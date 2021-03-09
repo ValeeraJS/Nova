@@ -1,8 +1,9 @@
-import { Matrix4 } from "../../math/matrix";
-import AbstractScale3 from "./AbstractScale3";
+import { Matrix4 } from "@valeera/mathx";
+import AScale3 from "./AScale3";
 
-export default abstract class Vector3Scale3 extends AbstractScale3 {
+export default class Vector3Scale3 extends AScale3 {
     vec3: Float32Array;
+    data = new Float32Array(16);
 
     constructor(vec3: Float32Array) {
         super();

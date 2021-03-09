@@ -1,10 +1,11 @@
-import { Matrix4 } from "../math/matrix";
-import AbstractPosition3 from "./AbstractPosition3";
+import { Matrix4 } from "@valeera/mathx";
+import APosition3 from "./APosition3";
 
-export default abstract class EuclidPosition3 extends AbstractPosition3 {
+export default class EuclidPosition3 extends APosition3 {
     vec3: Float32Array;
+    data = new Float32Array(16);
 
-    constructor(vec3: Float32Array) {
+    constructor(vec3: Float32Array = new Float32Array(3)) {
         super();
         this.vec3 = vec3;
         this.update();

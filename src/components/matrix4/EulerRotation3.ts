@@ -1,12 +1,18 @@
-import { from } from "../../math/euler/Euler";
-import IEuler from "../../math/euler/IEuler";
-import { fromEuler } from "../../math/matrix/Matrix4";
-import AbstractRotation3 from "./AbstractRotation3";
+import { from } from "@valeera/mathx/src/euler/Euler";
+import IEuler, { EulerRotationOrders }from "@valeera/mathx/src/euler/IEuler";
+import { fromEuler } from "@valeera/mathx/src/matrix/Matrix4";
+import ARotation3 from "./ARotation3";
 
-export default abstract class EulerRotation3 extends AbstractRotation3 {
+export default class EulerRotation3 extends ARotation3 {
     euler: IEuler;
+    data = new Float32Array(16);
 
-    constructor(euler: IEuler) {
+    constructor(euler: IEuler = {
+        x: 0,
+        y: 0,
+        z: 0,
+        order: EulerRotationOrders.XYZ,
+    }) {
         super();
         this.euler = euler;
         this.update();

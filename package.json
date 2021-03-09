@@ -87,6 +87,6 @@
 	"dependencies": {
 		"@valeera/mathx": "^0.1.6",
 		"@valeera/webgpu-constant": "^0.1.0",
-		"@valeera/x": "^0.1.1"
+		"@valeera/x": "^0.1.4"
 	}
 }

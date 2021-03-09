@@ -1,12 +1,13 @@
-import { Matrix4 } from "../math/matrix";
-import AbstractPosition3 from "./AbstractPosition3";
+import { Matrix4 } from "@valeera/mathx";
+import AProjection3 from "./AProjection3";
 
-export default abstract class EuclidPosition3 extends AbstractPosition3 {
+export default abstract class PerspectiveProjection extends AProjection3 {
     fovy: number;
     aspect: number;
     near: number;
     far: number;
     vec3: any;
+    data = new Float32Array(16);
 
     constructor(fovy: number, aspect: number, near: number, far: number) {
         super();

@@ -168,10 +168,10 @@
     "@typescript-eslint/types" "4.16.1"
     eslint-visitor-keys "^2.0.0"
 
-"@valeera/eventdispatcher@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@valeera/eventdispatcher/-/eventdispatcher-2.0.0.tgz#a4dfea07c9acdc2cf0bc29b31814a432093a1e1f"
-  integrity sha512-Qsbv/7g0KmJBIDB64cH9McdRiqMYgwPqLclcsabhXEFB9w+5TkL8ibgNj39JjwHcTvzL5FmQBy2190hOhYehgg==
+"@valeera/eventdispatcher@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.npm.taobao.org/@valeera/eventdispatcher/download/@valeera/eventdispatcher-2.1.0.tgz#6429a144f0660afd16d31401d503bae075abe923"
+  integrity sha1-ZCmhRPBmCv0W0xQB1QO64HWr6SM=
 
 "@valeera/idgenerator@^0.1.0":
   version "0.1.0"
@@ -188,12 +188,12 @@
   resolved "https://registry.yarnpkg.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.0.tgz#b4789c7743eaa8084d4806dc500f15f2fe63dbea"
   integrity sha512-D33cqKJoRpRDKtXD7cLyvQNacCbmAOpFtfZU5x8kBWiWb8JnXnMjEfsMyAZtcKb41pQQxmGBaeJCnxXvouETHw==
 
-"@valeera/x@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@valeera/x/-/x-0.1.1.tgz#91ad58e93ab08e798d47f7f6de10204a69e4ac3c"
-  integrity sha512-G45HFfz/lJu/5AoZrTvbgoBCU0LtDAdNYpcwR1jxliaGdSM4dDfHnU93O02QdcqBrsfLKZRkRi+JJbCrBFxrqA==
+"@valeera/x@^0.1.3":
+  version "0.1.3"
+  resolved "https://registry.npm.taobao.org/@valeera/x/download/@valeera/x-0.1.3.tgz?cache=0&sync_timestamp=1615301139180&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fx%2Fdownload%2F%40valeera%2Fx-0.1.3.tgz#854b2be8e72bcf8a99343b1ba47354f2ee49d342"
+  integrity sha1-hUsr6Ocrz4qZNDsbpHNU8u5J00I=
   dependencies:
-    "@valeera/eventdispatcher" "^2.0.0"
+    "@valeera/eventdispatcher" "^2.1.0"
     "@valeera/idgenerator" "^0.1.0"
 
 "@webgpu/types@0.0.43":
