@@ -1,0 +1,92 @@
+{
+	"name": "@valeera/engine",
+	"version": "0.1.0",
+	"description": "Event dispatcher fit for most framework.",
+	"main": "build/engine.js",
+	"repository": "ValeeraJS/engine",
+	"jsnext:main": "build/engine.module.js",
+	"module": "build/engine.module.js",
+	"types": "build/engine.d.ts",
+	"files": [
+		"build",
+		"LICENSE",
+		"package.json",
+		"README.md",
+		"src"
+	],
+	"directories": {
+		"docs": "docs",
+		"examples": "examples",
+		"src": "src"
+	},
+	"eslintConfig": {
+		"parser": "@typescript-eslint/parser",
+		"extends": "mdcs",
+		"plugins": [
+			"html",
+			"@typescript-eslint"
+		],
+		"rules": {
+			"@typescript-eslint/no-unused-vars": 1,
+			"@typescript-eslint/indent": [
+				"error",
+				"tab",
+				{
+					"SwitchCase": 1
+				}
+			]
+		}
+	},
+	"scripts": {
+		"build": "rollup -c scripts/rollup.config.js",
+		"build-legacy": "rollup -c scripts/rollup.config.legacy.js",
+		"build-closure": "google-closure-compiler --compilation_level=ADVANCED_OPTIMIZATIONS --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT_NEXT --language_out=ECMASCRIPT_NEXT --js build/engine.js --js_output_file build/engine.min.js",
+		"build-closure-legacy": "google-closure-compiler --compilation_level=ADVANCED_OPTIMIZATIONS --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT5 --js build/engine.legacy.js --js_output_file build/engine.legacy.min.js",
+		"build-all": "npm run build && npm run build-legacy && npm run build-closure && npm run build-closure-legacy",
+		"start": "npm run dev",
+		"lint": "eslint src --ext js --ext ts",
+		"test": "nyc --reporter=html --reporter=text mocha --require esm",
+		"travis": "npm run lint && npm test"
+	},
+	"keywords": [
+		"WebGPU"
+	],
+	"author": "hypnosnova",
+	"license": "MIT",
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "4.16.1",
+		"@typescript-eslint/parser": "4.16.1",
+		"@webgpu/types": "0.0.43",
+		"chai": "4.3.3",
+		"concurrently": "6.0.0",
+		"eslint": "7.21.0",
+		"eslint-plugin-html": "6.1.1",
+		"esm": "3.2.25",
+		"google-closure-compiler": "20210302.0.0",
+		"http-server": "0.12.3",
+		"qunit": "2.14.0",
+		"rollup": "2.40.0",
+		"rollup-plugin-json": "4.0.0",
+		"rollup-plugin-typescript2": "0.30.0",
+		"typescript": "4.2.3"
+	},
+	"jspm": {
+		"files": [
+			"package.json",
+			"LICENSE",
+			"README.md",
+			"build/engine.js",
+			"build/engine.min.js",
+			"build/engine.module.js",
+			"build/engine.legacy.js",
+			"build/engine.legacy.min.js",
+			"build/engine.legacy.module.js"
+		],
+		"directories": {}
+	},
+	"dependencies": {
+		"@valeera/mathx": "^0.1.6",
+		"@valeera/webgpu-constant": "^0.1.0",
+		"@valeera/x": "^0.1.1"
+	}
+}
