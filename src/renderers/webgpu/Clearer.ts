@@ -30,7 +30,10 @@ export default class Clearer {
 		}
 	}
 
-	public clear(): this {
+	public clear(commandEncoder: GPUCommandEncoder, swapChain: GPUSwapChain): this {
+		const textureView = swapChain.getCurrentTexture().createView();
+		(this.renderPassDescriptor.colorAttachments as any)[0].attachment = textureView;
+		commandEncoder.beginRenderPass(this.renderPassDescriptor);
 		return this;
 	}
 }
