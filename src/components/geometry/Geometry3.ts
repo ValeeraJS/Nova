@@ -60,4 +60,15 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
         });
         this.dirty = true;
     }
+
+    static createTriangleGeometry(a: ArrayLike<number> = [-1, 0, 0], b: ArrayLike<number> = [1, 0, 0], c: ArrayLike<number> = [0, 1, 0]): Geometry3 {
+        let geo = new Geometry3(3);
+        let result = new Float32Array(9);
+        result.set(a);
+        result.set(b, 3);
+        result.set(c, 6);
+        geo.addAttribute('vertices', result, 3);
+
+        return geo;
+    } 
 }
