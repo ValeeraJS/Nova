@@ -16,12 +16,12 @@ export default class RendererSystem extends ASystem<any> {
     clearer: Clearer;
     swapChain: GPUSwapChain;
     rendererMap: Map<string, IRenderer>;
-    constructor(engine: WebGPUEngine, clearer: Clearer) {
+    constructor(engine: WebGPUEngine, clearer?: Clearer) {
         super("Render System", (entity) => {
             return entity.getComponent(Renderable.TAG_TEXT)?.data;
         });
         this.engine = engine;
-        this.clearer = clearer;
+        this.clearer = clearer || new Clearer(engine);
         this.rendererMap = new Map();
         this.swapChain = engine.context.configureSwapChain({
             device: engine.device,

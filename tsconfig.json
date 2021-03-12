@@ -18,5 +18,5 @@
 		"noResolve": false,
 		"typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"]
 	},
-	"include": ["src", "node_modules/@webgpu/types"]
+	"include": ["src", "node_modules/@webgpu/types", "./node_modules/@valeera"]
 }
