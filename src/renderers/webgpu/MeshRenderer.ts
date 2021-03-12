@@ -2,12 +2,15 @@ import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3 from "../../components/geometry/Geometry3";
 import WebGPUEngine from "../../engine/WebGPUEngine";
+import createVerticesBuffer from "../../webgpu/createVerticesBuffer";
 import IRenderer from "./IRenderer";
 
 interface ICacheData {
 	matrixM: Float32Array;
 	pipeline: GPURenderPipeline;
 	uniformBuffer: GPUBuffer;
+	attributesBuffer: GPUBuffer;
+	uniformBindGroup: GPUBindGroup;
 }
 
 export default class MeshRenderer implements IRenderer{
@@ -26,28 +29,26 @@ export default class MeshRenderer implements IRenderer{
 			// TODO update cache
 		}
 
-		this.passEncoder.setPipeline(pipeline);
-		this.passEncoder.setScissorRect(0, 0, 400, 225);
-		for (let i = 0; i < mesh.geometry.nodes.length; i++) {
-			this.passEncoder.setVertexBuffer(i, mesh.geometry.nodes[i].buffer.gpuBuffer);
-		}
+		passEncoder.setPipeline(cacheData.pipeline);
+		// passEncoder.setScissorRect(0, 0, 400, 225);
+		// TODO 有多个attribute buffer
+		passEncoder.setVertexBuffer(0, cacheData.attributesBuffer);
 
 		const mvp = Matrix4.identity();
+		// TODO 视图矩阵
+		Matrix4.multiply(camera.getComponent("projection3")?.data, Matrix4.create(), mvp);
+		Matrix4.multiply(mvp, cacheData.matrixM, mvp);
 
-		
-
-		Matrix4.multiply(camera.projectionMatrix, camera.viewMatrix, mvp);
-		Matrix4.multiply(mvp, mesh.modelMatrix, mvp);
-
-		this.device.queue.writeBuffer(
-			mesh.uniformBuffer,
+		this.engine.device.queue.writeBuffer(
+			cacheData.uniformBuffer,
 			0,
 			mvp.buffer,
 			mvp.byteOffset,
 			mvp.byteLength
 		);
-		this.passEncoder.setBindGroup(0, mesh.uniformBindGroup);
-		this.passEncoder.draw(mesh.geometry.length, 1, 0, 0);
+		
+		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+		passEncoder.draw((mesh.getComponent("projection3") as Geometry3).count, 1, 0, 0);
 
 		return this;
 	}
@@ -64,10 +65,27 @@ export default class MeshRenderer implements IRenderer{
 			size: 4 * 16,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
+		// TODO
+		let attributesBuffer = createVerticesBuffer(this.engine.device, mesh.getComponent('geometry3')?.data);
+
+		let pipeline = this.createPipeline(mesh);
+	    let uniformBindGroup = this.engine.device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(0),
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: uniformBuffer,
+                    },
+                }
+            ],
+        });
 		return {
+			attributesBuffer,
 			matrixM,
 			uniformBuffer,
-			pipeline: this.createPipeline(mesh),
+			uniformBindGroup,
+			pipeline,
 		}
 	}
 
