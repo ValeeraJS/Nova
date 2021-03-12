@@ -399,10 +399,10 @@
   resolved "https://registry.yarnpkg.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.0.tgz#b4789c7743eaa8084d4806dc500f15f2fe63dbea"
   integrity sha512-D33cqKJoRpRDKtXD7cLyvQNacCbmAOpFtfZU5x8kBWiWb8JnXnMjEfsMyAZtcKb41pQQxmGBaeJCnxXvouETHw==
 
-"@valeera/x@^0.1.5":
-  version "0.1.5"
-  resolved "https://registry.npm.taobao.org/@valeera/x/download/@valeera/x-0.1.5.tgz#113e74af6f0a5b6f86cc9c4af62647e401670e9a"
-  integrity sha1-ET50r28KW2+GzJxK9iZH5AFnDpo=
+"@valeera/x@^0.1.7":
+  version "0.1.7"
+  resolved "https://registry.npm.taobao.org/@valeera/x/download/@valeera/x-0.1.7.tgz?cache=0&sync_timestamp=1615560317968&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fx%2Fdownload%2F%40valeera%2Fx-0.1.7.tgz#e8ca9ef98585e31d50bc7a4ceb75e9c9562e76ff"
+  integrity sha1-6Mqe+YWF4x1QvHpM63XpyVYudv8=
   dependencies:
     "@valeera/eventdispatcher" "^2.1.0"
     "@valeera/idgenerator" "^0.1.0"
