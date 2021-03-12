@@ -26,14 +26,14 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
     /**
      * 拓扑类型
      */
-    topology: string;
+    topology: GPUPrimitiveTopology;
     /**
      * 剔除方式
      */
-    cullMode: string;
+    cullMode: GPUCullMode ;
     data: AttributesNodeData[] = [];
 
-    constructor(count: number = 0, topology: string = "triangle-list", cullMode: string = "front", data: AttributesNodeData[] = []) {
+    constructor(count: number = 0, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "front", data: AttributesNodeData[] = []) {
         super('geometry3', data);
         this.count = count;
         this.topology = topology;

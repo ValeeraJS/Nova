@@ -8,6 +8,7 @@ import IRenderer from "./IRenderer";
 
 export interface IRenderParams {
     camera: IEntity;
+    passEncoder: GPURenderPassEncoder
 }
 
 export default class RendererSystem extends ASystem<any> {
@@ -45,7 +46,7 @@ export default class RendererSystem extends ASystem<any> {
 
     handle(entity: IEntity, params: IRenderParams): this {
         // 根据不同类别进行渲染
-        this.rendererMap.get(entity.getComponent(Renderable.TAG_TEXT)?.data)?.render(entity, params.camera);
+        this.rendererMap.get(entity.getComponent(Renderable.TAG_TEXT)?.data)?.render(entity, params.camera, params.passEncoder);
         return this;
     }
 
@@ -57,7 +58,10 @@ export default class RendererSystem extends ASystem<any> {
         let device = this.engine.device;
         let commandEncoder = device.createCommandEncoder();
         let passEncoder = this.clearer.clear(commandEncoder, this.swapChain);
-        super.run(world, params);
+        super.run(world, {
+            ...params,
+            passEncoder
+        });
         // finish
         passEncoder.endPass();
 		device.queue.submit([commandEncoder.finish()]);
