@@ -8,19 +8,18 @@
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Engine.WebGPUEngine(canvas);
-		let world = new Engine.World();
-		let mesh = new Engine.Entity();
-		let camera = new Engine.Entity();
-		world.addEntity(mesh);
-		world.camera = camera;
+		const world = new Engine.World();
 
 		engine.once(Engine.WebGPUEngine.INITED, (e) => {
-			console.log(e);
-			let renderSystem = new Engine.RenderSystem(engine);
-			let renderer = new Engine.MeshRenderer(engine);
-			renderSystem.addRenderer(renderer);
-
+			let clearer = new Engine.Clearer(engine, {
+				r: 1,
+				g: 0,
+				b: 0,
+				a: 1
+			});
+			let renderSystem = new Engine.RenderSystem(engine, clearer);
 			world.addSystem(renderSystem);
+			world.run();
 		});
 	</script>
 </body>
