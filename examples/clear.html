@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+</head>
+<body>
+	<canvas width="400" height="225" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="../build/Engine.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Engine.WebGPUEngine(canvas);
+		engine.once(Engine.WebGPUEngine.INITED, (e) => {
+			console.log(e)
+		});
+	</script>
+</body>

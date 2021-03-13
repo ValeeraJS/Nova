@@ -1,5 +1,6 @@
 import json from "rollup-plugin-json";
 import typescript from "rollup-plugin-typescript2";
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default {
 	input: "src/index.ts",
@@ -20,6 +21,7 @@ export default {
 	],
 	plugins: [
 		json(),
+		nodeResolve(),
 		typescript({
 			tsconfig: "./tsconfig.json"
 		})

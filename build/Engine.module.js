@@ -1,31 +1,147 @@
-import EventDispatcher from '@valeera/eventdispatcher';
-import { Matrix4 } from '@valeera/mathx';
-import IdGenerator from '@valeera/idgenerator';
-
 /*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
 
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
 
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
 ***************************************************************************** */
 
 function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 }
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const mixin = (Base = Object, eventKeyList = []) => {
+    var _a;
+    return _a = class EventDispatcher extends Base {
+            constructor() {
+                super(...arguments);
+                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+                this.eventKeyList = eventKeyList;
+                /**
+                 * store all the filters
+                 */
+                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+                this.filters = [];
+                /**
+                 * store all the listeners by key
+                 */
+                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+                this.listeners = new Map();
+                this.all = (listener) => {
+                    return this.filt(() => true, listener);
+                };
+                this.clearListenersByKey = (eventKey) => {
+                    this.listeners.delete(eventKey);
+                    return this;
+                };
+                this.clearAllListeners = () => {
+                    const keys = this.listeners.keys();
+                    for (const key of keys) {
+                        this.listeners.delete(key);
+                    }
+                    return this;
+                };
+                this.filt = (rule, listener) => {
+                    this.filters.push({
+                        listener,
+                        rule
+                    });
+                    return this;
+                };
+                this.fire = (eventKey, target) => {
+                    if (!this.checkEventKeyAvailable(eventKey)) {
+                        console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+                        return this;
+                    }
+                    const array = this.listeners.get(eventKey) || [];
+                    let len = array.length;
+                    let item;
+                    for (let i = 0; i < len; i++) {
+                        item = array[i];
+                        item.listener({
+                            eventKey,
+                            life: --item.times,
+                            target
+                        });
+                        if (item.times <= 0) {
+                            array.splice(i--, 1);
+                            --len;
+                        }
+                    }
+                    return this.checkFilt(eventKey, target);
+                };
+                this.off = (eventKey, listener) => {
+                    const array = this.listeners.get(eventKey);
+                    if (!array) {
+                        return this;
+                    }
+                    const len = array.length;
+                    for (let i = 0; i < len; i++) {
+                        if (array[i].listener === listener) {
+                            array.splice(i, 1);
+                            break;
+                        }
+                    }
+                    return this;
+                };
+                this.on = (eventKey, listener) => {
+                    return this.times(eventKey, Infinity, listener);
+                };
+                this.once = (eventKey, listener) => {
+                    return this.times(eventKey, 1, listener);
+                };
+                this.times = (eventKey, times, listener) => {
+                    if (!this.checkEventKeyAvailable(eventKey)) {
+                        console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+                        return this;
+                    }
+                    const array = this.listeners.get(eventKey) || [];
+                    if (!this.listeners.has(eventKey)) {
+                        this.listeners.set(eventKey, array);
+                    }
+                    array.push({
+                        listener,
+                        times
+                    });
+                    return this;
+                };
+                this.checkFilt = (eventKey, target) => {
+                    for (const item of this.filters) {
+                        if (item.rule(eventKey, target)) {
+                            item.listener({
+                                eventKey,
+                                life: Infinity,
+                                target
+                            });
+                        }
+                    }
+                    return this;
+                };
+                this.checkEventKeyAvailable = (eventKey) => {
+                    if (this.eventKeyList.length) {
+                        return this.eventKeyList.includes(eventKey);
+                    }
+                    return true;
+                };
+            }
+        },
+        _a.mixin = mixin,
+        _a;
+};
+var EventDispatcher = mixin(Object);
 
 class WebGPUEngine extends EventDispatcher {
     constructor(canvas) {
@@ -121,6 +237,901 @@ class Geometry3 extends Component {
         return geo;
     }
 }
+
+const EPSILON = Math.pow(2, -52);
+
+var EulerRotationOrders$1;
+(function (EulerRotationOrders) {
+    EulerRotationOrders["XYZ"] = "xyz";
+    EulerRotationOrders["ZXY"] = "zxy";
+    EulerRotationOrders["YZX"] = "yzx";
+    EulerRotationOrders["XZY"] = "xzy";
+    EulerRotationOrders["ZYX"] = "zyx";
+    EulerRotationOrders["YXZ"] = "yxz";
+})(EulerRotationOrders$1 || (EulerRotationOrders$1 = {}));
+
+let a00$2 = 0, a01$2 = 0, a02$1 = 0, a03$1 = 0, a11$2 = 0, a10$2 = 0, a12$1 = 0, a13$1 = 0, a20$1 = 0, a21$1 = 0, a22$1 = 0, a23$1 = 0, a31$1 = 0, a30$1 = 0, a32$1 = 0, a33$1 = 0;
+let b00$2 = 0, b01$2 = 0, b02$1 = 0, b03$1 = 0, b11$2 = 0, b10$2 = 0, b12$1 = 0, b13 = 0, b20$1 = 0, b21$1 = 0, b22$1 = 0, b23 = 0, b31 = 0, b30 = 0, b32 = 0, b33 = 0;
+let x$2 = 0, y$2 = 0, z$1 = 0, det$1 = 0, len$1 = 0, s = 0, t = 0, a$1 = 0, b$1 = 0, c$1 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
+const UNIT_MATRIX4_DATA$1 = Object.freeze([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
+]);
+const UNIT_MATRIX4 = new Float32Array(UNIT_MATRIX4_DATA$1);
+const create$3 = () => {
+    return new Float32Array(UNIT_MATRIX4_DATA$1);
+};
+const determinant$2 = (a) => {
+    a00$2 = a[0],
+        a01$2 = a[1],
+        a02$1 = a[2],
+        a03$1 = a[3];
+    a10$2 = a[4],
+        a11$2 = a[5],
+        a12$1 = a[6],
+        a13$1 = a[7];
+    a20$1 = a[8],
+        a21$1 = a[9],
+        a22$1 = a[10],
+        a23$1 = a[11];
+    a30$1 = a[12],
+        a31$1 = a[13],
+        a32$1 = a[14],
+        a33$1 = a[15];
+    b00$2 = a00$2 * a11$2 - a01$2 * a10$2;
+    b01$2 = a00$2 * a12$1 - a02$1 * a10$2;
+    b02$1 = a01$2 * a12$1 - a02$1 * a11$2;
+    b03$1 = a20$1 * a31$1 - a21$1 * a30$1;
+    b10$2 = a20$1 * a32$1 - a22$1 * a30$1;
+    b11$2 = a21$1 * a32$1 - a22$1 * a31$1;
+    b12$1 = a00$2 * b11$2 - a01$2 * b10$2 + a02$1 * b03$1;
+    b13 = a10$2 * b11$2 - a11$2 * b10$2 + a12$1 * b03$1;
+    b20$1 = a20$1 * b02$1 - a21$1 * b01$2 + a22$1 * b00$2;
+    b21$1 = a30$1 * b02$1 - a31$1 * b01$2 + a32$1 * b00$2;
+    return a13$1 * b12$1 - a03$1 * b13 + a33$1 * b20$1 - a23$1 * b21$1;
+};
+const from$2 = (a, out = new Float32Array(16)) => {
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = a[2];
+    out[3] = a[3];
+    out[4] = a[4];
+    out[5] = a[5];
+    out[6] = a[6];
+    out[7] = a[7];
+    out[8] = a[8];
+    out[9] = a[9];
+    out[10] = a[10];
+    out[11] = a[11];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+    return out;
+};
+const fromEuler$1 = (euler, out = new Float32Array(16)) => {
+    x$2 = euler.x;
+    y$2 = euler.y;
+    z$1 = euler.z;
+    a$1 = Math.cos(x$2), b$1 = Math.sin(x$2);
+    c$1 = Math.cos(y$2), d$1 = Math.sin(y$2);
+    e$1 = Math.cos(z$1), f$1 = Math.sin(z$1);
+    if (euler.order === EulerRotationOrders$1.XYZ) {
+        const ae = a$1 * e$1, af = a$1 * f$1, be = b$1 * e$1, bf = b$1 * f$1;
+        out[0] = c$1 * e$1;
+        out[4] = -c$1 * f$1;
+        out[8] = d$1;
+        out[1] = af + be * d$1;
+        out[5] = ae - bf * d$1;
+        out[9] = -b$1 * c$1;
+        out[2] = bf - ae * d$1;
+        out[6] = be + af * d$1;
+        out[10] = a$1 * c$1;
+    }
+    else if (euler.order === EulerRotationOrders$1.YXZ) {
+        const ce = c$1 * e$1, cf = c$1 * f$1, de = d$1 * e$1, df = d$1 * f$1;
+        out[0] = ce + df * b$1;
+        out[4] = de * b$1 - cf;
+        out[8] = a$1 * d$1;
+        out[1] = a$1 * f$1;
+        out[5] = a$1 * e$1;
+        out[9] = -b$1;
+        out[2] = cf * b$1 - de;
+        out[6] = df + ce * b$1;
+        out[10] = a$1 * c$1;
+    }
+    else if (euler.order === EulerRotationOrders$1.ZXY) {
+        const ce = c$1 * e$1, cf = c$1 * f$1, de = d$1 * e$1, df = d$1 * f$1;
+        out[0] = ce - df * b$1;
+        out[4] = -a$1 * f$1;
+        out[8] = de + cf * b$1;
+        out[1] = cf + de * b$1;
+        out[5] = a$1 * e$1;
+        out[9] = df - ce * b$1;
+        out[2] = -a$1 * d$1;
+        out[6] = b$1;
+        out[10] = a$1 * c$1;
+    }
+    else if (euler.order === EulerRotationOrders$1.ZYX) {
+        const ae = a$1 * e$1, af = a$1 * f$1, be = b$1 * e$1, bf = b$1 * f$1;
+        out[0] = c$1 * e$1;
+        out[4] = be * d$1 - af;
+        out[8] = ae * d$1 + bf;
+        out[1] = c$1 * f$1;
+        out[5] = bf * d$1 + ae;
+        out[9] = af * d$1 - be;
+        out[2] = -d$1;
+        out[6] = b$1 * c$1;
+        out[10] = a$1 * c$1;
+    }
+    else if (euler.order === EulerRotationOrders$1.YZX) {
+        const ac = a$1 * c$1, ad = a$1 * d$1, bc = b$1 * c$1, bd = b$1 * d$1;
+        out[0] = c$1 * e$1;
+        out[4] = bd - ac * f$1;
+        out[8] = bc * f$1 + ad;
+        out[1] = f$1;
+        out[5] = a$1 * e$1;
+        out[9] = -b$1 * e$1;
+        out[2] = -d$1 * e$1;
+        out[6] = ad * f$1 + bc;
+        out[10] = ac - bd * f$1;
+    }
+    else if (euler.order === EulerRotationOrders$1.XZY) {
+        const ac = a$1 * c$1, ad = a$1 * d$1, bc = b$1 * c$1, bd = b$1 * d$1;
+        out[0] = c$1 * e$1;
+        out[4] = -f$1;
+        out[8] = d$1 * e$1;
+        out[1] = ac * f$1 + bd;
+        out[5] = a$1 * e$1;
+        out[9] = ad * f$1 - bc;
+        out[2] = bc * f$1 - ad;
+        out[6] = b$1 * e$1;
+        out[10] = bd * f$1 + ac;
+    }
+    // bottom row
+    out[3] = 0;
+    out[7] = 0;
+    out[11] = 0;
+    // last column
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+function fromQuaternion(q, out) {
+    let x = q[0], y = q[1], z = q[2], w = q[3];
+    let x2 = x + x;
+    let y2 = y + y;
+    let z2 = z + z;
+    let xx = x * x2;
+    let yx = y * x2;
+    let yy = y * y2;
+    let zx = z * x2;
+    let zy = z * y2;
+    let zz = z * z2;
+    let wx = w * x2;
+    let wy = w * y2;
+    let wz = w * z2;
+    out[0] = 1 - yy - zz;
+    out[1] = yx + wz;
+    out[2] = zx - wy;
+    out[3] = 0;
+    out[4] = yx - wz;
+    out[5] = 1 - xx - zz;
+    out[6] = zy + wx;
+    out[7] = 0;
+    out[8] = zx + wy;
+    out[9] = zy - wx;
+    out[10] = 1 - xx - yy;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+}
+const fromRotation$2 = (rad, axis, out) => {
+    x$2 = axis[0];
+    y$2 = axis[1];
+    z$1 = axis[2];
+    len$1 = Math.hypot(x$2, y$2, z$1);
+    if (len$1 < EPSILON) {
+        return null;
+    }
+    len$1 = 1 / len$1;
+    x$2 *= len$1;
+    y$2 *= len$1;
+    z$1 *= len$1;
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    t = 1 - c$1;
+    out[0] = x$2 * x$2 * t + c$1;
+    out[1] = y$2 * x$2 * t + z$1 * s;
+    out[2] = z$1 * x$2 * t - y$2 * s;
+    out[3] = 0;
+    out[4] = x$2 * y$2 * t - z$1 * s;
+    out[5] = y$2 * y$2 * t + c$1;
+    out[6] = z$1 * y$2 * t + x$2 * s;
+    out[7] = 0;
+    out[8] = x$2 * z$1 * t + y$2 * s;
+    out[9] = y$2 * z$1 * t - x$2 * s;
+    out[10] = z$1 * z$1 * t + c$1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+const fromRotationX = (rad, out) => {
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = c$1;
+    out[6] = s;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = -s;
+    out[10] = c$1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+const fromRotationY = (rad, out) => {
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    out[0] = c$1;
+    out[1] = 0;
+    out[2] = -s;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = s;
+    out[9] = 0;
+    out[10] = c$1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+const fromRotationZ = (rad, out) => {
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    out[0] = c$1;
+    out[1] = s;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = -s;
+    out[5] = c$1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+const fromScaling$2 = (v, out = new Float32Array(16)) => {
+    out[0] = v[0];
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = v[1];
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = v[2];
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+const fromTranslation$1 = (v, out = new Float32Array(16)) => {
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = v[0];
+    out[13] = v[1];
+    out[14] = v[2];
+    out[15] = 1;
+    return out;
+};
+const identity$2 = (out = new Float32Array(16)) => {
+    out[0] = 1;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = 1;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+function invert$2(a, out = new Float32Array(16)) {
+    a00$2 = a[0],
+        a01$2 = a[1],
+        a02$1 = a[2],
+        a03$1 = a[3];
+    a10$2 = a[4],
+        a11$2 = a[5],
+        a12$1 = a[6],
+        a13$1 = a[7];
+    a20$1 = a[8],
+        a21$1 = a[9],
+        a22$1 = a[10],
+        a23$1 = a[11];
+    a30$1 = a[12],
+        a31$1 = a[13],
+        a32$1 = a[14],
+        a33$1 = a[15];
+    b00$2 = a00$2 * a11$2 - a01$2 * a10$2;
+    b01$2 = a00$2 * a12$1 - a02$1 * a10$2;
+    b02$1 = a00$2 * a13$1 - a03$1 * a10$2;
+    b03$1 = a01$2 * a12$1 - a02$1 * a11$2;
+    b20$1 = a01$2 * a13$1 - a03$1 * a11$2;
+    b21$1 = a02$1 * a13$1 - a03$1 * a12$1;
+    b22$1 = a20$1 * a31$1 - a21$1 * a30$1;
+    b23 = a20$1 * a32$1 - a22$1 * a30$1;
+    b30 = a20$1 * a33$1 - a23$1 * a30$1;
+    b31 = a21$1 * a32$1 - a22$1 * a31$1;
+    b32 = a21$1 * a33$1 - a23$1 * a31$1;
+    b33 = a22$1 * a33$1 - a23$1 * a32$1;
+    det$1 =
+        b00$2 * b33 - b01$2 * b32 + b02$1 * b31 + b03$1 * b30 - b20$1 * b23 + b21$1 * b22$1;
+    if (!det$1) {
+        return null;
+    }
+    det$1 = 1.0 / det$1;
+    out[0] = (a11$2 * b33 - a12$1 * b32 + a13$1 * b31) * det$1;
+    out[1] = (a02$1 * b32 - a01$2 * b33 - a03$1 * b31) * det$1;
+    out[2] = (a31$1 * b21$1 - a32$1 * b20$1 + a33$1 * b03$1) * det$1;
+    out[3] = (a22$1 * b20$1 - a21$1 * b21$1 - a23$1 * b03$1) * det$1;
+    out[4] = (a12$1 * b30 - a10$2 * b33 - a13$1 * b23) * det$1;
+    out[5] = (a00$2 * b33 - a02$1 * b30 + a03$1 * b23) * det$1;
+    out[6] = (a32$1 * b02$1 - a30$1 * b21$1 - a33$1 * b01$2) * det$1;
+    out[7] = (a20$1 * b21$1 - a22$1 * b02$1 + a23$1 * b01$2) * det$1;
+    out[8] = (a10$2 * b32 - a11$2 * b30 + a13$1 * b22$1) * det$1;
+    out[9] = (a01$2 * b30 - a00$2 * b32 - a03$1 * b22$1) * det$1;
+    out[10] = (a30$1 * b20$1 - a31$1 * b02$1 + a33$1 * b00$2) * det$1;
+    out[11] = (a21$1 * b02$1 - a20$1 * b20$1 - a23$1 * b00$2) * det$1;
+    out[12] = (a11$2 * b23 - a10$2 * b31 - a12$1 * b22$1) * det$1;
+    out[13] = (a00$2 * b31 - a01$2 * b23 + a02$1 * b22$1) * det$1;
+    out[14] = (a31$1 * b01$2 - a30$1 * b03$1 - a32$1 * b00$2) * det$1;
+    out[15] = (a20$1 * b03$1 - a21$1 * b01$2 + a22$1 * b00$2) * det$1;
+    return out;
+}
+const lookAt = (eye, center, up, out) => {
+    let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
+    let eyex = eye[0];
+    let eyey = eye[1];
+    let eyez = eye[2];
+    let upx = up[0];
+    let upy = up[1];
+    let upz = up[2];
+    let centerx = center[0];
+    let centery = center[1];
+    let centerz = center[2];
+    if (Math.abs(eyex - centerx) < EPSILON &&
+        Math.abs(eyey - centery) < EPSILON &&
+        Math.abs(eyez - centerz) < EPSILON) {
+        return identity$2(out);
+    }
+    z0 = eyex - centerx;
+    z1 = eyey - centery;
+    z2 = eyez - centerz;
+    len = 1 / Math.hypot(z0, z1, z2);
+    z0 *= len;
+    z1 *= len;
+    z2 *= len;
+    x0 = upy * z2 - upz * z1;
+    x1 = upz * z0 - upx * z2;
+    x2 = upx * z1 - upy * z0;
+    len = Math.hypot(x0, x1, x2);
+    if (!len) {
+        x0 = 0;
+        x1 = 0;
+        x2 = 0;
+    }
+    else {
+        len = 1 / len;
+        x0 *= len;
+        x1 *= len;
+        x2 *= len;
+    }
+    y0 = z1 * x2 - z2 * x1;
+    y1 = z2 * x0 - z0 * x2;
+    y2 = z0 * x1 - z1 * x0;
+    len = Math.hypot(y0, y1, y2);
+    if (!len) {
+        y0 = 0;
+        y1 = 0;
+        y2 = 0;
+    }
+    else {
+        len = 1 / len;
+        y0 *= len;
+        y1 *= len;
+        y2 *= len;
+    }
+    out[0] = x0;
+    out[1] = y0;
+    out[2] = z0;
+    out[3] = 0;
+    out[4] = x1;
+    out[5] = y1;
+    out[6] = z1;
+    out[7] = 0;
+    out[8] = x2;
+    out[9] = y2;
+    out[10] = z2;
+    out[11] = 0;
+    out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+    out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+    out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+    out[15] = 1;
+    return out;
+};
+const multiply$2 = (a, b, out = new Float32Array(16)) => {
+    a00$2 = a[0],
+        a01$2 = a[1],
+        a02$1 = a[2],
+        a03$1 = a[3];
+    a10$2 = a[4],
+        a11$2 = a[5],
+        a12$1 = a[6],
+        a13$1 = a[7];
+    a20$1 = a[8],
+        a21$1 = a[9],
+        a22$1 = a[10],
+        a23$1 = a[11];
+    a30$1 = a[12],
+        a31$1 = a[13],
+        a32$1 = a[14],
+        a33$1 = a[15];
+    b00$2 = b[0],
+        b01$2 = b[1],
+        b02$1 = b[2],
+        b03$1 = b[3];
+    out[0] = b00$2 * a00$2 + b01$2 * a10$2 + b02$1 * a20$1 + b03$1 * a30$1;
+    out[1] = b00$2 * a01$2 + b01$2 * a11$2 + b02$1 * a21$1 + b03$1 * a31$1;
+    out[2] = b00$2 * a02$1 + b01$2 * a12$1 + b02$1 * a22$1 + b03$1 * a32$1;
+    out[3] = b00$2 * a03$1 + b01$2 * a13$1 + b02$1 * a23$1 + b03$1 * a33$1;
+    b00$2 = b[4];
+    b01$2 = b[5];
+    b02$1 = b[6];
+    b03$1 = b[7];
+    out[4] = b00$2 * a00$2 + b01$2 * a10$2 + b02$1 * a20$1 + b03$1 * a30$1;
+    out[5] = b00$2 * a01$2 + b01$2 * a11$2 + b02$1 * a21$1 + b03$1 * a31$1;
+    out[6] = b00$2 * a02$1 + b01$2 * a12$1 + b02$1 * a22$1 + b03$1 * a32$1;
+    out[7] = b00$2 * a03$1 + b01$2 * a13$1 + b02$1 * a23$1 + b03$1 * a33$1;
+    b00$2 = b[8];
+    b01$2 = b[9];
+    b02$1 = b[10];
+    b03$1 = b[11];
+    out[8] = b00$2 * a00$2 + b01$2 * a10$2 + b02$1 * a20$1 + b03$1 * a30$1;
+    out[9] = b00$2 * a01$2 + b01$2 * a11$2 + b02$1 * a21$1 + b03$1 * a31$1;
+    out[10] = b00$2 * a02$1 + b01$2 * a12$1 + b02$1 * a22$1 + b03$1 * a32$1;
+    out[11] = b00$2 * a03$1 + b01$2 * a13$1 + b02$1 * a23$1 + b03$1 * a33$1;
+    b00$2 = b[12];
+    b01$2 = b[13];
+    b02$1 = b[14];
+    b03$1 = b[15];
+    out[12] = b00$2 * a00$2 + b01$2 * a10$2 + b02$1 * a20$1 + b03$1 * a30$1;
+    out[13] = b00$2 * a01$2 + b01$2 * a11$2 + b02$1 * a21$1 + b03$1 * a31$1;
+    out[14] = b00$2 * a02$1 + b01$2 * a12$1 + b02$1 * a22$1 + b03$1 * a32$1;
+    out[15] = b00$2 * a03$1 + b01$2 * a13$1 + b02$1 * a23$1 + b03$1 * a33$1;
+    return out;
+};
+const orthogonal = (left, right, bottom, top, near, far, out) => {
+    let lr = 1 / (left - right);
+    let bt = 1 / (bottom - top);
+    let nf = 1 / (near - far);
+    out[0] = -2 * lr;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = -2 * bt;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 2 * nf;
+    out[11] = 0;
+    out[12] = (left + right) * lr;
+    out[13] = (top + bottom) * bt;
+    out[14] = (far + near) * nf;
+    out[15] = 1;
+    return out;
+};
+const perspective = (fovy, aspect, near, far, out) => {
+    let f = 1.0 / Math.tan(fovy / 2), nf;
+    out[0] = f / aspect;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = f;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+    if (far != null && far !== Infinity) {
+        nf = 1 / (near - far);
+        out[10] = (far + near) * nf;
+        out[14] = 2 * far * near * nf;
+    }
+    else {
+        out[10] = -1;
+        out[14] = -2 * near;
+    }
+    return out;
+};
+const rotate$2 = (a, rad, axis, out) => {
+    x$2 = axis[0];
+    y$2 = axis[1];
+    z$1 = axis[2];
+    len$1 = Math.hypot(x$2, y$2, z$1);
+    if (len$1 < EPSILON) {
+        return null;
+    }
+    len$1 = 1 / len$1;
+    x$2 *= len$1;
+    y$2 *= len$1;
+    z$1 *= len$1;
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    t = 1 - c$1;
+    a00$2 = a[0];
+    a01$2 = a[1];
+    a02$1 = a[2];
+    a03$1 = a[3];
+    a10$2 = a[4];
+    a11$2 = a[5];
+    a12$1 = a[6];
+    a13$1 = a[7];
+    a20$1 = a[8];
+    a21$1 = a[9];
+    a22$1 = a[10];
+    a23$1 = a[11];
+    b00$2 = x$2 * x$2 * t + c$1;
+    b01$2 = y$2 * x$2 * t + z$1 * s;
+    b02$1 = z$1 * x$2 * t - y$2 * s;
+    b10$2 = x$2 * y$2 * t - z$1 * s;
+    b11$2 = y$2 * y$2 * t + c$1;
+    b12$1 = z$1 * y$2 * t + x$2 * s;
+    b20$1 = x$2 * z$1 * t + y$2 * s;
+    b21$1 = y$2 * z$1 * t - x$2 * s;
+    b22$1 = z$1 * z$1 * t + c$1;
+    out[0] = a00$2 * b00$2 + a10$2 * b01$2 + a20$1 * b02$1;
+    out[1] = a01$2 * b00$2 + a11$2 * b01$2 + a21$1 * b02$1;
+    out[2] = a02$1 * b00$2 + a12$1 * b01$2 + a22$1 * b02$1;
+    out[3] = a03$1 * b00$2 + a13$1 * b01$2 + a23$1 * b02$1;
+    out[4] = a00$2 * b10$2 + a10$2 * b11$2 + a20$1 * b12$1;
+    out[5] = a01$2 * b10$2 + a11$2 * b11$2 + a21$1 * b12$1;
+    out[6] = a02$1 * b10$2 + a12$1 * b11$2 + a22$1 * b12$1;
+    out[7] = a03$1 * b10$2 + a13$1 * b11$2 + a23$1 * b12$1;
+    out[8] = a00$2 * b20$1 + a10$2 * b21$1 + a20$1 * b22$1;
+    out[9] = a01$2 * b20$1 + a11$2 * b21$1 + a21$1 * b22$1;
+    out[10] = a02$1 * b20$1 + a12$1 * b21$1 + a22$1 * b22$1;
+    out[11] = a03$1 * b20$1 + a13$1 * b21$1 + a23$1 * b22$1;
+    if (a !== out) {
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    return out;
+};
+const rotateX = (a, rad, out) => {
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    a10$2 = a[4];
+    a11$2 = a[5];
+    a12$1 = a[6];
+    a13$1 = a[7];
+    a20$1 = a[8];
+    a21$1 = a[9];
+    a22$1 = a[10];
+    a23$1 = a[11];
+    if (a !== out) {
+        out[0] = a[0];
+        out[1] = a[1];
+        out[2] = a[2];
+        out[3] = a[3];
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    out[4] = a10$2 * c$1 + a20$1 * s;
+    out[5] = a11$2 * c$1 + a21$1 * s;
+    out[6] = a12$1 * c$1 + a22$1 * s;
+    out[7] = a13$1 * c$1 + a23$1 * s;
+    out[8] = a20$1 * c$1 - a10$2 * s;
+    out[9] = a21$1 * c$1 - a11$2 * s;
+    out[10] = a22$1 * c$1 - a12$1 * s;
+    out[11] = a23$1 * c$1 - a13$1 * s;
+    return out;
+};
+function rotateY(a, rad, out) {
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    a00$2 = a[0];
+    a01$2 = a[1];
+    a02$1 = a[2];
+    a03$1 = a[3];
+    a20$1 = a[8];
+    a21$1 = a[9];
+    a22$1 = a[10];
+    a23$1 = a[11];
+    if (a !== out) {
+        out[4] = a[4];
+        out[5] = a[5];
+        out[6] = a[6];
+        out[7] = a[7];
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    out[0] = a00$2 * c$1 - a20$1 * s;
+    out[1] = a01$2 * c$1 - a21$1 * s;
+    out[2] = a02$1 * c$1 - a22$1 * s;
+    out[3] = a03$1 * c$1 - a23$1 * s;
+    out[8] = a00$2 * s + a20$1 * c$1;
+    out[9] = a01$2 * s + a21$1 * c$1;
+    out[10] = a02$1 * s + a22$1 * c$1;
+    out[11] = a03$1 * s + a23$1 * c$1;
+    return out;
+}
+const rotateZ = (a, rad, out) => {
+    s = Math.sin(rad);
+    c$1 = Math.cos(rad);
+    a00$2 = a[0];
+    a01$2 = a[1];
+    a02$1 = a[2];
+    a03$1 = a[3];
+    a10$2 = a[4];
+    a11$2 = a[5];
+    a12$1 = a[6];
+    a13$1 = a[7];
+    if (a !== out) {
+        out[8] = a[8];
+        out[9] = a[9];
+        out[10] = a[10];
+        out[11] = a[11];
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    out[0] = a00$2 * c$1 + a10$2 * s;
+    out[1] = a01$2 * c$1 + a11$2 * s;
+    out[2] = a02$1 * c$1 + a12$1 * s;
+    out[3] = a03$1 * c$1 + a13$1 * s;
+    out[4] = a10$2 * c$1 - a00$2 * s;
+    out[5] = a11$2 * c$1 - a01$2 * s;
+    out[6] = a12$1 * c$1 - a02$1 * s;
+    out[7] = a13$1 * c$1 - a03$1 * s;
+    return out;
+};
+const scale$2 = (a, v, out = new Float32Array(16)) => {
+    x$2 = v[0];
+    y$2 = v[1];
+    z$1 = v[2];
+    out[0] = a[0] * x$2;
+    out[1] = a[1] * x$2;
+    out[2] = a[2] * x$2;
+    out[3] = a[3] * x$2;
+    out[4] = a[4] * y$2;
+    out[5] = a[5] * y$2;
+    out[6] = a[6] * y$2;
+    out[7] = a[7] * y$2;
+    out[8] = a[8] * z$1;
+    out[9] = a[9] * z$1;
+    out[10] = a[10] * z$1;
+    out[11] = a[11] * z$1;
+    if (out !== a) {
+        out[12] = a[12];
+        out[13] = a[13];
+        out[14] = a[14];
+        out[15] = a[15];
+    }
+    return out;
+};
+const targetTo = (eye, target, up, out = new Float32Array(16)) => {
+    let eyex = eye[0], eyey = eye[1], eyez = eye[2], upx = up[0], upy = up[1], upz = up[2];
+    let z0 = eyex - target[0], z1 = eyey - target[1], z2 = eyez - target[2];
+    let len = z0 * z0 + z1 * z1 + z2 * z2;
+    if (len > 0) {
+        len = 1 / Math.sqrt(len);
+        z0 *= len;
+        z1 *= len;
+        z2 *= len;
+    }
+    let x0 = upy * z2 - upz * z1, x1 = upz * z0 - upx * z2, x2 = upx * z1 - upy * z0;
+    len = x0 * x0 + x1 * x1 + x2 * x2;
+    if (len > 0) {
+        len = 1 / Math.sqrt(len);
+        x0 *= len;
+        x1 *= len;
+        x2 *= len;
+    }
+    out[0] = x0;
+    out[1] = x1;
+    out[2] = x2;
+    out[3] = 0;
+    out[4] = z1 * x2 - z2 * x1;
+    out[5] = z2 * x0 - z0 * x2;
+    out[6] = z0 * x1 - z1 * x0;
+    out[7] = 0;
+    out[8] = z0;
+    out[9] = z1;
+    out[10] = z2;
+    out[11] = 0;
+    out[12] = eyex;
+    out[13] = eyey;
+    out[14] = eyez;
+    out[15] = 1;
+    return out;
+};
+const translate$1 = (a, v, out = new Float32Array(16)) => {
+    x$2 = v[0];
+    y$2 = v[1];
+    z$1 = v[2];
+    if (a === out) {
+        out[12] = a[0] * x$2 + a[4] * y$2 + a[8] * z$1 + a[12];
+        out[13] = a[1] * x$2 + a[5] * y$2 + a[9] * z$1 + a[13];
+        out[14] = a[2] * x$2 + a[6] * y$2 + a[10] * z$1 + a[14];
+        out[15] = a[3] * x$2 + a[7] * y$2 + a[11] * z$1 + a[15];
+    }
+    else {
+        a00$2 = a[0];
+        a01$2 = a[1];
+        a02$1 = a[2];
+        a03$1 = a[3];
+        a10$2 = a[4];
+        a11$2 = a[5];
+        a12$1 = a[6];
+        a13$1 = a[7];
+        a20$1 = a[8];
+        a21$1 = a[9];
+        a22$1 = a[10];
+        a23$1 = a[11];
+        out[0] = a00$2;
+        out[1] = a01$2;
+        out[2] = a02$1;
+        out[3] = a03$1;
+        out[4] = a10$2;
+        out[5] = a11$2;
+        out[6] = a12$1;
+        out[7] = a13$1;
+        out[8] = a20$1;
+        out[9] = a21$1;
+        out[10] = a22$1;
+        out[11] = a23$1;
+        out[12] = a00$2 * x$2 + a10$2 * y$2 + a20$1 * z$1 + a[12];
+        out[13] = a01$2 * x$2 + a11$2 * y$2 + a21$1 * z$1 + a[13];
+        out[14] = a02$1 * x$2 + a12$1 * y$2 + a22$1 * z$1 + a[14];
+        out[15] = a03$1 * x$2 + a13$1 * y$2 + a23$1 * z$1 + a[15];
+    }
+    return out;
+};
+const transpose$2 = (a, out = new Float32Array(16)) => {
+    if (out === a) {
+        a01$2 = a[1],
+            a02$1 = a[2],
+            a03$1 = a[3];
+        a12$1 = a[6],
+            a13$1 = a[7];
+        a23$1 = a[11];
+        out[1] = a[4];
+        out[2] = a[8];
+        out[3] = a[12];
+        out[4] = a01$2;
+        out[6] = a[9];
+        out[7] = a[13];
+        out[8] = a02$1;
+        out[9] = a12$1;
+        out[11] = a[14];
+        out[12] = a03$1;
+        out[13] = a13$1;
+        out[14] = a23$1;
+    }
+    else {
+        out[0] = a[0];
+        out[1] = a[4];
+        out[2] = a[8];
+        out[3] = a[12];
+        out[4] = a[1];
+        out[5] = a[5];
+        out[6] = a[9];
+        out[7] = a[13];
+        out[8] = a[2];
+        out[9] = a[6];
+        out[10] = a[10];
+        out[11] = a[14];
+        out[12] = a[3];
+        out[13] = a[7];
+        out[14] = a[11];
+        out[15] = a[15];
+    }
+    return out;
+};
+
+var Matrix4 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	UNIT_MATRIX4: UNIT_MATRIX4,
+	create: create$3,
+	determinant: determinant$2,
+	from: from$2,
+	fromEuler: fromEuler$1,
+	fromQuaternion: fromQuaternion,
+	fromRotation: fromRotation$2,
+	fromRotationX: fromRotationX,
+	fromRotationY: fromRotationY,
+	fromRotationZ: fromRotationZ,
+	fromScaling: fromScaling$2,
+	fromTranslation: fromTranslation$1,
+	identity: identity$2,
+	invert: invert$2,
+	lookAt: lookAt,
+	multiply: multiply$2,
+	orthogonal: orthogonal,
+	perspective: perspective,
+	rotate: rotate$2,
+	rotateX: rotateX,
+	rotateY: rotateY,
+	rotateZ: rotateZ,
+	scale: scale$2,
+	targetTo: targetTo,
+	translate: translate$1,
+	transpose: transpose$2
+});
 
 class Matrix4Component extends Component {
     constructor(name, data = Matrix4.create()) {
@@ -753,6 +1764,30 @@ const wgslShaders = {
 		}
 	`
 };
+
+/**
+ * @class
+ * @classdesc 数字id生成器，用于生成递增id
+ * @param {number} [initValue = 0] 从几开始生成递增id
+ */
+class IdGenerator {
+    constructor(initValue = 0) {
+        this.value = this.initValue = initValue;
+    }
+    current() {
+        return this.value;
+    }
+    next() {
+        return ++this.value;
+    }
+    skip(value = 1) {
+        if (value < 1) {
+            value = 1;
+        }
+        this.value += value;
+        return ++this.value;
+    }
+}
 
 const IdGeneratorInstance = new IdGenerator();
 
