@@ -49,7 +49,7 @@ export default class MeshRenderer implements IRenderer{
 		);
 		
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-		passEncoder.draw((mesh.getComponent("projection3") as Geometry3).count, 1, 0, 0);
+		passEncoder.draw((mesh.getComponent("geometry3") as Geometry3).count, 1, 0, 0);
 
 		return this;
 	}
@@ -67,7 +67,7 @@ export default class MeshRenderer implements IRenderer{
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 		// TODO
-		let attributesBuffer = createVerticesBuffer(this.engine.device, mesh.getComponent('geometry3')?.data);
+		let attributesBuffer = createVerticesBuffer(this.engine.device, mesh.getComponent('geometry3')?.data[0].data);
 
 		let pipeline = this.createPipeline(mesh);
 	    let uniformBindGroup = this.engine.device.createBindGroup({
@@ -115,14 +115,14 @@ export default class MeshRenderer implements IRenderer{
                 cullMode: geometry.cullMode,
             },
             vertexState: {
-                vertexBuffers: {
+                vertexBuffers: [{
 					arrayStride: 6 * geometry.data[0].data.BYTES_PER_ELEMENT as any,
 					attributes:[{
 						shaderLocation: 0,
 						offset: 0,
 						format: "float32x3"
 					}]
-				}
+				}]
             } as any,
         });
 

@@ -36,7 +36,9 @@
 			let renderer = new Engine.MeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			world.run();
+			world.run({
+				camera,
+			});
 		});
 	</script>
 </body>

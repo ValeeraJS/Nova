@@ -3697,7 +3697,7 @@ class MeshRenderer {
         multiply(mvp, cacheData.matrixM, mvp);
         this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
         passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-        passEncoder.draw(mesh.getComponent("projection3").count, 1, 0, 0);
+        passEncoder.draw(mesh.getComponent("geometry3").count, 1, 0, 0);
         return this;
     }
     createCacheData(mesh) {
@@ -3713,7 +3713,7 @@ class MeshRenderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         // TODO
-        let attributesBuffer = createVerticesBuffer(this.engine.device, (_d = mesh.getComponent('geometry3')) === null || _d === void 0 ? void 0 : _d.data);
+        let attributesBuffer = createVerticesBuffer(this.engine.device, (_d = mesh.getComponent('geometry3')) === null || _d === void 0 ? void 0 : _d.data[0].data);
         let pipeline = this.createPipeline(mesh);
         let uniformBindGroup = this.engine.device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
@@ -3759,14 +3759,14 @@ class MeshRenderer {
                 cullMode: geometry.cullMode,
             },
             vertexState: {
-                vertexBuffers: {
-                    arrayStride: 6 * geometry.data[0].data.BYTES_PER_ELEMENT,
-                    attributes: [{
-                            shaderLocation: 0,
-                            offset: 0,
-                            format: "float32x3"
-                        }]
-                }
+                vertexBuffers: [{
+                        arrayStride: 6 * geometry.data[0].data.BYTES_PER_ELEMENT,
+                        attributes: [{
+                                shaderLocation: 0,
+                                offset: 0,
+                                format: "float32x3"
+                            }]
+                    }]
             },
         });
         return pipeline;
