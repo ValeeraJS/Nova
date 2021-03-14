@@ -3512,49 +3512,51 @@ class PerspectiveProjection extends AProjection3 {
     constructor(fovy, aspect, near, far) {
         super();
         this.data = new Float32Array(16);
-        this.fovy = fovy;
-        this.aspect = aspect;
-        this.near = near;
-        this.far = far;
+        this.options = {
+            fovy,
+            aspect,
+            near,
+            far,
+        };
         this.update();
     }
     get fovy() {
-        return this.fovy;
+        return this.options.fovy;
     }
     set fovy(value) {
-        this.fovy = value;
+        this.options.fovy = value;
         this.update();
     }
     get aspect() {
         return this.aspect;
     }
     set aspect(value) {
-        this.aspect = value;
+        this.options.aspect = value;
         this.update();
     }
     get near() {
-        return this.near;
+        return this.options.near;
     }
     set near(value) {
-        this.near = value;
+        this.options.near = value;
         this.update();
     }
     get far() {
-        return this.far;
+        return this.options.far;
     }
     set far(value) {
-        this.far = value;
+        this.options.far = value;
         this.update();
     }
     set(fovy = this.fovy, aspect = this.aspect, near = this.near, far = this.far) {
-        this.fovy = fovy;
-        this.aspect = aspect;
-        this.near = near;
-        this.far = far;
+        this.options.fovy = fovy;
+        this.options.aspect = aspect;
+        this.options.near = near;
+        this.options.far = far;
         return this.update();
     }
     update() {
-        Matrix4.perspective(this.fovy, this.aspect, this.near, this.far, this.data);
+        Matrix4.perspective(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
         this.dirty = true;
         return this;
     }

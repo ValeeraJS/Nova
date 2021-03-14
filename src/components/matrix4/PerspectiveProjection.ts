@@ -3,22 +3,25 @@ import AProjection3 from "./AProjection3";
 
 export default abstract class PerspectiveProjection extends AProjection3 {
     data = new Float32Array(16);
+    options: { fovy: number; aspect: number; near: number; far: number; };
 
     constructor(fovy: number, aspect: number, near: number, far: number) {
         super();
-        this.fovy = fovy;
-        this.aspect = aspect;
-        this.near = near;
-        this.far = far;
+        this.options = {
+            fovy,
+            aspect,
+            near,
+            far,
+        }
         this.update();
     }
 
     get fovy() {
-        return this.fovy;
+        return this.options.fovy;
     }
     
     set fovy(value: number) {
-        this.fovy = value;
+        this.options.fovy = value;
 
         this.update();
     }
@@ -28,43 +31,43 @@ export default abstract class PerspectiveProjection extends AProjection3 {
     }
     
     set aspect(value: number) {
-        this.aspect = value;
+        this.options.aspect = value;
 
         this.update();
     }
     
     get near() {
-        return this.near;
+        return this.options.near;
     }
     
     set near(value: number) {
-        this.near = value;
+        this.options.near = value;
 
         this.update();
     }
     
     get far() {
-        return this.far;
+        return this.options.far;
     }
     
     set far(value: number) {
-        this.far = value;
+        this.options.far = value;
 
         this.update();
     }
 
 
     set(fovy: number = this.fovy, aspect: number = this.aspect, near: number = this.near, far: number = this.far) {
-        this.fovy = fovy;
-        this.aspect = aspect;
-        this.near = near;
-        this.far = far;
+        this.options.fovy = fovy;
+        this.options.aspect = aspect;
+        this.options.near = near;
+        this.options.far = far;
 
         return this.update();
     }
 
     update() {
-        Matrix4.perspective(this.fovy, this.aspect, this.near, this.far, this.data);
+        Matrix4.perspective(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
         this.dirty = true;
         return this;
     }
