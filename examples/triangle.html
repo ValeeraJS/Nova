@@ -15,24 +15,26 @@
 		const positionMesh = new Engine.EuclidPosition3(new Float32Array([0, 0, -1]));
 		const scaleMesh = new Engine.Vector3Scale3();
 		const rotationMesh = new Engine.EulerRotation3();
+		const renderable = new Engine.Renderable("mesh");
 		mesh.addComponent(geo);
 		mesh.addComponent(positionMesh);
 		mesh.addComponent(scaleMesh);
 		mesh.addComponent(rotationMesh);
+		mesh.addComponent(renderable);
 		world.addEntity(mesh);
 
 		const camera = new Engine.Entity();
+		const positionCamera = new Engine.EuclidPosition3();
 		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
+		const rotationCamera = new Engine.EulerRotation3();
+		camera.addComponent(positionCamera);
+		camera.addComponent(rotationCamera);
 		camera.addComponent(projection);
 
 		engine.once(Engine.WebGPUEngine.INITED, (e) => {
-			let clearer = new Engine.Clearer(engine, {
-				r: 1,
-				g: 0,
-				b: 0,
-				a: 1
-			});
-			let renderSystem = new Engine.RenderSystem(engine, clearer);
+			let renderSystem = new Engine.RenderSystem(engine);
+			let renderer = new Engine.MeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			world.run();
 		});

@@ -14,6 +14,7 @@ interface ICacheData {
 }
 
 export default class MeshRenderer implements IRenderer{
+	public static readonly renderTypes = "mesh";
 	public readonly renderTypes = "mesh";
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
 	engine: WebGPUEngine;

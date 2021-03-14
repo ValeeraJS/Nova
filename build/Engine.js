@@ -3804,6 +3804,7 @@
 	        return [vertexStage, fragmentStage];
 	    }
 	}
+	MeshRenderer.renderTypes = "mesh";
 	const wgslShaders = {
 	    vertex: `
 		[[block]] struct Uniforms {
@@ -3926,7 +3927,7 @@
 	    }
 	}
 
-	class RendererSystem extends ASystem$1 {
+	class RenderSystem extends ASystem$1 {
 	    constructor(engine, clearer) {
 	        super("Render System", (entity) => {
 	            var _a;
@@ -4546,7 +4547,7 @@
 	exports.Object3 = Object3;
 	exports.PerspectiveProjection = PerspectiveProjection;
 	exports.Quaternion = Quaternion;
-	exports.RenderSystem = RendererSystem;
+	exports.RenderSystem = RenderSystem;
 	exports.Renderable = Renderable;
 	exports.SystemManager = SystemManager;
 	exports.Vector2 = Vector2;

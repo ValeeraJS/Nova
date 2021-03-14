@@ -3798,6 +3798,7 @@ class MeshRenderer {
         return [vertexStage, fragmentStage];
     }
 }
+MeshRenderer.renderTypes = "mesh";
 const wgslShaders = {
     vertex: `
 		[[block]] struct Uniforms {
@@ -3920,7 +3921,7 @@ class ASystem$1 {
     }
 }
 
-class RendererSystem extends ASystem$1 {
+class RenderSystem extends ASystem$1 {
     constructor(engine, clearer) {
         super("Render System", (entity) => {
             var _a;
@@ -4514,5 +4515,5 @@ class World {
     }
 }
 
-export { APosition3, AProjection3, ARotation3, AScale3, ASystem, COLOR_HEX_MAP, Clearer, ColorGPU, ColorRGB, ColorRGBA, Component, ComponentManager, Entity, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, Global, Matrix2, Matrix3, Matrix4, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, Quaternion, RendererSystem as RenderSystem, Renderable, SystemManager, Vector2, Vector3, Vector3Scale3, Vector4, WebGPUEngine, World, ceilPowerOfTwo, clampCommon as clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum$1 as sum, sumArray };
+export { APosition3, AProjection3, ARotation3, AScale3, ASystem, COLOR_HEX_MAP, Clearer, ColorGPU, ColorRGB, ColorRGBA, Component, ComponentManager, Entity, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, Global, Matrix2, Matrix3, Matrix4, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, Quaternion, RenderSystem, Renderable, SystemManager, Vector2, Vector3, Vector3Scale3, Vector4, WebGPUEngine, World, ceilPowerOfTwo, clampCommon as clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum$1 as sum, sumArray };
 //# sourceMappingURL=Engine.module.js.map

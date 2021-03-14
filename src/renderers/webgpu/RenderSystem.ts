@@ -11,7 +11,7 @@ export interface IRenderParams {
     passEncoder: GPURenderPassEncoder
 }
 
-export default class RendererSystem extends ASystem<any> {
+export default class RenderSystem extends ASystem<any> {
     engine: WebGPUEngine;
     clearer: Clearer;
     swapChain: GPUSwapChain;
