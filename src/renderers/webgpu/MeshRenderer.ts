@@ -146,13 +146,13 @@ export default class MeshRenderer implements IRenderer{
             module: this.engine.device.createShaderModule({
                 code: wgslShaders.vertex,
             }),
-            entryPoint: wgslShaders.vertex,
+            entryPoint: "main",
         };
         let fragmentStage = {
             module: this.engine.device.createShaderModule({
                 code: wgslShaders.fragment,
             }),
-            entryPoint: wgslShaders.fragment
+            entryPoint: "main"
         };
 		return [vertexStage, fragmentStage];
 	}

@@ -3787,13 +3787,13 @@ class MeshRenderer {
             module: this.engine.device.createShaderModule({
                 code: wgslShaders.vertex,
             }),
-            entryPoint: wgslShaders.vertex,
+            entryPoint: "main",
         };
         let fragmentStage = {
             module: this.engine.device.createShaderModule({
                 code: wgslShaders.fragment,
             }),
-            entryPoint: wgslShaders.fragment
+            entryPoint: "main"
         };
         return [vertexStage, fragmentStage];
     }
@@ -3807,21 +3807,17 @@ const wgslShaders = {
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
 		[[builtin(position)]] var<out> out_position : vec4<f32>;
-		//[[location(0)]] var<out> out_color : vec3<f32>;
 		[[location(0)]] var<in> a_position : vec3<f32>;
-		//[[location(1)]] var<in> a_color : vec3<f32>;
-		[[stage(vertex)]]
-		fn main() -> void {
+
+		[[stage(vertex)]] fn main() -> void {
 			out_position = uniforms.modelViewProjectionMatrix * vec4<f32>(a_position, 1.0);
-			//out_color = a_color;
 			return;
 		}
 	`,
     fragment: `
 		[[location(0)]] var<out> fragColor : vec4<f32>;
-		//[[location(0)]] var<in> in_color : vec3<f32>;
-		[[stage(fragment)]]
-		fn main() -> void {
+
+		[[stage(fragment)]] fn main() -> void {
 			fragColor = vec4<f32>(1., 1., 1., 1.0);
 			return;
 		}
