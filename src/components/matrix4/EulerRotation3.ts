@@ -1,3 +1,4 @@
+import { Matrix4 } from "@valeera/mathx/src/matrix";
 import { from } from "@valeera/mathx/src/euler/Euler";
 import IEuler, { EulerRotationOrders }from "@valeera/mathx/src/euler/IEuler";
 import { fromEuler } from "@valeera/mathx/src/matrix/Matrix4";
@@ -5,7 +6,7 @@ import ARotation3 from "./ARotation3";
 
 export default class EulerRotation3 extends ARotation3 {
     euler: IEuler;
-    data = new Float32Array(16);
+    data = Matrix4.identity();
 
     constructor(euler: IEuler = {
         x: 0,

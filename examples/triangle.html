@@ -10,6 +10,21 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
+		const mesh = new Engine.Entity();
+		const geo = Engine.Geometry3.createTriangleGeometry();
+		const positionMesh = new Engine.EuclidPosition3(new Float32Array([0, 0, -1]));
+		const scaleMesh = new Engine.Vector3Scale3();
+		const rotationMesh = new Engine.EulerRotation3();
+		mesh.addComponent(geo);
+		mesh.addComponent(positionMesh);
+		mesh.addComponent(scaleMesh);
+		mesh.addComponent(rotationMesh);
+		world.addEntity(mesh);
+
+		const camera = new Engine.Entity();
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
+		camera.addComponent(projection);
+
 		engine.once(Engine.WebGPUEngine.INITED, (e) => {
 			let clearer = new Engine.Clearer(engine, {
 				r: 1,

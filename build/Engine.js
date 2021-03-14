@@ -3231,7 +3231,7 @@
 	class EuclidPosition3 extends APosition3 {
 	    constructor(vec3 = new Float32Array(3)) {
 	        super();
-	        this.data = new Float32Array(16);
+	        this.data = Matrix4.identity();
 	        this.vec3 = vec3;
 	        this.update();
 	    }
@@ -3281,22 +3281,6 @@
 	    EulerRotationOrders["ZYX"] = "zyx";
 	    EulerRotationOrders["YXZ"] = "yxz";
 	})(EulerRotationOrders || (EulerRotationOrders = {}));
-
-	const createDefault = () => {
-	    return {
-	        x: 0,
-	        y: 0,
-	        z: 0,
-	        order: EulerRotationOrders.XYZ
-	    };
-	};
-	const from = (euler, out = createDefault()) => {
-	    out.x = euler.x;
-	    out.y = euler.y;
-	    out.z = euler.z;
-	    out.order = euler.order;
-	    return out;
-	};
 
 	let a00 = 0, a01 = 0, a02 = 0, a03 = 0, a11 = 0, a10 = 0, a12 = 0, a13 = 0, a20 = 0, a21 = 0, a22 = 0, a23 = 0, a31 = 0, a30 = 0, a32 = 0, a33 = 0;
 	let b00 = 0, b01 = 0, b02 = 0, b03 = 0;
@@ -3471,6 +3455,22 @@
 	    return out;
 	};
 
+	const createDefault = () => {
+	    return {
+	        x: 0,
+	        y: 0,
+	        z: 0,
+	        order: EulerRotationOrders.XYZ
+	    };
+	};
+	const from = (euler, out = createDefault()) => {
+	    out.x = euler.x;
+	    out.y = euler.y;
+	    out.z = euler.z;
+	    out.order = euler.order;
+	    return out;
+	};
+
 	class EulerRotation3 extends ARotation3 {
 	    constructor(euler = {
 	        x: 0,
@@ -3479,7 +3479,7 @@
 	        order: EulerRotationOrders.XYZ,
 	    }) {
 	        super();
-	        this.data = new Float32Array(16);
+	        this.data = identity();
 	        this.euler = euler;
 	        this.update();
 	    }
@@ -3566,10 +3566,11 @@
 	    }
 	}
 
+	const DEFAULT_SCALE = [1, 1, 1];
 	class Vector3Scale3 extends AScale3 {
-	    constructor(vec3) {
+	    constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
 	        super();
-	        this.data = new Float32Array(16);
+	        this.data = Matrix4.identity();
 	        this.vec3 = vec3;
 	        this.update();
 	    }
