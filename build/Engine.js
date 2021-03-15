@@ -206,7 +206,7 @@
 	}
 
 	class Geometry3 extends Component$1 {
-	    constructor(count = 0, topology = "triangle-list", cullMode = "front", data = []) {
+	    constructor(count = 0, topology = "triangle-list", cullMode = "back", data = []) {
 	        super('geometry3', data);
 	        this.data = [];
 	        this.count = count;
@@ -233,12 +233,13 @@
 	        });
 	        this.dirty = true;
 	    }
-	    static createTriangleGeometry(a = [-1, 0, 0], b = [1, 0, 0], c = [0, 1, 0]) {
+	    static createTriangleGeometry(a = [-1, -1, 0], b = [1, -1, 0], c = [0, 1, 0]) {
 	        let geo = new Geometry3(3);
 	        let result = new Float32Array(9);
 	        result.set(a);
 	        result.set(b, 3);
 	        result.set(c, 6);
+	        console.log(result, a, b, c);
 	        geo.addAttribute('vertices', result, 3);
 	        return geo;
 	    }
@@ -3688,10 +3689,22 @@
 	        this.engine = engine;
 	    }
 	    render(mesh, camera, passEncoder, scissor) {
-	        var _a;
+	        var _a, _b, _c, _d;
 	        let cacheData = this.entityCacheData.get(mesh);
 	        if (!cacheData) {
 	            cacheData = this.createCacheData(mesh);
+	            this.entityCacheData.set(mesh, cacheData);
+	        }
+	        else {
+	            // TODO update cache
+	            {
+	                let matrixT = ((_a = mesh.getComponent('position3')) === null || _a === void 0 ? void 0 : _a.data) || create();
+	                let matrixR = ((_b = mesh.getComponent('rotation3')) === null || _b === void 0 ? void 0 : _b.data) || create();
+	                let matrixS = ((_c = mesh.getComponent('scale3')) === null || _c === void 0 ? void 0 : _c.data) || create();
+	                let matrixM = cacheData.matrixM;
+	                multiply(matrixT, matrixR, matrixM);
+	                multiply(matrixM, matrixS, matrixM);
+	            }
 	        }
 	        passEncoder.setPipeline(cacheData.pipeline);
 	        // passEncoder.setScissorRect(0, 0, 400, 225);
@@ -3699,7 +3712,7 @@
 	        passEncoder.setVertexBuffer(0, cacheData.attributesBuffer);
 	        const mvp = identity();
 	        // TODO 视图矩阵
-	        multiply((_a = camera.getComponent("projection3")) === null || _a === void 0 ? void 0 : _a.data, create(), mvp);
+	        multiply((_d = camera.getComponent("projection3")) === null || _d === void 0 ? void 0 : _d.data, create(), mvp);
 	        multiply(mvp, cacheData.matrixM, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
@@ -3732,6 +3745,7 @@
 	                }
 	            ],
 	        });
+	        // console.log(pipeline);
 	        return {
 	            attributesBuffer,
 	            matrixM,
@@ -3766,11 +3780,11 @@
 	            },
 	            vertexState: {
 	                vertexBuffers: [{
-	                        arrayStride: 6 * geometry.data[0].data.BYTES_PER_ELEMENT,
+	                        arrayStride: geometry.data[0].stride * geometry.data[0].data.BYTES_PER_ELEMENT,
 	                        attributes: [{
 	                                shaderLocation: 0,
-	                                offset: 0,
-	                                format: "float32x3"
+	                                offset: geometry.data[0].attributes[0].offset,
+	                                format: "float32x" + geometry.data[0].attributes[0].length,
 	                            }]
 	                    }]
 	            },

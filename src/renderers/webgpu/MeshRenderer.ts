@@ -13,7 +13,7 @@ interface ICacheData {
 	uniformBindGroup: GPUBindGroup;
 }
 
-export default class MeshRenderer implements IRenderer{
+export default class MeshRenderer implements IRenderer {
 	public static readonly renderTypes = "mesh";
 	public readonly renderTypes = "mesh";
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
@@ -26,8 +26,17 @@ export default class MeshRenderer implements IRenderer{
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
 			cacheData = this.createCacheData(mesh);
+			this.entityCacheData.set(mesh, cacheData);
 		} else {
 			// TODO update cache
+			if (true) {
+				let matrixT = mesh.getComponent('position3')?.data || Matrix4.create();
+				let matrixR = mesh.getComponent('rotation3')?.data || Matrix4.create();
+				let matrixS = mesh.getComponent('scale3')?.data || Matrix4.create();
+				let matrixM = cacheData.matrixM;
+				Matrix4.multiply(matrixT, matrixR, matrixM);
+				Matrix4.multiply(matrixM, matrixS, matrixM);
+			}
 		}
 
 		passEncoder.setPipeline(cacheData.pipeline);
@@ -47,7 +56,7 @@ export default class MeshRenderer implements IRenderer{
 			mvp.byteOffset,
 			mvp.byteLength
 		);
-		
+
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
 		passEncoder.draw((mesh.getComponent("geometry3") as Geometry3).count, 1, 0, 0);
 
@@ -70,17 +79,19 @@ export default class MeshRenderer implements IRenderer{
 		let attributesBuffer = createVerticesBuffer(this.engine.device, mesh.getComponent('geometry3')?.data[0].data);
 
 		let pipeline = this.createPipeline(mesh);
-	    let uniformBindGroup = this.engine.device.createBindGroup({
-            layout: pipeline.getBindGroupLayout(0),
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: uniformBuffer,
-                    },
-                }
-            ],
-        });
+		let uniformBindGroup = this.engine.device.createBindGroup({
+			layout: pipeline.getBindGroupLayout(0),
+			entries: [
+				{
+					binding: 0,
+					resource: {
+						buffer: uniformBuffer,
+					},
+				}
+			],
+		});
+
+		// console.log(pipeline);
 		return {
 			attributesBuffer,
 			matrixM,
@@ -92,68 +103,68 @@ export default class MeshRenderer implements IRenderer{
 
 	private createPipeline(mesh: IEntity) {
 		const pipelineLayout = this.engine.device.createPipelineLayout({
-            bindGroupLayouts: [this.createBindGroupLayout()],
-        });
+			bindGroupLayouts: [this.createBindGroupLayout()],
+		});
 		let stages = this.createStages();
 		let geometry = mesh.getComponent('geometry3') as Geometry3;
 		let pipeline = this.engine.device.createRenderPipeline({
-            layout: pipelineLayout,
-            vertexStage: stages[0],
-            fragmentStage: stages[1],
-            primitiveTopology: geometry.topology,
-            colorStates: [
-                {
-                    format: "bgra8unorm"
-                }
-            ],
-            depthStencilState: {
-                depthWriteEnabled: true,
-                depthCompare: 'less',
-                format: 'depth24plus-stencil8',
-            },
-            rasterizationState: {
-                cullMode: geometry.cullMode,
-            },
-            vertexState: {
-                vertexBuffers: [{
-					arrayStride: 6 * geometry.data[0].data.BYTES_PER_ELEMENT as any,
-					attributes:[{
+			layout: pipelineLayout,
+			vertexStage: stages[0],
+			fragmentStage: stages[1],
+			primitiveTopology: geometry.topology,
+			colorStates: [
+				{
+					format: "bgra8unorm"
+				}
+			],
+			depthStencilState: {
+				depthWriteEnabled: true,
+				depthCompare: 'less',
+				format: 'depth24plus-stencil8',
+			},
+			rasterizationState: {
+				cullMode: geometry.cullMode,
+			},
+			vertexState: {
+				vertexBuffers: [{
+					arrayStride: geometry.data[0].stride * geometry.data[0].data.BYTES_PER_ELEMENT as any,
+					attributes: [{
 						shaderLocation: 0,
-						offset: 0,
-						format: "float32x3"
+						offset: geometry.data[0].attributes[0].offset,
+						format: "float32x" + geometry.data[0].attributes[0].length,
 					}]
 				}]
-            } as any,
-        });
+			} as any,
+		});
 
 		return pipeline;
 	}
 
 	private createBindGroupLayout() {
 		return this.engine.device.createBindGroupLayout({
-            entries: [
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
-                    type: 'uniform-buffer',
-                }
-            ],
-        });
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.VERTEX,
+					type: 'uniform-buffer',
+				}
+			],
+		});
 	}
 
 	private createStages() {
 		let vertexStage = {
-            module: this.engine.device.createShaderModule({
-                code: wgslShaders.vertex,
-            }),
-            entryPoint: "main",
-        };
-        let fragmentStage = {
-            module: this.engine.device.createShaderModule({
-                code: wgslShaders.fragment,
-            }),
-            entryPoint: "main"
-        };
+			module: this.engine.device.createShaderModule({
+				code: wgslShaders.vertex,
+			}),
+			entryPoint: "main",
+		};
+		let fragmentStage = {
+			module: this.engine.device.createShaderModule({
+				code: wgslShaders.fragment,
+			}),
+			entryPoint: "main"
+		};
 		return [vertexStage, fragmentStage];
 	}
 }
