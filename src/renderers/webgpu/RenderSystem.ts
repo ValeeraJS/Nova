@@ -3,15 +3,10 @@ import ASystem from "@valeera/x/src/ASystem"
 import Clearer from "./Clearer";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Renderable from "../../components/tag/Renderable";
-import IWorld from "@valeera/x/src/interfaces/IWorld";
+import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
 import IRenderer from "./IRenderer";
 
-export interface IRenderParams {
-    camera: IEntity;
-    passEncoder: GPURenderPassEncoder
-}
-
-export default class RenderSystem extends ASystem<any> {
+export default class RenderSystem extends ASystem {
     engine: WebGPUEngine;
     clearer: Clearer;
     swapChain: GPUSwapChain;
@@ -44,9 +39,9 @@ export default class RenderSystem extends ASystem<any> {
         this.rendererMap.clear();
     }
 
-    handle(entity: IEntity, params: IRenderParams): this {
+    handle(entity: IEntity, store: TWorldInjection): this {
         // 根据不同类别进行渲染
-        this.rendererMap.get(entity.getComponent(Renderable.TAG_TEXT)?.data)?.render(entity, params.camera, params.passEncoder);
+        this.rendererMap.get(entity.getComponent(Renderable.TAG_TEXT)?.data)?.render(entity, store.get("activeCamera"), store.get("passEncoder"));
         return this;
     }
 
@@ -54,14 +49,12 @@ export default class RenderSystem extends ASystem<any> {
         this.clearer = clearer;
     }
 
-    run(world: IWorld<any>, params: IRenderParams) {
+    run(world: IWorld) {
         let device = this.engine.device;
         let commandEncoder = device.createCommandEncoder();
         let passEncoder = this.clearer.clear(commandEncoder, this.swapChain);
-        super.run(world, {
-            ...params,
-            passEncoder
-        });
+        world.store.set("passEncoder", passEncoder);
+        super.run(world);
         // finish
         passEncoder.endPass();
 		device.queue.submit([commandEncoder.finish()]);

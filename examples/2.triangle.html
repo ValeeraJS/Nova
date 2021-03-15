@@ -10,26 +10,12 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const mesh = new Engine.Entity();
 		const geo = Engine.Geometry3.createTriangleGeometry();
-		const positionMesh = new Engine.EuclidPosition3(new Float32Array([0, 0, -5]));
-		const scaleMesh = new Engine.Vector3Scale3();
-		const rotationMesh = new Engine.EulerRotation3();
-		const renderable = new Engine.Renderable("mesh");
-		mesh.addComponent(geo);
-		mesh.addComponent(positionMesh);
-		mesh.addComponent(scaleMesh);
-		mesh.addComponent(rotationMesh);
-		mesh.addComponent(renderable);
-		world.addEntity(mesh);
+		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+		mesh.getComponent("position3").z = -5;
 
-		const camera = new Engine.Entity();
-		const positionCamera = new Engine.EuclidPosition3();
 		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
-		const rotationCamera = new Engine.EulerRotation3();
-		camera.addComponent(positionCamera);
-		camera.addComponent(rotationCamera);
-		camera.addComponent(projection);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
 
 		engine.once(Engine.WebGPUEngine.INITED, (e) => {
 			let renderSystem = new Engine.RenderSystem(engine);

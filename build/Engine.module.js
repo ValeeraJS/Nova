@@ -3905,12 +3905,11 @@ class ASystem$1 {
     query(entity) {
         return this.queryRule(entity);
     }
-    run(world, params = {}) {
+    run(world) {
         var _a;
-        params.world = world;
         if (world.entityManager) {
             (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
-                this.handle(item, params);
+                this.handle(item, world.store);
             });
         }
         return this;
@@ -3945,20 +3944,21 @@ class RenderSystem extends ASystem$1 {
     destroy() {
         this.rendererMap.clear();
     }
-    handle(entity, params) {
+    handle(entity, store) {
         var _a, _b;
         // 根据不同类别进行渲染
-        (_b = this.rendererMap.get((_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data)) === null || _b === void 0 ? void 0 : _b.render(entity, params.camera, params.passEncoder);
+        (_b = this.rendererMap.get((_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data)) === null || _b === void 0 ? void 0 : _b.render(entity, store.get("activeCamera"), store.get("passEncoder"));
         return this;
     }
     setClearer(clearer) {
         this.clearer = clearer;
     }
-    run(world, params) {
+    run(world) {
         let device = this.engine.device;
         let commandEncoder = device.createCommandEncoder();
         let passEncoder = this.clearer.clear(commandEncoder, this.swapChain);
-        super.run(world, Object.assign(Object.assign({}, params), { passEncoder }));
+        world.store.set("passEncoder", passEncoder);
+        super.run(world);
         // finish
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
@@ -3967,11 +3967,6 @@ class RenderSystem extends ASystem$1 {
 }
 
 const IdGeneratorInstance = new IdGenerator();
-
-var Global = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	IdGeneratorInstance: IdGeneratorInstance
-});
 
 let weakMapTmp;
 class ASystem {
@@ -4028,11 +4023,10 @@ class ASystem {
     query(entity) {
         return this.queryRule(entity);
     }
-    run(world, params = {}) {
-        params.world = world;
+    run(world) {
         if (world.entityManager) {
             this.entitySet.get(world.entityManager)?.forEach((item) => {
-                this.handle(item, params);
+                this.handle(item, world.store);
             });
         }
         return this;
@@ -4055,13 +4049,13 @@ class Component {
 }
 
 // 私有全局变量，外部无法访问
-let componentTmp;
-var EComponentEvent;
+let componentTmp$1;
+var EComponentEvent$1;
 (function (EComponentEvent) {
     EComponentEvent["ADD_COMPONENT"] = "addComponent";
     EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
-})(EComponentEvent || (EComponentEvent = {}));
-class ComponentManager {
+})(EComponentEvent$1 || (EComponentEvent$1 = {}));
+class ComponentManager$1 {
     constructor() {
         this.elements = new Map();
         this.disabled = false;
@@ -4077,13 +4071,13 @@ class ComponentManager {
     addComponentDirect(component) {
         this.elements.set(component.name, component);
         component.usedBy.push(this);
-        ComponentManager.eventObject = {
+        ComponentManager$1.eventObject = {
             component,
-            eventKey: ComponentManager.ADD_COMPONENT,
+            eventKey: ComponentManager$1.ADD_COMPONENT,
             manager: this,
             target: component
         };
-        this.entityComponentChangeDispatch(ComponentManager.ADD_COMPONENT, ComponentManager.eventObject);
+        this.entityComponentChangeDispatch(ComponentManager$1.ADD_COMPONENT, ComponentManager$1.eventObject);
         return this;
     }
     clear() {
@@ -4091,8 +4085,8 @@ class ComponentManager {
         return this;
     }
     get(name) {
-        componentTmp = this.elements.get(name);
-        return componentTmp ? componentTmp : null;
+        componentTmp$1 = this.elements.get(name);
+        return componentTmp$1 ? componentTmp$1 : null;
     }
     has(component) {
         if (typeof component === "string") {
@@ -4118,17 +4112,17 @@ class ComponentManager {
             : this.removeByInstance(component);
     }
     removeByName(name) {
-        componentTmp = this.elements.get(name);
-        if (componentTmp) {
+        componentTmp$1 = this.elements.get(name);
+        if (componentTmp$1) {
             this.elements.delete(name);
-            componentTmp.usedBy.splice(componentTmp.usedBy.indexOf(this), 1);
-            ComponentManager.eventObject = {
-                component: componentTmp,
-                eventKey: ComponentManager.REMOVE_COMPONENT,
+            componentTmp$1.usedBy.splice(componentTmp$1.usedBy.indexOf(this), 1);
+            ComponentManager$1.eventObject = {
+                component: componentTmp$1,
+                eventKey: ComponentManager$1.REMOVE_COMPONENT,
                 manager: this,
-                target: componentTmp
+                target: componentTmp$1
             };
-            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+            this.entityComponentChangeDispatch(ComponentManager$1.REMOVE_COMPONENT, ComponentManager$1.eventObject);
         }
         return this;
     }
@@ -4136,13 +4130,13 @@ class ComponentManager {
         if (this.elements.has(component.name)) {
             this.elements.delete(component.name);
             component.usedBy.splice(component.usedBy.indexOf(this), 1);
-            ComponentManager.eventObject = {
+            ComponentManager$1.eventObject = {
                 component,
-                eventKey: ComponentManager.REMOVE_COMPONENT,
+                eventKey: ComponentManager$1.REMOVE_COMPONENT,
                 manager: this,
                 target: component
             };
-            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+            this.entityComponentChangeDispatch(ComponentManager$1.REMOVE_COMPONENT, ComponentManager$1.eventObject);
         }
         return this;
     }
@@ -4155,9 +4149,9 @@ class ComponentManager {
         }
     }
 }
-ComponentManager.ADD_COMPONENT = EComponentEvent.ADD_COMPONENT;
-ComponentManager.REMOVE_COMPONENT = EComponentEvent.REMOVE_COMPONENT;
-ComponentManager.eventObject = {
+ComponentManager$1.ADD_COMPONENT = EComponentEvent$1.ADD_COMPONENT;
+ComponentManager$1.REMOVE_COMPONENT = EComponentEvent$1.REMOVE_COMPONENT;
+ComponentManager$1.eventObject = {
     component: null,
     eventKey: null,
     manager: null,
@@ -4165,11 +4159,12 @@ ComponentManager.eventObject = {
 };
 
 let arr$1;
-class Entity extends EventDispatcher {
+class Entity$1 extends EventDispatcher {
     constructor(name, componentManager) {
         super();
         this.id = IdGeneratorInstance.next();
         this.isEntity = true;
+        this.componentManager = null;
         this.name = "";
         this.usedBy = [];
         this.name = name;
@@ -4200,7 +4195,7 @@ class Entity extends EventDispatcher {
     hasComponent(component) {
         return this.componentManager ? this.componentManager.has(component) : false;
     }
-    registerComponentManager(manager = new ComponentManager()) {
+    registerComponentManager(manager = new ComponentManager$1()) {
         this.unregisterComponentManager();
         this.componentManager = manager;
         if (!this.componentManager.usedBy.includes(this)) {
@@ -4363,13 +4358,13 @@ class SystemManager extends EventDispatcher {
         }
         return this;
     }
-    run(world, params) {
+    run(world) {
         SystemManager.eventObject.eventKey = SystemManager.BEFORE_RUN;
         SystemManager.eventObject.manager = this;
         this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
         this.elements.forEach((item) => {
             item.checkUpdatedEntities(world.entityManager);
-            item.run(world, params);
+            item.run(world);
         });
         if (world.entityManager) {
             world.entityManager.updatedEntities.clear();
@@ -4404,9 +4399,12 @@ SystemManager.eventObject = {
     target: null
 };
 
-let arr;
+let arr$2;
 class World {
     constructor(name, entityManager, systemManager) {
+        this.entityManager = null;
+        this.systemManager = null;
+        this.store = new Map();
         this.id = IdGeneratorInstance.next();
         this.isWorld = true;
         this.name = name;
@@ -4487,29 +4485,232 @@ class World {
         }
         return this;
     }
-    run(params) {
+    run() {
         if (this.systemManager) {
-            this.systemManager.run(this, params);
+            this.systemManager.run(this);
         }
         return this;
     }
     unregisterEntityManager() {
         if (this.entityManager) {
-            arr = this.entityManager.usedBy;
-            arr.splice(arr.indexOf(this) - 1, 1);
+            arr$2 = this.entityManager.usedBy;
+            arr$2.splice(arr$2.indexOf(this) - 1, 1);
             this.entityManager = null;
         }
         return this;
     }
     unregisterSystemManager() {
         if (this.systemManager) {
-            arr = this.systemManager.usedBy;
-            arr.splice(arr.indexOf(this) - 1, 1);
+            arr$2 = this.systemManager.usedBy;
+            arr$2.splice(arr$2.indexOf(this) - 1, 1);
             this.entityManager = null;
         }
         return this;
     }
 }
 
-export { APosition3, AProjection3, ARotation3, AScale3, ASystem, COLOR_HEX_MAP, Clearer, ColorGPU, ColorRGB, ColorRGBA, Component, ComponentManager, Entity, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, Global, Matrix2, Matrix3, Matrix4, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, Quaternion, RenderSystem, Renderable, SystemManager, Vector2, Vector3, Vector3Scale3, Vector4, WebGPUEngine, World, ceilPowerOfTwo, clampCommon as clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum$1 as sum, sumArray };
+// 私有全局变量，外部无法访问
+let componentTmp;
+var EComponentEvent;
+(function (EComponentEvent) {
+    EComponentEvent["ADD_COMPONENT"] = "addComponent";
+    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
+})(EComponentEvent || (EComponentEvent = {}));
+class ComponentManager {
+    constructor() {
+        this.elements = new Map();
+        this.disabled = false;
+        this.usedBy = [];
+        this.isComponentManager = true;
+    }
+    add(component) {
+        if (this.has(component)) {
+            this.removeByInstance(component);
+        }
+        return this.addComponentDirect(component);
+    }
+    addComponentDirect(component) {
+        this.elements.set(component.name, component);
+        component.usedBy.push(this);
+        ComponentManager.eventObject = {
+            component,
+            eventKey: ComponentManager.ADD_COMPONENT,
+            manager: this,
+            target: component
+        };
+        this.entityComponentChangeDispatch(ComponentManager.ADD_COMPONENT, ComponentManager.eventObject);
+        return this;
+    }
+    clear() {
+        this.elements.clear();
+        return this;
+    }
+    get(name) {
+        componentTmp = this.elements.get(name);
+        return componentTmp ? componentTmp : null;
+    }
+    has(component) {
+        if (typeof component === "string") {
+            return this.elements.has(component);
+        }
+        else {
+            return this.elements.has(component.name);
+        }
+    }
+    // TODO
+    isMixedFrom(componentManager) {
+        console.log(componentManager);
+        return false;
+    }
+    // TODO
+    mixFrom(componentManager) {
+        console.log(componentManager);
+        return this;
+    }
+    remove(component) {
+        return typeof component === "string"
+            ? this.removeByName(component)
+            : this.removeByInstance(component);
+    }
+    removeByName(name) {
+        componentTmp = this.elements.get(name);
+        if (componentTmp) {
+            this.elements.delete(name);
+            componentTmp.usedBy.splice(componentTmp.usedBy.indexOf(this), 1);
+            ComponentManager.eventObject = {
+                component: componentTmp,
+                eventKey: ComponentManager.REMOVE_COMPONENT,
+                manager: this,
+                target: componentTmp
+            };
+            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+        }
+        return this;
+    }
+    removeByInstance(component) {
+        if (this.elements.has(component.name)) {
+            this.elements.delete(component.name);
+            component.usedBy.splice(component.usedBy.indexOf(this), 1);
+            ComponentManager.eventObject = {
+                component,
+                eventKey: ComponentManager.REMOVE_COMPONENT,
+                manager: this,
+                target: component
+            };
+            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+        }
+        return this;
+    }
+    entityComponentChangeDispatch(type, eventObject) {
+        for (const entity of this.usedBy) {
+            entity.fire(type, eventObject);
+            for (const manager of entity.usedBy) {
+                manager.updatedEntities.add(entity);
+            }
+        }
+    }
+}
+ComponentManager.ADD_COMPONENT = EComponentEvent.ADD_COMPONENT;
+ComponentManager.REMOVE_COMPONENT = EComponentEvent.REMOVE_COMPONENT;
+ComponentManager.eventObject = {
+    component: null,
+    eventKey: null,
+    manager: null,
+    target: null
+};
+
+let arr;
+class Entity extends EventDispatcher {
+    constructor(name, componentManager) {
+        super();
+        this.id = IdGeneratorInstance$1.next();
+        this.isEntity = true;
+        this.componentManager = null;
+        this.name = "";
+        this.usedBy = [];
+        this.name = name;
+        this.registerComponentManager(componentManager);
+    }
+    addComponent(component) {
+        if (this.componentManager) {
+            this.componentManager.add(component);
+        }
+        else {
+            throw new Error("Current entity hasn't registered a component manager yet.");
+        }
+        return this;
+    }
+    addTo(manager) {
+        manager.add(this);
+        return this;
+    }
+    addToWorld(world) {
+        if (world.entityManager) {
+            world.entityManager.add(this);
+        }
+        return this;
+    }
+    getComponent(name) {
+        return this.componentManager ? this.componentManager.get(name) : null;
+    }
+    hasComponent(component) {
+        return this.componentManager ? this.componentManager.has(component) : false;
+    }
+    registerComponentManager(manager = new ComponentManager()) {
+        this.unregisterComponentManager();
+        this.componentManager = manager;
+        if (!this.componentManager.usedBy.includes(this)) {
+            this.componentManager.usedBy.push(this);
+        }
+        return this;
+    }
+    removeComponent(component) {
+        if (this.componentManager) {
+            this.componentManager.remove(component);
+        }
+        return this;
+    }
+    unregisterComponentManager() {
+        if (this.componentManager) {
+            arr = this.componentManager.usedBy;
+            arr.splice(arr.indexOf(this) - 1, 1);
+            this.componentManager = null;
+        }
+        return this;
+    }
+}
+
+var createCamera = (projection, name = "camera", world) => {
+    const entity = new Entity(name);
+    entity.addComponent(projection)
+        .addComponent(new EuclidPosition3())
+        .addComponent(new Vector3Scale3())
+        .addComponent(new EulerRotation3());
+    if (world) {
+        world.addEntity(entity);
+        world.store.set("activeCamera", entity);
+    }
+    return entity;
+};
+
+var createMesh = (geometry, name = "mesh", world) => {
+    const entity = new Entity(name);
+    entity.addComponent(geometry)
+        .addComponent(new EuclidPosition3())
+        .addComponent(new Vector3Scale3())
+        .addComponent(new EulerRotation3())
+        .addComponent(new Renderable("mesh"));
+    if (world) {
+        world.addEntity(entity);
+    }
+    return entity;
+};
+
+var index = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	createCamera: createCamera,
+	createMesh: createMesh
+});
+
+export { APosition3, AProjection3, ARotation3, AScale3, ASystem, COLOR_HEX_MAP, Clearer, ColorGPU, ColorRGB, ColorRGBA, Component, ComponentManager$1 as ComponentManager, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, IdGeneratorInstance, Matrix2, Matrix3, Matrix4, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, Quaternion, RenderSystem, Renderable, SystemManager, Vector2, Vector3, Vector3Scale3, Vector4, WebGPUEngine, World, ceilPowerOfTwo, clampCommon as clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum$1 as sum, sumArray };
 //# sourceMappingURL=Engine.module.js.map

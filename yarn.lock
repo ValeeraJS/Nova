@@ -437,10 +437,10 @@
   resolved "https://registry.yarnpkg.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.0.tgz#b4789c7743eaa8084d4806dc500f15f2fe63dbea"
   integrity sha512-D33cqKJoRpRDKtXD7cLyvQNacCbmAOpFtfZU5x8kBWiWb8JnXnMjEfsMyAZtcKb41pQQxmGBaeJCnxXvouETHw==
 
-"@valeera/x@^0.1.7":
-  version "0.1.7"
-  resolved "https://registry.npm.taobao.org/@valeera/x/download/@valeera/x-0.1.7.tgz?cache=0&sync_timestamp=1615560317968&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fx%2Fdownload%2F%40valeera%2Fx-0.1.7.tgz#e8ca9ef98585e31d50bc7a4ceb75e9c9562e76ff"
-  integrity sha1-6Mqe+YWF4x1QvHpM63XpyVYudv8=
+"@valeera/x@^0.1.11":
+  version "0.1.11"
+  resolved "https://registry.npm.taobao.org/@valeera/x/download/@valeera/x-0.1.11.tgz?cache=0&sync_timestamp=1615789181562&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fx%2Fdownload%2F%40valeera%2Fx-0.1.11.tgz#b320fcbfba15af03f45d711cb6980dfb9d063f8f"
+  integrity sha1-syD8v7oVrwP0XXEctpgN+50GP48=
   dependencies:
     "@valeera/eventdispatcher" "^2.1.0"
     "@valeera/idgenerator" "^0.1.0"
@@ -1907,10 +1907,10 @@ mkdirp@^0.5.5:
   dependencies:
     minimist "^1.2.5"
 
-mocha@*:
-  version "8.3.1"
-  resolved "https://registry.npm.taobao.org/mocha/download/mocha-8.3.1.tgz?cache=0&sync_timestamp=1615013476552&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fmocha%2Fdownload%2Fmocha-8.3.1.tgz#b9eda6da1eb8cb8d29860a9c2205de5b8a076560"
-  integrity sha1-ue2m2h64y40phgqcIgXeW4oHZWA=
+mocha@8.3.2:
+  version "8.3.2"
+  resolved "https://registry.npm.taobao.org/mocha/download/mocha-8.3.2.tgz?cache=0&sync_timestamp=1615537715736&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fmocha%2Fdownload%2Fmocha-8.3.2.tgz#53406f195fa86fbdebe71f8b1c6fb23221d69fcc"
+  integrity sha1-U0BvGV+ob73r5x+LHG+yMiHWn8w=
   dependencies:
     "@ungap/promise-all-settled" "1.1.2"
     ansi-colors "4.1.1"
@@ -2350,10 +2350,10 @@ rollup-pluginutils@^2.5.0:
   dependencies:
     estree-walker "^0.6.1"
 
-rollup@2.40.0:
-  version "2.40.0"
-  resolved "https://registry.npm.taobao.org/rollup/download/rollup-2.40.0.tgz#efc218eaede7ab590954df50f96195188999c304"
-  integrity sha1-78IY6u3nq1kJVN9Q+WGVGImZwwQ=
+rollup@2.41.2:
+  version "2.41.2"
+  resolved "https://registry.npm.taobao.org/rollup/download/rollup-2.41.2.tgz?cache=0&sync_timestamp=1615559987284&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Frollup%2Fdownload%2Frollup-2.41.2.tgz#b7db5cb7c21c2d524e8b26ef39c7e9808a290c7e"
+  integrity sha1-t9tct8IcLVJOiybvOcfpgIopDH4=
   optionalDependencies:
     fsevents "~2.3.1"
 
