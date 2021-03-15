@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+</head>
+<body>
+	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="../../build/Engine.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Engine.WebGPUEngine(canvas);
+		const world = new Engine.World();
+
+		const geo = Engine.Geometry3.createTriangleGeometry();
+		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+		// 新建一个位置组件替换默认的位置矩阵组件。EuclidPosition3组件是修改平移矩阵的便于开发者操作的组件
+		mesh.addComponent(new Engine.EuclidPosition3([0, 0 , -5]));
+		// 新建一个欧拉角旋转组件替换默认的旋转矩阵组件。EulerRotation3组件是修改旋转矩阵的便于开发者操作的组件
+		mesh.addComponent(new Engine.EulerRotation3());
+
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+
+		engine.once(Engine.WebGPUEngine.INITED, (e) => {
+			let renderSystem = new Engine.RenderSystem(engine);
+			let renderer = new Engine.MeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			loop();
+		});
+
+		function loop() {
+			world.run();
+			mesh.getComponent("rotation3").y -= 0.01;
+			requestAnimationFrame(loop);
+		}
+	</script>
+</body>

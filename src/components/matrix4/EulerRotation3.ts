@@ -1,5 +1,5 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
-import { from } from "@valeera/mathx/src/euler/Euler";
+import * as Euler from "@valeera/mathx/src/euler/Euler";
 import IEuler, { EulerRotationOrders }from "@valeera/mathx/src/euler/IEuler";
 import { fromEuler } from "@valeera/mathx/src/matrix/Matrix4";
 import ARotation3 from "./ARotation3";
@@ -47,7 +47,7 @@ export default class EulerRotation3 extends ARotation3 {
     }
 
     set(arr: IEuler) {
-        from(arr, this.euler);
+        Euler.from(arr, this.euler);
 
         return this.update();
     }

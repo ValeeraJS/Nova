@@ -33,7 +33,7 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
     cullMode: GPUCullMode ;
     data: AttributesNodeData[] = [];
 
-    constructor(count: number = 0, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "back", data: AttributesNodeData[] = []) {
+    constructor(count: number = 0, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none", data: AttributesNodeData[] = []) {
         super('geometry3', data);
         this.count = count;
         this.topology = topology;

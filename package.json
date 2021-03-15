@@ -37,25 +37,25 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@rollup/plugin-node-resolve": "^11.2.0",
-		"@typescript-eslint/eslint-plugin": "4.17.0",
-		"@typescript-eslint/parser": "4.17.0",
-		"@webgpu/types": "0.0.43",
-		"chai": "4.3.3",
-		"concurrently": "6.0.0",
-		"eslint": "7.21.0",
-		"eslint-config-valeera": "0.1.1",
-		"eslint-plugin-html": "6.1.2",
-		"eslint-plugin-prettier": "3.3.1",
-		"esm": "3.2.25",
-		"google-closure-compiler": "20210302.0.0",
-		"http-server": "0.12.3",
-		"mocha": "8.3.2",
-		"nyc": "15.1.0",
-		"prettier": "2.2.1",
-		"rollup": "2.41.2",
-		"rollup-plugin-json": "4.0.0",
-		"rollup-plugin-typescript2": "0.30.0",
-		"typescript": "4.2.3"
+		"@typescript-eslint/eslint-plugin": "^4.17.0",
+		"@typescript-eslint/parser": "^4.17.0",
+		"@webgpu/types": "^0.0.43",
+		"chai": "^4.3.3",
+		"concurrently": "^6.0.0",
+		"eslint": "^7.21.0",
+		"eslint-config-valeera": "^0.1.1",
+		"eslint-plugin-html": "^6.1.2",
+		"eslint-plugin-prettier": "^3.3.1",
+		"esm": "^3.2.25",
+		"google-closure-compiler": "^20210302.0.0",
+		"http-server": "^0.12.3",
+		"mocha": "^8.3.2",
+		"nyc": "^15.1.0",
+		"prettier": "^2.2.1",
+		"rollup": "^2.41.2",
+		"rollup-plugin-json": "^4.0.0",
+		"rollup-plugin-typescript2": "^0.30.0",
+		"typescript": "^4.2.3"
 	},
 	"jspm": {
 		"files": [
@@ -73,7 +73,7 @@
 	},
 	"dependencies": {
 		"@valeera/eventdispatcher": "^2.1.0",
-		"@valeera/mathx": "^0.1.7",
+		"@valeera/mathx": "^0.1.9",
 		"@valeera/webgpu-constant": "^0.1.0",
 		"@valeera/x": "^0.1.11"
 	}
