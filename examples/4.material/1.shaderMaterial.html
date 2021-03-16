@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+</head>
+<body>
+	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="../../build/Engine.js"></script>
+	<script>
+		const vertexShader = `
+		[[block]] struct Uniforms {
+			[[offset(0)]] matrix : mat4x4<f32>;
+	  	};
+	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+
+		[[builtin(position)]] var<out> out_position : vec4<f32>;
+		[[location(0)]] var<in> a_position : vec3<f32>;
+
+		[[stage(vertex)]] fn main() -> void {
+			out_position = uniforms.matrix * vec4<f32>(a_position, 1.0);
+			return;
+		}
+		`;
+		const fragmentShader = `
+		[[location(0)]] var<out> fragColor : vec4<f32>;
+
+		[[stage(fragment)]] fn main() -> void {
+			fragColor = vec4<f32>(1., 0., 0., 1.0);
+			return;
+		}
+		`;
+
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Engine.WebGPUEngine(canvas);
+		const world = new Engine.World();
+
+		const geo = Engine.Geometry3.createTriangleGeometry();
+		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+		mesh.addComponent(new Engine.ShaderMaterial(vertexShader, fragmentShader));
+		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
+
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
+		positionProxy.z = 5;
+
+		engine.once(Engine.WebGPUEngine.INITED, (e) => {
+			let renderSystem = new Engine.RenderSystem(engine);
+			let renderer = new Engine.MeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			loop();
+		});
+
+		function loop() {
+			world.run();
+			rotationProxy.y -= 0.01;
+			requestAnimationFrame(loop);
+		}
+	</script>
+</body>

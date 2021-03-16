@@ -4,7 +4,7 @@ import IEntity from "@valeera/x/src/interfaces/IEntity";
 import IWorld from "@valeera/x/src/interfaces/IWorld";
 import { Matrix4Component } from "../../components/matrix4";
 import { Renderable } from "../../components/tag";
-import { MODEL_3D, ROTATION_3D, SCALING_3D, TRANSLATION_3D } from "../../components/matrix4/constants";
+import { MODEL_3D, ROTATION_3D, SCALING_3D, TRANSLATION_3D } from "../../components/constants";
 
 export default (geometry: IComponent<any>, name = "mesh", world?: IWorld): IEntity => {
     const entity = new Entity(name);

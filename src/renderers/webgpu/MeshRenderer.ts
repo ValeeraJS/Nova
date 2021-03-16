@@ -1,7 +1,7 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3 from "../../components/geometry/Geometry3";
-import { MODEL_3D, PROJECTION_3D } from "../../components/matrix4/constants";
+import { GEOMETRY_3D, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "../../webgpu/createVerticesBuffer";
@@ -54,7 +54,7 @@ export default class MeshRenderer implements IRenderer {
 		);
 
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-		passEncoder.draw((mesh.getComponent("geometry3") as Geometry3).count, 1, 0, 0);
+		passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
 
 		return this;
 	}
@@ -82,7 +82,6 @@ export default class MeshRenderer implements IRenderer {
 			],
 		});
 
-		// console.log(pipeline);
 		return {
 			mvp: new Float32Array(16),
 			attributesBuffer,
@@ -96,7 +95,7 @@ export default class MeshRenderer implements IRenderer {
 		const pipelineLayout = this.engine.device.createPipelineLayout({
 			bindGroupLayouts: [this.createBindGroupLayout()],
 		});
-		let stages = this.createStages();
+		let stages = this.createStages(mesh);
 		let geometry = mesh.getComponent('geometry3') as Geometry3;
 		let pipeline = this.engine.device.createRenderPipeline({
 			layout: pipelineLayout,
@@ -143,16 +142,17 @@ export default class MeshRenderer implements IRenderer {
 		});
 	}
 
-	private createStages() {
+	private createStages(mesh: IEntity) {
+		const material = mesh.getComponent(MATERIAL);
 		let vertexStage = {
 			module: this.engine.device.createShaderModule({
-				code: wgslShaders.vertex,
+				code: material?.data.vertex || wgslShaders.vertex,
 			}),
 			entryPoint: "main",
 		};
 		let fragmentStage = {
 			module: this.engine.device.createShaderModule({
-				code: wgslShaders.fragment,
+				code: material?.data.fragment || wgslShaders.fragment,
 			}),
 			entryPoint: "main"
 		};
