@@ -1,6 +1,6 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import Geometry3 from "../../components/geometry/Geometry3";
+import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
 import { GEOMETRY_3D, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
@@ -11,7 +11,7 @@ interface ICacheData {
 	mvp: Float32Array;
 	pipeline: GPURenderPipeline;
 	uniformBuffer: GPUBuffer;
-	attributesBuffer: GPUBuffer;
+	attributesBuffers: GPUBuffer[];
 	uniformBindGroup: GPUBindGroup;
 }
 
@@ -37,11 +37,13 @@ export default class MeshRenderer implements IRenderer {
 		passEncoder.setPipeline(cacheData.pipeline);
 		// passEncoder.setScissorRect(0, 0, 400, 225);
 		// TODO 有多个attribute buffer
-		passEncoder.setVertexBuffer(0, cacheData.attributesBuffer);
+		for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
+			passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+		}
 
 		const mvp = cacheData.mvp;
 		// TODO 视图矩阵
-		Matrix4.multiply(camera.getComponent(PROJECTION_3D)?.data, 
+		Matrix4.multiply(camera.getComponent(PROJECTION_3D)?.data,
 			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
 		Matrix4.multiply(mvp, mesh.getComponent(MODEL_3D)?.data, mvp);
 
@@ -66,8 +68,11 @@ export default class MeshRenderer implements IRenderer {
 			size: 4 * 16,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
-		// TODO
-		let attributesBuffer = createVerticesBuffer(this.engine.device, mesh.getComponent('geometry3')?.data[0].data);
+		let buffers = [];
+		let nodes = mesh.getComponent(GEOMETRY_3D)?.data as AttributesNodeData[];
+		for (let i = 0; i < nodes.length; i++) {
+			buffers.push(createVerticesBuffer(this.engine.device, nodes[i].data));
+		}
 
 		let pipeline = this.createPipeline(mesh);
 		let uniformBindGroup = this.engine.device.createBindGroup({
@@ -84,7 +89,7 @@ export default class MeshRenderer implements IRenderer {
 
 		return {
 			mvp: new Float32Array(16),
-			attributesBuffer,
+			attributesBuffers: buffers,
 			uniformBuffer,
 			uniformBindGroup,
 			pipeline,
@@ -96,7 +101,26 @@ export default class MeshRenderer implements IRenderer {
 			bindGroupLayouts: [this.createBindGroupLayout()],
 		});
 		let stages = this.createStages(mesh);
-		let geometry = mesh.getComponent('geometry3') as Geometry3;
+		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
+
+		let vertexBuffers: Array<GPUVertexBufferLayoutDescriptor> = [];
+		let location = 0;
+		for (let i = 0; i < geometry.data.length; i++) {
+			let data = geometry.data[i];
+			let attributeDescripters: GPUVertexAttributeDescriptor[] = [];
+			for (let j = 0; j < data.attributes.length; j++) {
+				attributeDescripters.push({
+					shaderLocation: location++,
+					offset: data.attributes[j].offset,
+					format: "float32x" + data.attributes[j].length as GPUVertexFormat,
+				});
+			}
+			vertexBuffers.push({
+				arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT as any,
+				attributes: attributeDescripters
+			});
+		}
+
 		let pipeline = this.engine.device.createRenderPipeline({
 			layout: pipelineLayout,
 			vertexStage: stages[0],
@@ -116,16 +140,11 @@ export default class MeshRenderer implements IRenderer {
 				cullMode: geometry.cullMode,
 			},
 			vertexState: {
-				vertexBuffers: [{
-					arrayStride: geometry.data[0].stride * geometry.data[0].data.BYTES_PER_ELEMENT as any,
-					attributes: [{
-						shaderLocation: 0,
-						offset: geometry.data[0].attributes[0].offset,
-						format: "float32x" + geometry.data[0].attributes[0].length,
-					}]
-				}]
-			} as any,
+				vertexBuffers
+			},
 		});
+
+		console.log(pipeline);
 
 		return pipeline;
 	}

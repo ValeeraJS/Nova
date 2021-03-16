@@ -15,7 +15,7 @@ export type AttributePicker = {
 // 对应转化到vertexState.vertexBuffers里面各个元素。
 export type AttributesNodeData = {
     name: string,
-    data: Float32Array | Uint32Array | Int32Array | Uint16Array | Int16Array,
+    data: Float32Array,
     stride: number,
     attributes: AttributePicker[]
 }

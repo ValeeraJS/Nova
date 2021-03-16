@@ -4470,7 +4470,9 @@
 	        passEncoder.setPipeline(cacheData.pipeline);
 	        // passEncoder.setScissorRect(0, 0, 400, 225);
 	        // TODO 有多个attribute buffer
-	        passEncoder.setVertexBuffer(0, cacheData.attributesBuffer);
+	        for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
+	            passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+	        }
 	        const mvp = cacheData.mvp;
 	        // TODO 视图矩阵
 	        multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
@@ -4487,8 +4489,11 @@
 	            size: 4 * 16,
 	            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	        });
-	        // TODO
-	        let attributesBuffer = createVerticesBuffer(this.engine.device, (_a = mesh.getComponent('geometry3')) === null || _a === void 0 ? void 0 : _a.data[0].data);
+	        let buffers = [];
+	        let nodes = (_a = mesh.getComponent(GEOMETRY_3D)) === null || _a === void 0 ? void 0 : _a.data;
+	        for (let i = 0; i < nodes.length; i++) {
+	            buffers.push(createVerticesBuffer(this.engine.device, nodes[i].data));
+	        }
 	        let pipeline = this.createPipeline(mesh);
 	        let uniformBindGroup = this.engine.device.createBindGroup({
 	            layout: pipeline.getBindGroupLayout(0),
@@ -4503,7 +4508,7 @@
 	        });
 	        return {
 	            mvp: new Float32Array(16),
-	            attributesBuffer,
+	            attributesBuffers: buffers,
 	            uniformBuffer,
 	            uniformBindGroup,
 	            pipeline,
@@ -4514,7 +4519,24 @@
 	            bindGroupLayouts: [this.createBindGroupLayout()],
 	        });
 	        let stages = this.createStages(mesh);
-	        let geometry = mesh.getComponent('geometry3');
+	        let geometry = mesh.getComponent(GEOMETRY_3D);
+	        let vertexBuffers = [];
+	        let location = 0;
+	        for (let i = 0; i < geometry.data.length; i++) {
+	            let data = geometry.data[i];
+	            let attributeDescripters = [];
+	            for (let j = 0; j < data.attributes.length; j++) {
+	                attributeDescripters.push({
+	                    shaderLocation: location++,
+	                    offset: data.attributes[j].offset,
+	                    format: "float32x" + data.attributes[j].length,
+	                });
+	            }
+	            vertexBuffers.push({
+	                arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
+	                attributes: attributeDescripters
+	            });
+	        }
 	        let pipeline = this.engine.device.createRenderPipeline({
 	            layout: pipelineLayout,
 	            vertexStage: stages[0],
@@ -4534,16 +4556,10 @@
 	                cullMode: geometry.cullMode,
 	            },
 	            vertexState: {
-	                vertexBuffers: [{
-	                        arrayStride: geometry.data[0].stride * geometry.data[0].data.BYTES_PER_ELEMENT,
-	                        attributes: [{
-	                                shaderLocation: 0,
-	                                offset: geometry.data[0].attributes[0].offset,
-	                                format: "float32x" + geometry.data[0].attributes[0].length,
-	                            }]
-	                    }]
+	                vertexBuffers
 	            },
 	        });
+	        console.log(pipeline);
 	        return pipeline;
 	    }
 	    createBindGroupLayout() {
