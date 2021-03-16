@@ -220,19 +220,21 @@ var constants$1 = /*#__PURE__*/Object.freeze({
 	VIEWING_3D: VIEWING_3D
 });
 
+const POSITION = "position";
 const VERTICES = "vertices";
-const VERTICES_COLORS = "vertices_colors";
-const NORMALS = "normals";
-const INDICES = "indices";
-const UVS = "uvs";
+const VERTICES_COLOR = "vertices_color";
+const NORMAL = "normal";
+const INDEX = "index";
+const UV = "uv";
 
 var constants = /*#__PURE__*/Object.freeze({
 	__proto__: null,
+	POSITION: POSITION,
 	VERTICES: VERTICES,
-	VERTICES_COLORS: VERTICES_COLORS,
-	NORMALS: NORMALS,
-	INDICES: INDICES,
-	UVS: UVS
+	VERTICES_COLOR: VERTICES_COLOR,
+	NORMAL: NORMAL,
+	INDEX: INDEX,
+	UV: UV
 });
 
 class Geometry3 extends Component$1 {
@@ -269,10 +271,150 @@ class Geometry3 extends Component$1 {
         result.set(a);
         result.set(b, 3);
         result.set(c, 6);
-        geo.addAttribute(VERTICES, result, 3);
+        geo.addAttribute(POSITION, result, 3);
         return geo;
     }
 }
+
+/**
+ * @function clamp
+ * @desc 将目标值限定在指定区间内。假定min小于等于max才能得到正确的结果。
+ * @see clampSafe
+ * @param {number} val 目标值
+ * @param {number} min 最小值，必须小于等于max
+ * @param {number} max 最大值，必须大于等于min
+ * @returns {number} 限制之后的值
+ * @example Mathx.clamp(1, 0, 2); // 1;
+ * Mathx.clamp(-1, 0, 2); // 0;
+ * Mathx.clamp(3, 0, 2); // 2;
+ */
+var clamp$2 = (val, min, max) => {
+    return Math.max(min, Math.min(max, val));
+};
+
+let ax$3, ay$3, az$3, bx$3, by$3, bz$3;
+const create$c = (x = 0, y = 0, z = 0, out = new Float32Array(3)) => {
+    out[0] = x;
+    out[1] = y;
+    out[2] = z;
+    return out;
+};
+const cross$3 = (a, b, out = new Float32Array(3)) => {
+    ax$3 = a[0];
+    ay$3 = a[1];
+    az$3 = a[2];
+    bx$3 = b[0];
+    by$3 = b[1];
+    bz$3 = b[2];
+    out[0] = ay$3 * bz$3 - az$3 * by$3;
+    out[1] = az$3 * bx$3 - ax$3 * bz$3;
+    out[2] = ax$3 * by$3 - ay$3 * bx$3;
+    return out;
+};
+const divideScalar$2 = (a, b, out = new Float32Array(3)) => {
+    out[0] = a[0] / b;
+    out[1] = a[1] / b;
+    out[2] = a[2] / b;
+    return out;
+};
+const length$3 = (a) => {
+    return Math.sqrt(lengthSquared$3(a));
+};
+const lengthSquared$3 = (a) => {
+    return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+};
+const minus$4 = (a, b, out = new Float32Array(3)) => {
+    out[0] = a[0] - b[0];
+    out[1] = a[1] - b[1];
+    out[2] = a[2] - b[2];
+    return out;
+};
+const normalize$3 = (a, out = new Float32Array(3)) => {
+    return divideScalar$2(a, length$3(a) || 1, out);
+};
+
+const defaultA$1 = [-1, -1, 0];
+const defaultB$1 = [1, -1, 0];
+const defaultC$1 = [0, 1, 0];
+let ab$1, bc$1;
+const create$b = (a = new Float32Array(defaultA$1), b = new Float32Array(defaultB$1), c = new Float32Array(defaultC$1)) => {
+    return { a, b, c };
+};
+const normal$1 = (t, out = create$c()) => {
+    minus$4(t.c, t.b, bc$1);
+    minus$4(t.b, t.a, ab$1);
+    cross$3(ab$1, bc$1, out);
+    return normalize$3(out);
+};
+
+const DEFAULT_OPTIONS = {
+    hasNormal: false,
+    hasUV: false,
+    hasIndices: false,
+    combine: true
+};
+
+var createTriangle3Geometry = (t = create$b(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+    let geo = new Geometry3(3, topology, cullMode);
+    let stride = 3;
+    if (options.combine) {
+        if (options.hasNormal && options.hasUV) {
+            stride = 10;
+        }
+        else if (options.hasNormal) {
+            stride = 7;
+        }
+        else if (options.hasUV) {
+            stride = 6;
+        }
+        let result = new Float32Array(stride * 3);
+        result.set(t.a);
+        result.set(t.b, stride);
+        result.set(t.c, stride + stride);
+        if (options.hasNormal) {
+            let normal = normal$1(t);
+            result.set(normal, 4);
+            result.set(normal, stride + 4);
+            result.set(normal, stride + stride + 4);
+        }
+        if (options.hasUV) {
+            let offset = options.hasNormal ? 8 : 4;
+            result.set([0, 0], offset);
+            result.set([1, 0], stride + offset);
+            result.set([0.5, 1], stride + stride + offset);
+        }
+        geo.addAttribute(VERTICES, result, stride, []);
+        return geo;
+    }
+    else {
+        let result = new Float32Array(9);
+        result.set(t.a);
+        result.set(t.b, 3);
+        result.set(t.c, 6);
+        geo.addAttribute(POSITION, result, 3);
+        if (options.hasNormal) {
+            result = new Float32Array(9);
+            let normal = normal$1(t);
+            result.set(normal, 0);
+            result.set(normal, 3);
+            result.set(normal, 6);
+            geo.addAttribute(NORMAL, result, 3);
+        }
+        if (options.hasUV) {
+            result = new Float32Array(6);
+            result.set([0, 0], 0);
+            result.set([1, 0], 2);
+            result.set([0.5, 1], 4);
+            geo.addAttribute(UV, result, 2);
+        }
+        return geo;
+    }
+};
+
+var index$2 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	createTriangle3Geometry: createTriangle3Geometry
+});
 
 /**
  * @class
@@ -581,11 +723,12 @@ const wgslShaders$1 = {
 	`
 };
 class ColorMaterial extends Component$1 {
-    constructor(color) {
+    constructor(color = new Float32Array([1, 1, 1, 1])) {
         super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [{
                     name: "color",
                     value: color,
-                    binding: 1
+                    binding: 1,
+                    dirty: true
                 }] }));
         this.dirty = true;
     }
@@ -595,8 +738,8 @@ class ColorMaterial extends Component$1 {
             this.data.uniforms[0].value[1] = g;
             this.data.uniforms[0].value[2] = b;
             this.data.uniforms[0].value[3] = a;
+            this.data.uniforms[0].dirty = true;
         }
-        console.log(this);
         return this;
     }
 }
@@ -813,7 +956,7 @@ class ColorRGB extends Uint8Array {
     }
 }
 
-const create$9 = (r = 0, g = 0, b = 0, a = 1, out = new Float32Array(4)) => {
+const create$a = (r = 0, g = 0, b = 0, a = 1, out = new Float32Array(4)) => {
     out[0] = r;
     out[1] = g;
     out[2] = b;
@@ -838,7 +981,7 @@ const fromScalar$2 = (scalar, a = 1, out) => {
 
 var ColorGPU = /*#__PURE__*/Object.freeze({
 	__proto__: null,
-	create: create$9,
+	create: create$a,
 	createJson: createJson$1,
 	fromScalar: fromScalar$2
 });
@@ -1006,7 +1149,7 @@ const createDefault$1 = () => {
         z: 0
     };
 };
-const create$8 = (x = 0, y = 0, z = 0, order = EulerRotationOrders$1.XYZ, out = createDefault$1()) => {
+const create$9 = (x = 0, y = 0, z = 0, order = EulerRotationOrders$1.XYZ, out = createDefault$1()) => {
     out.x = x;
     out.y = y;
     out.z = z;
@@ -1097,7 +1240,7 @@ const fromMatrix4$1 = (matrix, out = createDefault$1()) => {
 
 var Euler = /*#__PURE__*/Object.freeze({
 	__proto__: null,
-	create: create$8,
+	create: create$9,
 	from: from$6,
 	fromMatrix4: fromMatrix4$1
 });
@@ -1136,7 +1279,7 @@ const closeTo$3 = (a, b) => {
         closeToCommon(a10$2, b10$2) &&
         closeToCommon(a11$2, b11$2));
 };
-const create$7 = (a = UNIT_MATRIX2_DATA) => {
+const create$8 = (a = UNIT_MATRIX2_DATA) => {
     return new Float32Array(a);
 };
 const determinant$2 = (a) => {
@@ -1273,7 +1416,7 @@ var Matrix2 = /*#__PURE__*/Object.freeze({
 	add: add$3,
 	adjoint: adjoint,
 	closeTo: closeTo$3,
-	create: create$7,
+	create: create$8,
 	determinant: determinant$2,
 	equals: equals$4,
 	frobNorm: frobNorm,
@@ -1323,7 +1466,7 @@ const cofactor21 = (a) => {
 const cofactor22 = (a) => {
     return a[0] * a[4] - a[3] * a[1];
 };
-const create$6 = () => {
+const create$7 = () => {
     return new Float32Array(UNIT_MATRIX3_DATA);
 };
 const determinant$1 = (a) => {
@@ -1571,7 +1714,7 @@ var Matrix3 = /*#__PURE__*/Object.freeze({
 	cofactor20: cofactor20,
 	cofactor21: cofactor21,
 	cofactor22: cofactor22,
-	create: create$6,
+	create: create$7,
 	determinant: determinant$1,
 	from: from$4,
 	fromMatrix4: fromMatrix4$2,
@@ -1593,7 +1736,7 @@ let b00$3 = 0, b01$3 = 0, b02$2 = 0, b03$1 = 0, b11 = 0, b10 = 0, b12 = 0, b13 =
 let x$1 = 0, y$1 = 0, z$1 = 0, det$2 = 0, len$1 = 0, s$3 = 0, t = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
 const UNIT_MATRIX4_DATA = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 const UNIT_MATRIX4 = new Float32Array(UNIT_MATRIX4_DATA);
-const create$5 = () => {
+const create$6 = () => {
     return new Float32Array(UNIT_MATRIX4_DATA);
 };
 const determinant = (a) => {
@@ -2441,7 +2584,7 @@ const transpose = (a, out = new Float32Array(16)) => {
 var Matrix4 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	UNIT_MATRIX4: UNIT_MATRIX4,
-	create: create$5,
+	create: create$6,
 	determinant: determinant,
 	from: from$3,
 	fromEuler: fromEuler$1,
@@ -2519,7 +2662,7 @@ const clone$1 = (a, out = new Float32Array(3)) => {
 const closeTo$2 = (a, b) => {
     return closeToCommon(a[0], b[0]) && closeToCommon(a[1], b[1]) && closeToCommon(a[2], b[2]);
 };
-const create$4 = (x, y = 0, z, out = new Float32Array(3)) => {
+const create$5 = (x = 0, y = 0, z = 0, out = new Float32Array(3)) => {
     out[0] = x;
     out[1] = y;
     out[2] = z;
@@ -2795,7 +2938,7 @@ var Vector3 = /*#__PURE__*/Object.freeze({
 	clampScalar: clampScalar$1,
 	clone: clone$1,
 	closeTo: closeTo$2,
-	create: create$4,
+	create: create$5,
 	cross: cross$2,
 	distanceTo: distanceTo$2,
 	distanceToManhattan: distanceToManhattan$1,
@@ -2864,7 +3007,7 @@ function ceil$1(a, out = new Float32Array(4)) {
 const closeTo$1 = (a, b) => {
     return closeToCommon(a[0], b[0]) && closeToCommon(a[1], b[1]) && closeToCommon(a[2], b[2]) && closeToCommon(a[3], b[3]);
 };
-const create$3 = (x = 0, y = 0, z = 0, w = 0, out = new Float32Array(4)) => {
+const create$4 = (x = 0, y = 0, z = 0, w = 0, out = new Float32Array(4)) => {
     out[0] = x;
     out[1] = y;
     out[2] = z;
@@ -3066,7 +3209,7 @@ var Vector4 = /*#__PURE__*/Object.freeze({
 	add: add$1,
 	ceil: ceil$1,
 	closeTo: closeTo$1,
-	create: create$3,
+	create: create$4,
 	cross: cross$1,
 	distanceTo: distanceTo$1,
 	distanceToSquared: distanceToSquared$1,
@@ -3107,7 +3250,7 @@ const conjugate = (a, out = new Float32Array(4)) => {
     out[3] = a[3];
     return out;
 };
-const create$2 = (x = 0, y = 0, z = 0, w = 1, out = new Float32Array(4)) => {
+const create$3 = (x = 0, y = 0, z = 0, w = 1, out = new Float32Array(4)) => {
     out[0] = x;
     out[1] = y;
     out[2] = z;
@@ -3333,7 +3476,7 @@ var Quaternion = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	angleTo: angleTo,
 	conjugate: conjugate,
-	create: create$2,
+	create: create$3,
 	dot: dot$1,
 	fromAxisAngle: fromAxisAngle,
 	fromMatrix3: fromMatrix3,
@@ -3382,7 +3525,7 @@ const ceil = (a, out = new Float32Array(2)) => {
     out[1] = Math.ceil(a[1]);
     return out;
 };
-const clamp$2 = (a, min, max, out = new Float32Array(2)) => {
+const clamp = (a, min, max, out = new Float32Array(2)) => {
     out[0] = clampCommon(a[0], min[0], max[0]);
     out[1] = clampCommon(a[1], min[1], max[1]);
     return out;
@@ -3419,7 +3562,7 @@ const clone = (a, out = new Float32Array(2)) => {
 const cross = (a, b) => {
     return a[0] * b[1] - a[1] * b[0];
 };
-const create$1 = (x = 0, y = 0, out = new Float32Array(2)) => {
+const create$2 = (x = 0, y = 0, out = new Float32Array(2)) => {
     out[0] = x;
     out[1] = y;
     return out;
@@ -3604,7 +3747,7 @@ var Vector2 = /*#__PURE__*/Object.freeze({
 	addScalar: addScalar,
 	angle: angle,
 	ceil: ceil,
-	clamp: clamp$2,
+	clamp: clamp,
 	clampSafe: clampSafe,
 	clampLength: clampLength,
 	clampScalar: clampScalar,
@@ -3613,7 +3756,7 @@ var Vector2 = /*#__PURE__*/Object.freeze({
 	closeToManhattan: closeToManhattan,
 	clone: clone,
 	cross: cross,
-	create: create$1,
+	create: create$2,
 	distanceTo: distanceTo,
 	distanceToManhattan: distanceToManhattan,
 	distanceToSquared: distanceToSquared,
@@ -3657,15 +3800,15 @@ var Vector2 = /*#__PURE__*/Object.freeze({
 	VECTOR2_RIGHT: VECTOR2_RIGHT
 });
 
-class Rectangle {
-    constructor(a = create$1(), b = create$1(1, 1)) {
-        this.min = create$1();
-        this.max = create$1();
+class Rectangle2 {
+    constructor(a = create$2(), b = create$2(1, 1)) {
+        this.min = create$2();
+        this.max = create$2();
         min(a, b, this.min);
         max(a, b, this.max);
     }
 }
-const area = (a) => {
+const area$1 = (a) => {
     return (a.max[0] - a.min[0]) * (a.max[1] - a.min[1]);
 };
 const containsPoint = (rect, a) => {
@@ -3677,7 +3820,7 @@ const containsRectangle = (rect, box) => {
         rect.min[1] <= box.min[1] &&
         box.max[1] <= rect.max[1]);
 };
-const create = (a = create$1(), b = create$1(1, 1)) => {
+const create$1 = (a = create$2(), b = create$2(1, 1)) => {
     return {
         max: max(a, b),
         min: min(a, b)
@@ -3686,32 +3829,32 @@ const create = (a = create$1(), b = create$1(1, 1)) => {
 const equals = (a, b) => {
     return equals$1(a.min, b.min) && equals$1(a.max, b.max);
 };
-const getCenter = (a, out = create$1()) => {
+const getCenter = (a, out = create$2()) => {
     add(a.min, a.max, out);
     return multiplyScalar(out, 0.5, out);
 };
-const getSize = (a, out = create$1()) => {
+const getSize = (a, out = create$2()) => {
     return minus(a.max, a.min, out);
 };
 const height = (a) => {
     return a.max[1] - a.min[1];
 };
-const intersect = (a, b, out = new Rectangle()) => {
+const intersect = (a, b, out = new Rectangle2()) => {
     max(a.min, b.min, out.min);
     min(a.max, b.max, out.max);
     return out;
 };
-const stretch = (a, b, c, out = new Rectangle()) => {
+const stretch = (a, b, c, out = new Rectangle2()) => {
     add(a.min, b, out.min);
     add(a.max, c, out.max);
     return out;
 };
-const translate = (a, b, out = new Rectangle()) => {
+const translate = (a, b, out = new Rectangle2()) => {
     add(a.min, b, out.min);
     add(a.max, b, out.max);
     return out;
 };
-const union = (a, b, out = new Rectangle()) => {
+const union = (a, b, out = new Rectangle2()) => {
     min(a.min, b.min, out.min);
     max(a.max, b.max, out.max);
     return out;
@@ -3720,13 +3863,13 @@ const width = (a) => {
     return a.max[0] - a.min[0];
 };
 
-var Rectangle$1 = /*#__PURE__*/Object.freeze({
+var Rectangle2$1 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
-	'default': Rectangle,
-	area: area,
+	'default': Rectangle2,
+	area: area$1,
 	containsPoint: containsPoint,
 	containsRectangle: containsRectangle,
-	create: create,
+	create: create$1,
 	equals: equals,
 	getCenter: getCenter,
 	getSize: getSize,
@@ -3736,6 +3879,61 @@ var Rectangle$1 = /*#__PURE__*/Object.freeze({
 	translate: translate,
 	union: union,
 	width: width
+});
+
+const defaultA = [-1, -1, 0];
+const defaultB = [1, -1, 0];
+const defaultC = [0, 1, 0];
+let ab, bc;
+class Triangle3 {
+    constructor(a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+}
+const area = (t) => {
+    const c = getABLength(t);
+    const a = getBCLength(t);
+    const b = getCALength(t);
+    const p = (c + a + b) / 2;
+    return Math.sqrt(p * (p - a) * (p - b) * (p - c));
+};
+const create = (a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) => {
+    return { a, b, c };
+};
+const getABLength = (t) => {
+    return distanceTo$2(t.a, t.b);
+};
+const getBCLength = (t) => {
+    return distanceTo$2(t.b, t.c);
+};
+const getCALength = (t) => {
+    return distanceTo$2(t.c, t.a);
+};
+const normal = (t, out = create$5()) => {
+    minus$2(t.c, t.b, bc);
+    minus$2(t.b, t.a, ab);
+    cross$2(ab, bc, out);
+    return normalize$2(out);
+};
+const toFloat32Array = (t, out = new Float32Array(3)) => {
+    out.set(t.a, 0);
+    out.set(t.b, 3);
+    out.set(t.c, 6);
+    return normalize$2(out);
+};
+
+var Triangle3$1 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	'default': Triangle3,
+	area: area,
+	create: create,
+	getABLength: getABLength,
+	getBCLength: getBCLength,
+	getCALength: getCALength,
+	normal: normal,
+	toFloat32Array: toFloat32Array
 });
 
 var Mathx_module = /*#__PURE__*/Object.freeze({
@@ -3749,7 +3947,8 @@ var Mathx_module = /*#__PURE__*/Object.freeze({
 	Matrix3: Matrix3,
 	Matrix4: Matrix4,
 	Quaternion: Quaternion,
-	Rectangle: Rectangle$1,
+	Rectangle2: Rectangle2$1,
+	Triangle3: Triangle3$1,
 	Vector2: Vector2,
 	Vector3: Vector3,
 	Vector4: Vector4,
@@ -4103,22 +4302,6 @@ const multiply = (a, b, out = new Float32Array(16)) => {
     return out;
 };
 
-/**
- * @function clamp
- * @desc 将目标值限定在指定区间内。假定min小于等于max才能得到正确的结果。
- * @see clampSafe
- * @param {number} val 目标值
- * @param {number} min 最小值，必须小于等于max
- * @param {number} max 最大值，必须大于等于min
- * @returns {number} 限制之后的值
- * @example Mathx.clamp(1, 0, 2); // 1;
- * Mathx.clamp(-1, 0, 2); // 0;
- * Mathx.clamp(3, 0, 2); // 2;
- */
-var clamp = (val, min, max) => {
-    return Math.max(min, Math.min(max, val));
-};
-
 const createDefault = () => {
     return {
         order: EulerRotationOrders.XYZ,
@@ -4140,7 +4323,7 @@ const fromMatrix4 = (matrix, out = createDefault()) => {
     const m31 = matrix[2], m32 = matrix[6], m33 = matrix[10];
     switch (out.order) {
         case EulerRotationOrders.XYZ:
-            out.y = Math.asin(clamp(m13, -1, 1));
+            out.y = Math.asin(clamp$2(m13, -1, 1));
             if (Math.abs(m13) < 0.9999999) {
                 out.x = Math.atan2(-m23, m33);
                 out.z = Math.atan2(-m12, m11);
@@ -4151,7 +4334,7 @@ const fromMatrix4 = (matrix, out = createDefault()) => {
             }
             break;
         case EulerRotationOrders.YXZ:
-            out.x = Math.asin(-clamp(m23, -1, 1));
+            out.x = Math.asin(-clamp$2(m23, -1, 1));
             if (Math.abs(m23) < 0.9999999) {
                 out.y = Math.atan2(m13, m33);
                 out.z = Math.atan2(m21, m22);
@@ -4162,7 +4345,7 @@ const fromMatrix4 = (matrix, out = createDefault()) => {
             }
             break;
         case EulerRotationOrders.ZXY:
-            out.x = Math.asin(clamp(m32, -1, 1));
+            out.x = Math.asin(clamp$2(m32, -1, 1));
             if (Math.abs(m32) < 0.9999999) {
                 out.y = Math.atan2(-m31, m33);
                 out.z = Math.atan2(-m12, m22);
@@ -4173,7 +4356,7 @@ const fromMatrix4 = (matrix, out = createDefault()) => {
             }
             break;
         case EulerRotationOrders.ZYX:
-            out.y = Math.asin(-clamp(m31, -1, 1));
+            out.y = Math.asin(-clamp$2(m31, -1, 1));
             if (Math.abs(m31) < 0.9999999) {
                 out.x = Math.atan2(m32, m33);
                 out.z = Math.atan2(m21, m11);
@@ -4184,7 +4367,7 @@ const fromMatrix4 = (matrix, out = createDefault()) => {
             }
             break;
         case EulerRotationOrders.YZX:
-            out.z = Math.asin(clamp(m21, -1, 1));
+            out.z = Math.asin(clamp$2(m21, -1, 1));
             if (Math.abs(m21) < 0.9999999) {
                 out.x = Math.atan2(-m23, m22);
                 out.y = Math.atan2(-m31, m11);
@@ -4195,7 +4378,7 @@ const fromMatrix4 = (matrix, out = createDefault()) => {
             }
             break;
         case EulerRotationOrders.XZY:
-            out.z = Math.asin(-clamp(m12, -1, 1));
+            out.z = Math.asin(-clamp$2(m12, -1, 1));
             if (Math.abs(m12) < 0.9999999) {
                 out.x = Math.atan2(m32, m22);
                 out.y = Math.atan2(m13, m11);
@@ -4521,8 +4704,11 @@ class MeshRenderer {
         multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
         multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
         this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
-        cacheData.uniformMap.forEach((value, key) => {
-            this.engine.device.queue.writeBuffer(key, 0, value.buffer, value.byteOffset, value.byteLength);
+        cacheData.uniformMap.forEach((uniform, key) => {
+            if (uniform.dirty) {
+                this.engine.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
+                uniform.dirty = false;
+            }
         });
         passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
         passEncoder.draw(mesh.getComponent(GEOMETRY_3D).count, 1, 0, 0);
@@ -4555,7 +4741,7 @@ class MeshRenderer {
                     size: uniforms[i].value.length * 4,
                     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
                 });
-                uniformMap.set(buffer, uniforms[i].value);
+                uniformMap.set(buffer, uniforms[i]);
                 groupEntries.push({
                     binding: uniforms[i].binding,
                     resource: {
@@ -5317,5 +5503,5 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, Clearer, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, IdGeneratorInstance, Mathx_module as Mathx, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, RenderSystem, Renderable, ShaderMaterial, SystemManager, Vector3Scale3, WebGPUEngine, World };
+export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, Clearer, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, Mathx_module as Mathx, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, RenderSystem, Renderable, ShaderMaterial, SystemManager, Vector3Scale3, WebGPUEngine, World };
 //# sourceMappingURL=Engine.module.js.map

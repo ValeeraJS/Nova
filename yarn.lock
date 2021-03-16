@@ -427,10 +427,10 @@
   resolved "https://registry.yarnpkg.com/@valeera/idgenerator/-/idgenerator-0.1.0.tgz#b333fe032fccf83d2fa2243eae2cb90c4d080f48"
   integrity sha512-p6/msWBhkN6m363I7y9G54ovnqGIf+fMSN9+q1XhxtgcDXJcZrL1OHHIe/q3kSh/wTMvMJY7GJ/WGF/JnMUpAg==
 
-"@valeera/mathx@^0.1.10":
-  version "0.1.10"
-  resolved "https://registry.npm.taobao.org/@valeera/mathx/download/@valeera/mathx-0.1.10.tgz?cache=0&sync_timestamp=1615867169757&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fmathx%2Fdownload%2F%40valeera%2Fmathx-0.1.10.tgz#7fc61689353d0d61a0cb90249d0c7348929be8eb"
-  integrity sha1-f8YWiTU9DWGgy5AknQxzSJKb6Os=
+"@valeera/mathx@^0.1.11":
+  version "0.1.11"
+  resolved "https://registry.npm.taobao.org/@valeera/mathx/download/@valeera/mathx-0.1.11.tgz?cache=0&sync_timestamp=1615903005507&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fmathx%2Fdownload%2F%40valeera%2Fmathx-0.1.11.tgz#f3865f09f9c03845d28782b7f915af6c08e89ef4"
+  integrity sha1-84ZfCfnAOEXSh4K3+RWvbAjonvQ=
 
 "@valeera/webgpu-constant@^0.1.0":
   version "0.1.0"

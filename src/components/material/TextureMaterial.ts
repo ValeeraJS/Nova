@@ -17,10 +17,8 @@ const wgslShaders = {
 		}
 	`,
 	fragment: `
-		[[block]] struct Uniforms {
-			[[offset(0)]] color : vec4<f32>;
-	  	};
-	  	[[binding(1), group(0)]] var<uniform> uniforms : Uniforms;
+		[[binding(1), group(0)]] var mySampler: sampler;
+		[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
 		[[location(0)]] var<out> fragColor : vec4<f32>;
 
 		[[stage(fragment)]] fn main() -> void {

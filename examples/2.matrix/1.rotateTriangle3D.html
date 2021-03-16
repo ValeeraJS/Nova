@@ -31,6 +31,7 @@
 		function loop() {
 			world.run();
 			mesh.getComponent("rotation3").y -= 0.01;
+			mesh.getComponent("rotation3").dirty = true;
 			requestAnimationFrame(loop);
 		}
 	</script>

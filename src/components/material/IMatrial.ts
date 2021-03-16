@@ -4,6 +4,7 @@ export interface IUniformSlot {
     name: string;
     value: any;
     binding: number;
+    dirty: boolean;
 }
 
 export interface IShaderCode {

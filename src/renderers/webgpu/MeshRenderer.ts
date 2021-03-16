@@ -14,7 +14,7 @@ interface ICacheData {
 	uniformBuffer: GPUBuffer;
 	attributesBuffers: GPUBuffer[];
 	uniformBindGroup: GPUBindGroup;
-	uniformMap: Map<any, any>;
+	uniformMap: Map<any, IUniformSlot>;
 }
 
 export default class MeshRenderer implements IRenderer {
@@ -57,15 +57,18 @@ export default class MeshRenderer implements IRenderer {
 			mvp.byteLength
 		);
 
-		cacheData.uniformMap.forEach((value, key)=>{
-			this.engine.device.queue.writeBuffer(
-				key,
-				0,
-				value.buffer,
-				value.byteOffset,
-				value.byteLength
-			);
-		})
+		cacheData.uniformMap.forEach((uniform, key)=>{
+			if (uniform.dirty) {
+				this.engine.device.queue.writeBuffer(
+					key,
+					0,
+					uniform.value.buffer,
+					uniform.value.byteOffset,
+					uniform.value.byteLength
+				);
+				uniform.dirty = false;
+			}
+		});
 
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
 		passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
@@ -102,7 +105,7 @@ export default class MeshRenderer implements IRenderer {
 					size: uniforms[i].value.length * 4,
 					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 				});
-				uniformMap.set(buffer, uniforms[i].value);
+				uniformMap.set(buffer, uniforms[i]);
 				groupEntries.push({
 					binding: uniforms[i].binding,
 					resource: {
