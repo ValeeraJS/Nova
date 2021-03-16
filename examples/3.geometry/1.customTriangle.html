@@ -19,10 +19,8 @@
 		]), 3);
 
 		const mesh = Engine.EntityFactory.createMesh(geometry, "test-triangle", world);
-		// 新建一个操作平移矩阵组件的操作代理。这样开发者只需要按照三维坐标修改xyz值即可。这种代理方式优于demo1使用的EuclidPosition3类创建组件
 		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(mesh);
 		positionProxy.z = -5;
-		// 新建一个操作旋转矩阵组件的操作代理。这样开发者只需要按照欧拉角修改xyz值即可。这种代理方式优于demo1使用的EulerRotation3类创建组件
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 
 		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
