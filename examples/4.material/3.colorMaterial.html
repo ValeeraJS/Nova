@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+</head>
+<body>
+	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="../../build/Engine.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Engine.WebGPUEngine(canvas);
+		const world = new Engine.World();
+
+		const geo = Engine.Geometry3.createTriangleGeometry();
+		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+		const material = new Engine.ColorMaterial(new Float32Array([1, 0, 0, 1]));
+		mesh.addComponent(material);
+		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
+
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
+		positionProxy.z = 5;
+
+		engine.once(Engine.WebGPUEngine.INITED, (e) => {
+			let renderSystem = new Engine.RenderSystem(engine);
+			let renderer = new Engine.MeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			loop();
+		});
+
+		function loop() {
+			world.run();
+			rotationProxy.y -= 0.01;
+			material.setColor((1 + Math.sin(performance.now() / 300)) / 2, 0, 0, 1);
+			requestAnimationFrame(loop);
+		}
+	</script>
+</body>

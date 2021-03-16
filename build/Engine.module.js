@@ -546,9 +546,58 @@ ESystemEvent$1.AFTER_RUN;
 ESystemEvent$1.BEFORE_RUN;
 
 class ShaderMaterial extends Component$1 {
-    constructor(vertex, fragment) {
-        super("material", { vertex, fragment });
+    constructor(vertex, fragment, uniforms = []) {
+        super("material", { vertex, fragment, uniforms });
         this.dirty = true;
+    }
+}
+
+const wgslShaders$1 = {
+    vertex: `
+		[[block]] struct Uniforms {
+			[[offset(0)]] modelViewProjectionMatrix : mat4x4<f32>;
+	  	};
+	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+
+		[[builtin(position)]] var<out> out_position : vec4<f32>;
+		[[location(0)]] var<in> a_position : vec3<f32>;
+
+		[[stage(vertex)]] fn main() -> void {
+			out_position = uniforms.modelViewProjectionMatrix * vec4<f32>(a_position, 1.0);
+			return;
+		}
+	`,
+    fragment: `
+		[[block]] struct Uniforms {
+			[[offset(0)]] color : vec4<f32>;
+	  	};
+	  	[[binding(1), group(0)]] var<uniform> uniforms : Uniforms;
+		[[location(0)]] var<out> fragColor : vec4<f32>;
+
+		[[stage(fragment)]] fn main() -> void {
+			fragColor = uniforms.color;
+			return;
+		}
+	`
+};
+class ColorMaterial extends Component$1 {
+    constructor(color) {
+        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [{
+                    name: "color",
+                    value: color,
+                    binding: 1
+                }] }));
+        this.dirty = true;
+    }
+    setColor(r, g, b, a) {
+        if (this.data) {
+            this.data.uniforms[0].value[0] = r;
+            this.data.uniforms[0].value[1] = g;
+            this.data.uniforms[0].value[2] = b;
+            this.data.uniforms[0].value[3] = a;
+        }
+        console.log(this);
+        return this;
     }
 }
 
@@ -4472,15 +4521,18 @@ class MeshRenderer {
         multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
         multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
         this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
+        cacheData.uniformMap.forEach((value, key) => {
+            this.engine.device.queue.writeBuffer(key, 0, value.buffer, value.byteOffset, value.byteLength);
+        });
         passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
         passEncoder.draw(mesh.getComponent(GEOMETRY_3D).count, 1, 0, 0);
         return this;
     }
     createCacheData(mesh) {
-        var _a;
+        var _a, _b, _c;
         updateModelMatrixComponent(mesh);
         let uniformBuffer = this.engine.device.createBuffer({
-            size: 4 * 16,
+            size: 64,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         let buffers = [];
@@ -4489,16 +4541,32 @@ class MeshRenderer {
             buffers.push(createVerticesBuffer(this.engine.device, nodes[i].data));
         }
         let pipeline = this.createPipeline(mesh);
+        let groupEntries = [{
+                binding: 0,
+                resource: {
+                    buffer: uniformBuffer,
+                },
+            }];
+        let uniforms = (_c = (_b = mesh.getComponent(MATERIAL)) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c.uniforms;
+        let uniformMap = new Map();
+        if (uniforms) {
+            for (let i = 0; i < uniforms.length; i++) {
+                let buffer = this.engine.device.createBuffer({
+                    size: uniforms[i].value.length * 4,
+                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+                });
+                uniformMap.set(buffer, uniforms[i].value);
+                groupEntries.push({
+                    binding: uniforms[i].binding,
+                    resource: {
+                        buffer
+                    }
+                });
+            }
+        }
         let uniformBindGroup = this.engine.device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
-            entries: [
-                {
-                    binding: 0,
-                    resource: {
-                        buffer: uniformBuffer,
-                    },
-                }
-            ],
+            entries: groupEntries,
         });
         return {
             mvp: new Float32Array(16),
@@ -4506,11 +4574,12 @@ class MeshRenderer {
             uniformBuffer,
             uniformBindGroup,
             pipeline,
+            uniformMap
         };
     }
     createPipeline(mesh) {
         const pipelineLayout = this.engine.device.createPipelineLayout({
-            bindGroupLayouts: [this.createBindGroupLayout()],
+            bindGroupLayouts: [this.createBindGroupLayout(mesh)],
         });
         let stages = this.createStages(mesh);
         let geometry = mesh.getComponent(GEOMETRY_3D);
@@ -4553,18 +4622,29 @@ class MeshRenderer {
                 vertexBuffers
             },
         });
-        console.log(pipeline);
         return pipeline;
     }
-    createBindGroupLayout() {
-        return this.engine.device.createBindGroupLayout({
-            entries: [
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
+    createBindGroupLayout(mesh) {
+        var _a, _b;
+        let uniforms = (_b = (_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
+        let entries = [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                type: 'uniform-buffer',
+            }
+        ];
+        if (uniforms) {
+            for (let i = 0; i < uniforms.length; i++) {
+                entries.push({
+                    visibility: GPUShaderStage.FRAGMENT,
+                    binding: uniforms[i].binding,
                     type: 'uniform-buffer',
-                }
-            ],
+                });
+            }
+        }
+        return this.engine.device.createBindGroupLayout({
+            entries,
         });
     }
     createStages(mesh) {
@@ -5237,5 +5317,5 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, Clearer, Component, ComponentManager, index$1 as ComponentProxy, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, IdGeneratorInstance, Mathx_module as Mathx, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, RenderSystem, Renderable, ShaderMaterial, SystemManager, Vector3Scale3, WebGPUEngine, World };
+export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, Clearer, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, IdGeneratorInstance, Mathx_module as Mathx, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, RenderSystem, Renderable, ShaderMaterial, SystemManager, Vector3Scale3, WebGPUEngine, World };
 //# sourceMappingURL=Engine.module.js.map

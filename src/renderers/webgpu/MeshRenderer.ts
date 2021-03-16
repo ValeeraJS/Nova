@@ -6,6 +6,7 @@ import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Comp
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "../../webgpu/createVerticesBuffer";
 import IRenderer from "./IRenderer";
+import { IUniformSlot } from "../../components/material/IMatrial";
 
 interface ICacheData {
 	mvp: Float32Array;
@@ -13,6 +14,7 @@ interface ICacheData {
 	uniformBuffer: GPUBuffer;
 	attributesBuffers: GPUBuffer[];
 	uniformBindGroup: GPUBindGroup;
+	uniformMap: Map<any, any>;
 }
 
 export default class MeshRenderer implements IRenderer {
@@ -55,6 +57,16 @@ export default class MeshRenderer implements IRenderer {
 			mvp.byteLength
 		);
 
+		cacheData.uniformMap.forEach((value, key)=>{
+			this.engine.device.queue.writeBuffer(
+				key,
+				0,
+				value.buffer,
+				value.byteOffset,
+				value.byteLength
+			);
+		})
+
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
 		passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
 
@@ -65,7 +77,7 @@ export default class MeshRenderer implements IRenderer {
 		updateModelMatrixComponent(mesh);
 
 		let uniformBuffer = this.engine.device.createBuffer({
-			size: 4 * 16,
+			size: 64,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 		let buffers = [];
@@ -75,16 +87,34 @@ export default class MeshRenderer implements IRenderer {
 		}
 
 		let pipeline = this.createPipeline(mesh);
+		let groupEntries: GPUBindGroupEntry[] = [{
+			binding: 0,
+			resource: {
+				buffer: uniformBuffer,
+			},
+		}];
+
+		let uniforms: IUniformSlot[] = mesh.getComponent(MATERIAL)?.data?.uniforms;
+		let uniformMap = new Map();
+		if (uniforms) {
+			for(let i = 0; i < uniforms.length; i++) {
+				let buffer: GPUBuffer = this.engine.device.createBuffer({
+					size: uniforms[i].value.length * 4,
+					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+				});
+				uniformMap.set(buffer, uniforms[i].value);
+				groupEntries.push({
+					binding: uniforms[i].binding,
+					resource: {
+						buffer
+					}
+				});
+			}
+		}
+		
 		let uniformBindGroup = this.engine.device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: uniformBuffer,
-					},
-				}
-			],
+			entries: groupEntries,
 		});
 
 		return {
@@ -93,12 +123,13 @@ export default class MeshRenderer implements IRenderer {
 			uniformBuffer,
 			uniformBindGroup,
 			pipeline,
+			uniformMap
 		}
 	}
 
 	private createPipeline(mesh: IEntity) {
 		const pipelineLayout = this.engine.device.createPipelineLayout({
-			bindGroupLayouts: [this.createBindGroupLayout()],
+			bindGroupLayouts: [this.createBindGroupLayout(mesh)],
 		});
 		let stages = this.createStages(mesh);
 		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
@@ -144,20 +175,29 @@ export default class MeshRenderer implements IRenderer {
 			},
 		});
 
-		console.log(pipeline);
-
 		return pipeline;
 	}
 
-	private createBindGroupLayout() {
-		return this.engine.device.createBindGroupLayout({
-			entries: [
-				{
-					binding: 0,
-					visibility: GPUShaderStage.VERTEX,
+	private createBindGroupLayout(mesh: IEntity) {
+		let uniforms: IUniformSlot[] = mesh.getComponent(MATERIAL)?.data?.uniforms;
+		let entries: GPUBindGroupLayoutEntry[] = [
+			{
+				binding: 0,
+				visibility: GPUShaderStage.VERTEX,
+				type: 'uniform-buffer',
+			}
+		];
+		if (uniforms) {
+			for(let i = 0; i < uniforms.length; i++) {
+				entries.push({
+					visibility: GPUShaderStage.FRAGMENT,
+					binding: uniforms[i].binding,
 					type: 'uniform-buffer',
-				}
-			],
+				});
+			}
+		}
+		return this.engine.device.createBindGroupLayout({
+			entries,
 		});
 	}
 
