@@ -22,6 +22,31 @@ export default class MeshRenderer implements IRenderer {
 		this.engine = engine;
 	}
 
+	private getModelMatrix(mesh: IEntity, matrixM: Float32Array) {
+		let p3 = mesh.getComponent('position3');
+		let r3 = mesh.getComponent('rotation3');
+		let s3 = mesh.getComponent('scale3');
+		if (p3?.dirty || r3?.dirty || s3?.dirty) {
+			let matrixT = p3?.data || Matrix4.create();
+			let matrixR = r3?.data || Matrix4.create();
+			let matrixS = s3?.data || Matrix4.create();
+			Matrix4.multiply(matrixT, matrixR, matrixM);
+			Matrix4.multiply(matrixM, matrixS, matrixM);
+			
+			if (p3) {
+				p3.dirty = false;
+			}
+			if (r3) {
+				r3.dirty = false;
+			}
+			if (s3) {
+				s3.dirty = false;
+			}
+		}
+
+		return matrixM;
+	}
+
 	render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, scissor?: any): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
@@ -29,14 +54,8 @@ export default class MeshRenderer implements IRenderer {
 			this.entityCacheData.set(mesh, cacheData);
 		} else {
 			// TODO update cache
-			if (true) {
-				let matrixT = mesh.getComponent('position3')?.data || Matrix4.create();
-				let matrixR = mesh.getComponent('rotation3')?.data || Matrix4.create();
-				let matrixS = mesh.getComponent('scale3')?.data || Matrix4.create();
-				let matrixM = cacheData.matrixM;
-				Matrix4.multiply(matrixT, matrixR, matrixM);
-				Matrix4.multiply(matrixM, matrixS, matrixM);
-			}
+			let matrixM = cacheData.matrixM;
+			this.getModelMatrix(mesh, matrixM);
 		}
 
 		passEncoder.setPipeline(cacheData.pipeline);
@@ -64,12 +83,8 @@ export default class MeshRenderer implements IRenderer {
 	}
 
 	private createCacheData(mesh: IEntity): ICacheData {
-		let matrixT = mesh.getComponent('position3')?.data || Matrix4.create();
-		let matrixR = mesh.getComponent('rotation3')?.data || Matrix4.create();
-		let matrixS = mesh.getComponent('scale3')?.data || Matrix4.create();
 		let matrixM = Matrix4.create();
-		Matrix4.multiply(matrixT, matrixR, matrixM);
-		Matrix4.multiply(matrixM, matrixS, matrixM);
+		this.getModelMatrix(mesh, matrixM);
 
 		let uniformBuffer = this.engine.device.createBuffer({
 			size: 4 * 16,
