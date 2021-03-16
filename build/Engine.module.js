@@ -1227,12 +1227,12 @@ var Matrix3 = /*#__PURE__*/Object.freeze({
 
 /* eslint-disable max-lines */
 let a00$3 = 0, a01$3 = 0, a02$2 = 0, a03$1 = 0, a11$3 = 0, a10$3 = 0, a12$2 = 0, a13$1 = 0, a20$2 = 0, a21$2 = 0, a22$2 = 0, a23$1 = 0, a31$1 = 0, a30$1 = 0, a32$1 = 0, a33$1 = 0;
-let b00$3 = 0, b01$3 = 0, b02$2 = 0, b03$1 = 0, b11 = 0, b10 = 0, b12 = 0, b13 = 0, b20 = 0, b21 = 0, b22 = 0, b23 = 0, b31 = 0, b30 = 0, b32 = 0, b33 = 0;
-let x$1 = 0, y$1 = 0, z$1 = 0, det = 0, len$1 = 0, s$3 = 0, t = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
-const UNIT_MATRIX4_DATA$1 = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-const UNIT_MATRIX4 = new Float32Array(UNIT_MATRIX4_DATA$1);
+let b00$3 = 0, b01$3 = 0, b02$2 = 0, b03$1 = 0, b11 = 0, b10 = 0, b12 = 0, b13 = 0, b20$2 = 0, b21$2 = 0, b22$2 = 0, b23$1 = 0, b31$1 = 0, b30$1 = 0, b32$1 = 0, b33$1 = 0;
+let x$1 = 0, y$1 = 0, z$1 = 0, det$2 = 0, len$1 = 0, s$3 = 0, t = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
+const UNIT_MATRIX4_DATA = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+const UNIT_MATRIX4 = new Float32Array(UNIT_MATRIX4_DATA);
 const create$5 = () => {
-    return new Float32Array(UNIT_MATRIX4_DATA$1);
+    return new Float32Array(UNIT_MATRIX4_DATA);
 };
 const determinant = (a) => {
     a00$3 = a[0];
@@ -1259,9 +1259,9 @@ const determinant = (a) => {
     b11 = a21$2 * a32$1 - a22$2 * a31$1;
     b12 = a00$3 * b11 - a01$3 * b10 + a02$2 * b03$1;
     b13 = a10$3 * b11 - a11$3 * b10 + a12$2 * b03$1;
-    b20 = a20$2 * b02$2 - a21$2 * b01$3 + a22$2 * b00$3;
-    b21 = a30$1 * b02$2 - a31$1 * b01$3 + a32$1 * b00$3;
-    return a13$1 * b12 - a03$1 * b13 + a33$1 * b20 - a23$1 * b21;
+    b20$2 = a20$2 * b02$2 - a21$2 * b01$3 + a22$2 * b00$3;
+    b21$2 = a30$1 * b02$2 - a31$1 * b01$3 + a32$1 * b00$3;
+    return a13$1 * b12 - a03$1 * b13 + a33$1 * b20$2 - a23$1 * b21$2;
 };
 const from$3 = (a, out = new Float32Array(16)) => {
     out[0] = a[0];
@@ -1581,35 +1581,35 @@ function invert$1(a, out = new Float32Array(16)) {
     b01$3 = a00$3 * a12$2 - a02$2 * a10$3;
     b02$2 = a00$3 * a13$1 - a03$1 * a10$3;
     b03$1 = a01$3 * a12$2 - a02$2 * a11$3;
-    b20 = a01$3 * a13$1 - a03$1 * a11$3;
-    b21 = a02$2 * a13$1 - a03$1 * a12$2;
-    b22 = a20$2 * a31$1 - a21$2 * a30$1;
-    b23 = a20$2 * a32$1 - a22$2 * a30$1;
-    b30 = a20$2 * a33$1 - a23$1 * a30$1;
-    b31 = a21$2 * a32$1 - a22$2 * a31$1;
-    b32 = a21$2 * a33$1 - a23$1 * a31$1;
-    b33 = a22$2 * a33$1 - a23$1 * a32$1;
-    det = b00$3 * b33 - b01$3 * b32 + b02$2 * b31 + b03$1 * b30 - b20 * b23 + b21 * b22;
-    if (!det) {
+    b20$2 = a01$3 * a13$1 - a03$1 * a11$3;
+    b21$2 = a02$2 * a13$1 - a03$1 * a12$2;
+    b22$2 = a20$2 * a31$1 - a21$2 * a30$1;
+    b23$1 = a20$2 * a32$1 - a22$2 * a30$1;
+    b30$1 = a20$2 * a33$1 - a23$1 * a30$1;
+    b31$1 = a21$2 * a32$1 - a22$2 * a31$1;
+    b32$1 = a21$2 * a33$1 - a23$1 * a31$1;
+    b33$1 = a22$2 * a33$1 - a23$1 * a32$1;
+    det$2 = b00$3 * b33$1 - b01$3 * b32$1 + b02$2 * b31$1 + b03$1 * b30$1 - b20$2 * b23$1 + b21$2 * b22$2;
+    if (!det$2) {
         return null;
     }
-    det = 1.0 / det;
-    out[0] = (a11$3 * b33 - a12$2 * b32 + a13$1 * b31) * det;
-    out[1] = (a02$2 * b32 - a01$3 * b33 - a03$1 * b31) * det;
-    out[2] = (a31$1 * b21 - a32$1 * b20 + a33$1 * b03$1) * det;
-    out[3] = (a22$2 * b20 - a21$2 * b21 - a23$1 * b03$1) * det;
-    out[4] = (a12$2 * b30 - a10$3 * b33 - a13$1 * b23) * det;
-    out[5] = (a00$3 * b33 - a02$2 * b30 + a03$1 * b23) * det;
-    out[6] = (a32$1 * b02$2 - a30$1 * b21 - a33$1 * b01$3) * det;
-    out[7] = (a20$2 * b21 - a22$2 * b02$2 + a23$1 * b01$3) * det;
-    out[8] = (a10$3 * b32 - a11$3 * b30 + a13$1 * b22) * det;
-    out[9] = (a01$3 * b30 - a00$3 * b32 - a03$1 * b22) * det;
-    out[10] = (a30$1 * b20 - a31$1 * b02$2 + a33$1 * b00$3) * det;
-    out[11] = (a21$2 * b02$2 - a20$2 * b20 - a23$1 * b00$3) * det;
-    out[12] = (a11$3 * b23 - a10$3 * b31 - a12$2 * b22) * det;
-    out[13] = (a00$3 * b31 - a01$3 * b23 + a02$2 * b22) * det;
-    out[14] = (a31$1 * b01$3 - a30$1 * b03$1 - a32$1 * b00$3) * det;
-    out[15] = (a20$2 * b03$1 - a21$2 * b01$3 + a22$2 * b00$3) * det;
+    det$2 = 1.0 / det$2;
+    out[0] = (a11$3 * b33$1 - a12$2 * b32$1 + a13$1 * b31$1) * det$2;
+    out[1] = (a02$2 * b32$1 - a01$3 * b33$1 - a03$1 * b31$1) * det$2;
+    out[2] = (a31$1 * b21$2 - a32$1 * b20$2 + a33$1 * b03$1) * det$2;
+    out[3] = (a22$2 * b20$2 - a21$2 * b21$2 - a23$1 * b03$1) * det$2;
+    out[4] = (a12$2 * b30$1 - a10$3 * b33$1 - a13$1 * b23$1) * det$2;
+    out[5] = (a00$3 * b33$1 - a02$2 * b30$1 + a03$1 * b23$1) * det$2;
+    out[6] = (a32$1 * b02$2 - a30$1 * b21$2 - a33$1 * b01$3) * det$2;
+    out[7] = (a20$2 * b21$2 - a22$2 * b02$2 + a23$1 * b01$3) * det$2;
+    out[8] = (a10$3 * b32$1 - a11$3 * b30$1 + a13$1 * b22$2) * det$2;
+    out[9] = (a01$3 * b30$1 - a00$3 * b32$1 - a03$1 * b22$2) * det$2;
+    out[10] = (a30$1 * b20$2 - a31$1 * b02$2 + a33$1 * b00$3) * det$2;
+    out[11] = (a21$2 * b02$2 - a20$2 * b20$2 - a23$1 * b00$3) * det$2;
+    out[12] = (a11$3 * b23$1 - a10$3 * b31$1 - a12$2 * b22$2) * det$2;
+    out[13] = (a00$3 * b31$1 - a01$3 * b23$1 + a02$2 * b22$2) * det$2;
+    out[14] = (a31$1 * b01$3 - a30$1 * b03$1 - a32$1 * b00$3) * det$2;
+    out[15] = (a20$2 * b03$1 - a21$2 * b01$3 + a22$2 * b00$3) * det$2;
     return out;
 }
 const lookAt = (eye, center, up, out) => {
@@ -1816,9 +1816,9 @@ const rotate$1 = (a, rad, axis, out) => {
     b10 = x$1 * y$1 * t - z$1 * s$3;
     b11 = y$1 * y$1 * t + c$2;
     b12 = z$1 * y$1 * t + x$1 * s$3;
-    b20 = x$1 * z$1 * t + y$1 * s$3;
-    b21 = y$1 * z$1 * t - x$1 * s$3;
-    b22 = z$1 * z$1 * t + c$2;
+    b20$2 = x$1 * z$1 * t + y$1 * s$3;
+    b21$2 = y$1 * z$1 * t - x$1 * s$3;
+    b22$2 = z$1 * z$1 * t + c$2;
     out[0] = a00$3 * b00$3 + a10$3 * b01$3 + a20$2 * b02$2;
     out[1] = a01$3 * b00$3 + a11$3 * b01$3 + a21$2 * b02$2;
     out[2] = a02$2 * b00$3 + a12$2 * b01$3 + a22$2 * b02$2;
@@ -1827,10 +1827,10 @@ const rotate$1 = (a, rad, axis, out) => {
     out[5] = a01$3 * b10 + a11$3 * b11 + a21$2 * b12;
     out[6] = a02$2 * b10 + a12$2 * b11 + a22$2 * b12;
     out[7] = a03$1 * b10 + a13$1 * b11 + a23$1 * b12;
-    out[8] = a00$3 * b20 + a10$3 * b21 + a20$2 * b22;
-    out[9] = a01$3 * b20 + a11$3 * b21 + a21$2 * b22;
-    out[10] = a02$2 * b20 + a12$2 * b21 + a22$2 * b22;
-    out[11] = a03$1 * b20 + a13$1 * b21 + a23$1 * b22;
+    out[8] = a00$3 * b20$2 + a10$3 * b21$2 + a20$2 * b22$2;
+    out[9] = a01$3 * b20$2 + a11$3 * b21$2 + a21$2 * b22$2;
+    out[10] = a02$2 * b20$2 + a12$2 * b21$2 + a22$2 * b22$2;
+    out[11] = a03$1 * b20$2 + a13$1 * b21$2 + a23$1 * b22$2;
     if (a !== out) {
         out[12] = a[12];
         out[13] = a[13];
@@ -2797,7 +2797,7 @@ const identity$4 = (out = new Float32Array(4)) => {
     out[3] = 1;
     return out;
 };
-const invert = (a, out = new Float32Array(4)) => {
+const invert$4 = (a, out = new Float32Array(4)) => {
     ax = a[0],
         ay = a[1],
         az = a[2],
@@ -2976,7 +2976,7 @@ var Quaternion = /*#__PURE__*/Object.freeze({
 	fromAxisAngle: fromAxisAngle,
 	fromMatrix3: fromMatrix3,
 	identity: identity$4,
-	invert: invert,
+	invert: invert$4,
 	lerp: lerp$1,
 	multiply: multiply$1,
 	random: random$1,
@@ -3315,7 +3315,7 @@ const containsRectangle = (rect, box) => {
         rect.min[1] <= box.min[1] &&
         box.max[1] <= rect.max[1]);
 };
-const create$a = (a = create$1(), b = create$1(1, 1)) => {
+const create = (a = create$1(), b = create$1(1, 1)) => {
     return {
         max: max(a, b),
         min: min(a, b)
@@ -3364,7 +3364,7 @@ var Rectangle$1 = /*#__PURE__*/Object.freeze({
 	area: area,
 	containsPoint: containsPoint,
 	containsRectangle: containsRectangle,
-	create: create$a,
+	create: create,
 	equals: equals,
 	getCenter: getCenter,
 	getSize: getSize,
@@ -3408,34 +3408,67 @@ var Mathx_module = /*#__PURE__*/Object.freeze({
 	sumArray: sumArray
 });
 
+const MODEL_3D = "model3";
+const PROJECTION_3D = "projection3";
+const ROTATION_3D = "rotation3";
+const SCALING_3D = "scale3";
+const TRANSLATION_3D = "position3";
+
 class Matrix4Component extends Component$1 {
     constructor(name, data = Matrix4.create()) {
         super(name, data);
         this.dirty = true;
     }
 }
+const updateModelMatrixComponent = (mesh) => {
+    let p3 = mesh.getComponent(TRANSLATION_3D);
+    let r3 = mesh.getComponent(ROTATION_3D);
+    let s3 = mesh.getComponent(SCALING_3D);
+    let m3 = mesh.getComponent(MODEL_3D);
+    if (!m3) {
+        m3 = new Matrix4Component(MODEL_3D);
+        mesh.addComponent(m3);
+    }
+    if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty)) {
+        let matrixT = (p3 === null || p3 === void 0 ? void 0 : p3.data) || Matrix4.create();
+        let matrixR = (r3 === null || r3 === void 0 ? void 0 : r3.data) || Matrix4.create();
+        let matrixS = (s3 === null || s3 === void 0 ? void 0 : s3.data) || Matrix4.create();
+        Matrix4.multiply(matrixT, matrixR, m3.data);
+        Matrix4.multiply(m3.data, matrixS, m3.data);
+        if (p3) {
+            p3.dirty = false;
+        }
+        if (r3) {
+            r3.dirty = false;
+        }
+        if (s3) {
+            s3.dirty = false;
+        }
+    }
+    return m3;
+};
 
 class APosition3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super('position3', data);
+        super(TRANSLATION_3D, data);
     }
 }
 
 class AProjection3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super('projection3', data);
+        super(PROJECTION_3D, data);
     }
 }
 
 class ARotation3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super('rotation3', data);
+        super(ROTATION_3D, data);
     }
 }
 
 class AScale3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super('scale3', data);
+        super(SCALING_3D, data);
     }
 }
 
@@ -3495,12 +3528,9 @@ var EulerRotationOrders;
 
 /* eslint-disable max-lines */
 let a00 = 0, a01 = 0, a02 = 0, a03 = 0, a11 = 0, a10 = 0, a12 = 0, a13 = 0, a20 = 0, a21 = 0, a22 = 0, a23 = 0, a31 = 0, a30 = 0, a32 = 0, a33 = 0;
-let b00 = 0, b01 = 0, b02 = 0, b03 = 0;
-let x = 0, y = 0, z = 0, a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
-const UNIT_MATRIX4_DATA = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-const create = () => {
-    return new Float32Array(UNIT_MATRIX4_DATA);
-};
+let b00 = 0, b01 = 0, b02 = 0, b03 = 0, b20 = 0, b21 = 0, b22 = 0, b23 = 0, b31 = 0, b30 = 0, b32 = 0, b33 = 0;
+let x = 0, y = 0, z = 0, det = 0, a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
+Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 const fromEuler = (euler, out = new Float32Array(16)) => {
     x = euler.x;
     y = euler.y;
@@ -3613,6 +3643,58 @@ const identity = (out = new Float32Array(16)) => {
     out[15] = 1;
     return out;
 };
+function invert(a, out = new Float32Array(16)) {
+    a00 = a[0];
+    a01 = a[1];
+    a02 = a[2];
+    a03 = a[3];
+    a10 = a[4];
+    a11 = a[5];
+    a12 = a[6];
+    a13 = a[7];
+    a20 = a[8];
+    a21 = a[9];
+    a22 = a[10];
+    a23 = a[11];
+    a30 = a[12];
+    a31 = a[13];
+    a32 = a[14];
+    a33 = a[15];
+    b00 = a00 * a11 - a01 * a10;
+    b01 = a00 * a12 - a02 * a10;
+    b02 = a00 * a13 - a03 * a10;
+    b03 = a01 * a12 - a02 * a11;
+    b20 = a01 * a13 - a03 * a11;
+    b21 = a02 * a13 - a03 * a12;
+    b22 = a20 * a31 - a21 * a30;
+    b23 = a20 * a32 - a22 * a30;
+    b30 = a20 * a33 - a23 * a30;
+    b31 = a21 * a32 - a22 * a31;
+    b32 = a21 * a33 - a23 * a31;
+    b33 = a22 * a33 - a23 * a32;
+    det = b00 * b33 - b01 * b32 + b02 * b31 + b03 * b30 - b20 * b23 + b21 * b22;
+    if (!det) {
+        return null;
+    }
+    det = 1.0 / det;
+    out[0] = (a11 * b33 - a12 * b32 + a13 * b31) * det;
+    out[1] = (a02 * b32 - a01 * b33 - a03 * b31) * det;
+    out[2] = (a31 * b21 - a32 * b20 + a33 * b03) * det;
+    out[3] = (a22 * b20 - a21 * b21 - a23 * b03) * det;
+    out[4] = (a12 * b30 - a10 * b33 - a13 * b23) * det;
+    out[5] = (a00 * b33 - a02 * b30 + a03 * b23) * det;
+    out[6] = (a32 * b02 - a30 * b21 - a33 * b01) * det;
+    out[7] = (a20 * b21 - a22 * b02 + a23 * b01) * det;
+    out[8] = (a10 * b32 - a11 * b30 + a13 * b22) * det;
+    out[9] = (a01 * b30 - a00 * b32 - a03 * b22) * det;
+    out[10] = (a30 * b20 - a31 * b02 + a33 * b00) * det;
+    out[11] = (a21 * b02 - a20 * b20 - a23 * b00) * det;
+    out[12] = (a11 * b23 - a10 * b31 - a12 * b22) * det;
+    out[13] = (a00 * b31 - a01 * b23 + a02 * b22) * det;
+    out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+    out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+    return out;
+}
 const multiply = (a, b, out = new Float32Array(16)) => {
     a00 = a[0];
     a01 = a[1];
@@ -4061,30 +4143,8 @@ class MeshRenderer {
         this.entityCacheData = new WeakMap();
         this.engine = engine;
     }
-    getModelMatrix(mesh, matrixM) {
-        let p3 = mesh.getComponent('position3');
-        let r3 = mesh.getComponent('rotation3');
-        let s3 = mesh.getComponent('scale3');
-        if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty)) {
-            let matrixT = (p3 === null || p3 === void 0 ? void 0 : p3.data) || create();
-            let matrixR = (r3 === null || r3 === void 0 ? void 0 : r3.data) || create();
-            let matrixS = (s3 === null || s3 === void 0 ? void 0 : s3.data) || create();
-            multiply(matrixT, matrixR, matrixM);
-            multiply(matrixM, matrixS, matrixM);
-            if (p3) {
-                p3.dirty = false;
-            }
-            if (r3) {
-                r3.dirty = false;
-            }
-            if (s3) {
-                s3.dirty = false;
-            }
-        }
-        return matrixM;
-    }
     render(mesh, camera, passEncoder, scissor) {
-        var _a;
+        var _a, _b;
         let cacheData = this.entityCacheData.get(mesh);
         if (!cacheData) {
             cacheData = this.createCacheData(mesh);
@@ -4092,17 +4152,16 @@ class MeshRenderer {
         }
         else {
             // TODO update cache
-            let matrixM = cacheData.matrixM;
-            this.getModelMatrix(mesh, matrixM);
+            updateModelMatrixComponent(mesh);
         }
         passEncoder.setPipeline(cacheData.pipeline);
         // passEncoder.setScissorRect(0, 0, 400, 225);
         // TODO 有多个attribute buffer
         passEncoder.setVertexBuffer(0, cacheData.attributesBuffer);
-        const mvp = identity();
+        const mvp = cacheData.mvp;
         // TODO 视图矩阵
-        multiply((_a = camera.getComponent("projection3")) === null || _a === void 0 ? void 0 : _a.data, create(), mvp);
-        multiply(mvp, cacheData.matrixM, mvp);
+        multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
+        multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
         this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
         passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
         passEncoder.draw(mesh.getComponent("geometry3").count, 1, 0, 0);
@@ -4110,8 +4169,7 @@ class MeshRenderer {
     }
     createCacheData(mesh) {
         var _a;
-        let matrixM = create();
-        this.getModelMatrix(mesh, matrixM);
+        updateModelMatrixComponent(mesh);
         let uniformBuffer = this.engine.device.createBuffer({
             size: 4 * 16,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -4132,8 +4190,8 @@ class MeshRenderer {
         });
         // console.log(pipeline);
         return {
+            mvp: new Float32Array(16),
             attributesBuffer,
-            matrixM,
             uniformBuffer,
             uniformBindGroup,
             pipeline,
@@ -5088,9 +5146,10 @@ class Entity extends EventDispatcher {
 var createCamera = (projection, name = "camera", world) => {
     const entity = new Entity(name);
     entity.addComponent(projection)
-        .addComponent(new Matrix4Component("position3"))
-        .addComponent(new Matrix4Component("rotation3"))
-        .addComponent(new Matrix4Component("scale3"));
+        .addComponent(new Matrix4Component(TRANSLATION_3D))
+        .addComponent(new Matrix4Component(ROTATION_3D))
+        .addComponent(new Matrix4Component(SCALING_3D))
+        .addComponent(new Matrix4Component(MODEL_3D));
     if (world) {
         world.addEntity(entity);
         world.store.set("activeCamera", entity);
@@ -5101,9 +5160,10 @@ var createCamera = (projection, name = "camera", world) => {
 var createMesh = (geometry, name = "mesh", world) => {
     const entity = new Entity(name);
     entity.addComponent(geometry)
-        .addComponent(new Matrix4Component("position3"))
-        .addComponent(new Matrix4Component("rotation3"))
-        .addComponent(new Matrix4Component("scale3"))
+        .addComponent(new Matrix4Component(TRANSLATION_3D))
+        .addComponent(new Matrix4Component(ROTATION_3D))
+        .addComponent(new Matrix4Component(SCALING_3D))
+        .addComponent(new Matrix4Component(MODEL_3D))
         .addComponent(new Renderable("mesh"));
     if (world) {
         world.addEntity(entity);

@@ -1,12 +1,14 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3 from "../../components/geometry/Geometry3";
+import { MODEL_3D, PROJECTION_3D } from "../../components/matrix4/constants";
+import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "../../webgpu/createVerticesBuffer";
 import IRenderer from "./IRenderer";
 
 interface ICacheData {
-	matrixM: Float32Array;
+	mvp: Float32Array;
 	pipeline: GPURenderPipeline;
 	uniformBuffer: GPUBuffer;
 	attributesBuffer: GPUBuffer;
@@ -22,31 +24,6 @@ export default class MeshRenderer implements IRenderer {
 		this.engine = engine;
 	}
 
-	private getModelMatrix(mesh: IEntity, matrixM: Float32Array) {
-		let p3 = mesh.getComponent('position3');
-		let r3 = mesh.getComponent('rotation3');
-		let s3 = mesh.getComponent('scale3');
-		if (p3?.dirty || r3?.dirty || s3?.dirty) {
-			let matrixT = p3?.data || Matrix4.create();
-			let matrixR = r3?.data || Matrix4.create();
-			let matrixS = s3?.data || Matrix4.create();
-			Matrix4.multiply(matrixT, matrixR, matrixM);
-			Matrix4.multiply(matrixM, matrixS, matrixM);
-			
-			if (p3) {
-				p3.dirty = false;
-			}
-			if (r3) {
-				r3.dirty = false;
-			}
-			if (s3) {
-				s3.dirty = false;
-			}
-		}
-
-		return matrixM;
-	}
-
 	render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, scissor?: any): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
@@ -54,8 +31,7 @@ export default class MeshRenderer implements IRenderer {
 			this.entityCacheData.set(mesh, cacheData);
 		} else {
 			// TODO update cache
-			let matrixM = cacheData.matrixM;
-			this.getModelMatrix(mesh, matrixM);
+			updateModelMatrixComponent(mesh);
 		}
 
 		passEncoder.setPipeline(cacheData.pipeline);
@@ -63,10 +39,11 @@ export default class MeshRenderer implements IRenderer {
 		// TODO 有多个attribute buffer
 		passEncoder.setVertexBuffer(0, cacheData.attributesBuffer);
 
-		const mvp = Matrix4.identity();
+		const mvp = cacheData.mvp;
 		// TODO 视图矩阵
-		Matrix4.multiply(camera.getComponent("projection3")?.data, Matrix4.create(), mvp);
-		Matrix4.multiply(mvp, cacheData.matrixM, mvp);
+		Matrix4.multiply(camera.getComponent(PROJECTION_3D)?.data, 
+			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
+		Matrix4.multiply(mvp, mesh.getComponent(MODEL_3D)?.data, mvp);
 
 		this.engine.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
@@ -83,8 +60,7 @@ export default class MeshRenderer implements IRenderer {
 	}
 
 	private createCacheData(mesh: IEntity): ICacheData {
-		let matrixM = Matrix4.create();
-		this.getModelMatrix(mesh, matrixM);
+		updateModelMatrixComponent(mesh);
 
 		let uniformBuffer = this.engine.device.createBuffer({
 			size: 4 * 16,
@@ -108,8 +84,8 @@ export default class MeshRenderer implements IRenderer {
 
 		// console.log(pipeline);
 		return {
+			mvp: new Float32Array(16),
 			attributesBuffer,
-			matrixM,
 			uniformBuffer,
 			uniformBindGroup,
 			pipeline,

@@ -75,6 +75,6 @@
 		"@valeera/eventdispatcher": "^2.1.0",
 		"@valeera/mathx": "^0.1.10",
 		"@valeera/webgpu-constant": "^0.1.0",
-		"@valeera/x": "^0.1.11"
+		"@valeera/x": "^0.1.12"
 	}
 }
