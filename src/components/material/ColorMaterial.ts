@@ -36,6 +36,7 @@ export default class ColorMaterial extends Component<IShaderCode> implements IMa
 			...wgslShaders,
 			uniforms: [{
 				name: "color",
+				type: "uniform-buffer",
 				value: color,
 				binding: 1,
 				dirty: true

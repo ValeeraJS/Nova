@@ -10,7 +10,7 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3.createTriangleGeometry();
+		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 		// 新建一个操作平移矩阵组件的操作代理。这样开发者只需要按照三维坐标修改xyz值即可。这种代理方式优于demo1使用的EuclidPosition3类创建组件
 		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(mesh);

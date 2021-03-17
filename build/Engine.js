@@ -700,7 +700,7 @@
 	    }
 	}
 
-	const wgslShaders$1 = {
+	const wgslShaders$2 = {
 	    vertex: `
 		[[block]] struct Uniforms {
 			[[offset(0)]] modelViewProjectionMatrix : mat4x4<f32>;
@@ -730,8 +730,9 @@
 	};
 	class ColorMaterial extends Component$1 {
 	    constructor(color = new Float32Array([1, 1, 1, 1])) {
-	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [{
+	        super("material", Object.assign(Object.assign({}, wgslShaders$2), { uniforms: [{
 	                    name: "color",
+	                    type: "uniform-buffer",
 	                    value: color,
 	                    binding: 1,
 	                    dirty: true
@@ -746,6 +747,96 @@
 	            this.data.uniforms[0].value[3] = a;
 	            this.data.uniforms[0].dirty = true;
 	        }
+	        return this;
+	    }
+	}
+
+	class Sampler extends Component$1 {
+	    constructor(option = {}) {
+	        super("sampler", option);
+	        this.data = {};
+	        this.dirty = true;
+	    }
+	    setAddressMode(u, v, w) {
+	        this.data.addressModeU = u;
+	        this.data.addressModeV = v;
+	        this.data.addressModeW = w;
+	        this.dirty = true;
+	        return this;
+	    }
+	    setFilterMode(mag, min, mipmap) {
+	        this.data.magFilter = mag;
+	        this.data.minFilter = min;
+	        this.data.mipmapFilter = mipmap;
+	        this.dirty = true;
+	        return this;
+	    }
+	    setLodClamp(min, max) {
+	        this.data.lodMaxClamp = max;
+	        this.data.lodMinClamp = min;
+	        return this;
+	    }
+	    setMaxAnisotropy(v) {
+	        this.data.maxAnisotropy = v;
+	        return this;
+	    }
+	    setCompare(v) {
+	        this.data.compare = v;
+	        return this;
+	    }
+	}
+
+	const wgslShaders$1 = {
+	    vertex: `
+		[[block]] struct Uniforms {
+			[[offset(0)]] matrix : mat4x4<f32>;
+	  	};
+	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+		[[builtin(position)]] var<out> fragPosition : vec4<f32>;
+		[[location(0)]] var<out> fragUV : vec2<f32>;
+		[[location(0)]] var<in> position : vec3<f32>;
+		[[location(1)]] var<in> uv : vec2<f32>;
+
+		[[stage(vertex)]] fn main() -> void {
+			fragPosition = uniforms.matrix * vec4<f32>(position, 1.0);
+			fragUV = uv;
+			return;
+		}
+	`,
+	    fragment: `
+		[[binding(1), group(0)]] var mySampler: sampler;
+		[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
+		[[location(0)]] var<out> fragColor : vec4<f32>;
+		[[location(0)]] var<in> fragUV: vec2<f32>;
+
+		[[stage(fragment)]] fn main() -> void {
+			fragColor = textureSample(myTexture, mySampler, fragUV);
+			return;
+		}
+	`
+	};
+	class TextureMaterial extends Component$1 {
+	    constructor(texture, sampler = new Sampler()) {
+	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [{
+	                    name: "mySampler",
+	                    type: "sampler",
+	                    value: sampler,
+	                    binding: 1,
+	                    dirty: true
+	                }, {
+	                    name: "myTexture",
+	                    type: "sampled-texture",
+	                    value: texture,
+	                    binding: 2,
+	                    dirty: true
+	                }] }));
+	        this.dirty = true;
+	    }
+	    setColor(texture, sampler = new Sampler()) {
+	        this.data.uniforms[0].value = sampler;
+	        this.data.uniforms[0].dirty = true;
+	        this.data.uniforms[1].value = texture;
+	        this.data.uniforms[1].dirty = true;
 	        return this;
 	    }
 	}
@@ -4553,6 +4644,38 @@
 	    }
 	}
 
+	class ImageBitmapTexture extends Component$1 {
+	    constructor(img, name = "image-texture") {
+	        super(name);
+	        this.loaded = false;
+	        this.dirty = false;
+	        this.setImage(img);
+	    }
+	    setImage(img) {
+	        return __awaiter(this, void 0, void 0, function* () {
+	            this.loaded = false;
+	            this.dirty = false;
+	            if (typeof img === "string") {
+	                let tmp = img;
+	                img = new Image();
+	                img.src = tmp;
+	            }
+	            else if (img instanceof ImageBitmap) {
+	                this.dirty = true;
+	                this.loaded = true;
+	                this.data = img;
+	                return this;
+	            }
+	            this.image = img;
+	            yield img.decode();
+	            this.data = yield createImageBitmap(img);
+	            this.dirty = true;
+	            this.loaded = true;
+	            return this;
+	        });
+	    }
+	}
+
 	var getEuclidPosition3Proxy = (position) => {
 	    if (position.isEntity) {
 	        position = position.getComponent(TRANSLATION_3D);
@@ -4721,9 +4844,15 @@
 	        multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
-	            if (uniform.dirty) {
+	            if (uniform.type === "uniform-buffer" && uniform.dirty) {
 	                this.engine.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
 	                uniform.dirty = false;
+	            }
+	            else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
+	                if (uniform.value.data) {
+	                    this.engine.device.queue.copyImageBitmapToTexture({ imageBitmap: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
+	                    uniform.dirty = false;
+	                }
 	            }
 	        });
 	        passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
@@ -4731,16 +4860,17 @@
 	        return this;
 	    }
 	    createCacheData(mesh) {
-	        var _a, _b, _c;
+	        var _a, _b, _c, _d, _e;
 	        updateModelMatrixComponent(mesh);
-	        let uniformBuffer = this.engine.device.createBuffer({
+	        let device = this.engine.device;
+	        let uniformBuffer = device.createBuffer({
 	            size: 64,
 	            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	        });
 	        let buffers = [];
 	        let nodes = (_a = mesh.getComponent(GEOMETRY_3D)) === null || _a === void 0 ? void 0 : _a.data;
 	        for (let i = 0; i < nodes.length; i++) {
-	            buffers.push(createVerticesBuffer(this.engine.device, nodes[i].data));
+	            buffers.push(createVerticesBuffer(device, nodes[i].data));
 	        }
 	        let pipeline = this.createPipeline(mesh);
 	        let groupEntries = [{
@@ -4753,20 +4883,43 @@
 	        let uniformMap = new Map();
 	        if (uniforms) {
 	            for (let i = 0; i < uniforms.length; i++) {
-	                let buffer = this.engine.device.createBuffer({
-	                    size: uniforms[i].value.length * 4,
-	                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-	                });
-	                uniformMap.set(buffer, uniforms[i]);
-	                groupEntries.push({
-	                    binding: uniforms[i].binding,
-	                    resource: {
-	                        buffer
-	                    }
-	                });
+	                let uniform = uniforms[i];
+	                if (uniform.type === "uniform-buffer") {
+	                    let buffer = device.createBuffer({
+	                        size: uniform.value.length * 4,
+	                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+	                    });
+	                    uniformMap.set(buffer, uniform);
+	                    groupEntries.push({
+	                        binding: uniform.binding,
+	                        resource: {
+	                            buffer
+	                        }
+	                    });
+	                }
+	                else if (uniform.type === "sampler") {
+	                    let sampler = device.createSampler(uniform.value);
+	                    uniformMap.set(sampler, uniform);
+	                    groupEntries.push({
+	                        binding: uniform.binding,
+	                        resource: sampler
+	                    });
+	                }
+	                else if (uniform.type === "sampled-texture") {
+	                    let texture = device.createTexture({
+	                        size: [((_d = uniform.value) === null || _d === void 0 ? void 0 : _d.width) || uniform.value.image.naturalWidth, ((_e = uniform.value) === null || _e === void 0 ? void 0 : _e.height) || uniform.value.image.naturalHeight, 1],
+	                        format: 'rgba8unorm',
+	                        usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
+	                    });
+	                    uniformMap.set(texture, uniform);
+	                    groupEntries.push({
+	                        binding: uniform.binding,
+	                        resource: texture.createView()
+	                    });
+	                }
 	            }
 	        }
-	        let uniformBindGroup = this.engine.device.createBindGroup({
+	        let uniformBindGroup = device.createBindGroup({
 	            layout: pipeline.getBindGroupLayout(0),
 	            entries: groupEntries,
 	        });
@@ -4841,7 +4994,7 @@
 	                entries.push({
 	                    visibility: GPUShaderStage.FRAGMENT,
 	                    binding: uniforms[i].binding,
-	                    type: 'uniform-buffer',
+	                    type: uniforms[i].type,
 	                });
 	            }
 	        }
@@ -5568,6 +5721,7 @@
 	exports.Geometry3 = Geometry3;
 	exports.Geometry3Factory = index$2;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
+	exports.ImageBitmapTexture = ImageBitmapTexture;
 	exports.Mathx = Mathx_module;
 	exports.Matrix4Component = Matrix4Component;
 	exports.MeshRenderer = MeshRenderer;
@@ -5575,8 +5729,10 @@
 	exports.PerspectiveProjection = PerspectiveProjection;
 	exports.RenderSystem = RenderSystem;
 	exports.Renderable = Renderable;
+	exports.Sampler = Sampler;
 	exports.ShaderMaterial = ShaderMaterial;
 	exports.SystemManager = SystemManager;
+	exports.TextureMaterial = TextureMaterial;
 	exports.Vector3Scale3 = Vector3Scale3;
 	exports.WebGPUEngine = WebGPUEngine;
 	exports.World = World;

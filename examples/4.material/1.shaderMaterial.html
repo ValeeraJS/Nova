@@ -33,7 +33,7 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3.createTriangleGeometry();
+		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 		mesh.addComponent(new Engine.ShaderMaterial(vertexShader, fragmentShader));
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);

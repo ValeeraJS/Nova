@@ -12,14 +12,14 @@
 
 		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+		const material = new Engine.TextureMaterial(new Engine.ImageBitmapTexture("./../textures/test.png"));
+		mesh.addComponent(material);
+		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 
-		// 创建一个向量用于改变物体位置
-		const vec3 = Engine.Mathx.Vector3.create(0, 0, -4);
-		const matrixPosition = mesh.getComponent("position3");
-		const matrixRotation = mesh.getComponent("rotation3");
-
-		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
 		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
+		positionProxy.z = 5;
 
 		engine.once(Engine.WebGPUEngine.INITED, (e) => {
 			let renderSystem = new Engine.RenderSystem(engine);
@@ -31,11 +31,8 @@
 
 		function loop() {
 			world.run();
-			vec3[2] = Math.sin(performance.now() / 300) - 4;
-			Engine.Mathx.Matrix4.fromTranslation(vec3, matrixPosition.data);
-			Engine.Mathx.Matrix4.rotateY(matrixRotation.data, 0.01, matrixRotation.data);
-			matrixPosition.dirty = matrixRotation.dirty = true;
-			
+			rotationProxy.y -= 0.01;
+			material.setColor((1 + Math.sin(performance.now() / 300)) / 2, 0, 0, 1);
 			requestAnimationFrame(loop);
 		}
 	</script>

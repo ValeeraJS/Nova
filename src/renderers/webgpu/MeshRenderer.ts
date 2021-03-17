@@ -57,8 +57,8 @@ export default class MeshRenderer implements IRenderer {
 			mvp.byteLength
 		);
 
-		cacheData.uniformMap.forEach((uniform, key)=>{
-			if (uniform.dirty) {
+		cacheData.uniformMap.forEach((uniform, key) => {
+			if (uniform.type === "uniform-buffer" && uniform.dirty) {
 				this.engine.device.queue.writeBuffer(
 					key,
 					0,
@@ -67,6 +67,15 @@ export default class MeshRenderer implements IRenderer {
 					uniform.value.byteLength
 				);
 				uniform.dirty = false;
+			} else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
+				if (uniform.value.data) {
+					this.engine.device.queue.copyImageBitmapToTexture(
+						{ imageBitmap: uniform.value.data },
+						{ texture: key },
+						[uniform.value.data.width, uniform.value.data.height, 1]
+					);
+					uniform.dirty = false;
+				}
 			}
 		});
 
@@ -78,15 +87,16 @@ export default class MeshRenderer implements IRenderer {
 
 	private createCacheData(mesh: IEntity): ICacheData {
 		updateModelMatrixComponent(mesh);
+		let device = this.engine.device;
 
-		let uniformBuffer = this.engine.device.createBuffer({
+		let uniformBuffer = device.createBuffer({
 			size: 64,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 		let buffers = [];
 		let nodes = mesh.getComponent(GEOMETRY_3D)?.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
-			buffers.push(createVerticesBuffer(this.engine.device, nodes[i].data));
+			buffers.push(createVerticesBuffer(device, nodes[i].data));
 		}
 
 		let pipeline = this.createPipeline(mesh);
@@ -100,22 +110,43 @@ export default class MeshRenderer implements IRenderer {
 		let uniforms: IUniformSlot[] = mesh.getComponent(MATERIAL)?.data?.uniforms;
 		let uniformMap = new Map();
 		if (uniforms) {
-			for(let i = 0; i < uniforms.length; i++) {
-				let buffer: GPUBuffer = this.engine.device.createBuffer({
-					size: uniforms[i].value.length * 4,
-					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-				});
-				uniformMap.set(buffer, uniforms[i]);
-				groupEntries.push({
-					binding: uniforms[i].binding,
-					resource: {
-						buffer
-					}
-				});
+			for (let i = 0; i < uniforms.length; i++) {
+				let uniform = uniforms[i];
+				if (uniform.type === "uniform-buffer") {
+					let buffer: GPUBuffer = device.createBuffer({
+						size: uniform.value.length * 4,
+						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+					});
+					uniformMap.set(buffer, uniform);
+					groupEntries.push({
+						binding: uniform.binding,
+						resource: {
+							buffer
+						}
+					});
+				} else if (uniform.type === "sampler") {
+					let sampler: GPUSampler = device.createSampler(uniform.value);
+					uniformMap.set(sampler, uniform);
+					groupEntries.push({
+						binding: uniform.binding,
+						resource: sampler
+					});
+				} else if (uniform.type === "sampled-texture") {
+					let texture: GPUTexture = device.createTexture({
+						size: [uniform.value?.width || uniform.value.image.naturalWidth, uniform.value?.height || uniform.value.image.naturalHeight, 1],
+						format: 'rgba8unorm',
+						usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
+					});
+					uniformMap.set(texture, uniform);
+					groupEntries.push({
+						binding: uniform.binding,
+						resource: texture.createView()
+					});
+				}
 			}
 		}
-		
-		let uniformBindGroup = this.engine.device.createBindGroup({
+
+		let uniformBindGroup = device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
 			entries: groupEntries,
 		});
@@ -191,11 +222,11 @@ export default class MeshRenderer implements IRenderer {
 			}
 		];
 		if (uniforms) {
-			for(let i = 0; i < uniforms.length; i++) {
+			for (let i = 0; i < uniforms.length; i++) {
 				entries.push({
 					visibility: GPUShaderStage.FRAGMENT,
 					binding: uniforms[i].binding,
-					type: 'uniform-buffer',
+					type: uniforms[i].type as any,
 				});
 			}
 		}
