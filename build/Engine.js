@@ -226,23 +226,6 @@
 		VIEWING_3D: VIEWING_3D
 	});
 
-	const POSITION = "position";
-	const VERTICES = "vertices";
-	const VERTICES_COLOR = "vertices_color";
-	const NORMAL = "normal";
-	const INDEX = "index";
-	const UV = "uv";
-
-	var constants = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		POSITION: POSITION,
-		VERTICES: VERTICES,
-		VERTICES_COLOR: VERTICES_COLOR,
-		NORMAL: NORMAL,
-		INDEX: INDEX,
-		UV: UV
-	});
-
 	class Geometry3 extends Component$1 {
 	    constructor(count = 0, topology = "triangle-list", cullMode = "none", data = []) {
 	        super(GEOMETRY_3D, data);
@@ -271,16 +254,24 @@
 	        });
 	        this.dirty = true;
 	    }
-	    static createTriangleGeometry(a = [-1, -1, 0], b = [1, -1, 0], c = [0, 1, 0]) {
-	        let geo = new Geometry3(3);
-	        let result = new Float32Array(9);
-	        result.set(a);
-	        result.set(b, 3);
-	        result.set(c, 6);
-	        geo.addAttribute(POSITION, result, 3);
-	        return geo;
-	    }
 	}
+
+	const POSITION = "position";
+	const VERTICES = "vertices";
+	const VERTICES_COLOR = "vertices_color";
+	const NORMAL = "normal";
+	const INDEX = "index";
+	const UV = "uv";
+
+	var constants = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		POSITION: POSITION,
+		VERTICES: VERTICES,
+		VERTICES_COLOR: VERTICES_COLOR,
+		NORMAL: NORMAL,
+		INDEX: INDEX,
+		UV: UV
+	});
 
 	/**
 	 * @function clamp
@@ -342,7 +333,8 @@
 	const defaultA$1 = [-1, -1, 0];
 	const defaultB$1 = [1, -1, 0];
 	const defaultC$1 = [0, 1, 0];
-	let ab$1, bc$1;
+	const ab$1 = new Float32Array(3);
+	const bc$1 = new Float32Array(3);
 	const create$b = (a = new Float32Array(defaultA$1), b = new Float32Array(defaultB$1), c = new Float32Array(defaultC$1)) => {
 	    return { a, b, c };
 	};
@@ -354,8 +346,8 @@
 	};
 
 	const DEFAULT_OPTIONS = {
-	    hasNormal: false,
-	    hasUV: false,
+	    hasNormal: true,
+	    hasUV: true,
 	    hasIndices: false,
 	    combine: true
 	};
@@ -364,32 +356,48 @@
 	    let geo = new Geometry3(3, topology, cullMode);
 	    let stride = 3;
 	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
 	        if (options.hasNormal && options.hasUV) {
-	            stride = 10;
+	            stride = 8;
 	        }
 	        else if (options.hasNormal) {
-	            stride = 7;
+	            stride = 6;
 	        }
 	        else if (options.hasUV) {
-	            stride = 6;
+	            stride = 5;
 	        }
 	        let result = new Float32Array(stride * 3);
 	        result.set(t.a);
 	        result.set(t.b, stride);
 	        result.set(t.c, stride + stride);
 	        if (options.hasNormal) {
+	            console.log(t);
 	            let normal = normal$1(t);
-	            result.set(normal, 4);
-	            result.set(normal, stride + 4);
-	            result.set(normal, stride + stride + 4);
+	            result.set(normal, 3);
+	            result.set(normal, stride + 3);
+	            result.set(normal, stride + stride + 3);
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
 	        }
 	        if (options.hasUV) {
-	            let offset = options.hasNormal ? 8 : 4;
-	            result.set([0, 0], offset);
-	            result.set([1, 0], stride + offset);
-	            result.set([0.5, 1], stride + stride + offset);
+	            let offset = options.hasNormal ? 6 : 3;
+	            result.set([0, 1], offset);
+	            result.set([1, 1], stride + offset);
+	            result.set([0.5, 0], stride + stride + offset);
+	            pickers.push({
+	                name: UV,
+	                offset,
+	                length: 2,
+	            });
 	        }
-	        geo.addAttribute(VERTICES, result, stride, []);
+	        geo.addAttribute(VERTICES, result, stride, pickers);
 	        return geo;
 	    }
 	    else {
@@ -795,7 +803,7 @@
 		[[builtin(position)]] var<out> fragPosition : vec4<f32>;
 		[[location(0)]] var<out> fragUV : vec2<f32>;
 		[[location(0)]] var<in> position : vec3<f32>;
-		[[location(1)]] var<in> uv : vec2<f32>;
+		[[location(2)]] var<in> uv : vec2<f32>;
 
 		[[stage(vertex)]] fn main() -> void {
 			fragPosition = uniforms.matrix * vec4<f32>(position, 1.0);
@@ -4946,7 +4954,7 @@
 	            for (let j = 0; j < data.attributes.length; j++) {
 	                attributeDescripters.push({
 	                    shaderLocation: location++,
-	                    offset: data.attributes[j].offset,
+	                    offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
 	                    format: "float32x" + data.attributes[j].length,
 	                });
 	            }

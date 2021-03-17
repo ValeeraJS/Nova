@@ -12,7 +12,7 @@ const wgslShaders = {
 		[[builtin(position)]] var<out> fragPosition : vec4<f32>;
 		[[location(0)]] var<out> fragUV : vec2<f32>;
 		[[location(0)]] var<in> position : vec3<f32>;
-		[[location(1)]] var<in> uv : vec2<f32>;
+		[[location(2)]] var<in> uv : vec2<f32>;
 
 		[[stage(vertex)]] fn main() -> void {
 			fragPosition = uniforms.matrix * vec4<f32>(position, 1.0);

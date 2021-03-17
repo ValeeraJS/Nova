@@ -176,7 +176,7 @@ export default class MeshRenderer implements IRenderer {
 			for (let j = 0; j < data.attributes.length; j++) {
 				attributeDescripters.push({
 					shaderLocation: location++,
-					offset: data.attributes[j].offset,
+					offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
 					format: "float32x" + data.attributes[j].length as GPUVertexFormat,
 				});
 			}

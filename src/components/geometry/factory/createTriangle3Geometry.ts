@@ -14,11 +14,11 @@ export default (t: ITriangle = Triangle3.create(), options: geometryOptions = DE
             length: 3,
         }];
         if (options.hasNormal && options.hasUV) {
-            stride = 10;
+            stride = 8;
         } else if (options.hasNormal) {
-            stride = 7;
-        } else if (options.hasUV) {
             stride = 6;
+        } else if (options.hasUV) {
+            stride = 5;
         }
         let result = new Float32Array(stride * 3);
         result.set(t.a);
@@ -26,28 +26,29 @@ export default (t: ITriangle = Triangle3.create(), options: geometryOptions = DE
         result.set(t.c, stride + stride);
 
         if (options.hasNormal) {
+            console.log(t);
             let normal = Triangle3.normal(t);
-            result.set(normal, 4);
-            result.set(normal, stride + 4);
-            result.set(normal, stride + stride + 4);
+            result.set(normal, 3);
+            result.set(normal, stride + 3);
+            result.set(normal, stride + stride + 3);
             pickers.push({
                 name: 'normal',
-                offset: 4,
+                offset: 3,
                 length: 3,
             });
         }
         if (options.hasUV) {
-            let offset = options.hasNormal ? 8 : 4;
-            result.set([0, 0], offset);
-            result.set([1, 0], stride + offset);
-            result.set([0.5, 1], stride + stride + offset);
+            let offset = options.hasNormal ? 6 : 3;
+            result.set([0, 1], offset);
+            result.set([1, 1], stride + offset);
+            result.set([0.5, 0], stride + stride + offset);
             pickers.push({
                 name: UV,
                 offset,
                 length: 2,
             });
         }
-        geo.addAttribute(VERTICES, result, stride, []);
+        geo.addAttribute(VERTICES, result, stride, pickers);
         return geo;
     } else {
         let result = new Float32Array(9);

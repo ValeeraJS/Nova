@@ -6,8 +6,8 @@ export type geometryOptions = {
 }
 
 export const DEFAULT_OPTIONS: geometryOptions = {
-    hasNormal: false,
-    hasUV: false,
+    hasNormal: true,
+    hasUV: true,
     hasIndices: false,
     combine: true
 }

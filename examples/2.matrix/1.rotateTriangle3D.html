@@ -10,7 +10,7 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3.createTriangleGeometry();
+		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 		// 新建一个位置组件替换默认的位置矩阵组件。EuclidPosition3组件是修改平移矩阵的便于开发者操作的组件
 		mesh.addComponent(new Engine.EuclidPosition3([0, 0 , -5]));
