@@ -4641,7 +4641,7 @@
 	        var _a;
 	        this.engine = engine;
 	        this.color = color;
-	        const depthTexture = (_a = engine.device) === null || _a === void 0 ? void 0 : _a.createTexture({
+	        this.depthTexture = (_a = engine.device) === null || _a === void 0 ? void 0 : _a.createTexture({
 	            size: { width: engine.canvas.width, height: engine.canvas.height, depthOrArrayLayers: 1 },
 	            format: "depth24plus-stencil8",
 	            usage: GPUTextureUsage.RENDER_ATTACHMENT
@@ -4650,11 +4650,11 @@
 	            colorAttachments: [
 	                {
 	                    attachment: null,
-	                    loadValue: color
+	                    loadValue: this.color
 	                }
 	            ],
 	            depthStencilAttachment: {
-	                attachment: depthTexture.createView(),
+	                attachment: this.depthTexture.createView(),
 	                depthLoadValue: 1.0,
 	                depthStoreOp: "store",
 	                stencilLoadValue: 0,
@@ -4662,8 +4662,18 @@
 	            }
 	        };
 	    }
+	    setColor(color) {
+	        this.color = color;
+	    }
+	    updateColor(color) {
+	        this.color.r = color.r;
+	        this.color.g = color.g;
+	        this.color.b = color.b;
+	        this.color.a = color.a;
+	    }
 	    clear(commandEncoder, swapChain) {
 	        const textureView = swapChain.getCurrentTexture().createView();
+	        this.renderPassDescriptor.colorAttachments[0].loadValue = this.color;
 	        this.renderPassDescriptor.colorAttachments[0].attachment = textureView;
 	        return commandEncoder.beginRenderPass(this.renderPassDescriptor);
 	    }
@@ -4883,11 +4893,17 @@
 	};
 
 	class RenderSystem extends ASystem$1 {
-	    constructor(engine, clearer) {
+	    constructor(engine, clearer, viewport, scissor) {
 	        super("Render System", (entity) => {
 	            var _a;
 	            return (_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data;
 	        });
+	        this.scissor = {
+	            x: 0, y: 0, width: 0, height: 0,
+	        };
+	        this.viewport = {
+	            x: 0, y: 0, width: 0, height: 0, minDepth: 0, maxDepth: 1
+	        };
 	        this.engine = engine;
 	        this.clearer = clearer || new Clearer(engine);
 	        this.rendererMap = new Map();
@@ -4895,6 +4911,7 @@
 	            device: engine.device,
 	            format: 'bgra8unorm',
 	        });
+	        this.setScissor(scissor).setViewport(viewport);
 	    }
 	    addRenderer(renderer) {
 	        if (typeof renderer.renderTypes === "string") {
@@ -4919,10 +4936,32 @@
 	    setClearer(clearer) {
 	        this.clearer = clearer;
 	    }
+	    setViewport(viewport) {
+	        this.viewport = viewport || {
+	            x: 0,
+	            y: 0,
+	            width: this.engine.canvas.width,
+	            height: this.engine.canvas.height,
+	            minDepth: 0,
+	            maxDepth: 1
+	        };
+	        return this;
+	    }
+	    setScissor(scissor) {
+	        this.scissor = scissor || {
+	            x: 0,
+	            y: 0,
+	            width: this.engine.canvas.width,
+	            height: this.engine.canvas.height
+	        };
+	        return this;
+	    }
 	    run(world) {
 	        let device = this.engine.device;
 	        let commandEncoder = device.createCommandEncoder();
 	        let passEncoder = this.clearer.clear(commandEncoder, this.swapChain);
+	        passEncoder.setViewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height, this.viewport.minDepth, this.viewport.maxDepth);
+	        passEncoder.setScissorRect(this.scissor.x, this.scissor.y, this.scissor.width, this.scissor.height);
 	        world.store.set("passEncoder", passEncoder);
 	        super.run(world);
 	        // finish

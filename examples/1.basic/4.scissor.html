@@ -16,16 +16,21 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
+		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+		const mesh = Engine.EntityFactory.createMesh(geo, "", world);
+		let position = mesh.getComponent("position3");
+		position.data[14] = -5;
+		position.dirty = true;
+
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+
 		engine.once(Engine.WebGPUEngine.INITED, (e) => {
-			let clearer = new Engine.Clearer(engine, {
-				r: 1,
-				g: 0,
-				b: 0,
-				a: 1
-			});
-			let renderSystem = new Engine.RenderSystem(engine, clearer);
+			let renderSystem = new Engine.RenderSystem(engine);
+			let renderer = new Engine.MeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			createGUI(clearer);
+			createGUI(renderSystem);
 			loop();
 		});
 
@@ -34,22 +39,29 @@
 			requestAnimationFrame(loop);
 		}
 
-		function createGUI(clearer) {
+		function createGUI(renderSystem) {
+			window.r = renderSystem;
 			const gui = new dat.GUI();
-			const f = gui.addFolder("set clear color");
+			const f = gui.addFolder("set viewport");
+			f.add(renderSystem.scissor, "width", 0, canvas.width).step(1);
+			f.add(renderSystem.scissor, "height", 0, canvas.height).step(1);
+			f.add(renderSystem.scissor, "x", 0, canvas.width).step(1);
+			f.add(renderSystem.scissor, "y", 0, canvas.height).step(1);
+
+			const f2 = gui.addFolder("set clear color");
 			const options = {
 				color: {
-					r: 255,
+					r: 0,
 					g: 0,
 					b: 0
 				},
 				alpha: 1
 			};
-			f.addColor(options, "color").onChange(onChange);
-			f.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
+			f2.addColor(options, "color").onChange(onChange);
+			f2.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
 
 			function onChange(val) {
-				clearer.setColor({
+				renderSystem.clearer.setColor({
 					r: options.color.r / 255,
 					g: options.color.g / 255,
 					b: options.color.b / 255,

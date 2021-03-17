@@ -4,11 +4,12 @@ import WebGPUEngine from "../../engine/WebGPUEngine";
 export default class Clearer {
 	public color: IColorGPUJson;
 	public engine: WebGPUEngine;
-	renderPassDescriptor: GPURenderPassDescriptor;
+	private renderPassDescriptor: GPURenderPassDescriptor;
+	private depthTexture: GPUTexture;
 	public constructor(engine: WebGPUEngine, color: IColorGPUJson = createJson()) {
 		this.engine = engine;
 		this.color = color;
-		const depthTexture = engine.device?.createTexture({
+		this.depthTexture = engine.device?.createTexture({
 			size: { width: engine.canvas.width, height: engine.canvas.height, depthOrArrayLayers: 1 },
 			format: "depth24plus-stencil8",
 			usage: GPUTextureUsage.RENDER_ATTACHMENT
@@ -16,12 +17,12 @@ export default class Clearer {
 		this.renderPassDescriptor = {
 			colorAttachments: [
 				{
-					attachment: null,
-					loadValue: color
+					attachment: null as any,
+					loadValue: this.color
 				}
-			] as any,
+			],
 			depthStencilAttachment: {
-				attachment: depthTexture.createView(),
+				attachment: this.depthTexture.createView(),
 				depthLoadValue: 1.0,
 				depthStoreOp: "store",
 				stencilLoadValue: 0,
@@ -30,8 +31,20 @@ export default class Clearer {
 		}
 	}
 
+	public setColor(color: IColorGPUJson) {
+		this.color = color;
+	}
+
+	public updateColor(color: IColorGPUJson) {
+		this.color.r = color.r;
+		this.color.g = color.g;
+		this.color.b = color.b;
+		this.color.a = color.a;
+	}
+
 	public clear(commandEncoder: GPUCommandEncoder, swapChain: GPUSwapChain): GPURenderPassEncoder {
 		const textureView = swapChain.getCurrentTexture().createView();
+		(this.renderPassDescriptor.colorAttachments as any)[0].loadValue = this.color;
 		(this.renderPassDescriptor.colorAttachments as any)[0].attachment = textureView;
 		return commandEncoder.beginRenderPass(this.renderPassDescriptor);
 	}
