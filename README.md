@@ -1,4 +1,4 @@
-# Void
+# Description
 
 This is a game engine based on ECS architecture and WebGPU.
 
