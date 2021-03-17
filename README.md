@@ -9,6 +9,7 @@ This is a game engine based on ECS architecture and WebGPU.
 3. pipeline improvement
 4. interactions and events
 5. post-processing
-6. WebGL or WebGL2 support
+6. WebGL and WebGL2 support
 7. Easier APIs
 8. 2D renderers
+9. Useful geometries creaters.
