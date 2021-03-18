@@ -4664,6 +4664,9 @@ class ImageBitmapTexture extends Component$1 {
         super(name);
         this.loaded = false;
         this.dirty = false;
+        this.width = 0;
+        this.height = 0;
+        this.sizeChanged = false;
         this.setImage(img);
     }
     setImage(img) {
@@ -4684,6 +4687,11 @@ class ImageBitmapTexture extends Component$1 {
             this.image = img;
             yield img.decode();
             this.data = yield createImageBitmap(img);
+            if (this.width !== this.data.width || this.height !== this.data.height) {
+                this.sizeChanged = true;
+                this.width = this.data.width;
+                this.height = this.data.height;
+            }
             this.dirty = true;
             this.loaded = true;
             return this;
@@ -4869,6 +4877,7 @@ class MeshRenderer {
                     if (uniform.value.data) {
                         this.engine.device.queue.copyImageBitmapToTexture({ imageBitmap: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
                         uniform.dirty = false;
+                        uniform.value.sizeChanged = false;
                     }
                 }
             }
@@ -4878,7 +4887,7 @@ class MeshRenderer {
         return this;
     }
     createCacheData(mesh) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c;
         updateModelMatrixComponent(mesh);
         let device = this.engine.device;
         let uniformBuffer = device.createBuffer({
@@ -4922,10 +4931,11 @@ class MeshRenderer {
                         binding: uniform.binding,
                         resource: sampler
                     });
+                    console.log(sampler);
                 }
                 else if (uniform.type === "sampled-texture") {
                     let texture = device.createTexture({
-                        size: [((_d = uniform.value) === null || _d === void 0 ? void 0 : _d.width) || uniform.value.image.naturalWidth, ((_e = uniform.value) === null || _e === void 0 ? void 0 : _e.height) || uniform.value.image.naturalHeight, 1],
+                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
                         format: 'rgba8unorm',
                         usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
                     });
@@ -4934,6 +4944,7 @@ class MeshRenderer {
                         binding: uniform.binding,
                         resource: texture.createView()
                     });
+                    uniform.value.sizeChanged = false;
                 }
             }
         }
@@ -4941,6 +4952,7 @@ class MeshRenderer {
             layout: pipeline.getBindGroupLayout(0),
             entries: groupEntries,
         });
+        console.log(uniformBindGroup);
         return {
             mvp: new Float32Array(16),
             attributesBuffers: buffers,

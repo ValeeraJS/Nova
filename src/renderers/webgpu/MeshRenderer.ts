@@ -77,6 +77,7 @@ export default class MeshRenderer implements IRenderer {
 							[uniform.value.data.width, uniform.value.data.height, 1]
 						);
 						uniform.dirty = false;
+						uniform.value.sizeChanged = false;
 					}
 				}
 			}
@@ -134,9 +135,11 @@ export default class MeshRenderer implements IRenderer {
 						binding: uniform.binding,
 						resource: sampler
 					});
+
+					console.log(sampler)
 				} else if (uniform.type === "sampled-texture") {
 					let texture: GPUTexture = device.createTexture({
-						size: [uniform.value?.width || uniform.value.image.naturalWidth, uniform.value?.height || uniform.value.image.naturalHeight, 1],
+						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',
 						usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
 					});
@@ -145,6 +148,7 @@ export default class MeshRenderer implements IRenderer {
 						binding: uniform.binding,
 						resource: texture.createView()
 					});
+					uniform.value.sizeChanged = false;
 				}
 			}
 		}
@@ -153,6 +157,8 @@ export default class MeshRenderer implements IRenderer {
 			layout: pipeline.getBindGroupLayout(0),
 			entries: groupEntries,
 		});
+
+		console.log(uniformBindGroup);
 
 		return {
 			mvp: new Float32Array(16),
