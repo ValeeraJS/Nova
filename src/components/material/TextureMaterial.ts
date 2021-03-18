@@ -55,11 +55,29 @@ export default class TextureMaterial extends Component<IShaderCode> implements I
 		this.dirty = true;
 	}
 
-	setColor(texture: ImageBitmapTexture, sampler: Sampler = new Sampler()): this {
+	get sampler(): Sampler {
+		return this.data.uniforms[0].value as Sampler;
+	}
+	
+	set sampler(sampler: Sampler) {
+		this.data.uniforms[0].dirty = this.dirty = true;
 		this.data.uniforms[0].value = sampler;
-		this.data.uniforms[0].dirty = true;
+	}
+	
+	get texture(): ImageBitmapTexture {
+		return this.data.uniforms[1].value as ImageBitmapTexture;
+	}
+	
+	set texture(texture: ImageBitmapTexture) {
+		this.data.uniforms[1].dirty = this.dirty = true;
 		this.data.uniforms[1].value = texture;
-		this.data.uniforms[1].dirty = true;
+	}
+
+	setTextureAndSampler(texture: ImageBitmapTexture, sampler?: Sampler): this {
+		this.texture = texture;
+		if (sampler) {
+			this.sampler = sampler;
+		}
 
 		return this;
 	}

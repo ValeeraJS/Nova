@@ -369,7 +369,6 @@ var createTriangle3Geometry = (t = create$b(), options = DEFAULT_OPTIONS, topolo
         result.set(t.b, stride);
         result.set(t.c, stride + stride);
         if (options.hasNormal) {
-            console.log(t);
             let normal = normal$1(t);
             result.set(normal, 3);
             result.set(normal, stride + 3);
@@ -834,11 +833,25 @@ class TextureMaterial extends Component$1 {
                 }] }));
         this.dirty = true;
     }
-    setColor(texture, sampler = new Sampler()) {
+    get sampler() {
+        return this.data.uniforms[0].value;
+    }
+    set sampler(sampler) {
+        this.data.uniforms[0].dirty = this.dirty = true;
         this.data.uniforms[0].value = sampler;
-        this.data.uniforms[0].dirty = true;
+    }
+    get texture() {
+        return this.data.uniforms[1].value;
+    }
+    set texture(texture) {
+        this.data.uniforms[1].dirty = this.dirty = true;
         this.data.uniforms[1].value = texture;
-        this.data.uniforms[1].dirty = true;
+    }
+    setTextureAndSampler(texture, sampler) {
+        this.texture = texture;
+        if (sampler) {
+            this.sampler = sampler;
+        }
         return this;
     }
 }
@@ -4851,9 +4864,12 @@ class MeshRenderer {
                 uniform.dirty = false;
             }
             else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
-                if (uniform.value.data) {
-                    this.engine.device.queue.copyImageBitmapToTexture({ imageBitmap: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
-                    uniform.dirty = false;
+                // console.log(uniform);
+                if (uniform.value.loaded) {
+                    if (uniform.value.data) {
+                        this.engine.device.queue.copyImageBitmapToTexture({ imageBitmap: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
+                        uniform.dirty = false;
+                    }
                 }
             }
         });

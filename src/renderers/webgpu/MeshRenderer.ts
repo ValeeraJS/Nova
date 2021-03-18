@@ -68,13 +68,16 @@ export default class MeshRenderer implements IRenderer {
 				);
 				uniform.dirty = false;
 			} else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
-				if (uniform.value.data) {
-					this.engine.device.queue.copyImageBitmapToTexture(
-						{ imageBitmap: uniform.value.data },
-						{ texture: key },
-						[uniform.value.data.width, uniform.value.data.height, 1]
-					);
-					uniform.dirty = false;
+				// console.log(uniform);
+				if (uniform.value.loaded) {
+					if (uniform.value.data) {
+						this.engine.device.queue.copyImageBitmapToTexture(
+							{ imageBitmap: uniform.value.data },
+							{ texture: key },
+							[uniform.value.data.width, uniform.value.data.height, 1]
+						);
+						uniform.dirty = false;
+					}
 				}
 			}
 		});

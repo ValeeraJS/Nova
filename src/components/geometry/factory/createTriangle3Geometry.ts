@@ -26,7 +26,6 @@ export default (t: ITriangle = Triangle3.create(), options: geometryOptions = DE
         result.set(t.c, stride + stride);
 
         if (options.hasNormal) {
-            console.log(t);
             let normal = Triangle3.normal(t);
             result.set(normal, 3);
             result.set(normal, stride + 3);

@@ -32,7 +32,6 @@
 		function loop() {
 			world.run();
 			rotationProxy.y -= 0.01;
-			material.setColor((1 + Math.sin(performance.now() / 300)) / 2, 0, 0, 1);
 			requestAnimationFrame(loop);
 		}
 	</script>
