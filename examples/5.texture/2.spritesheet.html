@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+<body>
+	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="../../build/Engine.js"></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"
+		integrity="sha512-LF8ZB1iTwi4Qvkm4pekHG4a437Y9Af5ZuwbnW4GTbAWQeR2E4KW8WF+xH8b9psevV7wIlDMx1MH9YfPqgKhA/Q=="
+		crossorigin="anonymous"
+	></script>
+	<script>
+		let spritesheetJson = {};
+		fetch("./../textures/fighter.json")
+			.then((data) => {
+				return data.json();
+			})
+			.then((json) => {
+				// 文件是pixi的格式，转化为自己引擎的格式
+				spritesheetJson.image = json.meta.image;
+				spritesheetJson.spriteSize = { w: 175, h: 240 };
+				spritesheetJson.frames = [];
+				for (let item in json.frames) {
+					spritesheetJson.frames.push({
+						x: json.frames[item].frame.x,
+						y: json.frames[item].frame.y,
+						w: json.frames[item].frame.w,
+						h: json.frames[item].frame.h,
+						dx: json.frames[item].spriteSourceSize.x,
+						dy: json.frames[item].spriteSourceSize.y
+					});
+				}
+				// console.log(json, spritesheetJson);
+
+				const canvas = document.getElementById("gpucanvas");
+				const engine = new Engine.WebGPUEngine(canvas);
+				const world = new Engine.World();
+
+				const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+				const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+				const texture = new Engine.SpritesheetTexture(spritesheetJson);
+				const material = new Engine.TextureMaterial(texture);
+				mesh.addComponent(material);
+				const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
+
+				const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
+				const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+				const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
+				positionProxy.z = 5;
+
+				engine.once(Engine.WebGPUEngine.INITED, (e) => {
+					let renderSystem = new Engine.RenderSystem(engine);
+					let renderer = new Engine.MeshRenderer(engine);
+					renderSystem.addRenderer(renderer);
+					world.addSystem(renderSystem);
+					loop();
+				});
+
+				function loop() {
+					world.run();
+					rotationProxy.y -= 0.01;
+					requestAnimationFrame(loop);
+				}
+
+				createGUI();
+
+				function createGUI() {
+					const gui = new dat.GUI();
+					const options = {
+						frame: 0
+					}
+					gui.add(options, "frame", 0, spritesheetJson.frames.length).step(1).onChange((v)=>{
+						texture.setFrame(v);
+					});
+				}
+			});
+	</script>
+</body>

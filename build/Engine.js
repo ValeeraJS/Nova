@@ -4705,6 +4705,54 @@
 	    }
 	}
 
+	const canvas = document.createElement("canvas");
+	const ctx = canvas.getContext("2d");
+	function drawSpriteBlock(image, frame) {
+	    return __awaiter(this, void 0, void 0, function* () {
+	        ctx.clearRect(0, 0, canvas.width, canvas.height);
+	        ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
+	        return yield createImageBitmap(canvas);
+	    });
+	}
+	class SpritesheetTexture extends Component$1 {
+	    constructor(json, name = "spritesheet-texture") {
+	        super(name);
+	        this.loaded = false;
+	        this.dirty = false;
+	        this.frame = 0; // 当前帧索引
+	        this.width = 0;
+	        this.height = 0;
+	        this.framesBitmap = [];
+	        this.width = json.spriteSize.w;
+	        this.height = json.spriteSize.h;
+	        this.setImage(json);
+	    }
+	    setImage(json) {
+	        return __awaiter(this, void 0, void 0, function* () {
+	            this.loaded = false;
+	            this.dirty = false;
+	            let img = new Image();
+	            img.src = json.image;
+	            this.image = img;
+	            yield img.decode();
+	            canvas.width = json.spriteSize.w;
+	            canvas.height = json.spriteSize.h;
+	            for (let item of json.frames) {
+	                this.framesBitmap.push(yield drawSpriteBlock(this.image, item));
+	            }
+	            this.data = this.framesBitmap[0];
+	            this.dirty = true;
+	            this.loaded = true;
+	            return this;
+	        });
+	    }
+	    setFrame(frame) {
+	        this.frame = frame;
+	        this.data = this.framesBitmap[frame];
+	        this.dirty = true;
+	    }
+	}
+
 	var getEuclidPosition3Proxy = (position) => {
 	    if (position.isEntity) {
 	        position = position.getComponent(TRANSLATION_3D);
@@ -4868,7 +4916,6 @@
 	            passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
 	        }
 	        const mvp = cacheData.mvp;
-	        // TODO 视图矩阵
 	        multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
 	        multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
@@ -4878,12 +4925,10 @@
 	                uniform.dirty = false;
 	            }
 	            else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
-	                // console.log(uniform);
 	                if (uniform.value.loaded) {
 	                    if (uniform.value.data) {
 	                        this.engine.device.queue.copyImageBitmapToTexture({ imageBitmap: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
 	                        uniform.dirty = false;
-	                        uniform.value.sizeChanged = false;
 	                    }
 	                }
 	            }
@@ -4950,7 +4995,6 @@
 	                        binding: uniform.binding,
 	                        resource: texture.createView()
 	                    });
-	                    uniform.value.sizeChanged = false;
 	                }
 	            }
 	        }
@@ -5767,6 +5811,7 @@
 	exports.Renderable = Renderable;
 	exports.Sampler = Sampler;
 	exports.ShaderMaterial = ShaderMaterial;
+	exports.SpritesheetTexture = SpritesheetTexture;
 	exports.SystemManager = SystemManager;
 	exports.TextureMaterial = TextureMaterial;
 	exports.Vector3Scale3 = Vector3Scale3;

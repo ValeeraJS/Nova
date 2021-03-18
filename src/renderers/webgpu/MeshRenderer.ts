@@ -44,7 +44,6 @@ export default class MeshRenderer implements IRenderer {
 		}
 
 		const mvp = cacheData.mvp;
-		// TODO 视图矩阵
 		Matrix4.multiply(camera.getComponent(PROJECTION_3D)?.data,
 			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
 		Matrix4.multiply(mvp, mesh.getComponent(MODEL_3D)?.data, mvp);
@@ -68,7 +67,6 @@ export default class MeshRenderer implements IRenderer {
 				);
 				uniform.dirty = false;
 			} else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
-				// console.log(uniform);
 				if (uniform.value.loaded) {
 					if (uniform.value.data) {
 						this.engine.device.queue.copyImageBitmapToTexture(
@@ -77,7 +75,6 @@ export default class MeshRenderer implements IRenderer {
 							[uniform.value.data.width, uniform.value.data.height, 1]
 						);
 						uniform.dirty = false;
-						uniform.value.sizeChanged = false;
 					}
 				}
 			}
@@ -148,7 +145,6 @@ export default class MeshRenderer implements IRenderer {
 						binding: uniform.binding,
 						resource: texture.createView()
 					});
-					uniform.value.sizeChanged = false;
 				}
 			}
 		}
