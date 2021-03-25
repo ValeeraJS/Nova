@@ -5,8 +5,8 @@ import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Renderable from "../../components/tag/Renderable";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
 import IRenderer from "./IRenderer";
-import IViewport from "./IViewport";
-import IScissor from "./IScissor";
+import IViewport from "../IViewport";
+import IScissor from "./../IScissor";
 
 export default class RenderSystem extends ASystem {
 	engine: WebGPUEngine;

@@ -173,11 +173,11 @@ export default class MeshRenderer implements IRenderer {
 		let stages = this.createStages(mesh);
 		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
 
-		let vertexBuffers: Array<GPUVertexBufferLayoutDescriptor> = [];
+		let vertexBuffers: Array<GPUVertexBufferLayout> = [];
 		let location = 0;
 		for (let i = 0; i < geometry.data.length; i++) {
 			let data = geometry.data[i];
-			let attributeDescripters: GPUVertexAttributeDescriptor[] = [];
+			let attributeDescripters: GPUVertexAttribute[] = [];
 			for (let j = 0; j < data.attributes.length; j++) {
 				attributeDescripters.push({
 					shaderLocation: location++,

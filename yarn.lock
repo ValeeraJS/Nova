@@ -445,10 +445,10 @@
     "@valeera/eventdispatcher" "^2.1.0"
     "@valeera/idgenerator" "^0.1.0"
 
-"@webgpu/types@^0.0.43":
-  version "0.0.43"
-  resolved "https://registry.npm.taobao.org/@webgpu/types/download/@webgpu/types-0.0.43.tgz#e5adf5310342b8e8952d2f6d608ef9f3afbd6639"
-  integrity sha1-5a31MQNCuOiVLS9tYI7586+9Zjk=
+"@webgpu/types@^0.0.45":
+  version "0.0.45"
+  resolved "https://registry.npm.taobao.org/@webgpu/types/download/@webgpu/types-0.0.45.tgz#cef997ff7ea04ed8462f5c874b3cef042468193d"
+  integrity sha1-zvmX/36gTthGL1yHSzzvBCRoGT0=
 
 acorn-jsx@^5.2.0, acorn-jsx@^5.3.1:
   version "5.3.1"
@@ -2357,10 +2357,10 @@ rollup-pluginutils@^2.5.0:
   dependencies:
     estree-walker "^0.6.1"
 
-rollup@^2.41.2:
-  version "2.41.2"
-  resolved "https://registry.npm.taobao.org/rollup/download/rollup-2.41.2.tgz?cache=0&sync_timestamp=1615559987284&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Frollup%2Fdownload%2Frollup-2.41.2.tgz#b7db5cb7c21c2d524e8b26ef39c7e9808a290c7e"
-  integrity sha1-t9tct8IcLVJOiybvOcfpgIopDH4=
+rollup@^2.42.4:
+  version "2.42.4"
+  resolved "https://registry.npm.taobao.org/rollup/download/rollup-2.42.4.tgz#97c910a48bd0db6aaa4271dd48745870cbbbf970"
+  integrity sha1-l8kQpIvQ22qqQnHdSHRYcMu7+XA=
   optionalDependencies:
     fsevents "~2.3.1"
 
