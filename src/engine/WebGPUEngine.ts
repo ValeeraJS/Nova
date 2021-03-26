@@ -1,5 +1,5 @@
 import EventDispatcher from "@valeera/eventdispatcher";
-import IEngine from "./IEngine";
+import IEngine, { EngineEvents } from "./IEngine";
 
 export default class WebGPUEngine extends EventDispatcher implements IEngine {
 	public static async detect(
@@ -32,9 +32,7 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 	public device!: GPUDevice;
 	public inited: boolean = false;
 
-	public static INITED = "inited";
-
-	constructor(canvas: HTMLCanvasElement) {
+	constructor(canvas: HTMLCanvasElement = document.createElement("canvas")) {
 		super();
 		this.canvas = canvas;
 		WebGPUEngine.detect(canvas).then(({context, adapter, device})=> {
@@ -42,8 +40,8 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 			this.adapter = adapter;
 			this.device = device;
 			this.inited = true;
-			this.fire(WebGPUEngine.INITED, {
-				eventKey: WebGPUEngine.INITED,
+			this.fire(EngineEvents.INITED, {
+				eventKey: EngineEvents.INITED,
 				target: this
 			});
 		}).catch((error)=>{
