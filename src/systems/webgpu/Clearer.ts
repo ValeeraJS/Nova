@@ -33,6 +33,8 @@ export default class Clearer {
 
 	public setColor(color: IColorGPUJson) {
 		this.color = color;
+
+		return this;
 	}
 
 	public updateColor(color: IColorGPUJson) {
@@ -40,6 +42,8 @@ export default class Clearer {
 		this.color.g = color.g;
 		this.color.b = color.b;
 		this.color.a = color.a;
+
+		return this;
 	}
 
 	public clear(commandEncoder: GPUCommandEncoder, swapChain: GPUSwapChain): GPURenderPassEncoder {
