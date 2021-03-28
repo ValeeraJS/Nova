@@ -5,7 +5,7 @@ import { GEOMETRY_3D, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "../../webgpu/createVerticesBuffer";
-import IRenderer from "./IRenderer";
+import IRenderer from "./IWebGPURenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
 
 interface ICacheData {

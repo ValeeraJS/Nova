@@ -149,8 +149,13 @@
 	};
 	var EventDispatcher = mixin(Object);
 
+	var EngineEvents;
+	(function (EngineEvents) {
+	    EngineEvents["INITED"] = "inited";
+	})(EngineEvents || (EngineEvents = {}));
+
 	class WebGPUEngine extends EventDispatcher {
-	    constructor(canvas) {
+	    constructor(canvas = document.createElement("canvas")) {
 	        super();
 	        this.inited = false;
 	        this.canvas = canvas;
@@ -159,8 +164,8 @@
 	            this.adapter = adapter;
 	            this.device = device;
 	            this.inited = true;
-	            this.fire(WebGPUEngine.INITED, {
-	                eventKey: WebGPUEngine.INITED,
+	            this.fire(EngineEvents.INITED, {
+	                eventKey: EngineEvents.INITED,
 	                target: this
 	            });
 	        }).catch((error) => {
@@ -188,7 +193,6 @@
 	    createRenderer() {
 	    }
 	}
-	WebGPUEngine.INITED = "inited";
 
 	class Component$1 {
 	    constructor(name, data = null) {
@@ -4864,12 +4868,14 @@
 	    }
 	    setColor(color) {
 	        this.color = color;
+	        return this;
 	    }
 	    updateColor(color) {
 	        this.color.r = color.r;
 	        this.color.g = color.g;
 	        this.color.b = color.b;
 	        this.color.a = color.a;
+	        return this;
 	    }
 	    clear(commandEncoder, swapChain) {
 	        const textureView = swapChain.getCurrentTexture().createView();

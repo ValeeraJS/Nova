@@ -26,7 +26,7 @@ export default class Clearer {
 
 	public clear(): this {
 		let gl = this.engine.context;
-		gl.clearColor(0.9, 0.95, 1, 1);
+		gl.clearColor(this.color.r, this.color.g, this.color.b, this.color.a);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		return this;

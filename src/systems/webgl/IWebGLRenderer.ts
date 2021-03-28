@@ -1,6 +1,6 @@
 import IEntity from "@valeera/x/src/interfaces/IEntity";
+import IRenderer from "./../IRenderer";
 
-export default interface IRenderer {
-    renderTypes: string | string[]; // 某渲染器可渲染的实例渲染标记类型
+export default interface IWebGLRenderer extends IRenderer{
     render(entity: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, scissor?: any): any; // 处理渲染逻辑
 }
