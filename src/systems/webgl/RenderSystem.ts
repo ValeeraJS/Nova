@@ -78,6 +78,7 @@ export default class RenderSystem extends ASystem {
 
 	run(world: IWorld) {
 		let gl = this.engine.context;
+		this.clearer.clear();
 		gl.viewport(
 			this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
 		gl.scissor(

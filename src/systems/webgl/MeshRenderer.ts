@@ -3,30 +3,30 @@ import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
 import { GEOMETRY_3D, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
-import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
-import IRenderer from "./IWebGPURenderer";
+import IWebGLRenderer from "./IWebGLRenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
+import WebGLEngine from "../../engine/WebGLEngine";
 
 interface ICacheData {
 	mvp: Float32Array;
-	pipeline: GPURenderPipeline;
-	uniformBuffer: GPUBuffer;
-	attributesBuffers: GPUBuffer[];
-	uniformBindGroup: GPUBindGroup;
+	pipeline: any;
+	uniformBuffer: WebGLBuffer;
+	attributesBuffers: WebGLBuffer[];
+	uniformBindGroup: any;
 	uniformMap: Map<any, IUniformSlot>;
 }
 
-export default class MeshRenderer implements IRenderer {
+export default class MeshRenderer implements IWebGLRenderer {
 	public static readonly renderTypes = "mesh";
 	public readonly renderTypes = "mesh";
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
-	engine: WebGPUEngine;
-	public constructor(engine: WebGPUEngine) {
+	engine: WebGLEngine;
+	public constructor(engine: WebGLEngine) {
 		this.engine = engine;
 	}
 
-	render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, scissor?: any): this {
+	render(mesh: IEntity, scissor?: any): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
 			cacheData = this.createCacheData(mesh);
@@ -88,20 +88,17 @@ export default class MeshRenderer implements IRenderer {
 
 	private createCacheData(mesh: IEntity): ICacheData {
 		updateModelMatrixComponent(mesh);
-		let device = this.engine.device;
+		let gl = this.engine.context;
 
-		let uniformBuffer = device.createBuffer({
-			size: 64,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		});
+		let uniformBuffer = gl.createBuffer() as WebGLBuffer;
 		let buffers = [];
 		let nodes = mesh.getComponent(GEOMETRY_3D)?.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
-			buffers.push(createVerticesBuffer(device, nodes[i].data));
+			buffers.push(createVerticesBuffer(gl, nodes[i].data));
 		}
 
 		let pipeline = this.createPipeline(mesh);
-		let groupEntries: GPUBindGroupEntry[] = [{
+		let groupEntries: any[] = [{
 			binding: 0,
 			resource: {
 				buffer: uniformBuffer,
@@ -114,10 +111,7 @@ export default class MeshRenderer implements IRenderer {
 			for (let i = 0; i < uniforms.length; i++) {
 				let uniform = uniforms[i];
 				if (uniform.type === "uniform-buffer") {
-					let buffer: GPUBuffer = device.createBuffer({
-						size: uniform.value.length * 4,
-						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-					});
+					let buffer: WebGLBuffer = gl.createBuffer() as WebGLBuffer;
 					uniformMap.set(buffer, uniform);
 					groupEntries.push({
 						binding: uniform.binding,
@@ -126,33 +120,33 @@ export default class MeshRenderer implements IRenderer {
 						}
 					});
 				} else if (uniform.type === "sampler") {
-					let sampler: GPUSampler = device.createSampler(uniform.value);
-					uniformMap.set(sampler, uniform);
-					groupEntries.push({
-						binding: uniform.binding,
-						resource: sampler
-					});
+					// let sampler: GPUSampler = gl.createSampler(uniform.value);
+					// uniformMap.set(sampler, uniform);
+					// groupEntries.push({
+					// 	binding: uniform.binding,
+					// 	resource: sampler
+					// });
 
-					console.log(sampler)
+					// console.log(sampler)
 				} else if (uniform.type === "sampled-texture") {
-					let texture: GPUTexture = device.createTexture({
-						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-						format: 'rgba8unorm',
-						usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
-					});
-					uniformMap.set(texture, uniform);
-					groupEntries.push({
-						binding: uniform.binding,
-						resource: texture.createView()
-					});
+					// let texture: GPUTexture = gl.createTexture({
+					// 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
+					// 	format: 'rgba8unorm',
+					// 	usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
+					// });
+					// uniformMap.set(texture, uniform);
+					// groupEntries.push({
+					// 	binding: uniform.binding,
+					// 	resource: texture.createView()
+					// });
 				}
 			}
 		}
 
-		let uniformBindGroup = device.createBindGroup({
-			layout: pipeline.getBindGroupLayout(0),
+		let uniformBindGroup = {
+			layout: pipeline.layout.bindGroupLayouts[0],
 			entries: groupEntries,
-		});
+		};
 
 		console.log(uniformBindGroup);
 
@@ -167,10 +161,16 @@ export default class MeshRenderer implements IRenderer {
 	}
 
 	private createPipeline(mesh: IEntity) {
-		const pipelineLayout = this.engine.device.createPipelineLayout({
+		const pipelineLayout = {
 			bindGroupLayouts: [this.createBindGroupLayout(mesh)],
-		});
-		let stages = this.createStages(mesh);
+		};
+		let [vShader, fShader] = this.createStages(mesh);
+		let gl = this.engine.context;
+		const program = gl.createProgram() as WebGLProgram;
+		gl.attachShader(program, vShader);
+		gl.attachShader(program, fShader);
+		gl.linkProgram(program);
+
 		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
 
 		let vertexBuffers: Array<GPUVertexBufferLayout> = [];
@@ -191,10 +191,10 @@ export default class MeshRenderer implements IRenderer {
 			});
 		}
 
-		let pipeline = this.engine.device.createRenderPipeline({
+		let pipeline = {
 			layout: pipelineLayout,
-			vertexStage: stages[0],
-			fragmentStage: stages[1],
+			vertexStage: vShader,
+			fragmentStage: fShader,
 			primitiveTopology: geometry.topology,
 			colorStates: [
 				{
@@ -212,7 +212,7 @@ export default class MeshRenderer implements IRenderer {
 			vertexState: {
 				vertexBuffers
 			},
-		});
+		};
 
 		return pipeline;
 	}
@@ -235,50 +235,49 @@ export default class MeshRenderer implements IRenderer {
 				});
 			}
 		}
-		return this.engine.device.createBindGroupLayout({
+		return {
 			entries,
-		});
+		};
 	}
 
 	private createStages(mesh: IEntity) {
 		const material = mesh.getComponent(MATERIAL);
-		let vertexStage = {
-			module: this.engine.device.createShaderModule({
-				code: material?.data.vertex || wgslShaders.vertex,
-			}),
-			entryPoint: "main",
-		};
-		let fragmentStage = {
-			module: this.engine.device.createShaderModule({
-				code: material?.data.fragment || wgslShaders.fragment,
-			}),
-			entryPoint: "main"
-		};
-		return [vertexStage, fragmentStage];
+		const gl = this.engine.context;
+		var vShader = gl.createShader(gl.VERTEX_SHADER) as WebGLShader;
+		var fShader = gl.createShader(gl.FRAGMENT_SHADER) as WebGLShader;
+
+		gl.shaderSource(vShader, material?.data.vertex || glslShaders.vertex);
+		gl.shaderSource(fShader, material?.data.fragment || glslShaders.fragment);
+
+		gl.compileShader(vShader);
+		if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) {
+			console.error("Error vs:", gl.getShaderInfoLog(vShader));
+		}
+
+		gl.compileShader(fShader);
+		if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) {
+			console.error("Error fs:", gl.getShaderInfoLog(fShader));
+		}
+		return [vShader, fShader];
 	}
 }
 
-const wgslShaders = {
+const glslShaders = {
 	vertex: `
-		[[block]] struct Uniforms {
-			[[offset(0)]] modelViewProjectionMatrix : mat4x4<f32>;
-	  	};
-	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+		precision mediump float;
 
-		[[builtin(position)]] var<out> out_position : vec4<f32>;
-		[[location(0)]] var<in> a_position : vec3<f32>;
-
-		[[stage(vertex)]] fn main() -> void {
-			out_position = uniforms.modelViewProjectionMatrix * vec4<f32>(a_position, 1.0);
-			return;
+		attribute vec3 verPosition;
+		uniform mat4 mvpMatrix;
+	
+		void main(){
+			gl_Position= mvpMatrix * vec4(verPosition, 1.0);
 		}
 	`,
 	fragment: `
-		[[location(0)]] var<out> fragColor : vec4<f32>;
+		precision mediump float;
 
-		[[stage(fragment)]] fn main() -> void {
-			fragColor = vec4<f32>(1., 1., 1., 1.0);
-			return;
+		void main(){
+			gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 		}
 	`
 };
