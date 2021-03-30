@@ -1,4 +1,4 @@
-export type {default as IRenderer} from './IWebGPURenderer';
-export {default as Clearer} from './Clearer';
-export {default as MeshRenderer} from './MeshRenderer';
-export {default as RenderSystem} from './RenderSystem';
+export type {default as IWebGPURenderer} from './IWebGPURenderer';
+export {default as WebGPUClearer} from './Clearer';
+export {default as WebGPUMeshRenderer} from './MeshRenderer';
+export {default as WebGPURenderSystem} from './RenderSystem';

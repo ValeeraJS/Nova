@@ -26,7 +26,8 @@ export default class MeshRenderer implements IWebGLRenderer {
 		this.engine = engine;
 	}
 
-	render(mesh: IEntity, scissor?: any): this {
+	render(mesh: IEntity, camera: IEntity, scissor?: any): this {
+		let gl = this.engine.context;
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
 			cacheData = this.createCacheData(mesh);
@@ -36,12 +37,16 @@ export default class MeshRenderer implements IWebGLRenderer {
 			updateModelMatrixComponent(mesh);
 		}
 
-		passEncoder.setPipeline(cacheData.pipeline);
-		// passEncoder.setScissorRect(0, 0, 400, 225);
+		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.BACK)
+
 		// TODO 有多个attribute buffer
 		for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
-			passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+			gl.enableVertexAttribArray(i);
+			gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 0, 0);
 		}
+
+		gl.useProgram(cacheData.pipeline.program);
 
 		const mvp = cacheData.mvp;
 		Matrix4.multiply(camera.getComponent(PROJECTION_3D)?.data,
@@ -192,6 +197,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 		}
 
 		let pipeline = {
+			program,
 			layout: pipelineLayout,
 			vertexStage: vShader,
 			fragmentStage: fShader,
