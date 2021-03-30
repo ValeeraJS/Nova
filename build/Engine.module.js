@@ -158,6 +158,7 @@ class WebGPUEngine extends EventDispatcher {
             this.adapter = adapter;
             this.device = device;
             this.inited = true;
+            console.info(EngineEvents.INITED);
             this.fire(EngineEvents.INITED, {
                 eventKey: EngineEvents.INITED,
                 target: this
@@ -4834,7 +4835,7 @@ const createJson = (r = 0, g = 0, b = 0, a = 1) => {
     };
 };
 
-class Clearer {
+class Clearer$1 {
     constructor(engine, color = createJson()) {
         var _a;
         this.engine = engine;
@@ -4884,7 +4885,7 @@ let descriptor = {
     usage: GPUBufferUsage.VERTEX,
     mappedAtCreation: true
 };
-var createVerticesBuffer = (device, data) => {
+var createVerticesBuffer$1 = (device, data) => {
     descriptor.size = data.byteLength;
     let buffer = device.createBuffer(descriptor);
     new Float32Array(buffer.getMappedRange()).set(data);
@@ -4892,7 +4893,7 @@ var createVerticesBuffer = (device, data) => {
     return buffer;
 };
 
-class MeshRenderer {
+class MeshRenderer$1 {
     constructor(engine) {
         this.renderTypes = "mesh";
         this.entityCacheData = new WeakMap();
@@ -4948,7 +4949,7 @@ class MeshRenderer {
         let buffers = [];
         let nodes = (_a = mesh.getComponent(GEOMETRY_3D)) === null || _a === void 0 ? void 0 : _a.data;
         for (let i = 0; i < nodes.length; i++) {
-            buffers.push(createVerticesBuffer(device, nodes[i].data));
+            buffers.push(createVerticesBuffer$1(device, nodes[i].data));
         }
         let pipeline = this.createPipeline(mesh);
         let groupEntries = [{
@@ -5099,7 +5100,7 @@ class MeshRenderer {
         return [vertexStage, fragmentStage];
     }
 }
-MeshRenderer.renderTypes = "mesh";
+MeshRenderer$1.renderTypes = "mesh";
 const wgslShaders = {
     vertex: `
 		[[block]] struct Uniforms {
@@ -5125,7 +5126,7 @@ const wgslShaders = {
 	`
 };
 
-class RenderSystem extends ASystem$1 {
+class RenderSystem$1 extends ASystem$1 {
     constructor(engine, clearer, viewport, scissor) {
         super("Render System", (entity) => {
             var _a;
@@ -5138,7 +5139,7 @@ class RenderSystem extends ASystem$1 {
             x: 0, y: 0, width: 0, height: 0, minDepth: 0, maxDepth: 1
         };
         this.engine = engine;
-        this.clearer = clearer || new Clearer(engine);
+        this.clearer = clearer || new Clearer$1(engine);
         this.rendererMap = new Map();
         this.swapChain = engine.context.configureSwapChain({
             device: engine.device,
@@ -5200,6 +5201,336 @@ class RenderSystem extends ASystem$1 {
         // finish
         passEncoder.endPass();
         device.queue.submit([commandEncoder.finish()]);
+        return this;
+    }
+}
+
+class Clearer {
+    constructor(engine, color = createJson()) {
+        this.engine = engine;
+        this.color = color;
+    }
+    setColor(color) {
+        this.color = color;
+        return this;
+    }
+    updateColor(color) {
+        this.color.r = color.r;
+        this.color.g = color.g;
+        this.color.b = color.b;
+        this.color.a = color.a;
+        return this;
+    }
+    clear() {
+        let gl = this.engine.context;
+        gl.clearColor(this.color.r, this.color.g, this.color.b, this.color.a);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        return this;
+    }
+}
+
+({
+    size: 0,
+    usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true
+});
+var createVerticesBuffer = (gl, data) => {
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    return buffer;
+};
+
+class MeshRenderer {
+    constructor(engine) {
+        this.renderTypes = "mesh";
+        this.entityCacheData = new WeakMap();
+        this.engine = engine;
+    }
+    render(mesh, camera, scissor) {
+        var _a, _b;
+        let gl = this.engine.context;
+        let cacheData = this.entityCacheData.get(mesh);
+        if (!cacheData) {
+            cacheData = this.createCacheData(mesh);
+            this.entityCacheData.set(mesh, cacheData);
+        }
+        else {
+            // TODO update cache
+            updateModelMatrixComponent(mesh);
+        }
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
+        // TODO 有多个attribute buffer
+        for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
+            gl.enableVertexAttribArray(i);
+            gl.vertexAttribPointer(i, 3, gl.FLOAT, false, 0, 0);
+        }
+        gl.useProgram(cacheData.pipeline.program);
+        const mvp = cacheData.mvp;
+        multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
+        multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
+        gl.uniformMatrix4fv(0, false, mvp);
+        cacheData.uniformMap.forEach((uniform, key) => {
+            // if (uniform.type === "uniform-buffer" && uniform.dirty) {
+            // 	this.engine.device.queue.writeBuffer(
+            // 		key,
+            // 		0,
+            // 		uniform.value.buffer,
+            // 		uniform.value.byteOffset,
+            // 		uniform.value.byteLength
+            // 	);
+            // 	uniform.dirty = false;
+            // } else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
+            // 	if (uniform.value.loaded) {
+            // 		if (uniform.value.data) {
+            // 			this.engine.device.queue.copyImageBitmapToTexture(
+            // 				{ imageBitmap: uniform.value.data },
+            // 				{ texture: key },
+            // 				[uniform.value.data.width, uniform.value.data.height, 1]
+            // 			);
+            // 			uniform.dirty = false;
+            // 		}
+            // 	}
+            // }
+        });
+        // passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+        // passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, mesh.getComponent(GEOMETRY_3D).count);
+        return this;
+    }
+    createCacheData(mesh) {
+        var _a, _b, _c;
+        updateModelMatrixComponent(mesh);
+        let gl = this.engine.context;
+        let uniformBuffer = gl.createBuffer();
+        let buffers = [];
+        let nodes = (_a = mesh.getComponent(GEOMETRY_3D)) === null || _a === void 0 ? void 0 : _a.data;
+        for (let i = 0; i < nodes.length; i++) {
+            buffers.push(createVerticesBuffer(gl, nodes[i].data));
+        }
+        let pipeline = this.createPipeline(mesh);
+        let groupEntries = [{
+                binding: 0,
+                resource: {
+                    buffer: uniformBuffer,
+                },
+            }];
+        let uniforms = (_c = (_b = mesh.getComponent(MATERIAL)) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c.uniforms;
+        let uniformMap = new Map();
+        if (uniforms) {
+            for (let i = 0; i < uniforms.length; i++) {
+                let uniform = uniforms[i];
+                if (uniform.type === "uniform-buffer") {
+                    let buffer = gl.createBuffer();
+                    uniformMap.set(buffer, uniform);
+                    groupEntries.push({
+                        binding: uniform.binding,
+                        resource: {
+                            buffer
+                        }
+                    });
+                }
+                else if (uniform.type === "sampler") ;
+                else if (uniform.type === "sampled-texture") ;
+            }
+        }
+        let uniformBindGroup = {
+            layout: pipeline.layout.bindGroupLayouts[0],
+            entries: groupEntries,
+        };
+        console.log(uniformBindGroup);
+        return {
+            mvp: new Float32Array(16),
+            attributesBuffers: buffers,
+            uniformBuffer,
+            uniformBindGroup,
+            pipeline,
+            uniformMap
+        };
+    }
+    createPipeline(mesh) {
+        const pipelineLayout = {
+            bindGroupLayouts: [this.createBindGroupLayout(mesh)],
+        };
+        let [vShader, fShader] = this.createStages(mesh);
+        let gl = this.engine.context;
+        const program = gl.createProgram();
+        gl.attachShader(program, vShader);
+        gl.attachShader(program, fShader);
+        gl.linkProgram(program);
+        let geometry = mesh.getComponent(GEOMETRY_3D);
+        let vertexBuffers = [];
+        let location = 0;
+        for (let i = 0; i < geometry.data.length; i++) {
+            let data = geometry.data[i];
+            let attributeDescripters = [];
+            for (let j = 0; j < data.attributes.length; j++) {
+                attributeDescripters.push({
+                    shaderLocation: location++,
+                    offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
+                    format: "float32x" + data.attributes[j].length,
+                });
+            }
+            vertexBuffers.push({
+                arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
+                attributes: attributeDescripters
+            });
+        }
+        let pipeline = {
+            program,
+            layout: pipelineLayout,
+            vertexStage: vShader,
+            fragmentStage: fShader,
+            primitiveTopology: geometry.topology,
+            colorStates: [
+                {
+                    format: "bgra8unorm"
+                }
+            ],
+            depthStencilState: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus-stencil8',
+            },
+            rasterizationState: {
+                cullMode: geometry.cullMode,
+            },
+            vertexState: {
+                vertexBuffers
+            },
+        };
+        return pipeline;
+    }
+    createBindGroupLayout(mesh) {
+        var _a, _b;
+        let uniforms = (_b = (_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
+        let entries = [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                type: 'uniform-buffer',
+            }
+        ];
+        if (uniforms) {
+            for (let i = 0; i < uniforms.length; i++) {
+                entries.push({
+                    visibility: GPUShaderStage.FRAGMENT,
+                    binding: uniforms[i].binding,
+                    type: uniforms[i].type,
+                });
+            }
+        }
+        return {
+            entries,
+        };
+    }
+    createStages(mesh) {
+        const material = mesh.getComponent(MATERIAL);
+        const gl = this.engine.context;
+        var vShader = gl.createShader(gl.VERTEX_SHADER);
+        var fShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(vShader, (material === null || material === void 0 ? void 0 : material.data.vertex) || glslShaders.vertex);
+        gl.shaderSource(fShader, (material === null || material === void 0 ? void 0 : material.data.fragment) || glslShaders.fragment);
+        gl.compileShader(vShader);
+        if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) {
+            console.error("Error vs:", gl.getShaderInfoLog(vShader));
+        }
+        gl.compileShader(fShader);
+        if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) {
+            console.error("Error fs:", gl.getShaderInfoLog(fShader));
+        }
+        return [vShader, fShader];
+    }
+}
+MeshRenderer.renderTypes = "mesh";
+const glslShaders = {
+    vertex: `
+		precision mediump float;
+
+		attribute vec3 verPosition;
+		uniform mat4 mvpMatrix;
+	
+		void main(){
+			gl_Position= mvpMatrix * vec4(verPosition, 1.0);
+		}
+	`,
+    fragment: `
+		precision mediump float;
+
+		void main(){
+			gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+		}
+	`
+};
+
+class RenderSystem extends ASystem$1 {
+    constructor(engine, clearer, viewport, scissor) {
+        super("Render System", (entity) => {
+            var _a;
+            return (_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data;
+        });
+        this.scissor = {
+            x: 0, y: 0, width: 0, height: 0,
+        };
+        this.viewport = {
+            x: 0, y: 0, width: 0, height: 0, minDepth: 0, maxDepth: 1
+        };
+        this.engine = engine;
+        this.clearer = clearer || new Clearer(engine);
+        this.rendererMap = new Map();
+        this.setScissor(scissor).setViewport(viewport);
+    }
+    addRenderer(renderer) {
+        if (typeof renderer.renderTypes === "string") {
+            this.rendererMap.set(renderer.renderTypes, renderer);
+        }
+        else {
+            for (let item of renderer.renderTypes) {
+                this.rendererMap.set(item, renderer);
+            }
+        }
+        return this;
+    }
+    destroy() {
+        this.rendererMap.clear();
+    }
+    handle(entity, store) {
+        var _a, _b;
+        // 根据不同类别进行渲染
+        (_b = this.rendererMap.get((_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data)) === null || _b === void 0 ? void 0 : _b.render(entity, store.get("activeCamera"), store.get("passEncoder"));
+        return this;
+    }
+    setClearer(clearer) {
+        this.clearer = clearer;
+    }
+    setViewport(viewport) {
+        this.viewport = viewport || {
+            x: 0,
+            y: 0,
+            width: this.engine.canvas.width,
+            height: this.engine.canvas.height,
+            minDepth: 0,
+            maxDepth: 1
+        };
+        return this;
+    }
+    setScissor(scissor) {
+        this.scissor = scissor || {
+            x: 0,
+            y: 0,
+            width: this.engine.canvas.width,
+            height: this.engine.canvas.height
+        };
+        return this;
+    }
+    run(world) {
+        let gl = this.engine.context;
+        this.clearer.clear();
+        gl.viewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height);
+        gl.scissor(this.scissor.x, this.scissor.y, this.scissor.width, this.scissor.height);
+        super.run(world);
+        // finish
         return this;
     }
 }
@@ -5781,5 +6112,5 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, Clearer, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Mathx_module as Mathx, Matrix4Component, MeshRenderer, Object3, PerspectiveProjection, RenderSystem, Renderable, Sampler, ShaderMaterial, SpritesheetTexture, SystemManager, TextureMaterial, Vector3Scale3, WebGPUEngine, World };
+export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, EngineEvents, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Mathx_module as Mathx, Matrix4Component, Object3, PerspectiveProjection, Renderable, Sampler, ShaderMaterial, SpritesheetTexture, SystemManager, TextureMaterial, Vector3Scale3, Clearer as WebGLClearer, MeshRenderer as WebGLMeshRenderer, RenderSystem as WebGLRenderSystem, Clearer$1 as WebGPUClearer, WebGPUEngine, MeshRenderer$1 as WebGPUMeshRenderer, RenderSystem$1 as WebGPURenderSystem, World };
 //# sourceMappingURL=Engine.module.js.map

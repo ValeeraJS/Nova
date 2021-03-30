@@ -53,40 +53,36 @@ export default class MeshRenderer implements IWebGLRenderer {
 			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
 		Matrix4.multiply(mvp, mesh.getComponent(MODEL_3D)?.data, mvp);
 
-		this.engine.device.queue.writeBuffer(
-			cacheData.uniformBuffer,
-			0,
-			mvp.buffer,
-			mvp.byteOffset,
-			mvp.byteLength
-		);
+		gl.uniformMatrix4fv(0, false, mvp);
 
 		cacheData.uniformMap.forEach((uniform, key) => {
-			if (uniform.type === "uniform-buffer" && uniform.dirty) {
-				this.engine.device.queue.writeBuffer(
-					key,
-					0,
-					uniform.value.buffer,
-					uniform.value.byteOffset,
-					uniform.value.byteLength
-				);
-				uniform.dirty = false;
-			} else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
-				if (uniform.value.loaded) {
-					if (uniform.value.data) {
-						this.engine.device.queue.copyImageBitmapToTexture(
-							{ imageBitmap: uniform.value.data },
-							{ texture: key },
-							[uniform.value.data.width, uniform.value.data.height, 1]
-						);
-						uniform.dirty = false;
-					}
-				}
-			}
+			// if (uniform.type === "uniform-buffer" && uniform.dirty) {
+			// 	this.engine.device.queue.writeBuffer(
+			// 		key,
+			// 		0,
+			// 		uniform.value.buffer,
+			// 		uniform.value.byteOffset,
+			// 		uniform.value.byteLength
+			// 	);
+			// 	uniform.dirty = false;
+			// } else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
+			// 	if (uniform.value.loaded) {
+			// 		if (uniform.value.data) {
+			// 			this.engine.device.queue.copyImageBitmapToTexture(
+			// 				{ imageBitmap: uniform.value.data },
+			// 				{ texture: key },
+			// 				[uniform.value.data.width, uniform.value.data.height, 1]
+			// 			);
+			// 			uniform.dirty = false;
+			// 		}
+			// 	}
+			// }
 		});
 
-		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-		passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
+		// passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+		// passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
+
+		gl.drawArrays(gl.TRIANGLES, 0, (mesh.getComponent(GEOMETRY_3D) as Geometry3).count);
 
 		return this;
 	}

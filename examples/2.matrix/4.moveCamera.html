@@ -19,7 +19,7 @@
 		positionProxy.z = 5;
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(camera);
 
-		engine.once(Engine.WebGPUEngine.INITED, (e) => {
+		engine.once(Engine.EngineEvents.INITED, (e) => {
 			let renderSystem = new Engine.RenderSystem(engine);
 			let renderer = new Engine.MeshRenderer(engine);
 			renderSystem.addRenderer(renderer);

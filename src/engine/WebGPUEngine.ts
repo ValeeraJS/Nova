@@ -40,11 +40,13 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 			this.adapter = adapter;
 			this.device = device;
 			this.inited = true;
+
+			console.info(EngineEvents.INITED)
 			this.fire(EngineEvents.INITED, {
 				eventKey: EngineEvents.INITED,
 				target: this
 			});
-		}).catch((error)=>{
+		}).catch((error) => {
 			throw error;
 		});
 	}

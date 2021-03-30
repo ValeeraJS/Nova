@@ -59,7 +59,7 @@
 		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
 		positionProxy.z = 5;
 
-		engine.once(Engine.WebGPUEngine.INITED, (e) => {
+		engine.once(Engine.EngineEvents.INITED, (e) => {
 			let renderSystem = new Engine.RenderSystem(engine);
 			let renderer = new Engine.MeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
