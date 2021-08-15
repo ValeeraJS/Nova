@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="./../../../build/Engine.js"></script>
+	<script>
+		const vertexShader = `
+		[[block]] struct Uniforms {
+			[[offset(0)]] matrix : mat4x4<f32>;
+	  	};
+	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+		[[builtin(position)]] var<out> out_vertices : vec4<f32>;
+		[[location(0)]] var<out> out_colors : vec4<f32>;
+		[[location(0)]] var<in> vertices : vec3<f32>;
+		[[location(1)]] var<in> colors : vec3<f32>;
+
+		[[stage(vertex)]] fn main() -> void {
+			out_vertices = uniforms.matrix * vec4<f32>(vertices, 1.0);
+			out_colors = vec4<f32>(colors, 1.0);
+			return;
+		}
+		`;
+		const fragmentShader = `
+		[[location(0)]] var<out> fragColor : vec4<f32>;
+		[[location(0)]] var<in> in_colors : vec4<f32>;
+		[[stage(fragment)]] fn main() -> void {
+			fragColor = in_colors;
+			return;
+		}
+		`;
+
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Engine.WebGPUEngine(canvas);
+		const world = new Engine.World();
+
+		const geometry = new Engine.Geometry3(3, "triangle-list", "none");
+		geometry.addAttribute("vertices", new Float32Array([
+			// vertices + color
+			0, 0, 0, 1, 0, 0,
+			0, 1, 1, 0, 1, 0,
+			-2, 1, 0, 0, 0, 1
+		]), 6, [{
+			name: "vertices",
+			offset: 0,
+			length: 3,
+		}, {
+			name: "vertices-colors",
+			offset: 12,
+			length: 3,
+		}]);
+		const mesh = Engine.EntityFactory.createMesh(geometry, "test-triangle", world);
+		mesh.addComponent(new Engine.ShaderMaterial(vertexShader, fragmentShader));
+		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
+
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
+		positionProxy.z = 5;
+
+		engine.once(Engine.EngineEvents.INITED, (e) => {
+			let renderSystem = new Engine.WebGPURenderSystem(engine);
+			let renderer = new Engine.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			loop();
+		});
+
+		function loop() {
+			world.run();
+			rotationProxy.y -= 0.01;
+			requestAnimationFrame(loop);
+		}
+	</script>
+</body>

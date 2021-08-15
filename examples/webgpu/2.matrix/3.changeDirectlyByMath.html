@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script type="text/javascript" src="./../../../build/Engine.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Engine.WebGPUEngine(canvas);
+		const world = new Engine.World();
+
+		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+
+		// 创建一个向量用于改变物体位置
+		const vec3 = Engine.Mathx.Vector3.create(0, 0, -4);
+		const matrixPosition = mesh.getComponent("position3");
+		const matrixRotation = mesh.getComponent("rotation3");
+
+		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
+		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+
+		engine.once(Engine.EngineEvents.INITED, (e) => {
+			let renderSystem = new Engine.WebGPURenderSystem(engine);
+			let renderer = new Engine.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			loop();
+		});
+
+		function loop() {
+			world.run();
+			vec3[2] = Math.sin(performance.now() / 300) - 4;
+			Engine.Mathx.Matrix4.fromTranslation(vec3, matrixPosition.data);
+			Engine.Mathx.Matrix4.rotateY(matrixRotation.data, 0.01, matrixRotation.data);
+			matrixPosition.dirty = matrixRotation.dirty = true;
+			
+			requestAnimationFrame(loop);
+		}
+	</script>
+</body>
