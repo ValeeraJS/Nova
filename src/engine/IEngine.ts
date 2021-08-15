@@ -1,5 +1,5 @@
 export default interface IEngine {
-	context: GPUCanvasContext | WebGLRenderingContext | WebGL2RenderingContext;
+	context: GPUPresentationContext | WebGLRenderingContext | WebGL2RenderingContext;
 }
 
 export enum EngineEvents {

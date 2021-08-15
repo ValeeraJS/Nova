@@ -11,7 +11,7 @@ import IScissor from "./../IScissor";
 export default class RenderSystem extends ASystem {
 	engine: WebGPUEngine;
 	clearer: Clearer;
-	swapChain: GPUSwapChain;
+	// swapChain: GPUSwapChain;
 	rendererMap: Map<string, IWebGPURenderer>;
 	scissor: IScissor = {
 		x: 0, y: 0, width: 0, height: 0,
@@ -26,9 +26,10 @@ export default class RenderSystem extends ASystem {
 		this.engine = engine;
 		this.clearer = clearer || new Clearer(engine);
 		this.rendererMap = new Map();
-		this.swapChain = engine.context.configureSwapChain({
+		engine.context.configure({
 			device: engine.device,
-			format: 'bgra8unorm',
+			format: engine.preferredFormat,
+			size: [engine.canvas.clientWidth * devicePixelRatio, engine.canvas.clientHeight * devicePixelRatio]
 		});
 		this.setScissor(scissor).setViewport(viewport);
 	}
@@ -83,7 +84,7 @@ export default class RenderSystem extends ASystem {
 	run(world: IWorld) {
 		let device = this.engine.device;
 		let commandEncoder = device.createCommandEncoder();
-		let passEncoder = this.clearer.clear(commandEncoder, this.swapChain);
+		let passEncoder = this.clearer.clear(commandEncoder);
 		passEncoder.setViewport(
 			this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height, this.viewport.minDepth, this.viewport.maxDepth);
 		passEncoder.setScissorRect(

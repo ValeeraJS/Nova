@@ -9,20 +9,22 @@ export default class Clearer {
 	public constructor(engine: WebGPUEngine, color: IColorGPUJson = createJson()) {
 		this.engine = engine;
 		this.color = color;
-		this.depthTexture = engine.device?.createTexture({
+		console.log(engine)
+		this.depthTexture = engine.device.createTexture({
 			size: { width: engine.canvas.width, height: engine.canvas.height, depthOrArrayLayers: 1 },
-			format: "depth24plus-stencil8",
+			format: "depth24plus",
 			usage: GPUTextureUsage.RENDER_ATTACHMENT
 		});
 		this.renderPassDescriptor = {
 			colorAttachments: [
 				{
-					attachment: null as any,
-					loadValue: this.color
+					view: null as any,
+					loadValue: this.color,
+					storeOp: 'store'
 				}
 			],
 			depthStencilAttachment: {
-				attachment: this.depthTexture.createView(),
+				view: this.depthTexture.createView(),
 				depthLoadValue: 1.0,
 				depthStoreOp: "store",
 				stencilLoadValue: 0,
@@ -46,10 +48,12 @@ export default class Clearer {
 		return this;
 	}
 
-	public clear(commandEncoder: GPUCommandEncoder, swapChain: GPUSwapChain): GPURenderPassEncoder {
-		const textureView = swapChain.getCurrentTexture().createView();
+	public clear(commandEncoder: GPUCommandEncoder): GPURenderPassEncoder {
+		// const textureView = swapChain.getCurrentTexture().createView();
 		(this.renderPassDescriptor.colorAttachments as any)[0].loadValue = this.color;
-		(this.renderPassDescriptor.colorAttachments as any)[0].attachment = textureView;
+		(this.renderPassDescriptor.colorAttachments as any)[0].view = this.engine.context
+			.getCurrentTexture()
+			.createView();
 		return commandEncoder.beginRenderPass(this.renderPassDescriptor);
 	}
 }

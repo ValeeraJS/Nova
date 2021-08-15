@@ -53,7 +53,8 @@ export default class MeshRenderer implements IWebGLRenderer {
 			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
 		Matrix4.multiply(mvp, mesh.getComponent(MODEL_3D)?.data, mvp);
 
-		gl.uniformMatrix4fv(0, false, mvp);
+		var mvpLocation = gl.getUniformLocation(cacheData.pipeline.program, "mvpMatrix");
+		gl.uniformMatrix4fv(mvpLocation, false, mvp);
 
 		cacheData.uniformMap.forEach((uniform, key) => {
 			// if (uniform.type === "uniform-buffer" && uniform.dirty) {
@@ -225,7 +226,6 @@ export default class MeshRenderer implements IWebGLRenderer {
 			{
 				binding: 0,
 				visibility: GPUShaderStage.VERTEX,
-				type: 'uniform-buffer',
 			}
 		];
 		if (uniforms) {
@@ -233,7 +233,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 				entries.push({
 					visibility: GPUShaderStage.FRAGMENT,
 					binding: uniforms[i].binding,
-					type: uniforms[i].type as any,
+					// type: uniforms[i].type as any,
 				});
 			}
 		}

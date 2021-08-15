@@ -69,8 +69,8 @@ export default class MeshRenderer implements IRenderer {
 			} else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
 				if (uniform.value.loaded) {
 					if (uniform.value.data) {
-						this.engine.device.queue.copyImageBitmapToTexture(
-							{ imageBitmap: uniform.value.data },
+						this.engine.device.queue.copyExternalImageToTexture(
+							{ source: uniform.value.data },
 							{ texture: key },
 							[uniform.value.data.width, uniform.value.data.height, 1]
 						);
@@ -155,6 +155,7 @@ export default class MeshRenderer implements IRenderer {
 		});
 
 		console.log(uniformBindGroup);
+		console.log("?>>>>1")
 
 		return {
 			mvp: new Float32Array(16),
@@ -193,24 +194,16 @@ export default class MeshRenderer implements IRenderer {
 
 		let pipeline = this.engine.device.createRenderPipeline({
 			layout: pipelineLayout,
-			vertexStage: stages[0],
-			fragmentStage: stages[1],
-			primitiveTopology: geometry.topology,
-			colorStates: [
-				{
-					format: "bgra8unorm"
-				}
-			],
-			depthStencilState: {
-				depthWriteEnabled: true,
-				depthCompare: 'less',
-				format: 'depth24plus-stencil8',
-			},
-			rasterizationState: {
+			vertex: stages.vertex,
+			fragment: stages.fragment,
+			primitive: {
+				topology: geometry.topology,
 				cullMode: geometry.cullMode,
 			},
-			vertexState: {
-				vertexBuffers
+			depthStencil: {
+				depthWriteEnabled: true,
+				depthCompare: 'less',
+				format: 'depth24plus',
 			},
 		});
 
@@ -223,7 +216,9 @@ export default class MeshRenderer implements IRenderer {
 			{
 				binding: 0,
 				visibility: GPUShaderStage.VERTEX,
-				type: 'uniform-buffer',
+				buffer: {
+					type: 'uniform',
+				}
 			}
 		];
 		if (uniforms) {
@@ -231,54 +226,87 @@ export default class MeshRenderer implements IRenderer {
 				entries.push({
 					visibility: GPUShaderStage.FRAGMENT,
 					binding: uniforms[i].binding,
-					type: uniforms[i].type as any,
+					buffer: {
+						type: 'uniform',
+					}
 				});
 			}
 		}
+		console.log("?>>>>2")
 		return this.engine.device.createBindGroupLayout({
 			entries,
 		});
 	}
 
-	private createStages(mesh: IEntity) {
+	private createStages(mesh: IEntity): {
+		vertex: GPUVertexState,
+		fragment: GPUFragmentState
+	} {
 		const material = mesh.getComponent(MATERIAL);
-		let vertexStage = {
+		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
+
+		let vertexBuffers: Array<GPUVertexBufferLayout> = [];
+		let location = 0;
+		for (let i = 0; i < geometry.data.length; i++) {
+			let data = geometry.data[i];
+			let attributeDescripters: GPUVertexAttribute[] = [];
+			for (let j = 0; j < data.attributes.length; j++) {
+				attributeDescripters.push({
+					shaderLocation: location++,
+					offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
+					format: "float32x" + data.attributes[j].length as GPUVertexFormat,
+				});
+			}
+			vertexBuffers.push({
+				arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT as any,
+				attributes: attributeDescripters
+			});
+		}
+		let vertex = {
 			module: this.engine.device.createShaderModule({
 				code: material?.data.vertex || wgslShaders.vertex,
 			}),
 			entryPoint: "main",
+			buffers: vertexBuffers
 		};
-		let fragmentStage = {
+		let fragment = {
 			module: this.engine.device.createShaderModule({
 				code: material?.data.fragment || wgslShaders.fragment,
 			}),
-			entryPoint: "main"
+			entryPoint: "main",
+			targets: [
+				{
+					format: this.engine.preferredFormat,
+				}
+			]
 		};
-		return [vertexStage, fragmentStage];
+		return {
+			vertex,
+			fragment
+		};
 	}
 }
 
 const wgslShaders = {
 	vertex: `
 		[[block]] struct Uniforms {
-			[[offset(0)]] modelViewProjectionMatrix : mat4x4<f32>;
+			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
-		[[builtin(position)]] var<out> out_position : vec4<f32>;
-		[[location(0)]] var<in> a_position : vec3<f32>;
+		struct VertexOutput {
+			[[builtin(position)]] Position : vec4<f32>;
+		};
 
-		[[stage(vertex)]] fn main() -> void {
-			out_position = uniforms.modelViewProjectionMatrix * vec4<f32>(a_position, 1.0);
-			return;
+		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+			var output : VertexOutput;
+			output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			return output;
 		}
 	`,
 	fragment: `
-		[[location(0)]] var<out> fragColor : vec4<f32>;
-
-		[[stage(fragment)]] fn main() -> void {
-			fragColor = vec4<f32>(1., 1., 1., 1.0);
-			return;
+		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+			return vec4<f32>(1., 1., 1., 1.0);
 		}
 	`
 };

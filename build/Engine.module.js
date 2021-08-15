@@ -23,22 +23,19 @@ function __awaiter(thisArg, _arguments, P, generator) {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const mixin = (Base = Object, eventKeyList = []) => {
+const mixin$1 = (Base = Object, eventKeyList = []) => {
     var _a;
     return _a = class EventDispatcher extends Base {
             constructor() {
                 super(...arguments);
-                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
                 this.eventKeyList = eventKeyList;
                 /**
                  * store all the filters
                  */
-                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
                 this.filters = [];
                 /**
                  * store all the listeners by key
                  */
-                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
                 this.listeners = new Map();
                 this.all = (listener) => {
                     return this.filt(() => true, listener);
@@ -138,17 +135,17 @@ const mixin = (Base = Object, eventKeyList = []) => {
                 };
             }
         },
-        _a.mixin = mixin,
+        _a.mixin = mixin$1,
         _a;
 };
-var EventDispatcher = mixin(Object);
+var EventDispatcher$1 = mixin$1(Object);
 
 var EngineEvents;
 (function (EngineEvents) {
     EngineEvents["INITED"] = "inited";
 })(EngineEvents || (EngineEvents = {}));
 
-class WebGPUEngine extends EventDispatcher {
+class WebGPUEngine extends EventDispatcher$1 {
     constructor(canvas = document.createElement("canvas")) {
         super();
         this.inited = false;
@@ -158,7 +155,7 @@ class WebGPUEngine extends EventDispatcher {
             this.adapter = adapter;
             this.device = device;
             this.inited = true;
-            console.info(EngineEvents.INITED);
+            this.preferredFormat = context.getPreferredFormat(adapter);
             this.fire(EngineEvents.INITED, {
                 eventKey: EngineEvents.INITED,
                 target: this
@@ -170,7 +167,7 @@ class WebGPUEngine extends EventDispatcher {
     static detect(canvas = document.createElement("canvas")) {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            const context = canvas.getContext("gpupresent");
+            const context = canvas.getContext("webgpu");
             if (!context) {
                 throw new Error('WebGPU not supported: ');
             }
@@ -183,6 +180,35 @@ class WebGPUEngine extends EventDispatcher {
                 throw new Error('WebGPU not supported: ');
             }
             return { context, adapter, device };
+        });
+    }
+    createRenderer() {
+    }
+}
+
+class WebGLEngine extends EventDispatcher$1 {
+    constructor(canvas = document.createElement("canvas")) {
+        super();
+        this.inited = false;
+        this.canvas = canvas;
+        WebGLEngine.detect(canvas).then(({ context }) => {
+            this.context = context;
+            this.inited = true;
+            this.fire(EngineEvents.INITED, {
+                eventKey: EngineEvents.INITED,
+                target: this
+            });
+        }).catch((error) => {
+            throw error;
+        });
+    }
+    static detect(canvas = document.createElement("canvas")) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const context = canvas.getContext("webgl");
+            if (!context) {
+                throw new Error('WebGL not supported: ');
+            }
+            return { context };
         });
     }
     createRenderer() {
@@ -456,7 +482,7 @@ const IdGeneratorInstance$1 = new IdGenerator();
 
 let weakMapTmp$1;
 class ASystem$1 {
-    constructor(name, fitRule) {
+    constructor(name = "", fitRule) {
         this.id = IdGeneratorInstance$1.next();
         this.isSystem = true;
         this.name = "";
@@ -630,9 +656,130 @@ ComponentManager$1.eventObject = {
     target: null
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const mixin = (Base = Object, eventKeyList = []) => {
+    var _a;
+    return _a = class EventDispatcher extends Base {
+            constructor() {
+                super(...arguments);
+                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+                this.eventKeyList = eventKeyList;
+                /**
+                 * store all the filters
+                 */
+                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+                this.filters = [];
+                /**
+                 * store all the listeners by key
+                 */
+                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+                this.listeners = new Map();
+                this.all = (listener) => {
+                    return this.filt(() => true, listener);
+                };
+                this.clearListenersByKey = (eventKey) => {
+                    this.listeners.delete(eventKey);
+                    return this;
+                };
+                this.clearAllListeners = () => {
+                    const keys = this.listeners.keys();
+                    for (const key of keys) {
+                        this.listeners.delete(key);
+                    }
+                    return this;
+                };
+                this.filt = (rule, listener) => {
+                    this.filters.push({
+                        listener,
+                        rule
+                    });
+                    return this;
+                };
+                this.fire = (eventKey, target) => {
+                    if (!this.checkEventKeyAvailable(eventKey)) {
+                        console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+                        return this;
+                    }
+                    const array = this.listeners.get(eventKey) || [];
+                    let len = array.length;
+                    let item;
+                    for (let i = 0; i < len; i++) {
+                        item = array[i];
+                        item.listener({
+                            eventKey,
+                            life: --item.times,
+                            target
+                        });
+                        if (item.times <= 0) {
+                            array.splice(i--, 1);
+                            --len;
+                        }
+                    }
+                    return this.checkFilt(eventKey, target);
+                };
+                this.off = (eventKey, listener) => {
+                    const array = this.listeners.get(eventKey);
+                    if (!array) {
+                        return this;
+                    }
+                    const len = array.length;
+                    for (let i = 0; i < len; i++) {
+                        if (array[i].listener === listener) {
+                            array.splice(i, 1);
+                            break;
+                        }
+                    }
+                    return this;
+                };
+                this.on = (eventKey, listener) => {
+                    return this.times(eventKey, Infinity, listener);
+                };
+                this.once = (eventKey, listener) => {
+                    return this.times(eventKey, 1, listener);
+                };
+                this.times = (eventKey, times, listener) => {
+                    if (!this.checkEventKeyAvailable(eventKey)) {
+                        console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+                        return this;
+                    }
+                    const array = this.listeners.get(eventKey) || [];
+                    if (!this.listeners.has(eventKey)) {
+                        this.listeners.set(eventKey, array);
+                    }
+                    array.push({
+                        listener,
+                        times
+                    });
+                    return this;
+                };
+                this.checkFilt = (eventKey, target) => {
+                    for (const item of this.filters) {
+                        if (item.rule(eventKey, target)) {
+                            item.listener({
+                                eventKey,
+                                life: Infinity,
+                                target
+                            });
+                        }
+                    }
+                    return this;
+                };
+                this.checkEventKeyAvailable = (eventKey) => {
+                    if (this.eventKeyList.length) {
+                        return this.eventKeyList.includes(eventKey);
+                    }
+                    return true;
+                };
+            }
+        },
+        _a.mixin = mixin,
+        _a;
+};
+var EventDispatcher = mixin(Object);
+
 let arr$2;
 class Entity$1 extends EventDispatcher {
-    constructor(name, componentManager) {
+    constructor(name = "", componentManager) {
         super();
         this.id = IdGeneratorInstance$1.next();
         this.isEntity = true;
@@ -691,13 +838,109 @@ class Entity$1 extends EventDispatcher {
     }
 }
 
+let systemTmp$1;
 var ESystemEvent$1;
 (function (ESystemEvent) {
     ESystemEvent["BEFORE_RUN"] = "beforeRun";
     ESystemEvent["AFTER_RUN"] = "afterRun";
 })(ESystemEvent$1 || (ESystemEvent$1 = {}));
-ESystemEvent$1.AFTER_RUN;
-ESystemEvent$1.BEFORE_RUN;
+class SystemManager$1 extends EventDispatcher {
+    constructor(world) {
+        super();
+        this.disabled = false;
+        this.elements = new Map();
+        this.loopTimes = 0;
+        this.usedBy = [];
+        if (world) {
+            this.usedBy.push(world);
+        }
+    }
+    add(system) {
+        if (this.elements.has(system.name)) {
+            return this;
+        }
+        this.elements.set(system.name, system);
+        this.updateSystemEntitySetByAddFromManager(system);
+        return this;
+    }
+    clear() {
+        this.elements.clear();
+        return this;
+    }
+    get(name) {
+        systemTmp$1 = this.elements.get(name);
+        return systemTmp$1 ? systemTmp$1 : null;
+    }
+    has(element) {
+        if (typeof element === "string") {
+            return this.elements.has(element);
+        }
+        else {
+            return this.elements.has(element.name);
+        }
+    }
+    remove(system) {
+        return typeof system === "string"
+            ? this.removeByName(system)
+            : this.removeByInstance(system);
+    }
+    removeByName(name) {
+        systemTmp$1 = this.elements.get(name);
+        if (systemTmp$1) {
+            this.elements.delete(name);
+            this.updateSystemEntitySetByRemovedFromManager(systemTmp$1);
+            systemTmp$1.usedBy.splice(systemTmp$1.usedBy.indexOf(this), 1);
+        }
+        return this;
+    }
+    removeByInstance(system) {
+        if (this.elements.has(system.name)) {
+            this.elements.delete(system.name);
+            this.updateSystemEntitySetByRemovedFromManager(system);
+            system.usedBy.splice(system.usedBy.indexOf(this), 1);
+        }
+        return this;
+    }
+    run(world) {
+        SystemManager$1.eventObject.eventKey = SystemManager$1.BEFORE_RUN;
+        SystemManager$1.eventObject.manager = this;
+        this.fire(SystemManager$1.BEFORE_RUN, SystemManager$1.eventObject);
+        this.elements.forEach((item) => {
+            item.checkUpdatedEntities(world.entityManager);
+            item.run(world);
+        });
+        if (world.entityManager) {
+            world.entityManager.updatedEntities.clear();
+        }
+        this.loopTimes++;
+        SystemManager$1.eventObject.eventKey = SystemManager$1.AFTER_RUN;
+        this.fire(SystemManager$1.BEFORE_RUN, SystemManager$1.eventObject);
+        return this;
+    }
+    updateSystemEntitySetByRemovedFromManager(system) {
+        for (const item of this.usedBy) {
+            if (item.entityManager) {
+                system.entitySet.delete(item.entityManager);
+            }
+        }
+        return this;
+    }
+    updateSystemEntitySetByAddFromManager(system) {
+        for (const item of this.usedBy) {
+            if (item.entityManager) {
+                system.checkEntityManager(item.entityManager);
+            }
+        }
+        return this;
+    }
+}
+SystemManager$1.AFTER_RUN = ESystemEvent$1.AFTER_RUN;
+SystemManager$1.BEFORE_RUN = ESystemEvent$1.BEFORE_RUN;
+SystemManager$1.eventObject = {
+    eventKey: null,
+    manager: null,
+    target: null
+};
 
 class ShaderMaterial extends Component$1 {
     constructor(vertex, fragment, uniforms = []) {
@@ -709,28 +952,28 @@ class ShaderMaterial extends Component$1 {
 const wgslShaders$2 = {
     vertex: `
 		[[block]] struct Uniforms {
-			[[offset(0)]] modelViewProjectionMatrix : mat4x4<f32>;
+			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
-		[[builtin(position)]] var<out> out_position : vec4<f32>;
-		[[location(0)]] var<in> a_position : vec3<f32>;
+		struct VertexOutput {
+			[[builtin(position)]] position : vec4<f32>;
+		};
 
-		[[stage(vertex)]] fn main() -> void {
-			out_position = uniforms.modelViewProjectionMatrix * vec4<f32>(a_position, 1.0);
-			return;
+		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			return out;
 		}
 	`,
     fragment: `
 		[[block]] struct Uniforms {
-			[[offset(0)]] color : vec4<f32>;
+			color : vec4<f32>;
 	  	};
 	  	[[binding(1), group(0)]] var<uniform> uniforms : Uniforms;
-		[[location(0)]] var<out> fragColor : vec4<f32>;
 
-		[[stage(fragment)]] fn main() -> void {
-			fragColor = uniforms.color;
-			return;
+		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+			return uniforms.color;
 		}
 	`
 };
@@ -738,10 +981,13 @@ class ColorMaterial extends Component$1 {
     constructor(color = new Float32Array([1, 1, 1, 1])) {
         super("material", Object.assign(Object.assign({}, wgslShaders$2), { uniforms: [{
                     name: "color",
-                    type: "uniform-buffer",
                     value: color,
                     binding: 1,
-                    dirty: true
+                    dirty: true,
+                    type: "uniform-buffer",
+                    buffer: {
+                        type: "",
+                    }
                 }] }));
         this.dirty = true;
     }
@@ -4001,7 +4247,8 @@ var Rectangle2$1 = /*#__PURE__*/Object.freeze({
 const defaultA = [-1, -1, 0];
 const defaultB = [1, -1, 0];
 const defaultC = [0, 1, 0];
-let ab, bc;
+const ab = new Float32Array(3);
+const bc = new Float32Array(3);
 class Triangle3 {
     constructor(a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) {
         this.a = a;
@@ -4837,23 +5084,24 @@ const createJson = (r = 0, g = 0, b = 0, a = 1) => {
 
 class Clearer$1 {
     constructor(engine, color = createJson()) {
-        var _a;
         this.engine = engine;
         this.color = color;
-        this.depthTexture = (_a = engine.device) === null || _a === void 0 ? void 0 : _a.createTexture({
+        console.log(engine);
+        this.depthTexture = engine.device.createTexture({
             size: { width: engine.canvas.width, height: engine.canvas.height, depthOrArrayLayers: 1 },
-            format: "depth24plus-stencil8",
+            format: "depth24plus",
             usage: GPUTextureUsage.RENDER_ATTACHMENT
         });
         this.renderPassDescriptor = {
             colorAttachments: [
                 {
-                    attachment: null,
-                    loadValue: this.color
+                    view: null,
+                    loadValue: this.color,
+                    storeOp: 'store'
                 }
             ],
             depthStencilAttachment: {
-                attachment: this.depthTexture.createView(),
+                view: this.depthTexture.createView(),
                 depthLoadValue: 1.0,
                 depthStoreOp: "store",
                 stencilLoadValue: 0,
@@ -4872,10 +5120,12 @@ class Clearer$1 {
         this.color.a = color.a;
         return this;
     }
-    clear(commandEncoder, swapChain) {
-        const textureView = swapChain.getCurrentTexture().createView();
+    clear(commandEncoder) {
+        // const textureView = swapChain.getCurrentTexture().createView();
         this.renderPassDescriptor.colorAttachments[0].loadValue = this.color;
-        this.renderPassDescriptor.colorAttachments[0].attachment = textureView;
+        this.renderPassDescriptor.colorAttachments[0].view = this.engine.context
+            .getCurrentTexture()
+            .createView();
         return commandEncoder.beginRenderPass(this.renderPassDescriptor);
     }
 }
@@ -4928,7 +5178,7 @@ class MeshRenderer$1 {
             else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
                 if (uniform.value.loaded) {
                     if (uniform.value.data) {
-                        this.engine.device.queue.copyImageBitmapToTexture({ imageBitmap: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
+                        this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
                         uniform.dirty = false;
                     }
                 }
@@ -5004,6 +5254,7 @@ class MeshRenderer$1 {
             entries: groupEntries,
         });
         console.log(uniformBindGroup);
+        console.log("?>>>>1");
         return {
             mvp: new Float32Array(16),
             attributesBuffers: buffers,
@@ -5038,24 +5289,16 @@ class MeshRenderer$1 {
         }
         let pipeline = this.engine.device.createRenderPipeline({
             layout: pipelineLayout,
-            vertexStage: stages[0],
-            fragmentStage: stages[1],
-            primitiveTopology: geometry.topology,
-            colorStates: [
-                {
-                    format: "bgra8unorm"
-                }
-            ],
-            depthStencilState: {
-                depthWriteEnabled: true,
-                depthCompare: 'less',
-                format: 'depth24plus-stencil8',
-            },
-            rasterizationState: {
+            vertex: stages.vertex,
+            fragment: stages.fragment,
+            primitive: {
+                topology: geometry.topology,
                 cullMode: geometry.cullMode,
             },
-            vertexState: {
-                vertexBuffers
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
             },
         });
         return pipeline;
@@ -5067,7 +5310,9 @@ class MeshRenderer$1 {
             {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX,
-                type: 'uniform-buffer',
+                buffer: {
+                    type: 'uniform',
+                }
             }
         ];
         if (uniforms) {
@@ -5075,53 +5320,82 @@ class MeshRenderer$1 {
                 entries.push({
                     visibility: GPUShaderStage.FRAGMENT,
                     binding: uniforms[i].binding,
-                    type: uniforms[i].type,
+                    buffer: {
+                        type: 'uniform',
+                    }
                 });
             }
         }
+        console.log("?>>>>2");
         return this.engine.device.createBindGroupLayout({
             entries,
         });
     }
     createStages(mesh) {
         const material = mesh.getComponent(MATERIAL);
-        let vertexStage = {
+        let geometry = mesh.getComponent(GEOMETRY_3D);
+        let vertexBuffers = [];
+        let location = 0;
+        for (let i = 0; i < geometry.data.length; i++) {
+            let data = geometry.data[i];
+            let attributeDescripters = [];
+            for (let j = 0; j < data.attributes.length; j++) {
+                attributeDescripters.push({
+                    shaderLocation: location++,
+                    offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
+                    format: "float32x" + data.attributes[j].length,
+                });
+            }
+            vertexBuffers.push({
+                arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
+                attributes: attributeDescripters
+            });
+        }
+        let vertex = {
             module: this.engine.device.createShaderModule({
                 code: (material === null || material === void 0 ? void 0 : material.data.vertex) || wgslShaders.vertex,
             }),
             entryPoint: "main",
+            buffers: vertexBuffers
         };
-        let fragmentStage = {
+        let fragment = {
             module: this.engine.device.createShaderModule({
                 code: (material === null || material === void 0 ? void 0 : material.data.fragment) || wgslShaders.fragment,
             }),
-            entryPoint: "main"
+            entryPoint: "main",
+            targets: [
+                {
+                    format: this.engine.preferredFormat,
+                }
+            ]
         };
-        return [vertexStage, fragmentStage];
+        return {
+            vertex,
+            fragment
+        };
     }
 }
 MeshRenderer$1.renderTypes = "mesh";
 const wgslShaders = {
     vertex: `
 		[[block]] struct Uniforms {
-			[[offset(0)]] modelViewProjectionMatrix : mat4x4<f32>;
+			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
 
-		[[builtin(position)]] var<out> out_position : vec4<f32>;
-		[[location(0)]] var<in> a_position : vec3<f32>;
+		struct VertexOutput {
+			[[builtin(position)]] Position : vec4<f32>;
+		};
 
-		[[stage(vertex)]] fn main() -> void {
-			out_position = uniforms.modelViewProjectionMatrix * vec4<f32>(a_position, 1.0);
-			return;
+		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+			var output : VertexOutput;
+			output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			return output;
 		}
 	`,
     fragment: `
-		[[location(0)]] var<out> fragColor : vec4<f32>;
-
-		[[stage(fragment)]] fn main() -> void {
-			fragColor = vec4<f32>(1., 1., 1., 1.0);
-			return;
+		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+			return vec4<f32>(1., 1., 1., 1.0);
 		}
 	`
 };
@@ -5141,9 +5415,10 @@ class RenderSystem$1 extends ASystem$1 {
         this.engine = engine;
         this.clearer = clearer || new Clearer$1(engine);
         this.rendererMap = new Map();
-        this.swapChain = engine.context.configureSwapChain({
+        engine.context.configure({
             device: engine.device,
-            format: 'bgra8unorm',
+            format: engine.preferredFormat,
+            size: [engine.canvas.clientWidth * devicePixelRatio, engine.canvas.clientHeight * devicePixelRatio]
         });
         this.setScissor(scissor).setViewport(viewport);
     }
@@ -5193,7 +5468,7 @@ class RenderSystem$1 extends ASystem$1 {
     run(world) {
         let device = this.engine.device;
         let commandEncoder = device.createCommandEncoder();
-        let passEncoder = this.clearer.clear(commandEncoder, this.swapChain);
+        let passEncoder = this.clearer.clear(commandEncoder);
         passEncoder.setViewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height, this.viewport.minDepth, this.viewport.maxDepth);
         passEncoder.setScissorRect(this.scissor.x, this.scissor.y, this.scissor.width, this.scissor.height);
         world.store.set("passEncoder", passEncoder);
@@ -5270,7 +5545,8 @@ class MeshRenderer {
         const mvp = cacheData.mvp;
         multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
         multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
-        gl.uniformMatrix4fv(0, false, mvp);
+        var mvpLocation = gl.getUniformLocation(cacheData.pipeline.program, "mvpMatrix");
+        gl.uniformMatrix4fv(mvpLocation, false, mvp);
         cacheData.uniformMap.forEach((uniform, key) => {
             // if (uniform.type === "uniform-buffer" && uniform.dirty) {
             // 	this.engine.device.queue.writeBuffer(
@@ -5409,7 +5685,6 @@ class MeshRenderer {
             {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX,
-                type: 'uniform-buffer',
             }
         ];
         if (uniforms) {
@@ -5417,7 +5692,7 @@ class MeshRenderer {
                 entries.push({
                     visibility: GPUShaderStage.FRAGMENT,
                     binding: uniforms[i].binding,
-                    type: uniforms[i].type,
+                    // type: uniforms[i].type as any,
                 });
             }
         }
@@ -5539,7 +5814,7 @@ const IdGeneratorInstance = new IdGenerator();
 
 let weakMapTmp;
 class ASystem {
-    constructor(name, fitRule) {
+    constructor(name = "", fitRule) {
         this.id = IdGeneratorInstance.next();
         this.isSystem = true;
         this.name = "";
@@ -5729,7 +6004,7 @@ ComponentManager.eventObject = {
 
 let arr$1;
 class Entity extends EventDispatcher {
-    constructor(name, componentManager) {
+    constructor(name = "", componentManager) {
         super();
         this.id = IdGeneratorInstance.next();
         this.isEntity = true;
@@ -5970,7 +6245,7 @@ SystemManager.eventObject = {
 
 let arr;
 class World {
-    constructor(name, entityManager, systemManager) {
+    constructor(name = "", entityManager, systemManager) {
         this.entityManager = null;
         this.systemManager = null;
         this.store = new Map();
@@ -6003,6 +6278,12 @@ class World {
         }
         else {
             throw new Error("The world doesn't have a systemManager yet.");
+        }
+        return this;
+    }
+    clearAllEntities() {
+        if (this.entityManager) {
+            this.entityManager.clear();
         }
         return this;
     }
@@ -6112,5 +6393,5 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, EngineEvents, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Mathx_module as Mathx, Matrix4Component, Object3, PerspectiveProjection, Renderable, Sampler, ShaderMaterial, SpritesheetTexture, SystemManager, TextureMaterial, Vector3Scale3, Clearer as WebGLClearer, MeshRenderer as WebGLMeshRenderer, RenderSystem as WebGLRenderSystem, Clearer$1 as WebGPUClearer, WebGPUEngine, MeshRenderer$1 as WebGPUMeshRenderer, RenderSystem$1 as WebGPURenderSystem, World };
+export { APosition3, AProjection3, ARotation3, AScale3, ASystem, constants as ATTRIBUTE_NAME, constants$1 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, EngineEvents, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Mathx_module as Mathx, Matrix4Component, Object3, PerspectiveProjection, Renderable, Sampler, ShaderMaterial, SpritesheetTexture, SystemManager, TextureMaterial, Vector3Scale3, Clearer as WebGLClearer, WebGLEngine, MeshRenderer as WebGLMeshRenderer, RenderSystem as WebGLRenderSystem, Clearer$1 as WebGPUClearer, WebGPUEngine, MeshRenderer$1 as WebGPUMeshRenderer, RenderSystem$1 as WebGPURenderSystem, World };
 //# sourceMappingURL=Engine.module.js.map

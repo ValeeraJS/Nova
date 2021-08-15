@@ -4,34 +4,28 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<canvas width="800" height="450" id="glcanvas"></canvas>
 	<script
-		src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"
+		src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"
 		integrity="sha512-LF8ZB1iTwi4Qvkm4pekHG4a437Y9Af5ZuwbnW4GTbAWQeR2E4KW8WF+xH8b9psevV7wIlDMx1MH9YfPqgKhA/Q=="
 		crossorigin="anonymous"
 	></script>
 	<script type="text/javascript" src="../../build/Engine.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Engine.WebGPUEngine(canvas);
+		const canvas = document.getElementById("glcanvas");
+		const engine = new Engine.WebGLEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
-		const mesh = Engine.EntityFactory.createMesh(geo, "", world);
-
-		let position = mesh.getComponent("position3");
-		position.data[14] = -5;
-		position.dirty = true;
-
-		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
-		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
-
 		engine.once(Engine.EngineEvents.INITED, (e) => {
-			let renderSystem = new Engine.RenderSystem(engine);
-			let renderer = new Engine.MeshRenderer(engine);
-			renderSystem.addRenderer(renderer);
+			let clearer = new Engine.WebGLClearer(engine, {
+				r: 1,
+				g: 0,
+				b: 0,
+				a: 1
+			});
+			let renderSystem = new Engine.WebGLRenderSystem(engine, clearer);
 			world.addSystem(renderSystem);
-			createGUI(renderSystem.clearer);
+			createGUI(clearer);
 			loop();
 		});
 
@@ -45,7 +39,7 @@
 			const f = gui.addFolder("set clear color");
 			const options = {
 				color: {
-					r: 0,
+					r: 255,
 					g: 0,
 					b: 0
 				},
