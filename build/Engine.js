@@ -1047,29 +1047,28 @@
 	const wgslShaders$1 = {
 	    vertex: `
 		[[block]] struct Uniforms {
-			[[offset(0)]] matrix : mat4x4<f32>;
+			 matrix : mat4x4<f32>;
 	  	};
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
-		[[builtin(position)]] var<out> fragPosition : vec4<f32>;
-		[[location(0)]] var<out> fragUV : vec2<f32>;
-		[[location(0)]] var<in> position : vec3<f32>;
-		[[location(2)]] var<in> uv : vec2<f32>;
 
-		[[stage(vertex)]] fn main() -> void {
-			fragPosition = uniforms.matrix * vec4<f32>(position, 1.0);
-			fragUV = uv;
-			return;
+		struct VertexOutput {
+			[[builtin(position)]] position : vec4<f32>;
+			[[location(0)]] uv : vec2<f32>;
+		};
+
+		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>, [[location(2)]] uv : vec2<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
+			out.uv = uv;
+			return out;
 		}
 	`,
 	    fragment: `
 		[[binding(1), group(0)]] var mySampler: sampler;
 		[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
-		[[location(0)]] var<out> fragColor : vec4<f32>;
-		[[location(0)]] var<in> fragUV: vec2<f32>;
 
-		[[stage(fragment)]] fn main() -> void {
-			fragColor = textureSample(myTexture, mySampler, fragUV);
-			return;
+		[[stage(fragment)]] fn main([[location(0)]] uv: vec2<f32>) -> [[location(0)]] vec4<f32> {
+			return textureSample(myTexture, mySampler, uv);
 		}
 	`
 	};
@@ -5245,7 +5244,7 @@
 	                    let texture = device.createTexture({
 	                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 	                        format: 'rgba8unorm',
-	                        usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
+	                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 	                    });
 	                    uniformMap.set(texture, uniform);
 	                    groupEntries.push({

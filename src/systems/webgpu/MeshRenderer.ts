@@ -138,7 +138,7 @@ export default class MeshRenderer implements IRenderer {
 					let texture: GPUTexture = device.createTexture({
 						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',
-						usage: GPUTextureUsage.SAMPLED | GPUTextureUsage.COPY_DST,
+						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 					});
 					uniformMap.set(texture, uniform);
 					groupEntries.push({
