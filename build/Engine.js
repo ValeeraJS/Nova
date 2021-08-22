@@ -1064,29 +1064,33 @@
 		}
 	`,
 	    fragment: `
-		[[binding(1), group(0)]] var mySampler: sampler;
-		[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
+		//[[binding(1), group(0)]] var mySampler: sampler;
+		//[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
 
 		[[stage(fragment)]] fn main([[location(0)]] uv: vec2<f32>) -> [[location(0)]] vec4<f32> {
-			return textureSample(myTexture, mySampler, uv);
+			// return textureSample(myTexture, mySampler, uv);
+			return vec4<f32>(1., 0., 1., 1.);
 		}
 	`
 	};
 	class TextureMaterial extends Component$1 {
 	    constructor(texture, sampler = new Sampler()) {
-	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [{
-	                    name: "mySampler",
-	                    type: "sampler",
-	                    value: sampler,
-	                    binding: 1,
-	                    dirty: true
-	                }, {
+	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [
+	                // 	{
+	                // 	name: "mySampler",
+	                // 	type: "sampler",
+	                // 	value: sampler,
+	                // 	binding: 1,
+	                // 	dirty: true
+	                // }, 
+	                {
 	                    name: "myTexture",
 	                    type: "sampled-texture",
 	                    value: texture,
 	                    binding: 2,
 	                    dirty: true
-	                }] }));
+	                }
+	            ] }));
 	        this.dirty = true;
 	    }
 	    get sampler() {
@@ -5238,13 +5242,12 @@
 	                        binding: uniform.binding,
 	                        resource: sampler
 	                    });
-	                    console.log(sampler);
 	                }
 	                else if (uniform.type === "sampled-texture") {
 	                    let texture = device.createTexture({
 	                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 	                        format: 'rgba8unorm',
-	                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+	                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
 	                    });
 	                    uniformMap.set(texture, uniform);
 	                    groupEntries.push({
@@ -5258,8 +5261,6 @@
 	            layout: pipeline.getBindGroupLayout(0),
 	            entries: groupEntries,
 	        });
-	        console.log(uniformBindGroup);
-	        console.log("?>>>>1");
 	        return {
 	            mvp: new Float32Array(16),
 	            attributesBuffers: buffers,
@@ -5322,16 +5323,36 @@
 	        ];
 	        if (uniforms) {
 	            for (let i = 0; i < uniforms.length; i++) {
-	                entries.push({
-	                    visibility: GPUShaderStage.FRAGMENT,
-	                    binding: uniforms[i].binding,
-	                    buffer: {
-	                        type: 'uniform',
-	                    }
-	                });
+	                if (uniforms[i].type === "sampler") {
+	                    entries.push({
+	                        visibility: GPUShaderStage.FRAGMENT,
+	                        binding: uniforms[i].binding,
+	                        sampler: {
+	                            type: 'comparison',
+	                        },
+	                    });
+	                }
+	                else if (uniforms[i].type === "sampled-texture") {
+	                    entries.push({
+	                        visibility: GPUShaderStage.FRAGMENT,
+	                        binding: uniforms[i].binding,
+	                        texture: {
+	                            sampleType: 'float',
+	                        },
+	                    });
+	                }
+	                else {
+	                    entries.push({
+	                        visibility: GPUShaderStage.FRAGMENT,
+	                        binding: uniforms[i].binding,
+	                        buffer: {
+	                            type: 'uniform',
+	                        }
+	                    });
+	                }
 	            }
 	        }
-	        console.log("?>>>>2");
+	        console.log(uniforms, entries);
 	        return this.engine.device.createBindGroupLayout({
 	            entries,
 	        });

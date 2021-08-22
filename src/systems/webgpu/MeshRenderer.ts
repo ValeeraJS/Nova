@@ -132,13 +132,11 @@ export default class MeshRenderer implements IRenderer {
 						binding: uniform.binding,
 						resource: sampler
 					});
-
-					console.log(sampler)
 				} else if (uniform.type === "sampled-texture") {
 					let texture: GPUTexture = device.createTexture({
 						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',
-						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
 					});
 					uniformMap.set(texture, uniform);
 					groupEntries.push({
@@ -153,9 +151,6 @@ export default class MeshRenderer implements IRenderer {
 			layout: pipeline.getBindGroupLayout(0),
 			entries: groupEntries,
 		});
-
-		console.log(uniformBindGroup);
-		console.log("?>>>>1")
 
 		return {
 			mvp: new Float32Array(16),
@@ -223,16 +218,35 @@ export default class MeshRenderer implements IRenderer {
 		];
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
-				entries.push({
-					visibility: GPUShaderStage.FRAGMENT,
-					binding: uniforms[i].binding,
-					buffer: {
-						type: 'uniform',
-					}
-				});
+				if (uniforms[i].type === "sampler") {
+					entries.push({
+						visibility: GPUShaderStage.FRAGMENT,
+						binding: uniforms[i].binding,
+						sampler: {
+							type: 'comparison',
+						},
+					});
+				} else if (uniforms[i].type === "sampled-texture") {
+					entries.push({
+						visibility: GPUShaderStage.FRAGMENT,
+						binding: uniforms[i].binding,
+						texture: {
+							sampleType: 'float',
+						},
+					});
+				} else {
+					entries.push({
+						visibility: GPUShaderStage.FRAGMENT,
+						binding: uniforms[i].binding,
+						buffer: {
+							type: 'uniform',
+						}
+					});
+				}
+
 			}
 		}
-		console.log("?>>>>2")
+		console.log(uniforms, entries)
 		return this.engine.device.createBindGroupLayout({
 			entries,
 		});

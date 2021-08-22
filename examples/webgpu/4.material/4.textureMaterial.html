@@ -12,7 +12,7 @@
 
 		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
-		const material = new Engine.TextureMaterial(new Engine.ImageBitmapTexture("./../textures/test.png"));
+		const material = new Engine.TextureMaterial(new Engine.ImageBitmapTexture("./../../textures/test.png"));
 		mesh.addComponent(material);
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 
