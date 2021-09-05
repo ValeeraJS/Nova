@@ -243,7 +243,7 @@
 "meta": {
     "app": "http://www.texturepacker.com",
     "version": "1.0",
-    "image": "./../textures/fighter.png",
+    "image": "./../../textures/fighter.png",
     "format": "RGBA8888",
     "size": {"w":1024,"h":1024},
     "scale": "1",

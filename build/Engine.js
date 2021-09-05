@@ -1012,7 +1012,10 @@
 	class Sampler extends Component$1 {
 	    constructor(option = {}) {
 	        super("sampler", option);
-	        this.data = {};
+	        this.data = {
+	            minFilter: 'linear',
+	            magFilter: 'linear',
+	        };
 	        this.dirty = true;
 	    }
 	    setAddressMode(u, v, w) {
@@ -1064,25 +1067,25 @@
 		}
 	`,
 	    fragment: `
-		//[[binding(1), group(0)]] var mySampler: sampler;
-		//[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
+		[[binding(1), group(0)]] var mySampler: sampler;
+		[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
 
 		[[stage(fragment)]] fn main([[location(0)]] uv: vec2<f32>) -> [[location(0)]] vec4<f32> {
-			// return textureSample(myTexture, mySampler, uv);
-			return vec4<f32>(1., 0., 1., 1.);
+			return textureSample(myTexture, mySampler, uv);
+			//return vec4<f32>(1., 0., 1., 1.);
 		}
 	`
 	};
 	class TextureMaterial extends Component$1 {
 	    constructor(texture, sampler = new Sampler()) {
 	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [
-	                // 	{
-	                // 	name: "mySampler",
-	                // 	type: "sampler",
-	                // 	value: sampler,
-	                // 	binding: 1,
-	                // 	dirty: true
-	                // }, 
+	                {
+	                    name: "mySampler",
+	                    type: "sampler",
+	                    value: sampler,
+	                    binding: 1,
+	                    dirty: true
+	                },
 	                {
 	                    name: "myTexture",
 	                    type: "sampled-texture",
@@ -5236,7 +5239,7 @@
 	                    });
 	                }
 	                else if (uniform.type === "sampler") {
-	                    let sampler = device.createSampler(uniform.value);
+	                    let sampler = device.createSampler(uniform.value.data);
 	                    uniformMap.set(sampler, uniform);
 	                    groupEntries.push({
 	                        binding: uniform.binding,
@@ -5328,7 +5331,7 @@
 	                        visibility: GPUShaderStage.FRAGMENT,
 	                        binding: uniforms[i].binding,
 	                        sampler: {
-	                            type: 'comparison',
+	                            type: 'filtering'
 	                        },
 	                    });
 	                }
@@ -5352,7 +5355,6 @@
 	                }
 	            }
 	        }
-	        console.log(uniforms, entries);
 	        return this.engine.device.createBindGroupLayout({
 	            entries,
 	        });

@@ -23,12 +23,11 @@ const wgslShaders = {
 		}
 	`,
 	fragment: `
-		//[[binding(1), group(0)]] var mySampler: sampler;
-		//[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
+		[[binding(1), group(0)]] var mySampler: sampler;
+		[[binding(2), group(0)]] var myTexture: texture_2d<f32>;
 
 		[[stage(fragment)]] fn main([[location(0)]] uv: vec2<f32>) -> [[location(0)]] vec4<f32> {
-			// return textureSample(myTexture, mySampler, uv);
-			return vec4<f32>(1., 0., 1., 1.);
+			return textureSample(myTexture, mySampler, uv);
 		}
 	`
 };
@@ -39,13 +38,13 @@ export default class TextureMaterial extends Component<IShaderCode> implements I
 		super("material", {
 			...wgslShaders,
 			uniforms: [
-				// 	{
-				// 	name: "mySampler",
-				// 	type: "sampler",
-				// 	value: sampler,
-				// 	binding: 1,
-				// 	dirty: true
-				// }, 
+				{
+					name: "mySampler",
+					type: "sampler",
+					value: sampler,
+					binding: 1,
+					dirty: true
+				},
 				{
 					name: "myTexture",
 					type: "sampled-texture",

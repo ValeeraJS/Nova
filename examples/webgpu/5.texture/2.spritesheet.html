@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-	<link rel="stylesheet" href="./../style/common.css" />
+	<link rel="stylesheet" href="./../../style/common.css" />
 </head>
 <body>
 	<canvas width="800" height="450" id="gpucanvas"></canvas>
-	<script type="text/javascript" src="../../build/Engine.js"></script>
+	<script type="text/javascript" src="./../../../build/Engine.js"></script>
 	<script
 		src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"
 		integrity="sha512-LF8ZB1iTwi4Qvkm4pekHG4a437Y9Af5ZuwbnW4GTbAWQeR2E4KW8WF+xH8b9psevV7wIlDMx1MH9YfPqgKhA/Q=="
@@ -13,7 +13,7 @@
 	></script>
 	<script>
 		let spritesheetJson = {};
-		fetch("./../textures/fighter.json")
+		fetch("./../../textures/fighter.json")
 			.then((data) => {
 				return data.json();
 			})
@@ -51,8 +51,14 @@
 				positionProxy.z = 5;
 
 				engine.once(Engine.EngineEvents.INITED, (e) => {
-					let renderSystem = new Engine.RenderSystem(engine);
-					let renderer = new Engine.MeshRenderer(engine);
+					let clearer = new Engine.WebGPUClearer(engine, {
+						r: 0,
+						g: 0,
+						b: 0,
+						a: 0
+					});
+					let renderSystem = new Engine.WebGPURenderSystem(engine, clearer);
+					let renderer = new Engine.WebGPUMeshRenderer(engine);
 					renderSystem.addRenderer(renderer);
 					world.addSystem(renderSystem);
 					loop();
@@ -60,7 +66,7 @@
 
 				function loop() {
 					world.run();
-					rotationProxy.y -= 0.01;
+					// rotationProxy.y -= 0.01;
 					requestAnimationFrame(loop);
 				}
 
@@ -70,10 +76,12 @@
 					const gui = new dat.GUI();
 					const options = {
 						frame: 0
-					}
-					gui.add(options, "frame", 0, spritesheetJson.frames.length).step(1).onChange((v)=>{
-						texture.setFrame(v);
-					});
+					};
+					gui.add(options, "frame", 0, spritesheetJson.frames.length)
+						.step(1)
+						.onChange((v) => {
+							texture.setFrame(v);
+						});
 				}
 			});
 	</script>

@@ -295,10 +295,10 @@
     "@nodelib/fs.scandir" "2.1.3"
     fastq "^1.6.0"
 
-"@rollup/plugin-node-resolve@^13.0.2":
-  version "13.0.2"
-  resolved "https://registry.nlark.com/@rollup/plugin-node-resolve/download/@rollup/plugin-node-resolve-13.0.2.tgz#bfe58e9bfc7284ee0fabc6da7fabcb268f04e0a4"
-  integrity sha1-v+WOm/xyhO4Pq8baf6vLJo8E4KQ=
+"@rollup/plugin-node-resolve@^13.0.4":
+  version "13.0.4"
+  resolved "https://registry.nlark.com/@rollup/plugin-node-resolve/download/@rollup/plugin-node-resolve-13.0.4.tgz#b10222f4145a019740acb7738402130d848660c0"
+  integrity sha1-sQIi9BRaAZdArLdzhAITDYSGYMA=
   dependencies:
     "@rollup/pluginutils" "^3.1.0"
     "@types/resolve" "1.17.1"
@@ -356,73 +356,73 @@
   dependencies:
     "@types/node" "*"
 
-"@typescript-eslint/eslint-plugin@^4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/eslint-plugin/download/@typescript-eslint/eslint-plugin-4.28.4.tgz#e73c8cabbf3f08dee0e1bda65ed4e622ae8f8921"
-  integrity sha1-5zyMq78/CN7g4b2mXtTmIq6PiSE=
+"@typescript-eslint/eslint-plugin@^4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/eslint-plugin/download/@typescript-eslint/eslint-plugin-4.30.0.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Feslint-plugin%2Fdownload%2F%40typescript-eslint%2Feslint-plugin-4.30.0.tgz#4a0c1ae96b953f4e67435e20248d812bfa55e4fb"
+  integrity sha1-Sgwa6WuVP05nQ14gJI2BK/pV5Ps=
   dependencies:
-    "@typescript-eslint/experimental-utils" "4.28.4"
-    "@typescript-eslint/scope-manager" "4.28.4"
+    "@typescript-eslint/experimental-utils" "4.30.0"
+    "@typescript-eslint/scope-manager" "4.30.0"
     debug "^4.3.1"
     functional-red-black-tree "^1.0.1"
     regexpp "^3.1.0"
     semver "^7.3.5"
     tsutils "^3.21.0"
 
-"@typescript-eslint/experimental-utils@4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/experimental-utils/download/@typescript-eslint/experimental-utils-4.28.4.tgz#9c70c35ebed087a5c70fb0ecd90979547b7fec96"
-  integrity sha1-nHDDXr7Qh6XHD7Ds2Ql5VHt/7JY=
+"@typescript-eslint/experimental-utils@4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/experimental-utils/download/@typescript-eslint/experimental-utils-4.30.0.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Fexperimental-utils%2Fdownload%2F%40typescript-eslint%2Fexperimental-utils-4.30.0.tgz#9e49704fef568432ae16fc0d6685c13d67db0fd5"
+  integrity sha1-nklwT+9WhDKuFvwNZoXBPWfbD9U=
   dependencies:
     "@types/json-schema" "^7.0.7"
-    "@typescript-eslint/scope-manager" "4.28.4"
-    "@typescript-eslint/types" "4.28.4"
-    "@typescript-eslint/typescript-estree" "4.28.4"
+    "@typescript-eslint/scope-manager" "4.30.0"
+    "@typescript-eslint/types" "4.30.0"
+    "@typescript-eslint/typescript-estree" "4.30.0"
     eslint-scope "^5.1.1"
     eslint-utils "^3.0.0"
 
-"@typescript-eslint/parser@^4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/parser/download/@typescript-eslint/parser-4.28.4.tgz#bc462dc2779afeefdcf49082516afdc3e7b96fab"
-  integrity sha1-vEYtwnea/u/c9JCCUWr9w+e5b6s=
+"@typescript-eslint/parser@^4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/parser/download/@typescript-eslint/parser-4.30.0.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Fparser%2Fdownload%2F%40typescript-eslint%2Fparser-4.30.0.tgz#6abd720f66bd790f3e0e80c3be77180c8fcb192d"
+  integrity sha1-ar1yD2a9eQ8+DoDDvncYDI/LGS0=
   dependencies:
-    "@typescript-eslint/scope-manager" "4.28.4"
-    "@typescript-eslint/types" "4.28.4"
-    "@typescript-eslint/typescript-estree" "4.28.4"
+    "@typescript-eslint/scope-manager" "4.30.0"
+    "@typescript-eslint/types" "4.30.0"
+    "@typescript-eslint/typescript-estree" "4.30.0"
     debug "^4.3.1"
 
-"@typescript-eslint/scope-manager@4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/scope-manager/download/@typescript-eslint/scope-manager-4.28.4.tgz#bdbce9b6a644e34f767bd68bc17bb14353b9fe7f"
-  integrity sha1-vbzptqZE4092e9aLwXuxQ1O5/n8=
+"@typescript-eslint/scope-manager@4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/scope-manager/download/@typescript-eslint/scope-manager-4.30.0.tgz?cache=0&sync_timestamp=1630808160918&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Fscope-manager%2Fdownload%2F%40typescript-eslint%2Fscope-manager-4.30.0.tgz#1a3ffbb385b1a06be85cd5165a22324f069a85ee"
+  integrity sha1-Gj/7s4WxoGvoXNUWWiIyTwaahe4=
   dependencies:
-    "@typescript-eslint/types" "4.28.4"
-    "@typescript-eslint/visitor-keys" "4.28.4"
+    "@typescript-eslint/types" "4.30.0"
+    "@typescript-eslint/visitor-keys" "4.30.0"
 
-"@typescript-eslint/types@4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/types/download/@typescript-eslint/types-4.28.4.tgz#41acbd79b5816b7c0dd7530a43d97d020d3aeb42"
-  integrity sha1-Qay9ebWBa3wN11MKQ9l9Ag0660I=
+"@typescript-eslint/types@4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/types/download/@typescript-eslint/types-4.30.0.tgz?cache=0&sync_timestamp=1630808157548&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Ftypes%2Fdownload%2F%40typescript-eslint%2Ftypes-4.30.0.tgz#fb9d9b0358426f18687fba82eb0b0f869780204f"
+  integrity sha1-+52bA1hCbxhof7qC6wsPhpeAIE8=
 
-"@typescript-eslint/typescript-estree@4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/typescript-estree/download/@typescript-eslint/typescript-estree-4.28.4.tgz#252e6863278dc0727244be9e371eb35241c46d00"
-  integrity sha1-JS5oYyeNwHJyRL6eNx6zUkHEbQA=
+"@typescript-eslint/typescript-estree@4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/typescript-estree/download/@typescript-eslint/typescript-estree-4.30.0.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Ftypescript-estree%2Fdownload%2F%40typescript-eslint%2Ftypescript-estree-4.30.0.tgz#ae57833da72a753f4846cd3053758c771670c2ac"
+  integrity sha1-rleDPacqdT9IRs0wU3WMdxZwwqw=
   dependencies:
-    "@typescript-eslint/types" "4.28.4"
-    "@typescript-eslint/visitor-keys" "4.28.4"
+    "@typescript-eslint/types" "4.30.0"
+    "@typescript-eslint/visitor-keys" "4.30.0"
     debug "^4.3.1"
     globby "^11.0.3"
     is-glob "^4.0.1"
     semver "^7.3.5"
     tsutils "^3.21.0"
 
-"@typescript-eslint/visitor-keys@4.28.4":
-  version "4.28.4"
-  resolved "https://registry.nlark.com/@typescript-eslint/visitor-keys/download/@typescript-eslint/visitor-keys-4.28.4.tgz?cache=0&sync_timestamp=1626715268700&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Fvisitor-keys%2Fdownload%2F%40typescript-eslint%2Fvisitor-keys-4.28.4.tgz#92dacfefccd6751cbb0a964f06683bfd72d0c4d3"
-  integrity sha1-ktrP78zWdRy7CpZPBmg7/XLQxNM=
+"@typescript-eslint/visitor-keys@4.30.0":
+  version "4.30.0"
+  resolved "https://registry.nlark.com/@typescript-eslint/visitor-keys/download/@typescript-eslint/visitor-keys-4.30.0.tgz?cache=0&sync_timestamp=1630808160113&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40typescript-eslint%2Fvisitor-keys%2Fdownload%2F%40typescript-eslint%2Fvisitor-keys-4.30.0.tgz#a47c6272fc71b0c627d1691f68eaecf4ad71445e"
+  integrity sha1-pHxicvxxsMYn0WkfaOrs9K1xRF4=
   dependencies:
-    "@typescript-eslint/types" "4.28.4"
+    "@typescript-eslint/types" "4.30.0"
     eslint-visitor-keys "^2.0.0"
 
 "@ungap/promise-all-settled@1.1.2":
@@ -688,7 +688,7 @@ caniuse-lite@^1.0.30001181:
   resolved "https://registry.npm.taobao.org/caniuse-lite/download/caniuse-lite-1.0.30001197.tgz?cache=0&sync_timestamp=1615163759334&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fcaniuse-lite%2Fdownload%2Fcaniuse-lite-1.0.30001197.tgz#47ad15b977d2f32b3ec2fe2b087e0c50443771db"
   integrity sha1-R60VuXfS8ys+wv4rCH4MUEQ3cds=
 
-chai@^4.3.3:
+chai@^4.3.4:
   version "4.3.4"
   resolved "https://registry.npm.taobao.org/chai/download/chai-4.3.4.tgz#b55e655b31e1eac7099be4c08c21964fce2e6c49"
   integrity sha1-tV5lWzHh6scJm+TAjCGWT84ubEk=
@@ -996,16 +996,6 @@ domutils@^2.4.4:
     dom-serializer "^1.0.1"
     domelementtype "^2.0.1"
     domhandler "^4.0.0"
-
-ecstatic@^3.3.2:
-  version "3.3.2"
-  resolved "http://registry.npm.baidu-int.com/ecstatic/-/ecstatic-3.3.2.tgz#6d1dd49814d00594682c652adb66076a69d46c48"
-  integrity sha1-bR3UmBTQBZRoLGUq22YHamnUbEg=
-  dependencies:
-    he "^1.1.1"
-    mime "^1.6.0"
-    minimist "^1.1.0"
-    url-join "^2.0.5"
 
 electron-to-chromium@^1.3.649:
   version "1.3.684"
@@ -1549,10 +1539,10 @@ hasha@^5.0.0:
     is-stream "^2.0.0"
     type-fest "^0.8.0"
 
-he@1.2.0, he@^1.1.1:
+he@1.2.0, he@^1.1.0:
   version "1.2.0"
-  resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
-  integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
+  resolved "https://registry.nlark.com/he/download/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
+  integrity sha1-hK5l+n6vsWX922FWauFLrwVmTw8=
 
 hosted-git-info@^2.1.4:
   version "2.8.5"
@@ -1583,21 +1573,23 @@ http-proxy@^1.18.0:
     follow-redirects "^1.0.0"
     requires-port "^1.0.0"
 
-http-server@^0.12.3:
-  version "0.12.3"
-  resolved "https://registry.npm.taobao.org/http-server/download/http-server-0.12.3.tgz#ba0471d0ecc425886616cb35c4faf279140a0d37"
-  integrity sha1-ugRx0OzEJYhmFss1xPryeRQKDTc=
+http-server@^13.0.1:
+  version "13.0.1"
+  resolved "https://registry.nlark.com/http-server/download/http-server-13.0.1.tgz#e7340d082925c4b1d6484c905d0df29d7d8ec16f"
+  integrity sha1-5zQNCCklxLHWSEyQXQ3ynX2OwW8=
   dependencies:
     basic-auth "^1.0.3"
     colors "^1.4.0"
     corser "^2.0.1"
-    ecstatic "^3.3.2"
+    he "^1.1.0"
     http-proxy "^1.18.0"
+    mime "^1.6.0"
     minimist "^1.2.5"
     opener "^1.5.1"
     portfinder "^1.0.25"
     secure-compare "3.0.1"
     union "~0.5.0"
+    url-join "^2.0.5"
 
 ignore@^4.0.6:
   version "4.0.6"
@@ -1950,7 +1942,7 @@ minimatch@3.0.4, minimatch@^3.0.4:
   dependencies:
     brace-expansion "^1.1.7"
 
-minimist@1.x, minimist@^1.1.0:
+minimist@1.x:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.0.tgz#a35008b20f41383eec1fb914f4cd5df79a264284"
   integrity sha1-o1AIsg9BOD7sH7kU9M1d95omQoQ=
@@ -1967,10 +1959,10 @@ mkdirp@^0.5.5:
   dependencies:
     minimist "^1.2.5"
 
-mocha@^9.0.2:
-  version "9.0.2"
-  resolved "https://registry.nlark.com/mocha/download/mocha-9.0.2.tgz#e84849b61f406a680ced85af76425f6f3108d1a0"
-  integrity sha1-6EhJth9AamgM7YWvdkJfbzEI0aA=
+mocha@^9.1.1:
+  version "9.1.1"
+  resolved "https://registry.nlark.com/mocha/download/mocha-9.1.1.tgz#33df2eb9c6262434630510c5f4283b36efda9b61"
+  integrity sha1-M98uucYmJDRjBRDF9Cg7Nu/am2E=
   dependencies:
     "@ungap/promise-all-settled" "1.1.2"
     ansi-colors "4.1.1"
@@ -2405,10 +2397,10 @@ rollup-pluginutils@^2.5.0:
   dependencies:
     estree-walker "^0.6.1"
 
-rollup@^2.53.3:
-  version "2.53.3"
-  resolved "https://registry.nlark.com/rollup/download/rollup-2.53.3.tgz#14b0e57f0874d4ad23bdbb13050cf70bcd1eabf7"
-  integrity sha1-FLDlfwh01K0jvbsTBQz3C80eq/c=
+rollup@^2.56.3:
+  version "2.56.3"
+  resolved "https://registry.nlark.com/rollup/download/rollup-2.56.3.tgz#b63edadd9851b0d618a6d0e6af8201955a77aeff"
+  integrity sha1-tj7a3ZhRsNYYptDmr4IBlVp3rv8=
   optionalDependencies:
     fsevents "~2.3.2"
 
@@ -2725,10 +2717,10 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
-typescript@^4.3.5:
-  version "4.3.5"
-  resolved "https://registry.nlark.com/typescript/download/typescript-4.3.5.tgz#4d1c37cc16e893973c45a06886b7113234f119f4"
-  integrity sha1-TRw3zBbok5c8RaBohrcRMjTxGfQ=
+typescript@^4.4.2:
+  version "4.4.2"
+  resolved "https://registry.nlark.com/typescript/download/typescript-4.4.2.tgz?cache=0&sync_timestamp=1630826368760&other_urls=https%3A%2F%2Fregistry.nlark.com%2Ftypescript%2Fdownload%2Ftypescript-4.4.2.tgz#6d618640d430e3569a1dfb44f7d7e600ced3ee86"
+  integrity sha1-bWGGQNQw41aaHftE99fmAM7T7oY=
 
 union@~0.5.0:
   version "0.5.0"

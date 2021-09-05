@@ -126,7 +126,7 @@ export default class MeshRenderer implements IRenderer {
 						}
 					});
 				} else if (uniform.type === "sampler") {
-					let sampler: GPUSampler = device.createSampler(uniform.value);
+					let sampler: GPUSampler = device.createSampler(uniform.value.data);
 					uniformMap.set(sampler, uniform);
 					groupEntries.push({
 						binding: uniform.binding,
@@ -223,7 +223,7 @@ export default class MeshRenderer implements IRenderer {
 						visibility: GPUShaderStage.FRAGMENT,
 						binding: uniforms[i].binding,
 						sampler: {
-							type: 'comparison',
+							type: 'filtering'
 						},
 					});
 				} else if (uniforms[i].type === "sampled-texture") {
@@ -246,7 +246,6 @@ export default class MeshRenderer implements IRenderer {
 
 			}
 		}
-		console.log(uniforms, entries)
 		return this.engine.device.createBindGroupLayout({
 			entries,
 		});
