@@ -1,1 +1,2 @@
-export {default as createTriangle3Geometry} from "./createTriangle3Geometry";
+export {default as createTriangleGeometry3} from "./createTriangleGeometry3";
+export {default as createPlaneGeometry3} from "./createPlaneGeometry3";

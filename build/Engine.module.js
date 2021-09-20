@@ -374,10 +374,12 @@ const DEFAULT_OPTIONS = {
     hasNormal: true,
     hasUV: true,
     hasIndices: false,
-    combine: true
+    combine: true,
+    topology: "triangle-list",
+    cullMode: "none"
 };
 
-var createTriangle3Geometry = (t = create$b(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+var createTriangleGeometry3 = (t = create$b(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
     let geo = new Geometry3(3, topology, cullMode);
     let stride = 3;
     if (options.combine) {
@@ -449,9 +451,160 @@ var createTriangle3Geometry = (t = create$b(), options = DEFAULT_OPTIONS, topolo
     }
 };
 
+const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segmentX: 1, segmentY: 1 });
+var createPlaneGeometry3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
+    let stride = 3;
+    const halfX = width * 0.5;
+    const halfY = height * 0.5;
+    const gridX = Math.max(1, Math.round(options.segmentX));
+    const gridY = Math.max(1, Math.round(options.segmentY));
+    const gridX1 = gridX + 1;
+    const gridY1 = gridY + 1;
+    const segmentWidth = width / gridX;
+    const segmentHeight = height / gridY;
+    const indices = [];
+    const positions = [];
+    const normals = [];
+    const uvs = [];
+    for (let iy = 0; iy < gridY1; iy++) {
+        const y = iy * segmentHeight - halfY;
+        for (let ix = 0; ix < gridX1; ix++) {
+            const x = ix * segmentWidth - halfX;
+            positions.push(x, -y, 0);
+            normals.push(0, 0, 1);
+            uvs.push(ix / gridX);
+            uvs.push(iy / gridY);
+        }
+    }
+    for (let iy = 0; iy < gridY; iy++) {
+        for (let ix = 0; ix < gridX; ix++) {
+            const a = ix + gridX1 * iy;
+            const b = ix + gridX1 * (iy + 1);
+            const c = (ix + 1) + gridX1 * (iy + 1);
+            const d = (ix + 1) + gridX1 * iy;
+            indices.push(a, b, d);
+            indices.push(b, c, d);
+        }
+    }
+    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+    let geo = new Geometry3(len, options.topology, options.cullMode);
+    console.log(indices, positions, normals, uvs);
+    // TODO indices 现在都是非索引版本
+    if (options.combine) {
+        let pickers = [{
+                name: POSITION,
+                offset: 0,
+                length: 3,
+            }];
+        if (options.hasNormal && options.hasUV) {
+            stride = 8;
+            pickers.push({
+                name: 'normal',
+                offset: 3,
+                length: 3,
+            });
+            pickers.push({
+                name: 'uv',
+                offset: 6,
+                length: 2,
+            });
+        }
+        else if (options.hasNormal) {
+            stride = 6;
+            pickers.push({
+                name: 'normal',
+                offset: 3,
+                length: 3,
+            });
+        }
+        else if (options.hasUV) {
+            stride = 5;
+            pickers.push({
+                name: 'uv',
+                offset: 3,
+                length: 2,
+            });
+        }
+        let result = new Float32Array(stride * len);
+        for (let i = 0; i < len; i++) {
+            i2 = indices[i] << 1;
+            i3 = indices[i] * 3;
+            strideI = i * stride;
+            result[0 + strideI] = positions[i3];
+            result[1 + strideI] = positions[i3 + 1];
+            result[2 + strideI] = positions[i3 + 2];
+            if (options.hasNormal) {
+                result[3 + strideI] = normals[i3];
+                result[4 + strideI] = normals[i3 + 1];
+                result[5 + strideI] = normals[i3 + 2];
+                if (options.hasUV) {
+                    result[6 + strideI] = uvs[i2];
+                    result[7 + strideI] = uvs[i2 + 1];
+                }
+            }
+            else if (options.hasUV) {
+                result[3 + strideI] = uvs[i2];
+                result[4 + strideI] = uvs[i2 + 1];
+            }
+        }
+        // result.set(t.a);
+        // result.set(t.b, stride);
+        // result.set(t.c, stride + stride);
+        // if (options.hasNormal) {
+        //     let normal = Triangle3.normal(t);
+        //     result.set(normal, 3);
+        //     result.set(normal, stride + 3);
+        //     result.set(normal, stride + stride + 3);
+        //     pickers.push({
+        //         name: 'normal',
+        //         offset: 3,
+        //         length: 3,
+        //     });
+        // }
+        // if (options.hasUV) {
+        //     let offset = options.hasNormal ? 6 : 3;
+        //     result.set([0, 1], offset);
+        //     result.set([1, 1], stride + offset);
+        //     result.set([0.5, 0], stride + stride + offset);
+        //     pickers.push({
+        //         name: UV,
+        //         offset,
+        //         length: 2,
+        //     });
+        // }
+        geo.addAttribute(VERTICES, result, stride, pickers);
+        console.log(geo);
+        return geo;
+    }
+    else {
+        // let result = new Float32Array(9);
+        // result.set(t.a);
+        // result.set(t.b, 3);
+        // result.set(t.c, 6);
+        // geo.addAttribute(POSITION, result, 3);
+        // if (options.hasNormal) {
+        //     result = new Float32Array(9);
+        //     let normal = Triangle3.normal(t);
+        //     result.set(normal, 0);
+        //     result.set(normal, 3);
+        //     result.set(normal, 6);
+        //     geo.addAttribute(NORMAL, result, 3);
+        // }
+        // if (options.hasUV) {
+        //     result = new Float32Array(6);
+        //     result.set([0, 0], 0);
+        //     result.set([1, 0], 2);
+        //     result.set([0.5, 1], 4);
+        //     geo.addAttribute(UV, result, 2);
+        // }
+        return geo;
+    }
+};
+
 var index$2 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
-	createTriangle3Geometry: createTriangle3Geometry
+	createTriangleGeometry3: createTriangleGeometry3,
+	createPlaneGeometry3: createPlaneGeometry3
 });
 
 /**
@@ -1066,7 +1219,6 @@ const wgslShaders$1 = {
 
 		[[stage(fragment)]] fn main([[location(0)]] uv: vec2<f32>) -> [[location(0)]] vec4<f32> {
 			return textureSample(myTexture, mySampler, uv);
-			//return vec4<f32>(1., 0., 1., 1.);
 		}
 	`
 };
@@ -4925,6 +5077,7 @@ class ImageBitmapTexture extends Component$1 {
         this.width = 0;
         this.height = 0;
         this.sizeChanged = false;
+        this.image = new Image();
         this.setImage(img);
     }
     setImage(img) {
@@ -4932,9 +5085,7 @@ class ImageBitmapTexture extends Component$1 {
             this.loaded = false;
             this.dirty = false;
             if (typeof img === "string") {
-                let tmp = img;
-                img = new Image();
-                img.src = tmp;
+                this.image.src = img;
             }
             else if (img instanceof ImageBitmap) {
                 this.dirty = true;
@@ -4942,9 +5093,11 @@ class ImageBitmapTexture extends Component$1 {
                 this.data = img;
                 return this;
             }
-            this.image = img;
-            yield img.decode();
-            this.data = yield createImageBitmap(img);
+            else {
+                this.image = img;
+            }
+            yield this.image.decode();
+            this.data = yield createImageBitmap(this.image);
             if (this.width !== this.data.width || this.height !== this.data.height) {
                 this.sizeChanged = true;
                 this.width = this.data.width;

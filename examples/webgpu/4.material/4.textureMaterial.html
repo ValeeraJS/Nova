@@ -10,7 +10,7 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+		const geo = Engine.Geometry3Factory.createPlaneGeometry3(2, 2);
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 		const material = new Engine.TextureMaterial(new Engine.ImageBitmapTexture("./../../textures/test.png"));
 		mesh.addComponent(material);
@@ -31,7 +31,7 @@
 
 		function loop() {
 			world.run();
-			rotationProxy.y -= 0.01;
+			rotationProxy.y -= 0.03;
 			requestAnimationFrame(loop);
 		}
 	</script>

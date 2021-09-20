@@ -16,7 +16,7 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+		const geo = Engine.Geometry3Factory.createPlaneGeometry3();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 		const texture = new Engine.ImageBitmapTexture("./../../textures/test.png");
 		const material = new Engine.TextureMaterial(texture);
@@ -48,7 +48,7 @@
 			const gui = new dat.GUI();
 			const input = document.createElement("input");
 			input.type = "file";
-			input.accept = ".jpeg,.png,.jpg,bmp,.gif";
+			input.accept = ".jpeg,.png,.jpg,.bmp,.gif";
 			const reader = new FileReader();
 			input.onchange = function (e) {
 				let file = e.target.files[0]
@@ -59,7 +59,7 @@
 			reader.onload = function (e) {
 				console.log(e);
 				material.texture.setImage(e.target.result);
-				material.dirty = true;
+				// material.dirty = true;
 			}
 			const fileParams = {
 				loadFile: function () {

@@ -4,8 +4,8 @@ import IEngine, { EngineEvents } from "./IEngine";
 export default class WebGPUEngine extends EventDispatcher implements IEngine {
 	public static async detect(
 		canvas: HTMLCanvasElement = document.createElement("canvas"),
-	): Promise<{context: GPUPresentationContext, adapter: GPUAdapter, device: GPUDevice}> {
-		const context = (canvas.getContext("webgpu") as any) as GPUPresentationContext;
+	): Promise<{context: GPUCanvasContext, adapter: GPUAdapter, device: GPUDevice}> {
+		const context = (canvas.getContext("webgpu") as any) as GPUCanvasContext;
 
 		if (!context) {
 			throw new Error('WebGPU not supported: ');
@@ -28,7 +28,7 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 
 	public adapter!: GPUAdapter;
 	public canvas: HTMLCanvasElement;
-	public context!: GPUPresentationContext;
+	public context!: GPUCanvasContext;
 	public device!: GPUDevice;
 	public inited: boolean = false;
 	public preferredFormat!: GPUTextureFormat;

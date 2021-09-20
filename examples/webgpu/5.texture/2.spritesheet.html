@@ -38,7 +38,7 @@
 				const engine = new Engine.WebGPUEngine(canvas);
 				const world = new Engine.World();
 
-				const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+				const geo = Engine.Geometry3Factory.createTriangleGeometry3();
 				const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 				const texture = new Engine.SpritesheetTexture(spritesheetJson);
 				const material = new Engine.TextureMaterial(texture);

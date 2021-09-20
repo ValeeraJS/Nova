@@ -6,7 +6,8 @@ export default class ImageBitmapTexture extends Component<ImageBitmap> {
 	width = 0;
 	height = 0;
 	sizeChanged = false;
-	image?: HTMLImageElement;
+	image: HTMLImageElement = new Image();
+
 	constructor(img: HTMLImageElement | string, name: string = "image-texture") {
 		super(name);
 		this.setImage(img);
@@ -16,21 +17,20 @@ export default class ImageBitmapTexture extends Component<ImageBitmap> {
 		this.loaded = false;
 		this.dirty = false;
 		if (typeof img === "string") {
-			let tmp = img;
-			img = new Image();
-			img.src = tmp;
+			this.image.src = img;
 		} else if (img instanceof ImageBitmap) {
 			this.dirty = true;
 			this.loaded = true;
 			this.data = img;
 
 			return this;
+		} else {
+			this.image = img;
 		}
 
-		this.image = img;
-		await img.decode();
+		await this.image.decode();
 
-		this.data = await createImageBitmap(img);
+		this.data = await createImageBitmap(this.image);
 		if (this.width !== this.data.width || this.height !== this.data.height) {
 			this.sizeChanged = true;
 			this.width = this.data.width;

@@ -2,9 +2,9 @@ import { Triangle3 } from "@valeera/mathx/src/shape";
 import ITriangle from "@valeera/mathx/src/shape/interfaces/ITriangle";
 import { NORMAL, POSITION, UV, VERTICES } from "../constants";
 import Geometry3, { AttributePicker } from "../Geometry3";
-import { DEFAULT_OPTIONS, geometryOptions } from "./geometryOptions";
+import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
-export default (width = 1, height = 1, depth = 1, widthSegments = 1, heightSegments = 1, depthSegments = 1, options: geometryOptions = DEFAULT_OPTIONS, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none"): Geometry3 => {
+export default (width = 1, height = 1, depth = 1, widthSegments = 1, heightSegments = 1, depthSegments = 1, options: IGeometryOptions = DEFAULT_OPTIONS, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none"): Geometry3 => {
     let geo = new Geometry3(3, topology, cullMode);
     let stride = 3;
     if (options.combine) {
