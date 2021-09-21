@@ -29,7 +29,7 @@ export default class RenderSystem extends ASystem {
 		engine.context.configure({
 			device: engine.device,
 			format: engine.preferredFormat,
-			size: [engine.canvas.clientWidth * devicePixelRatio, engine.canvas.clientHeight * devicePixelRatio]
+			size: [engine.canvas.clientWidth, engine.canvas.clientHeight]
 		});
 		this.setScissor(scissor).setViewport(viewport);
 	}

@@ -16,7 +16,7 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3Factory.createTriangleGeometry3();
+		const geo = Engine.Geometry3Factory.createTriangle3();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
 		const material = new Engine.ColorMaterial(new Float32Array([1, 0, 0, 1]));
 		mesh.addComponent(material);

@@ -1,6 +1,5 @@
 import Component from "@valeera/x/src/Component";
 import { GEOMETRY_3D } from "../constants";
-import { POSITION } from "./constants";
 
 // 顶点多种数据（位置，uv，法线等）合并为一个类型数组，每个顶点各个数据如何取数据的方式
 // 在WebGPU管线中，对应会转化到vertexState.vertexBuffers里面各个元素的attributes元素信息。

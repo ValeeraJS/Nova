@@ -7,41 +7,20 @@
 	<canvas width="800" height="450" id="gpucanvas"></canvas>
 	<script type="text/javascript" src="./../../../build/Engine.js"></script>
 	<script>
-		const vertexShader = `
-		[[block]] struct Uniforms {
-			modelViewProjectionMatrix : mat4x4<f32>;
-	  	};
-		[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
-
-		struct VertexOutput {
-			[[builtin(position)]] position : vec4<f32>;
-		};
-
-		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
-			var out: VertexOutput;
-			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-			return out;
-		}
-		`;
-		const fragmentShader = `
-		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
-			return vec4<f32>(1., 0., 0., 1.0);
-		}
-		`;
-
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3Factory.createTriangle3();
-		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
-		mesh.addComponent(new Engine.ShaderMaterial(vertexShader, fragmentShader));
+		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
+		const geometry = Engine.Geometry3Factory.createTriangle3(2, 2);
+
+		const mesh = Engine.EntityFactory.createMesh(geometry, "test-triangle", world);
+		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(mesh);
+		positionProxy.z = -5;
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 
 		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
 		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
-		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(camera);
-		positionProxy.z = 5;
 
 		engine.once(Engine.EngineEvents.INITED, (e) => {
 			let renderSystem = new Engine.WebGPURenderSystem(engine);
