@@ -16,10 +16,9 @@
 		const engine = new Engine.WebGPUEngine(canvas);
 		const world = new Engine.World();
 
-		const geo = Engine.Geometry3Factory.createPlane3(3, 3);
+		const geo = Engine.Geometry3Factory.createTriangle3();
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
-		const texture = new Engine.ImageBitmapTexture("./../../textures/test.png");
-		const material = new Engine.TextureMaterial(texture);
+		const material = new Engine.NormalMaterial();
 		mesh.addComponent(material);
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 
@@ -40,33 +39,6 @@
 			world.run();
 			rotationProxy.y -= 0.01;
 			requestAnimationFrame(loop);
-		}
-
-		createGUI();
-
-		function createGUI() {
-			const gui = new dat.GUI();
-			const input = document.createElement("input");
-			input.type = "file";
-			input.accept = ".jpeg,.png,.jpg,.bmp,.gif";
-			const reader = new FileReader();
-			input.onchange = function (e) {
-				let file = e.target.files[0]
-				if (file) {
-					reader.readAsDataURL(file);
-				}
-			};
-			reader.onload = function (e) {
-				console.log(e);
-				material.texture.setImage(e.target.result);
-				// material.dirty = true;
-			}
-			const fileParams = {
-				loadFile: function () {
-					input.click();
-				}
-			};
-			gui.add(fileParams, "loadFile").name("select image");
 		}
 	</script>
 </body>

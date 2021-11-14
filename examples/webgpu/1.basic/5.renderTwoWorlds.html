@@ -20,7 +20,7 @@
 
 		function createWorld(engine, triangleColor, clearColor) {
 			const world = new Engine.World();
-			const geo = Engine.Geometry3Factory.createTriangle3Geometry();
+			const geo = Engine.Geometry3Factory.createTriangle3();
 			const mesh = Engine.EntityFactory.createMesh(geo, "", world);
 			mesh.addComponent(new Engine.ColorMaterial(triangleColor));
 			let position = mesh.getComponent("position3");

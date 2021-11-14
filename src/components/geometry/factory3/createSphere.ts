@@ -3,14 +3,14 @@ import { NORMAL, POSITION, UV, VERTICES } from "../constants";
 import Geometry3, { AttributePicker } from "../Geometry3";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
-export type ICircleGeometryOptions = {
+export type ISphereGeometryOptions = {
     segments: number,
     angleStart: number,
     angle: number,
     radius: number,
 } & IGeometryOptions;
 
-export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
+export const DEFAULT_SPHERE_OPTIONS: ISphereGeometryOptions = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
     combine: true,
@@ -21,7 +21,7 @@ export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
 };
 
 
-export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geometry3 => {
+export default (options: ISphereGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geometry3 => {
     let stride = 3;
 
     const indices = [];

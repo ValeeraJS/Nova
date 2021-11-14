@@ -18,8 +18,7 @@
 
 		const geo = Engine.Geometry3Factory.createPlane3(3, 3);
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
-		const texture = new Engine.ImageBitmapTexture("./../../textures/test.png");
-		const material = new Engine.TextureMaterial(texture);
+		const material = new Engine.DepthMaterial();
 		mesh.addComponent(material);
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 
@@ -34,6 +33,7 @@
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			loop();
+			// createGUI();
 		});
 
 		function loop() {
@@ -42,31 +42,23 @@
 			requestAnimationFrame(loop);
 		}
 
-		createGUI();
-
 		function createGUI() {
 			const gui = new dat.GUI();
-			const input = document.createElement("input");
-			input.type = "file";
-			input.accept = ".jpeg,.png,.jpg,.bmp,.gif";
-			const reader = new FileReader();
-			input.onchange = function (e) {
-				let file = e.target.files[0]
-				if (file) {
-					reader.readAsDataURL(file);
-				}
+			const f = gui.addFolder("set clear color");
+			const options = {
+				color: {
+					r: 255,
+					g: 0,
+					b: 0
+				},
+				alpha: 1
 			};
-			reader.onload = function (e) {
-				console.log(e);
-				material.texture.setImage(e.target.result);
-				// material.dirty = true;
+			f.addColor(options, "color").onChange(onChange);
+			f.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
+
+			function onChange(val) {
+				material.setColor(options.color.r / 255, options.color.g / 255, options.color.b / 255, options.alpha);
 			}
-			const fileParams = {
-				loadFile: function () {
-					input.click();
-				}
-			};
-			gui.add(fileParams, "loadFile").name("select image");
 		}
 	</script>
 </body>

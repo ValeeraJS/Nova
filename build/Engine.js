@@ -313,8 +313,8 @@
 	    cullMode: "none"
 	};
 
-	const DEFAULT_PLANE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
-	var createCircle3 = (options = DEFAULT_PLANE_OPTIONS$1) => {
+	const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
+	var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
 	    let stride = 3;
 	    const indices = [];
 	    const positions = [0, 0, 0];
@@ -392,33 +392,7 @@
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
 	        }
-	        // result.set(t.a);
-	        // result.set(t.b, stride);
-	        // result.set(t.c, stride + stride);
-	        // if (options.hasNormal) {
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, stride + 3);
-	        //     result.set(normal, stride + stride + 3);
-	        //     pickers.push({
-	        //         name: 'normal',
-	        //         offset: 3,
-	        //         length: 3,
-	        //     });
-	        // }
-	        // if (options.hasUV) {
-	        //     let offset = options.hasNormal ? 6 : 3;
-	        //     result.set([0, 1], offset);
-	        //     result.set([1, 1], stride + offset);
-	        //     result.set([0.5, 0], stride + stride + offset);
-	        //     pickers.push({
-	        //         name: UV,
-	        //         offset,
-	        //         length: 2,
-	        //     });
-	        // }
 	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        console.log(geo);
 	        return geo;
 	    }
 	    else {
@@ -1235,13 +1209,6 @@
 	    target: null
 	};
 
-	class ShaderMaterial extends Component$1 {
-	    constructor(vertex, fragment, uniforms = []) {
-	        super("material", { vertex, fragment, uniforms });
-	        this.dirty = true;
-	    }
-	}
-
 	const wgslShaders$2 = {
 	    vertex: `
 		[[block]] struct Uniforms {
@@ -1293,6 +1260,79 @@
 	            this.data.uniforms[0].dirty = true;
 	        }
 	        return this;
+	    }
+	}
+
+	const vertexShader$1 = `
+[[block]] struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>;
+};
+
+[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	[[builtin(position)]] position : vec4<f32>;
+	[[location(0)]] depth : vec2<f32>;
+};
+
+[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+	var out: VertexOutput;
+	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	out.depth = vec2<f32>(out.position.z, out.position.w);
+	return out;
+}`;
+	const fragmentShader$1 = `
+[[stage(fragment)]] fn main([[location(0)]] depth : vec2<f32>) -> [[location(0)]] vec4<f32> {
+	var fragCoordZ: f32 = (depth.x / depth.y);
+	return vec4<f32>(fragCoordZ, 0., fragCoordZ, 1.0);
+}`;
+	class NormalMaterial$1 extends Component$1 {
+	    constructor() {
+	        super("material", {
+	            vertex: vertexShader$1,
+	            fragment: fragmentShader$1,
+	            uniforms: []
+	        });
+	        this.dirty = true;
+	    }
+	}
+
+	const vertexShader = `
+[[block]] struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>;
+};
+[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	[[builtin(position)]] position : vec4<f32>;
+	[[location(0)]] normal : vec4<f32>;
+};
+
+[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>, [[location(1)]] normal : vec3<f32>) -> VertexOutput {
+	var out: VertexOutput;
+	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	out.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));
+	return out;
+}`;
+	const fragmentShader = `
+[[stage(fragment)]] fn main([[location(0)]] normal : vec4<f32>) -> [[location(0)]] vec4<f32> {
+	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
+}`;
+	class NormalMaterial extends Component$1 {
+	    constructor() {
+	        super("material", {
+	            vertex: vertexShader,
+	            fragment: fragmentShader,
+	            uniforms: []
+	        });
+	        this.dirty = true;
+	    }
+	}
+
+	class ShaderMaterial extends Component$1 {
+	    constructor(vertex, fragment, uniforms = []) {
+	        super("material", { vertex, fragment, uniforms });
+	        this.dirty = true;
 	    }
 	}
 
@@ -1751,6 +1791,24 @@
 
 	var isPowerOfTwo = (value) => {
 	    return (value & (value - 1)) === 0 && value !== 0;
+	};
+
+	let d1 = 0, d2 = 0;
+	/**
+	 * @function mapRange
+	 * @desc 将目标值按照区间线性映射到另一个区间里面的值。
+	 * @param {number} value 目标值
+	 * @param {number} range1 值所在的线性区间
+	 * @param {number} range2 值需要映射到的目标区间
+	 * @returns {number} 映射之后的值
+	 * @example Mathx.mapRange(50, [0, 100], [0, 1]); // 0.5;
+	 * Mathx.clamp(150, [100, 200], [0, -100]); // -50;
+	 * Mathx.clamp(10, [0, 1], [0, -2]); // -20;
+	 */
+	var mapRange = (value, range1, range2) => {
+	    d1 = range1[1] - range1[0];
+	    d2 = range2[1] - range2[0];
+	    return (value - d1 * 0.5) / d2 / d1;
 	};
 
 	var randFloat = (min = 0, max = 1) => {
@@ -4622,6 +4680,7 @@
 		floorPowerOfTwo: floorPowerOfTwo,
 		floorToZero: floorToZeroCommon,
 		isPowerOfTwo: isPowerOfTwo,
+		mapRange: mapRange,
 		randFloat: randFloat,
 		randInt: randInt,
 		rndFloat: rndFloat,
@@ -5093,6 +5152,78 @@
 	    }
 	    update() {
 	        fromEuler(this.euler, this.data);
+	        return this;
+	    }
+	}
+
+	class PerspectiveProjection$1 extends AProjection3 {
+	    constructor(left, right, bottom, top, near, far) {
+	        super();
+	        this.data = new Float32Array(16);
+	        this.options = {
+	            left,
+	            right,
+	            bottom,
+	            top,
+	            near,
+	            far,
+	        };
+	        this.update();
+	    }
+	    get left() {
+	        return this.options.left;
+	    }
+	    set left(value) {
+	        this.options.left = value;
+	        this.update();
+	    }
+	    get right() {
+	        return this.right;
+	    }
+	    set right(value) {
+	        this.options.right = value;
+	        this.update();
+	    }
+	    get top() {
+	        return this.top;
+	    }
+	    set top(value) {
+	        this.options.top = value;
+	        this.update();
+	    }
+	    get bottom() {
+	        return this.bottom;
+	    }
+	    set bottom(value) {
+	        this.options.bottom = value;
+	        this.update();
+	    }
+	    get near() {
+	        return this.options.near;
+	    }
+	    set near(value) {
+	        this.options.near = value;
+	        this.update();
+	    }
+	    get far() {
+	        return this.options.far;
+	    }
+	    set far(value) {
+	        this.options.far = value;
+	        this.update();
+	    }
+	    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top, near = this.near, far = this.far) {
+	        this.options.left = left;
+	        this.options.right = right;
+	        this.options.bottom = bottom;
+	        this.options.top = top;
+	        this.options.near = near;
+	        this.options.far = far;
+	        return this.update();
+	    }
+	    update() {
+	        Matrix4.orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
+	        this.dirty = true;
 	        return this;
 	    }
 	}
@@ -5702,9 +5833,23 @@
 			[[builtin(position)]] Position : vec4<f32>;
 		};
 
+		fn mapRange(
+			value: f32,
+			range1: vec2<f32>,
+			range2: vec2<f32>,
+		) -> f32 {
+			var d1: f32 = range1.y - range1.x;
+			var d2: f32 = range2.y - range2.x;
+		
+			return (value - d1 * 0.5) / d2 / d1;
+		};
+
 		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
 			var output : VertexOutput;
 			output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			if (output.Position.w == 1.0) {
+				output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
+			}
 			return output;
 		}
 	`,
@@ -6719,6 +6864,7 @@
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
 	exports.ComponentProxy = index$1;
+	exports.DepthMaterial = NormalMaterial$1;
 	exports.Entity = Entity;
 	exports.EntityFactory = index;
 	exports.Entitymanager = EntityManager;
@@ -6730,7 +6876,9 @@
 	exports.ImageBitmapTexture = ImageBitmapTexture;
 	exports.Mathx = Mathx_module;
 	exports.Matrix4Component = Matrix4Component;
+	exports.NormalMaterial = NormalMaterial;
 	exports.Object3 = Object3;
+	exports.OrthogonalProjection = PerspectiveProjection$1;
 	exports.PerspectiveProjection = PerspectiveProjection;
 	exports.Renderable = Renderable;
 	exports.Sampler = Sampler;
