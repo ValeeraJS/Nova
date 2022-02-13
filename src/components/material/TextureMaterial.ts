@@ -5,7 +5,7 @@ import IMaterial, { IShaderCode } from "./IMatrial";
 
 const wgslShaders = {
 	vertex: `
-		[[block]] struct Uniforms {
+		struct Uniforms {
 			 matrix : mat4x4<f32>;
 	  	};
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;

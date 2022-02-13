@@ -74,7 +74,7 @@
 	"dependencies": {
 		"@valeera/eventdispatcher": "^2.1.2",
 		"@valeera/mathx": "^0.1.15",
-		"@valeera/webgpu-constant": "^0.1.0",
+		"@valeera/webgpu-constant": "^0.1.1",
 		"@valeera/x": "^0.1.14"
 	}
 }

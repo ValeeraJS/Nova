@@ -1258,27 +1258,27 @@ class ColorMaterial extends Component$1 {
 }
 
 const vertexShader$1 = `
-[[block]] struct Uniforms {
+struct Uniforms {
 	modelViewProjectionMatrix : mat4x4<f32>;
 };
 
-[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 struct VertexOutput {
-	[[builtin(position)]] position : vec4<f32>;
-	[[location(0)]] depth : vec2<f32>;
+	@builtin(position) position : vec4<f32>;
+	@location(0) depth : vec2<f32>;
 };
 
-[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	out.depth = vec2<f32>(out.position.z, out.position.w);
 	return out;
 }`;
 const fragmentShader$1 = `
-[[stage(fragment)]] fn main([[location(0)]] depth : vec2<f32>) -> [[location(0)]] vec4<f32> {
+@stage(fragment) fn main(@location(0) depth : vec2<f32>) -> @location(0) vec4<f32> {
 	var fragCoordZ: f32 = (depth.x / depth.y);
-	return vec4<f32>(fragCoordZ, 0., fragCoordZ, 1.0);
+	return vec4<f32>(fragCoordZ, fragCoordZ, fragCoordZ, 1.0);
 }`;
 class NormalMaterial$1 extends Component$1 {
     constructor() {
@@ -1292,24 +1292,24 @@ class NormalMaterial$1 extends Component$1 {
 }
 
 const vertexShader = `
-[[block]] struct Uniforms {
+struct Uniforms {
 	modelViewProjectionMatrix : mat4x4<f32>;
 };
-[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 struct VertexOutput {
-	[[builtin(position)]] position : vec4<f32>;
-	[[location(0)]] normal : vec4<f32>;
+	@builtin(position) position : vec4<f32>;
+	@location(0) normal : vec4<f32>;
 };
 
-[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>, [[location(1)]] normal : vec3<f32>) -> VertexOutput {
+@stage(vertex) fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	out.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));
 	return out;
 }`;
 const fragmentShader = `
-[[stage(fragment)]] fn main([[location(0)]] normal : vec4<f32>) -> [[location(0)]] vec4<f32> {
+@stage(fragment) fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
 class NormalMaterial extends Component$1 {
@@ -1370,7 +1370,7 @@ class Sampler extends Component$1 {
 
 const wgslShaders$1 = {
     vertex: `
-		[[block]] struct Uniforms {
+		struct Uniforms {
 			 matrix : mat4x4<f32>;
 	  	};
 	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
@@ -5520,8 +5520,9 @@ class Clearer$1 {
             colorAttachments: [
                 {
                     view: null,
-                    loadValue: this.color,
-                    storeOp: 'store'
+                    clearOp: "clear",
+                    clearValue: this.color,
+                    storeOp: "store"
                 }
             ],
             depthStencilAttachment: {
@@ -5545,8 +5546,8 @@ class Clearer$1 {
         return this;
     }
     clear(commandEncoder) {
-        // const textureView = swapChain.getCurrentTexture().createView();
-        this.renderPassDescriptor.colorAttachments[0].loadValue = this.color;
+        this.renderPassDescriptor.colorAttachments[0].loadOp = "clear";
+        this.renderPassDescriptor.colorAttachments[0].clearValue = this.color;
         this.renderPassDescriptor.colorAttachments[0].view = this.engine.context
             .getCurrentTexture()
             .createView();
@@ -5818,13 +5819,13 @@ class MeshRenderer$1 {
 MeshRenderer$1.renderTypes = "mesh";
 const wgslShaders = {
     vertex: `
-		[[block]] struct Uniforms {
+		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
-	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 		struct VertexOutput {
-			[[builtin(position)]] Position : vec4<f32>;
+			@builtin(position) Position : vec4<f32>;
 		};
 
 		fn mapRange(
@@ -5838,7 +5839,7 @@ const wgslShaders = {
 			return (value - d1 * 0.5) / d2 / d1;
 		};
 
-		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 			var output : VertexOutput;
 			output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 			if (output.Position.w == 1.0) {
@@ -5848,7 +5849,7 @@ const wgslShaders = {
 		}
 	`,
     fragment: `
-		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+		@stage(fragment) fn main() -> [[location(0)]] vec4<f32> {
 			return vec4<f32>(1., 1., 1., 1.0);
 		}
 	`

@@ -450,10 +450,10 @@
   resolved "https://registry.npmmirror.com/@valeera/mathx/download/@valeera/mathx-0.1.15.tgz?cache=0&sync_timestamp=1633357292898&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2F%40valeera%2Fmathx%2Fdownload%2F%40valeera%2Fmathx-0.1.15.tgz#04bb8b093c5ad0dacd494dd8f7845e9a7de88c96"
   integrity sha1-BLuLCTxa0NrNSU3Y94Remn3ojJY=
 
-"@valeera/webgpu-constant@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.0.tgz#b4789c7743eaa8084d4806dc500f15f2fe63dbea"
-  integrity sha512-D33cqKJoRpRDKtXD7cLyvQNacCbmAOpFtfZU5x8kBWiWb8JnXnMjEfsMyAZtcKb41pQQxmGBaeJCnxXvouETHw==
+"@valeera/webgpu-constant@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.npmmirror.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.1.tgz#dee1727f33e599c7520a593a711ec31d0ac0bd69"
+  integrity sha512-74n1qjoMiAorlLdi9eRWFU7Rl9z1YBXD0kr1ixmV39sprbkGFXva4OPFib179FxXmvM0D9OFFSz5qyIxH5GwuA==
 
 "@valeera/x@^0.1.14":
   version "0.1.14"

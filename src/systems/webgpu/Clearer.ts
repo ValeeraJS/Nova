@@ -19,8 +19,9 @@ export default class Clearer {
 			colorAttachments: [
 				{
 					view: null as any,
-					loadValue: this.color,
-					storeOp: 'store'
+					clearOp: "clear",
+					clearValue: this.color,
+					storeOp: "store"
 				}
 			],
 			depthStencilAttachment: {
@@ -30,7 +31,7 @@ export default class Clearer {
 				stencilLoadValue: 0,
 				stencilStoreOp: "store"
 			}
-		}
+		} as any
 	}
 
 	public setColor(color: IColorGPUJson) {
@@ -49,8 +50,8 @@ export default class Clearer {
 	}
 
 	public clear(commandEncoder: GPUCommandEncoder): GPURenderPassEncoder {
-		// const textureView = swapChain.getCurrentTexture().createView();
-		(this.renderPassDescriptor.colorAttachments as any)[0].loadValue = this.color;
+		(this.renderPassDescriptor.colorAttachments as any)[0].loadOp = "clear";
+		(this.renderPassDescriptor.colorAttachments as any)[0].clearValue = this.color;
 		(this.renderPassDescriptor.colorAttachments as any)[0].view = this.engine.context
 			.getCurrentTexture()
 			.createView();

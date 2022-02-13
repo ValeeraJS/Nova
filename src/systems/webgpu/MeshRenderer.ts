@@ -302,13 +302,13 @@ export default class MeshRenderer implements IRenderer {
 
 const wgslShaders = {
 	vertex: `
-		[[block]] struct Uniforms {
+		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
-	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 		struct VertexOutput {
-			[[builtin(position)]] Position : vec4<f32>;
+			@builtin(position) Position : vec4<f32>;
 		};
 
 		fn mapRange(
@@ -322,7 +322,7 @@ const wgslShaders = {
 			return (value - d1 * 0.5) / d2 / d1;
 		};
 
-		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 			var output : VertexOutput;
 			output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 			if (output.Position.w == 1.0) {
@@ -332,7 +332,7 @@ const wgslShaders = {
 		}
 	`,
 	fragment: `
-		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+		@stage(fragment) fn main() -> [[location(0)]] vec4<f32> {
 			return vec4<f32>(1., 1., 1., 1.0);
 		}
 	`
