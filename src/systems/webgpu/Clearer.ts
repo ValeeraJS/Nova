@@ -26,9 +26,11 @@ export default class Clearer {
 			],
 			depthStencilAttachment: {
 				view: this.depthTexture.createView(),
-				depthLoadValue: 1.0,
+				depthClearValue: 1.0,
+				depthLoadOp: "clear",
 				depthStoreOp: "store",
-				stencilLoadValue: 0,
+				stencilLoadOp: "clear",
+				stencilClearValue: 0.0,
 				stencilStoreOp: "store"
 			}
 		} as any

@@ -3,28 +3,28 @@ import IMaterial, { IShaderCode } from "./IMatrial";
 
 const wgslShaders = {
 	vertex: `
-		[[block]] struct Uniforms {
+		@block struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
-	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 		struct VertexOutput {
-			[[builtin(position)]] position : vec4<f32>;
+			@builtin(position) position : vec4<f32>;
 		};
 
-		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 			var out: VertexOutput;
 			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 			return out;
 		}
 	`,
 	fragment: `
-		[[block]] struct Uniforms {
+		@block struct Uniforms {
 			color : vec4<f32>;
 	  	};
-	  	[[binding(1), group(0)]] var<uniform> uniforms : Uniforms;
+	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
 
-		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+		@stage(fragment) fn main() -> @location(0) vec4<f32> {
 			return uniforms.color;
 		}
 	`

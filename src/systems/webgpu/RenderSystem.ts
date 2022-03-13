@@ -92,7 +92,7 @@ export default class RenderSystem extends ASystem {
 		world.store.set("passEncoder", passEncoder);
 		super.run(world);
 		// finish
-		passEncoder.endPass();
+		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
 		return this;
 	}

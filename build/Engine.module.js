@@ -1,23 +1,24 @@
 /*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) Microsoft Corporation.
 
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
 
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
 
 function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 }
@@ -1205,28 +1206,28 @@ SystemManager$1.eventObject = {
 
 const wgslShaders$2 = {
     vertex: `
-		[[block]] struct Uniforms {
+		@block struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>;
 	  	};
-	  	[[binding(0), group(0)]] var<uniform> uniforms : Uniforms;
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 		struct VertexOutput {
-			[[builtin(position)]] position : vec4<f32>;
+			@builtin(position) position : vec4<f32>;
 		};
 
-		[[stage(vertex)]] fn main([[location(0)]] position : vec3<f32>) -> VertexOutput {
+		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 			var out: VertexOutput;
 			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 			return out;
 		}
 	`,
     fragment: `
-		[[block]] struct Uniforms {
+		@block struct Uniforms {
 			color : vec4<f32>;
 	  	};
-	  	[[binding(1), group(0)]] var<uniform> uniforms : Uniforms;
+	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
 
-		[[stage(fragment)]] fn main() -> [[location(0)]] vec4<f32> {
+		@stage(fragment) fn main() -> @location(0) vec4<f32> {
 			return uniforms.color;
 		}
 	`
@@ -5527,9 +5528,11 @@ class Clearer$1 {
             ],
             depthStencilAttachment: {
                 view: this.depthTexture.createView(),
-                depthLoadValue: 1.0,
+                depthClearValue: 1.0,
+                depthLoadOp: "clear",
                 depthStoreOp: "store",
-                stencilLoadValue: 0,
+                stencilLoadOp: "clear",
+                stencilClearValue: 0.0,
                 stencilStoreOp: "store"
             }
         };
@@ -5849,7 +5852,7 @@ const wgslShaders = {
 		}
 	`,
     fragment: `
-		@stage(fragment) fn main() -> [[location(0)]] vec4<f32> {
+		@stage(fragment) fn main() -> @location(0) vec4<f32> {
 			return vec4<f32>(1., 1., 1., 1.0);
 		}
 	`
@@ -5929,7 +5932,7 @@ class RenderSystem$1 extends ASystem$1 {
         world.store.set("passEncoder", passEncoder);
         super.run(world);
         // finish
-        passEncoder.endPass();
+        passEncoder.end();
         device.queue.submit([commandEncoder.finish()]);
         return this;
     }
