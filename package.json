@@ -1,12 +1,12 @@
 {
 	"name": "@valeera/nova",
-	"version": "0.1.1",
+	"version": "0.1.1a",
 	"description": "Event dispatcher fit for most framework.",
 	"main": "build/Nova.js",
 	"repository": "ValeeraJS/Nova",
 	"jsnext:main": "build/Nova.module.js",
 	"module": "build/Nova.module.js",
-	"types": "build/Nova.d.ts",
+	"types": "build/index.d.ts",
 	"files": [
 		"build",
 		"LICENSE",
