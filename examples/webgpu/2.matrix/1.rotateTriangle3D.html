@@ -6,25 +6,25 @@
 <body>
 	<canvas width="800" height="450" id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
-	<script type="text/javascript" src="./../../../build/Engine.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
-		const engine = new Engine.WebGPUEngine(canvas);
-		const world = new Engine.World();
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
 
-		const geo = Engine.Geometry3Factory.createTriangle3Geometry();
-		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
+		const geo = Nova.Geometry3Factory.createTriangle3();
+		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 		// 新建一个位置组件替换默认的位置矩阵组件。EuclidPosition3组件是修改平移矩阵的便于开发者操作的组件
-		mesh.addComponent(new Engine.EuclidPosition3([0, 0 , -5]));
+		mesh.addComponent(new Nova.EuclidPosition3([0, 0 , -5]));
 		// 新建一个欧拉角旋转组件替换默认的旋转矩阵组件。EulerRotation3组件是修改旋转矩阵的便于开发者操作的组件
-		mesh.addComponent(new Engine.EulerRotation3());
+		mesh.addComponent(new Nova.EulerRotation3());
 
-		const projection = new Engine.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
-		const camera = Engine.EntityFactory.createCamera(projection, "test-camera", world);
+		const projection = new Nova.PerspectiveProjection(Math.PI / 3, 16/9, 0.01, 10);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 
-		engine.once(Engine.EngineEvents.INITED, (e) => {
-			let renderSystem = new Engine.WebGPURenderSystem(engine);
-			let renderer = new Engine.WebGPUMeshRenderer(engine);
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			loop();

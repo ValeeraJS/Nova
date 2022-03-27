@@ -1,4 +1,7 @@
 /// <reference types="dist" />
 export default interface IEngine {
-    init(adapter: GPUAdapter, device: GPUDevice, contex: GPUCanvasContext): this;
+    context: GPUCanvasContext | WebGLRenderingContext | WebGL2RenderingContext;
+}
+export declare enum EngineEvents {
+    INITED = "inited"
 }

@@ -26,7 +26,7 @@ export default class MeshRenderer implements IRenderer {
 		this.engine = engine;
 	}
 
-	render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, scissor?: any): this {
+	render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, _scissor?: any): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
 			cacheData = this.createCacheData(mesh);

@@ -6,17 +6,17 @@ export default {
 	input: "src/index.ts",
 	output: [
 		{
-			file: "build/Engine.js",
+			file: "build/Nova.js",
 			format: "umd",
 			indent: "\t",
-			name: "Engine",
+			name: "Nova",
 			sourcemap: true
 		},
 		{
-			file: "build/Engine.module.js",
+			file: "build/Nova.module.js",
 			format: "es",
 			indent: "\t",
-			sourcemap: true
+			sourcemap: false
 		}
 	],
 	plugins: [

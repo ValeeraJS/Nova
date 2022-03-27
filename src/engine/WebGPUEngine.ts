@@ -26,6 +26,8 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 		return {context, adapter, device};
 	}
 
+	public static Events = EngineEvents;
+
 	public adapter!: GPUAdapter;
 	public canvas: HTMLCanvasElement;
 	public context!: GPUCanvasContext;

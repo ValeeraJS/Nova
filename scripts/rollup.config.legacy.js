@@ -5,17 +5,17 @@ export default {
 	input: "src/index.ts",
 	output: [
 		{
-			file: "build/Engine.legacy.js",
+			file: "build/Nova.legacy.js",
 			format: "umd",
 			indent: "\t",
-			name: "Engine",
+			name: "Nova",
 			sourcemap: true
 		},
 		{
-			file: "build/Engine.legacy.module.js",
+			file: "build/Nova.legacy.module.js",
 			format: "es",
 			indent: "\t",
-			sourcemap: true
+			sourcemap: false
 		}
 	],
 	plugins: [

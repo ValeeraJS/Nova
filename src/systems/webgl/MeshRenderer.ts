@@ -26,7 +26,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 		this.engine = engine;
 	}
 
-	render(mesh: IEntity, camera: IEntity, scissor?: any): this {
+	render(mesh: IEntity, camera: IEntity, _scissor?: any): this {
 		let gl = this.engine.context;
 		let cacheData = this.entityCacheData.get(mesh);
 		if (!cacheData) {
@@ -56,7 +56,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 		var mvpLocation = gl.getUniformLocation(cacheData.pipeline.program, "mvpMatrix");
 		gl.uniformMatrix4fv(mvpLocation, false, mvp);
 
-		cacheData.uniformMap.forEach((uniform, key) => {
+		cacheData.uniformMap.forEach((_uniform, _key) => {
 			// if (uniform.type === "uniform-buffer" && uniform.dirty) {
 			// 	this.engine.device.queue.writeBuffer(
 			// 		key,

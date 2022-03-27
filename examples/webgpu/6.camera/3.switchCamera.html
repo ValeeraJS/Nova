@@ -5,28 +5,28 @@
 </head>
 <body>
 	<canvas width="800" height="450" id="gpucanvas"></canvas>
-	<script type="text/javascript" src="./../../../build/Engine.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
-		const engine = new Engine.WebGPUEngine(canvas);
-		const world = new Engine.World();
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
 
 		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
-		const geometry = Engine.Geometry3Factory.createPlane3(2,2);
+		const geometry = Nova.Geometry3Factory.createPlane3(2,2);
 
-		const mesh = Engine.EntityFactory.createMesh(geometry, "test-triangle", world);
-		const positionProxy = Engine.ComponentProxy.getEuclidPosition3Proxy(mesh);
+		const mesh = Nova.EntityFactory.createMesh(geometry, "test-triangle", world);
+		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(mesh);
 		positionProxy.z = -5;
-		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
+		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
 
-		const perspectiveProjection = new Engine.PerspectiveProjection(Math.PI / 3, 16 / 9, 1, 9);
-		const orthogonalProjection = new Engine.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
-		const camera = Engine.EntityFactory.createCamera(perspectiveProjection, "test-camera", world);
+		const perspectiveProjection = new Nova.PerspectiveProjection(Math.PI / 3, 16 / 9, 1, 9);
+		const orthogonalProjection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
+		const camera = Nova.EntityFactory.createCamera(perspectiveProjection, "test-camera", world);
 
-		engine.once(Engine.EngineEvents.INITED, (e) => {
-			let renderSystem = new Engine.WebGPURenderSystem(engine);
-			let renderer = new Engine.WebGPUMeshRenderer(engine);
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			loop();

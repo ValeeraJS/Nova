@@ -1,6 +1,4 @@
 import { Matrix4 } from "@valeera/mathx";
-import mapRange from "@valeera/mathx/src/common/mapRange";
-import { WebGLNearFarRange, WebGPUNearFarRange } from "../../constants";
 import AProjection3 from "./AProjection3";
 
 export default abstract class PerspectiveProjection extends AProjection3 {

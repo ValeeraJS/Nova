@@ -1,5 +1,4 @@
-import { Triangle3 } from "@valeera/mathx/src/shape";
-import { NORMAL, POSITION, UV, VERTICES } from "../constants";
+import { POSITION, VERTICES } from "../constants";
 import Geometry3, { AttributePicker } from "../Geometry3";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
@@ -51,7 +50,7 @@ export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geome
     }
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-    let count = len / 3;
+    // let count = len / 3;
     let geo = new Geometry3(len, options.topology, options.cullMode);
     console.log(indices, positions, normals, uvs);
     // TODO indices 现在都是非索引版本
