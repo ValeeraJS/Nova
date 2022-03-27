@@ -1,6 +1,6 @@
 {
 	"name": "@valeera/engine",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Event dispatcher fit for most framework.",
 	"main": "build/engine.js",
 	"repository": "ValeeraJS/engine",
@@ -76,5 +76,8 @@
 		"@valeera/mathx": "^0.1.15",
 		"@valeera/webgpu-constant": "^0.1.1",
 		"@valeera/x": "^0.1.15"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

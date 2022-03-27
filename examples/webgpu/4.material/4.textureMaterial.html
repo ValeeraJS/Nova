@@ -4,6 +4,7 @@
 </head>
 <body>
 	<canvas width="800" height="450" id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../../build/Engine.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
@@ -12,7 +13,7 @@
 
 		const geo = Engine.Geometry3Factory.createPlane3(2, 2);
 		const mesh = Engine.EntityFactory.createMesh(geo, "test-triangle", world);
-		const material = new Engine.TextureMaterial(new Engine.ImageBitmapTexture("./../../textures/test.png"));
+		const material = new Engine.TextureMaterial(new Engine.ImageBitmapTexture("./../../textures/test.png", 512, 512));
 		mesh.addComponent(material);
 		const rotationProxy = Engine.ComponentProxy.getEulerRotation3Proxy(mesh);
 

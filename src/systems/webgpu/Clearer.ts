@@ -28,10 +28,7 @@ export default class Clearer {
 				view: this.depthTexture.createView(),
 				depthClearValue: 1.0,
 				depthLoadOp: "clear",
-				depthStoreOp: "store",
-				stencilLoadOp: "clear",
-				stencilClearValue: 0.0,
-				stencilStoreOp: "store"
+				depthStoreOp: "store"
 			}
 		} as any
 	}
