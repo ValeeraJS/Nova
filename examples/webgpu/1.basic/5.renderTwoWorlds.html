@@ -4,15 +4,21 @@
 	<link rel="stylesheet" href="./../../style/common.css" />
 </head>
 <body>
-	<canvas width="800" height="450" id="gpucanvas"></canvas>
-	<canvas width="800" height="450" id="gpucanvas2"></canvas>
+	<canvas id="gpucanvas"></canvas>
+	<canvas id="gpucanvas2"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../../build/Nova.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const canvas2 = document.getElementById("gpucanvas2");
-		const engine1 = new Nova.WebGPUEngine(canvas);
-		const engine2 = new Nova.WebGPUEngine(canvas2);
+		const engine1 = new Nova.WebGPUEngine(canvas, {
+			width: 800,
+			height: 450
+		});
+		const engine2 = new Nova.WebGPUEngine(canvas2, {
+			width: 800,
+			height: 450
+		});
 
 		function createWorld(engine, triangleColor, clearColor) {
 			const world = new Nova.World();

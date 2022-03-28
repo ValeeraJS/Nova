@@ -151,12 +151,20 @@
 	(function (EngineEvents) {
 	    EngineEvents["INITED"] = "inited";
 	})(exports.EngineEvents || (exports.EngineEvents = {}));
+	const DEFAULT_ENGINE_OPTIONS = {
+	    width: window.innerWidth,
+	    height: window.innerHeight,
+	    resolution: window.devicePixelRatio,
+	    autoResize: true,
+	};
 
 	class WebGPUEngine extends EventDispatcher$1 {
-	    constructor(canvas = document.createElement("canvas")) {
+	    constructor(canvas = document.createElement("canvas"), options = DEFAULT_ENGINE_OPTIONS) {
+	        var _a, _b, _c;
 	        super();
 	        this.inited = false;
 	        this.canvas = canvas;
+	        this.resize((_a = options.width) !== null && _a !== void 0 ? _a : DEFAULT_ENGINE_OPTIONS.width, (_b = options.height) !== null && _b !== void 0 ? _b : DEFAULT_ENGINE_OPTIONS.height, (_c = options.resolution) !== null && _c !== void 0 ? _c : DEFAULT_ENGINE_OPTIONS.resolution);
 	        WebGPUEngine.detect(canvas).then(({ context, adapter, device }) => {
 	            this.context = context;
 	            this.adapter = adapter;
@@ -188,6 +196,13 @@
 	            }
 	            return { context, adapter, device };
 	        });
+	    }
+	    resize(width, height, resolution) {
+	        this.canvas.style.width = width + 'px';
+	        this.canvas.style.height = height + 'px';
+	        this.canvas.width = width * resolution;
+	        this.canvas.height = height * resolution;
+	        return this;
 	    }
 	    createRenderer() {
 	    }
@@ -5387,15 +5402,28 @@ struct VertexOutput {
 	    }
 	}
 
-	const canvas = document.createElement("canvas");
-	const ctx = canvas.getContext("2d");
-	function drawSpriteBlock(image, frame) {
+	const canvases = []; // 储存多个canvas，可能存在n个图同时画
+	function drawSpriteBlock(image, width, height, frame) {
 	    return __awaiter(this, void 0, void 0, function* () {
+	        let canvas = canvases.pop() || document.createElement("canvas");
+	        let ctx = canvas.getContext("2d");
+	        canvas.width = width;
+	        canvas.height = height;
 	        ctx.clearRect(0, 0, canvas.width, canvas.height);
 	        ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-	        return yield createImageBitmap(canvas);
+	        let result = yield createImageBitmap(canvas);
+	        canvases.push(canvas);
+	        return result;
 	    });
 	}
+
+	// const canvas = document.createElement("canvas");
+	// const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+	// async function drawSpriteBlock(image: HTMLImageElement, frame: IFrame): Promise<ImageBitmap> {
+	//     ctx.clearRect(0, 0, canvas.width, canvas.height);
+	//     ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
+	//     return await createImageBitmap(canvas);
+	// }
 	class SpritesheetTexture extends Component$1 {
 	    constructor(json, name = "spritesheet-texture") {
 	        super(name);
@@ -5417,10 +5445,10 @@ struct VertexOutput {
 	            img.src = json.image;
 	            this.image = img;
 	            yield img.decode();
-	            canvas.width = json.spriteSize.w;
-	            canvas.height = json.spriteSize.h;
+	            // canvas.width = json.spriteSize.w;
+	            // canvas.height = json.spriteSize.h;
 	            for (let item of json.frames) {
-	                this.framesBitmap.push(yield drawSpriteBlock(this.image, item));
+	                this.framesBitmap.push(yield drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, item));
 	            }
 	            this.data = this.framesBitmap[0];
 	            this.dirty = true;
