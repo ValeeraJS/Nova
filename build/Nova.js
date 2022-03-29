@@ -30,122 +30,116 @@
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$1 = (Base = Object, eventKeyList = []) => {
-	    var _a;
-	    return _a = class EventDispatcher extends Base {
-	            constructor() {
-	                super(...arguments);
-	                this.eventKeyList = eventKeyList;
-	                /**
-	                 * store all the filters
-	                 */
-	                this.filters = [];
-	                /**
-	                 * store all the listeners by key
-	                 */
-	                this.listeners = new Map();
-	                this.all = (listener) => {
-	                    return this.filt(() => true, listener);
-	                };
-	                this.clearListenersByKey = (eventKey) => {
-	                    this.listeners.delete(eventKey);
-	                    return this;
-	                };
-	                this.clearAllListeners = () => {
-	                    const keys = this.listeners.keys();
-	                    for (const key of keys) {
-	                        this.listeners.delete(key);
-	                    }
-	                    return this;
-	                };
-	                this.filt = (rule, listener) => {
-	                    this.filters.push({
-	                        listener,
-	                        rule
-	                    });
-	                    return this;
-	                };
-	                this.fire = (eventKey, target) => {
-	                    if (!this.checkEventKeyAvailable(eventKey)) {
-	                        console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
-	                        return this;
-	                    }
-	                    const array = this.listeners.get(eventKey) || [];
-	                    let len = array.length;
-	                    let item;
-	                    for (let i = 0; i < len; i++) {
-	                        item = array[i];
-	                        item.listener({
-	                            eventKey,
-	                            life: --item.times,
-	                            target
-	                        });
-	                        if (item.times <= 0) {
-	                            array.splice(i--, 1);
-	                            --len;
-	                        }
-	                    }
-	                    return this.checkFilt(eventKey, target);
-	                };
-	                this.off = (eventKey, listener) => {
-	                    const array = this.listeners.get(eventKey);
-	                    if (!array) {
-	                        return this;
-	                    }
-	                    const len = array.length;
-	                    for (let i = 0; i < len; i++) {
-	                        if (array[i].listener === listener) {
-	                            array.splice(i, 1);
-	                            break;
-	                        }
-	                    }
-	                    return this;
-	                };
-	                this.on = (eventKey, listener) => {
-	                    return this.times(eventKey, Infinity, listener);
-	                };
-	                this.once = (eventKey, listener) => {
-	                    return this.times(eventKey, 1, listener);
-	                };
-	                this.times = (eventKey, times, listener) => {
-	                    if (!this.checkEventKeyAvailable(eventKey)) {
-	                        console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
-	                        return this;
-	                    }
-	                    const array = this.listeners.get(eventKey) || [];
-	                    if (!this.listeners.has(eventKey)) {
-	                        this.listeners.set(eventKey, array);
-	                    }
-	                    array.push({
-	                        listener,
-	                        times
-	                    });
-	                    return this;
-	                };
-	                this.checkFilt = (eventKey, target) => {
-	                    for (const item of this.filters) {
-	                        if (item.rule(eventKey, target)) {
-	                            item.listener({
-	                                eventKey,
-	                                life: Infinity,
-	                                target
-	                            });
-	                        }
-	                    }
-	                    return this;
-	                };
-	                this.checkEventKeyAvailable = (eventKey) => {
-	                    if (this.eventKeyList.length) {
-	                        return this.eventKeyList.includes(eventKey);
-	                    }
-	                    return true;
-	                };
+	const mixin$4 = (Base = Object, eventKeyList = []) => {
+	    return class EventFirer extends Base {
+	        static mixin = mixin$4;
+	        eventKeyList = eventKeyList;
+	        /**
+	         * store all the filters
+	         */
+	        filters = [];
+	        /**
+	         * store all the listeners by key
+	         */
+	        listeners = new Map();
+	        all(listener) {
+	            return this.filt(() => true, listener);
+	        }
+	        clearListenersByKey(eventKey) {
+	            this.listeners.delete(eventKey);
+	            return this;
+	        }
+	        clearAllListeners() {
+	            const keys = this.listeners.keys();
+	            for (const key of keys) {
+	                this.listeners.delete(key);
 	            }
-	        },
-	        _a.mixin = mixin$1,
-	        _a;
+	            return this;
+	        }
+	        filt(rule, listener) {
+	            this.filters.push({
+	                listener,
+	                rule
+	            });
+	            return this;
+	        }
+	        fire(eventKey, target) {
+	            if (!this.checkEventKeyAvailable(eventKey)) {
+	                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+	                return this;
+	            }
+	            const array = this.listeners.get(eventKey) || [];
+	            let len = array.length;
+	            let item;
+	            for (let i = 0; i < len; i++) {
+	                item = array[i];
+	                item.listener(target);
+	                item.times--;
+	                if (item.times <= 0) {
+	                    array.splice(i--, 1);
+	                    --len;
+	                }
+	            }
+	            return this.checkFilt(eventKey, target);
+	        }
+	        off(eventKey, listener) {
+	            const array = this.listeners.get(eventKey);
+	            if (!array) {
+	                return this;
+	            }
+	            const len = array.length;
+	            for (let i = 0; i < len; i++) {
+	                if (array[i].listener === listener) {
+	                    array.splice(i, 1);
+	                    break;
+	                }
+	            }
+	            return this;
+	        }
+	        on(eventKey, listener) {
+	            if (eventKey instanceof Array) {
+	                for (let i = 0, j = eventKey.length; i < j; i++) {
+	                    this.times(eventKey[i], Infinity, listener);
+	                }
+	                return this;
+	            }
+	            return this.times(eventKey, Infinity, listener);
+	        }
+	        once(eventKey, listener) {
+	            return this.times(eventKey, 1, listener);
+	        }
+	        times(eventKey, times, listener) {
+	            if (!this.checkEventKeyAvailable(eventKey)) {
+	                console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+	                return this;
+	            }
+	            const array = this.listeners.get(eventKey) || [];
+	            if (!this.listeners.has(eventKey)) {
+	                this.listeners.set(eventKey, array);
+	            }
+	            array.push({
+	                listener,
+	                times
+	            });
+	            return this;
+	        }
+	        checkFilt(eventKey, target) {
+	            for (const item of this.filters) {
+	                if (item.rule(eventKey, target)) {
+	                    item.listener(target, eventKey);
+	                }
+	            }
+	            return this;
+	        }
+	        checkEventKeyAvailable(eventKey) {
+	            if (this.eventKeyList.length) {
+	                return this.eventKeyList.includes(eventKey);
+	            }
+	            return true;
+	        }
+	    };
 	};
-	var EventDispatcher$1 = mixin$1(Object);
+	var EventDispatcher = mixin$4(Object);
 
 	exports.EngineEvents = void 0;
 	(function (EngineEvents) {
@@ -158,13 +152,14 @@
 	    autoResize: true,
 	};
 
-	class WebGPUEngine extends EventDispatcher$1 {
-	    constructor(canvas = document.createElement("canvas"), options = DEFAULT_ENGINE_OPTIONS) {
+	class WebGPUEngine extends EventDispatcher {
+	    constructor(canvas = document.createElement("canvas"), options = {}) {
 	        var _a, _b, _c;
 	        super();
 	        this.inited = false;
 	        this.canvas = canvas;
-	        this.resize((_a = options.width) !== null && _a !== void 0 ? _a : DEFAULT_ENGINE_OPTIONS.width, (_b = options.height) !== null && _b !== void 0 ? _b : DEFAULT_ENGINE_OPTIONS.height, (_c = options.resolution) !== null && _c !== void 0 ? _c : DEFAULT_ENGINE_OPTIONS.resolution);
+	        this.options = Object.assign(Object.assign({}, DEFAULT_ENGINE_OPTIONS), options);
+	        this.resize((_a = options.width) !== null && _a !== void 0 ? _a : window.innerWidth, (_b = options.height) !== null && _b !== void 0 ? _b : window.innerHeight, (_c = options.resolution) !== null && _c !== void 0 ? _c : window.devicePixelRatio);
 	        WebGPUEngine.detect(canvas).then(({ context, adapter, device }) => {
 	            this.context = context;
 	            this.adapter = adapter;
@@ -209,7 +204,7 @@
 	}
 	WebGPUEngine.Events = exports.EngineEvents;
 
-	class WebGLEngine extends EventDispatcher$1 {
+	class WebGLEngine extends EventDispatcher {
 	    constructor(canvas = document.createElement("canvas")) {
 	        super();
 	        this.inited = false;
@@ -238,9 +233,100 @@
 	    }
 	}
 
+	const S4 = () => {
+	    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+	};
+	/**
+	 * @class
+	 * @classdesc 数字id生成器，用于生成递增id
+	 * @param {number} [initValue = 0] 从几开始生成递增id
+	 * @implements IdGenerator.IIncreaser
+	 */
+	class IdGenerator {
+	    initValue;
+	    value;
+	    /**
+	     * @member IdGenerator.initValue
+	     * @desc id从该值开始递增，在创建实例时进行设置。设置之后将无法修改。
+	     * @readonly
+	     * @public
+	     */
+	    constructor(initValue = 0) {
+	        this.value = this.initValue = initValue;
+	    }
+	    /**
+	     * @method IdGenerator.prototype.current
+	     * @desc 返回当前的id
+	     * @readonly
+	     * @public
+	     * @returns {number} id
+	     */
+	    current() {
+	        return this.value;
+	    }
+	    /**
+	     * @method IdGenerator.prototype.next
+	     * @desc 生成新的id
+	     * @public
+	     * @returns {number} id
+	     */
+	    next() {
+	        return ++this.value;
+	    }
+	    /**
+	     * @method IdGenerator.prototype.skip
+	     * @desc 跳过一段值生成新的id
+	     * @public
+	     * @param {number} [value = 1] 跳过的范围，必须大于等于1
+	     * @returns {number} id
+	     */
+	    skip(value = 1) {
+	        if (value < 1) {
+	            value = 1;
+	        }
+	        this.value += value;
+	        return ++this.value;
+	    }
+	    /**
+	     * @method IdGenerator.prototype.skip
+	     * @desc 生成新的32位uuid
+	     * @public
+	     * @returns {string} uuid
+	     */
+	    uuid() {
+	        if (crypto.randomUUID) {
+	            return crypto.randomUUID();
+	        }
+	        else {
+	            return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+	        }
+	    }
+	    /**
+	     * @method IdGenerator.prototype.skip
+	     * @desc 生成新的32位BigInt
+	     * @public
+	     * @returns {BigInt} uuid
+	     */
+	    uuidBigInt() {
+	        //return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
+	        let arr = crypto.getRandomValues(new Uint16Array(8));
+	        return BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
+	            + BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
+	            + BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n
+	            + BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n
+	            + BigInt(arr[4]) * 65536n * 65536n * 65536n
+	            + BigInt(arr[5]) * 65536n * 65536n
+	            + BigInt(arr[6]) * 65536n
+	            + BigInt(arr[6]);
+	    }
+	}
+
+	const IdGeneratorInstance$1 = new IdGenerator();
+
 	class Component$1 {
 	    constructor(name, data = null) {
 	        this.isComponent = true;
+	        this.id = IdGeneratorInstance$1.next();
 	        this.data = null;
 	        this.disabled = false;
 	        this.usedBy = [];
@@ -248,8 +334,21 @@
 	        this.name = name;
 	        this.data = data;
 	    }
+	    static unserialize(json) {
+	        const component = new Component$1(json.name, json.data);
+	        component.disabled = json.disabled;
+	        return component;
+	    }
 	    clone() {
 	        return new Component$1(this.name, this.data);
+	    }
+	    serialize() {
+	        return {
+	            data: this.data,
+	            disabled: this.disabled,
+	            name: this.name,
+	            type: "component"
+	        };
 	    }
 	}
 
@@ -740,44 +839,26 @@
 		createTriangle3: createTriangle3
 	});
 
-	/**
-	 * @class
-	 * @classdesc 数字id生成器，用于生成递增id
-	 * @param {number} [initValue = 0] 从几开始生成递增id
-	 */
-	class IdGenerator {
-	    constructor(initValue = 0) {
-	        this.value = this.initValue = initValue;
-	    }
-	    current() {
-	        return this.value;
-	    }
-	    next() {
-	        return ++this.value;
-	    }
-	    skip(value = 1) {
-	        if (value < 1) {
-	            value = 1;
-	        }
-	        this.value += value;
-	        return ++this.value;
-	    }
-	}
-
-	const IdGeneratorInstance$1 = new IdGenerator();
-
 	let weakMapTmp$1;
-	class ASystem$1 {
+	class System$1 {
 	    constructor(name = "", fitRule) {
 	        this.id = IdGeneratorInstance$1.next();
 	        this.isSystem = true;
 	        this.name = "";
-	        this.disabled = false;
 	        this.loopTimes = 0;
 	        this.entitySet = new WeakMap();
 	        this.usedBy = [];
+	        this.cache = new WeakMap();
+	        this._disabled = false;
 	        this.name = name;
-	        this.queryRule = fitRule;
+	        this.disabled = false;
+	        this.rule = fitRule;
+	    }
+	    get disabled() {
+	        return this._disabled;
+	    }
+	    set disabled(value) {
+	        this._disabled = value;
 	    }
 	    checkUpdatedEntities(manager) {
 	        if (manager) {
@@ -819,7 +900,7 @@
 	        return this;
 	    }
 	    query(entity) {
-	        return this.queryRule(entity);
+	        return this.rule(entity);
 	    }
 	    run(world) {
 	        var _a;
@@ -830,38 +911,162 @@
 	        }
 	        return this;
 	    }
+	    destroy() {
+	        for (let i = this.usedBy.length - 1; i > -1; i--) {
+	            this.usedBy[i].removeElement(this);
+	        }
+	        return this;
+	    }
 	}
 
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin$3 = (Base = Object, eventKeyList = []) => {
+	    var _a;
+	    return _a = class EventFirer extends Base {
+	            constructor() {
+	                super(...arguments);
+	                this.eventKeyList = eventKeyList;
+	                /**
+	                 * store all the filters
+	                 */
+	                this.filters = [];
+	                /**
+	                 * store all the listeners by key
+	                 */
+	                this.listeners = new Map();
+	            }
+	            all(listener) {
+	                return this.filt(() => true, listener);
+	            }
+	            clearListenersByKey(eventKey) {
+	                this.listeners.delete(eventKey);
+	                return this;
+	            }
+	            clearAllListeners() {
+	                const keys = this.listeners.keys();
+	                for (const key of keys) {
+	                    this.listeners.delete(key);
+	                }
+	                return this;
+	            }
+	            filt(rule, listener) {
+	                this.filters.push({
+	                    listener,
+	                    rule
+	                });
+	                return this;
+	            }
+	            fire(eventKey, target) {
+	                if (!this.checkEventKeyAvailable(eventKey)) {
+	                    console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+	                    return this;
+	                }
+	                const array = this.listeners.get(eventKey) || [];
+	                let len = array.length;
+	                let item;
+	                for (let i = 0; i < len; i++) {
+	                    item = array[i];
+	                    item.listener(target);
+	                    item.times--;
+	                    if (item.times <= 0) {
+	                        array.splice(i--, 1);
+	                        --len;
+	                    }
+	                }
+	                return this.checkFilt(eventKey, target);
+	            }
+	            off(eventKey, listener) {
+	                const array = this.listeners.get(eventKey);
+	                if (!array) {
+	                    return this;
+	                }
+	                const len = array.length;
+	                for (let i = 0; i < len; i++) {
+	                    if (array[i].listener === listener) {
+	                        array.splice(i, 1);
+	                        break;
+	                    }
+	                }
+	                return this;
+	            }
+	            on(eventKey, listener) {
+	                if (eventKey instanceof Array) {
+	                    for (let i = 0, j = eventKey.length; i < j; i++) {
+	                        this.times(eventKey[i], Infinity, listener);
+	                    }
+	                    return this;
+	                }
+	                return this.times(eventKey, Infinity, listener);
+	            }
+	            once(eventKey, listener) {
+	                return this.times(eventKey, 1, listener);
+	            }
+	            times(eventKey, times, listener) {
+	                if (!this.checkEventKeyAvailable(eventKey)) {
+	                    console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+	                    return this;
+	                }
+	                const array = this.listeners.get(eventKey) || [];
+	                if (!this.listeners.has(eventKey)) {
+	                    this.listeners.set(eventKey, array);
+	                }
+	                array.push({
+	                    listener,
+	                    times
+	                });
+	                return this;
+	            }
+	            checkFilt(eventKey, target) {
+	                for (const item of this.filters) {
+	                    if (item.rule(eventKey, target)) {
+	                        item.listener(target, eventKey);
+	                    }
+	                }
+	                return this;
+	            }
+	            checkEventKeyAvailable(eventKey) {
+	                if (this.eventKeyList.length) {
+	                    return this.eventKeyList.includes(eventKey);
+	                }
+	                return true;
+	            }
+	        },
+	        _a.mixin = mixin$3,
+	        _a;
+	};
+	var EventFirer$1 = mixin$3(Object);
+
 	// 私有全局变量，外部无法访问
-	let componentTmp$1;
-	var EComponentEvent$1;
-	(function (EComponentEvent) {
-	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
-	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
-	})(EComponentEvent$1 || (EComponentEvent$1 = {}));
-	class ComponentManager$1 {
+	let elementTmp$1;
+	var EElementChangeEvent$1;
+	(function (EElementChangeEvent) {
+	    EElementChangeEvent["ADD"] = "add";
+	    EElementChangeEvent["REMOVE"] = "remove";
+	})(EElementChangeEvent$1 || (EElementChangeEvent$1 = {}));
+	class Manager$1 extends EventFirer$1 {
 	    constructor() {
+	        super(...arguments);
+	        // private static eventObject: EventObject = {
+	        // 	component: null as any,
+	        // 	element: null as any,
+	        // 	eventKey: null as any,
+	        // 	manager: null as any
+	        // };
 	        this.elements = new Map();
 	        this.disabled = false;
 	        this.usedBy = [];
-	        this.isComponentManager = true;
+	        this.isManager = true;
 	    }
-	    add(component) {
+	    addElement(component) {
 	        if (this.has(component)) {
-	            this.removeByInstance(component);
+	            this.removeElementByInstance(component);
 	        }
-	        return this.addComponentDirect(component);
+	        return this.addElementDirect(component);
 	    }
-	    addComponentDirect(component) {
+	    addElementDirect(component) {
 	        this.elements.set(component.name, component);
 	        component.usedBy.push(this);
-	        ComponentManager$1.eventObject = {
-	            component,
-	            eventKey: ComponentManager$1.ADD_COMPONENT,
-	            manager: this,
-	            target: component
-	        };
-	        this.entityComponentChangeDispatch(ComponentManager$1.ADD_COMPONENT, ComponentManager$1.eventObject);
+	        this.elementChangeDispatch(Manager$1.Events.ADD, this);
 	        return this;
 	    }
 	    clear() {
@@ -869,8 +1074,8 @@
 	        return this;
 	    }
 	    get(name) {
-	        componentTmp$1 = this.elements.get(name);
-	        return componentTmp$1 ? componentTmp$1 : null;
+	        elementTmp$1 = this.elements.get(name);
+	        return elementTmp$1 ? elementTmp$1 : null;
 	    }
 	    has(component) {
 	        if (typeof component === "string") {
@@ -880,191 +1085,181 @@
 	            return this.elements.has(component.name);
 	        }
 	    }
-	    // TODO
-	    isMixedFrom(componentManager) {
-	        console.log(componentManager);
-	        return false;
-	    }
-	    // TODO
-	    mixFrom(componentManager) {
-	        console.log(componentManager);
-	        return this;
-	    }
-	    remove(component) {
+	    removeElement(component) {
 	        return typeof component === "string"
-	            ? this.removeByName(component)
-	            : this.removeByInstance(component);
+	            ? this.removeElementByName(component)
+	            : this.removeElementByInstance(component);
 	    }
-	    removeByName(name) {
-	        componentTmp$1 = this.elements.get(name);
-	        if (componentTmp$1) {
+	    removeElementByName(name) {
+	        elementTmp$1 = this.elements.get(name);
+	        if (elementTmp$1) {
 	            this.elements.delete(name);
-	            componentTmp$1.usedBy.splice(componentTmp$1.usedBy.indexOf(this), 1);
-	            ComponentManager$1.eventObject = {
-	                component: componentTmp$1,
-	                eventKey: ComponentManager$1.REMOVE_COMPONENT,
-	                manager: this,
-	                target: componentTmp$1
-	            };
-	            this.entityComponentChangeDispatch(ComponentManager$1.REMOVE_COMPONENT, ComponentManager$1.eventObject);
+	            elementTmp$1.usedBy.splice(elementTmp$1.usedBy.indexOf(this), 1);
+	            this.elementChangeDispatch(Manager$1.Events.REMOVE, this);
 	        }
 	        return this;
 	    }
-	    removeByInstance(component) {
+	    removeElementByInstance(component) {
 	        if (this.elements.has(component.name)) {
 	            this.elements.delete(component.name);
 	            component.usedBy.splice(component.usedBy.indexOf(this), 1);
-	            ComponentManager$1.eventObject = {
-	                component,
-	                eventKey: ComponentManager$1.REMOVE_COMPONENT,
-	                manager: this,
-	                target: component
-	            };
-	            this.entityComponentChangeDispatch(ComponentManager$1.REMOVE_COMPONENT, ComponentManager$1.eventObject);
+	            this.elementChangeDispatch(Manager$1.Events.REMOVE, this);
 	        }
 	        return this;
 	    }
-	    entityComponentChangeDispatch(type, eventObject) {
+	    elementChangeDispatch(type, eventObject) {
+	        var _a, _b;
 	        for (const entity of this.usedBy) {
-	            entity.fire(type, eventObject);
+	            (_b = (_a = entity).fire) === null || _b === void 0 ? void 0 : _b.call(_a, type, eventObject);
 	            for (const manager of entity.usedBy) {
 	                manager.updatedEntities.add(entity);
 	            }
 	        }
 	    }
 	}
-	ComponentManager$1.ADD_COMPONENT = EComponentEvent$1.ADD_COMPONENT;
-	ComponentManager$1.REMOVE_COMPONENT = EComponentEvent$1.REMOVE_COMPONENT;
-	ComponentManager$1.eventObject = {
-	    component: null,
-	    eventKey: null,
-	    manager: null,
-	    target: null
-	};
+	Manager$1.Events = EElementChangeEvent$1;
 
+	// import { IdGeneratorInstance } from "./Global";
+	// 私有全局变量，外部无法访问
+	// let componentTmp: IComponent<any> | undefined;
+	var EComponentEvent$1;
+	(function (EComponentEvent) {
+	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
+	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
+	})(EComponentEvent$1 || (EComponentEvent$1 = {}));
+	class ComponentManager$1 extends Manager$1 {
+	    constructor() {
+	        super(...arguments);
+	        this.isComponentManager = true;
+	        this.usedBy = [];
+	    }
+	}
+
+	const FIND_LEAVES_VISITOR$1 = {
+	    enter: (node, result) => {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
+	};
+	const ARRAY_VISITOR$1 = {
+	    enter: (node, result) => {
+	        result.push(node);
+	    }
+	};
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base = Object, eventKeyList = []) => {
+	const mixin$2 = (Base = Object) => {
 	    var _a;
-	    return _a = class EventDispatcher extends Base {
+	    return _a = class TreeNode extends Base {
 	            constructor() {
 	                super(...arguments);
-	                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
-	                this.eventKeyList = eventKeyList;
-	                /**
-	                 * store all the filters
-	                 */
-	                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
-	                this.filters = [];
-	                /**
-	                 * store all the listeners by key
-	                 */
-	                // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
-	                this.listeners = new Map();
-	                this.all = (listener) => {
-	                    return this.filt(() => true, listener);
-	                };
-	                this.clearListenersByKey = (eventKey) => {
-	                    this.listeners.delete(eventKey);
-	                    return this;
-	                };
-	                this.clearAllListeners = () => {
-	                    const keys = this.listeners.keys();
-	                    for (const key of keys) {
-	                        this.listeners.delete(key);
+	                this.parent = null;
+	                this.children = [];
+	            }
+	            static addNode(node, child) {
+	                if (TreeNode.hasAncestor(node, child)) {
+	                    throw new Error("The node added is one of the ancestors of current one.");
+	                }
+	                node.children.push(child);
+	                child.parent = node;
+	                return node;
+	            }
+	            static depth(node) {
+	                if (!node.children.length) {
+	                    return 1;
+	                }
+	                else {
+	                    const childrenDepth = [];
+	                    for (const item of node.children) {
+	                        item && childrenDepth.push(this.depth(item));
 	                    }
-	                    return this;
-	                };
-	                this.filt = (rule, listener) => {
-	                    this.filters.push({
-	                        listener,
-	                        rule
-	                    });
-	                    return this;
-	                };
-	                this.fire = (eventKey, target) => {
-	                    if (!this.checkEventKeyAvailable(eventKey)) {
-	                        console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
-	                        return this;
+	                    let max = 0;
+	                    for (const item of childrenDepth) {
+	                        max = Math.max(max, item);
 	                    }
-	                    const array = this.listeners.get(eventKey) || [];
-	                    let len = array.length;
-	                    let item;
-	                    for (let i = 0; i < len; i++) {
-	                        item = array[i];
-	                        item.listener({
-	                            eventKey,
-	                            life: --item.times,
-	                            target
-	                        });
-	                        if (item.times <= 0) {
-	                            array.splice(i--, 1);
-	                            --len;
-	                        }
+	                    return 1 + max;
+	                }
+	            }
+	            static findLeaves(node) {
+	                const result = [];
+	                TreeNode.traverse(node, FIND_LEAVES_VISITOR$1, result);
+	                return result;
+	            }
+	            static findRoot(node) {
+	                if (node.parent) {
+	                    return this.findRoot(node.parent);
+	                }
+	                return node;
+	            }
+	            static hasAncestor(node, ancestor) {
+	                if (!node.parent) {
+	                    return false;
+	                }
+	                else {
+	                    if (node.parent === ancestor) {
+	                        return true;
 	                    }
-	                    return this.checkFilt(eventKey, target);
-	                };
-	                this.off = (eventKey, listener) => {
-	                    const array = this.listeners.get(eventKey);
-	                    if (!array) {
-	                        return this;
+	                    else {
+	                        return TreeNode.hasAncestor(node.parent, ancestor);
 	                    }
-	                    const len = array.length;
-	                    for (let i = 0; i < len; i++) {
-	                        if (array[i].listener === listener) {
-	                            array.splice(i, 1);
-	                            break;
-	                        }
-	                    }
-	                    return this;
-	                };
-	                this.on = (eventKey, listener) => {
-	                    return this.times(eventKey, Infinity, listener);
-	                };
-	                this.once = (eventKey, listener) => {
-	                    return this.times(eventKey, 1, listener);
-	                };
-	                this.times = (eventKey, times, listener) => {
-	                    if (!this.checkEventKeyAvailable(eventKey)) {
-	                        console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
-	                        return this;
-	                    }
-	                    const array = this.listeners.get(eventKey) || [];
-	                    if (!this.listeners.has(eventKey)) {
-	                        this.listeners.set(eventKey, array);
-	                    }
-	                    array.push({
-	                        listener,
-	                        times
-	                    });
-	                    return this;
-	                };
-	                this.checkFilt = (eventKey, target) => {
-	                    for (const item of this.filters) {
-	                        if (item.rule(eventKey, target)) {
-	                            item.listener({
-	                                eventKey,
-	                                life: Infinity,
-	                                target
-	                            });
-	                        }
-	                    }
-	                    return this;
-	                };
-	                this.checkEventKeyAvailable = (eventKey) => {
-	                    if (this.eventKeyList.length) {
-	                        return this.eventKeyList.includes(eventKey);
-	                    }
-	                    return true;
-	                };
+	                }
+	            }
+	            static removeNode(node, child) {
+	                if (node.children.includes(child)) {
+	                    node.children.splice(node.children.indexOf(child), 1);
+	                    child.parent = null;
+	                }
+	                return node;
+	            }
+	            static toArray(node) {
+	                const result = [];
+	                TreeNode.traverse(node, ARRAY_VISITOR$1, result);
+	                return result;
+	            }
+	            static traverse(node, visitor, rest) {
+	                var _a, _b, _c;
+	                (_a = visitor.enter) === null || _a === void 0 ? void 0 : _a.call(visitor, node, rest);
+	                (_b = visitor.visit) === null || _b === void 0 ? void 0 : _b.call(visitor, node, rest);
+	                for (const item of node.children) {
+	                    item && TreeNode.traverse(item, visitor, rest);
+	                }
+	                (_c = visitor.leave) === null || _c === void 0 ? void 0 : _c.call(visitor, node, rest);
+	                return node;
+	            }
+	            addNode(node) {
+	                return TreeNode.addNode(this, node);
+	            }
+	            depth() {
+	                return TreeNode.depth(this);
+	            }
+	            findLeaves() {
+	                return TreeNode.findLeaves(this);
+	            }
+	            findRoot() {
+	                return TreeNode.findRoot(this);
+	            }
+	            hasAncestor(ancestor) {
+	                return TreeNode.hasAncestor(this, ancestor);
+	            }
+	            removeNode(child) {
+	                return TreeNode.removeNode(this, child);
+	            }
+	            toArray() {
+	                return TreeNode.toArray(this);
+	            }
+	            traverse(visitor, rest) {
+	                return TreeNode.traverse(this, visitor, rest);
 	            }
 	        },
-	        _a.mixin = mixin,
+	        _a.mixin = mixin$2,
 	        _a;
 	};
-	var EventDispatcher = mixin(Object);
+	var TreeNode$1 = mixin$2(Object);
+
+	const TreeNodeWithEvent$1 = mixin$3(TreeNode$1);
 
 	let arr$2;
-	class Entity$1 extends EventDispatcher {
+	class Entity$1 extends TreeNodeWithEvent$1 {
 	    constructor(name = "", componentManager) {
 	        super();
 	        this.id = IdGeneratorInstance$1.next();
@@ -1077,7 +1272,7 @@
 	    }
 	    addComponent(component) {
 	        if (this.componentManager) {
-	            this.componentManager.add(component);
+	            this.componentManager.addElement(component);
 	        }
 	        else {
 	            throw new Error("Current entity hasn't registered a component manager yet.");
@@ -1085,12 +1280,12 @@
 	        return this;
 	    }
 	    addTo(manager) {
-	        manager.add(this);
+	        manager.addElement(this);
 	        return this;
 	    }
 	    addToWorld(world) {
 	        if (world.entityManager) {
-	            world.entityManager.add(this);
+	            world.entityManager.addElement(this);
 	        }
 	        return this;
 	    }
@@ -1110,7 +1305,7 @@
 	    }
 	    removeComponent(component) {
 	        if (this.componentManager) {
-	            this.componentManager.remove(component);
+	            this.componentManager.removeElement(component);
 	        }
 	        return this;
 	    }
@@ -1130,7 +1325,7 @@
 	    ESystemEvent["BEFORE_RUN"] = "beforeRun";
 	    ESystemEvent["AFTER_RUN"] = "afterRun";
 	})(ESystemEvent$1 || (ESystemEvent$1 = {}));
-	class SystemManager$1 extends EventDispatcher {
+	class SystemManager$1 extends Manager$1 {
 	    constructor(world) {
 	        super();
 	        this.disabled = false;
@@ -1141,7 +1336,7 @@
 	            this.usedBy.push(world);
 	        }
 	    }
-	    add(system) {
+	    addElement(system) {
 	        if (this.elements.has(system.name)) {
 	            return this;
 	        }
@@ -1152,23 +1347,6 @@
 	    clear() {
 	        this.elements.clear();
 	        return this;
-	    }
-	    get(name) {
-	        systemTmp$1 = this.elements.get(name);
-	        return systemTmp$1 ? systemTmp$1 : null;
-	    }
-	    has(element) {
-	        if (typeof element === "string") {
-	            return this.elements.has(element);
-	        }
-	        else {
-	            return this.elements.has(element.name);
-	        }
-	    }
-	    remove(system) {
-	        return typeof system === "string"
-	            ? this.removeByName(system)
-	            : this.removeByInstance(system);
 	    }
 	    removeByName(name) {
 	        systemTmp$1 = this.elements.get(name);
@@ -1812,6 +1990,10 @@ struct VertexOutput {
 	    return (value & (value - 1)) === 0 && value !== 0;
 	};
 
+	var lerp$4 = (a, b, p) => {
+	    return (b - a) * p + a;
+	};
+
 	let d1 = 0, d2 = 0;
 	/**
 	 * @function mapRange
@@ -1867,6 +2049,190 @@ struct VertexOutput {
 	 */
 	var sum = (...arr) => {
 	    return sumArray(arr);
+	};
+
+	var BackIn = (p) => {
+	    const s = 1.70158;
+	    return p === 1 ? 1 : p * p * ((s + 1) * p - s);
+	};
+
+	var BackInOut = (p) => {
+	    const s = 1.70158 * 1.525;
+	    if ((p *= 2) < 1) {
+	        return 0.5 * (p * p * ((s + 1) * p - s));
+	    }
+	    p -= 2;
+	    return 0.5 * (p * p * ((s + 1) * p + s) + 2);
+	};
+
+	var BackOut = (p) => {
+	    const s = 1.70158;
+	    return p === 0 ? 0 : --p * p * ((s + 1) * p + s) + 1;
+	};
+
+	/* eslint-disable no-return-assign */
+	var BounceOut = (p) => {
+	    if (p < 1 / 2.75) {
+	        return 7.5625 * p * p;
+	    }
+	    else if (p < 2 / 2.75) {
+	        return 7.5625 * (p -= 1.5 / 2.75) * p + 0.75;
+	    }
+	    else if (p < 2.5 / 2.75) {
+	        return 7.5625 * (p -= 2.25 / 2.75) * p + 0.9375;
+	    }
+	    else {
+	        return 7.5625 * (p -= 2.625 / 2.75) * p + 0.984375;
+	    }
+	};
+
+	var BounceIn = (p) => {
+	    return 1 - BounceOut(1 - p);
+	};
+
+	var BounceInOut = (p) => {
+	    if (p < 0.5) {
+	        return BounceIn(p * 2) * 0.5;
+	    }
+	    return BounceOut(p * 2 - 1) * 0.5 + 0.5;
+	};
+
+	var CircularIn = (p) => {
+	    return 1 - Math.sqrt(1 - p * p);
+	};
+
+	var CircularInOut = (p) => {
+	    if ((p *= 2) < 1) {
+	        return -0.5 * (Math.sqrt(1 - p * p) - 1);
+	    }
+	    p -= 2;
+	    return 0.5 * (Math.sqrt(1 - p * p) + 1);
+	};
+
+	var CircularOut = (p) => {
+	    return Math.sqrt(1 - --p * p);
+	};
+
+	var CubicIn = (p) => {
+	    return p * p * p;
+	};
+
+	var CubicInOut = (p) => {
+	    if ((p *= 2) < 1) {
+	        return 0.5 * p * p * p;
+	    }
+	    p -= 2;
+	    return 0.5 * (p * p * p + 2);
+	};
+
+	var CubicOut = (p) => {
+	    return --p * p * p + 1;
+	};
+
+	var ElasticIn = (p) => {
+	    if (p === 0 || p === 1) {
+	        return p;
+	    }
+	    return -Math.pow(2, 10 * (p - 1)) * Math.sin((p - 1.1) * 5 * Math.PI);
+	};
+
+	var ElasticInOut = (p) => {
+	    if (p === 0 || p === 1) {
+	        return p;
+	    }
+	    p *= 2;
+	    if (p < 1) {
+	        return -0.5 * Math.pow(2, 10 * (p - 1)) * Math.sin((p - 1.1) * 5 * Math.PI);
+	    }
+	    return 0.5 * Math.pow(2, -10 * (p - 1)) * Math.sin((p - 1.1) * 5 * Math.PI) + 1;
+	};
+
+	var ElasticOut = (p) => {
+	    if (p === 0 || p === 1) {
+	        return p;
+	    }
+	    return Math.pow(2, -10 * p) * Math.sin((p - 0.1) * 5 * Math.PI) + 1;
+	};
+
+	var ExponentialIn = (p) => {
+	    return p === 0 ? 0 : Math.pow(1024, p - 1);
+	};
+
+	var ExponentialInOut = (p) => {
+	    if (p === 0 || p === 1) {
+	        return p;
+	    }
+	    if ((p *= 2) < 1) {
+	        return 0.5 * Math.pow(1024, p - 1);
+	    }
+	    return 0.5 * (-Math.pow(2, -10 * (p - 1)) + 2);
+	};
+
+	var ExponentialOut = (p) => {
+	    return p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+	};
+
+	var Linear = (p) => {
+	    return p;
+	};
+
+	var QuadraticIn = (p) => {
+	    return p * p;
+	};
+
+	var QuadraticInOut = (p) => {
+	    if ((p *= 2) < 1) {
+	        return 0.5 * p * p;
+	    }
+	    return -0.5 * (--p * (p - 2) - 1);
+	};
+
+	var QuadraticOut = (p) => {
+	    return p * (2 - p);
+	};
+
+	var QuarticIn = (p) => {
+	    return p * p * p * p;
+	};
+
+	var QuarticInOut = (p) => {
+	    if ((p *= 2) < 1) {
+	        return 0.5 * p * p * p * p;
+	    }
+	    p -= 2;
+	    return -0.5 * (p * p * p * p - 2);
+	};
+
+	var QuarticOut = (p) => {
+	    return 1 - --p * p * p * p;
+	};
+
+	var QuinticIn = (p) => {
+	    return p * p * p * p * p;
+	};
+
+	var QuinticInOut = (p) => {
+	    if ((p *= 2) < 1) {
+	        return 0.5 * p * p * p * p * p;
+	    }
+	    p -= 2;
+	    return 0.5 * (p * p * p * p * p + 2);
+	};
+
+	var QuinticOut = (p) => {
+	    return --p * p * p * p * p + 1;
+	};
+
+	var SinusoidalIn = (p) => {
+	    return 1 - Math.sin(((1.0 - p) * Math.PI) / 2);
+	};
+
+	var SinusoidalInOut = (p) => {
+	    return 0.5 * (1 - Math.sin(Math.PI * (0.5 - p)));
+	};
+
+	var SinusoidalOut = (p) => {
+	    return Math.sin((p * Math.PI) / 2);
 	};
 
 	var EulerRotationOrders$1;
@@ -3735,15 +4101,18 @@ struct VertexOutput {
 	    out[3] = a[3] + b[3];
 	    return out;
 	};
-	function ceil$1(a, out = new Float32Array(4)) {
+	const ceil$1 = (a, out = new Float32Array(4)) => {
 	    out[0] = Math.ceil(a[0]);
 	    out[1] = Math.ceil(a[1]);
 	    out[2] = Math.ceil(a[2]);
 	    out[3] = Math.ceil(a[3]);
 	    return out;
-	}
+	};
 	const closeTo$1 = (a, b) => {
-	    return closeToCommon(a[0], b[0]) && closeToCommon(a[1], b[1]) && closeToCommon(a[2], b[2]) && closeToCommon(a[3], b[3]);
+	    return (closeToCommon(a[0], b[0]) &&
+	        closeToCommon(a[1], b[1]) &&
+	        closeToCommon(a[2], b[2]) &&
+	        closeToCommon(a[3], b[3]));
 	};
 	const create$4 = (x = 0, y = 0, z = 0, w = 0, out = new Float32Array(4)) => {
 	    out[0] = x;
@@ -3753,12 +4122,12 @@ struct VertexOutput {
 	    return out;
 	};
 	const cross$1 = (u, v, w, out = new Float32Array(4)) => {
-	    A = v[0] * w[1] - v[1] * w[0],
-	        B = v[0] * w[2] - v[2] * w[0],
-	        C = v[0] * w[3] - v[3] * w[0],
-	        D = v[1] * w[2] - v[2] * w[1],
-	        E = v[1] * w[3] - v[3] * w[1],
-	        F = v[2] * w[3] - v[3] * w[2];
+	    A = v[0] * w[1] - v[1] * w[0];
+	    B = v[0] * w[2] - v[2] * w[0];
+	    C = v[0] * w[3] - v[3] * w[0];
+	    D = v[1] * w[2] - v[2] * w[1];
+	    E = v[1] * w[3] - v[3] * w[1];
+	    F = v[2] * w[3] - v[3] * w[2];
 	    G = u[0];
 	    H = u[1];
 	    I = u[2];
@@ -3909,28 +4278,28 @@ struct VertexOutput {
 	    out[3] = Math.round(a[3]);
 	    return out;
 	};
-	function toString$2(a) {
+	const toString$2 = (a) => {
 	    return `vec4(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
-	}
-	function transformMatrix4(a, m, out = new Float32Array(4)) {
-	    ax$1 = a[0],
-	        ay$1 = a[1],
-	        az$1 = a[2],
-	        aw$1 = a[3];
+	};
+	const transformMatrix4 = (a, m, out = new Float32Array(4)) => {
+	    ax$1 = a[0];
+	    ay$1 = a[1];
+	    az$1 = a[2];
+	    aw$1 = a[3];
 	    out[0] = m[0] * ax$1 + m[4] * ay$1 + m[8] * az$1 + m[12] * aw$1;
 	    out[1] = m[1] * ax$1 + m[5] * ay$1 + m[9] * az$1 + m[13] * aw$1;
 	    out[2] = m[2] * ax$1 + m[6] * ay$1 + m[10] * az$1 + m[14] * aw$1;
 	    out[3] = m[3] * ax$1 + m[7] * ay$1 + m[11] * az$1 + m[15] * aw$1;
 	    return out;
-	}
+	};
 	const transformQuat = (a, q, out = new Float32Array(4)) => {
-	    bx$1 = a[0],
-	        by$1 = a[1],
-	        bz$1 = a[2];
-	    ax$1 = q[0],
-	        ay$1 = q[1],
-	        az$1 = q[2],
-	        aw$1 = q[3];
+	    bx$1 = a[0];
+	    by$1 = a[1];
+	    bz$1 = a[2];
+	    ax$1 = q[0];
+	    ay$1 = q[1];
+	    az$1 = q[2];
+	    aw$1 = q[3];
 	    ix = aw$1 * bx$1 + ay$1 * bz$1 - az$1 * by$1;
 	    iy = aw$1 * by$1 + az$1 * bx$1 - ax$1 * bz$1;
 	    iz = aw$1 * bz$1 + ax$1 * by$1 - ay$1 * bx$1;
@@ -4677,16 +5046,47 @@ struct VertexOutput {
 
 	var Mathx_module = /*#__PURE__*/Object.freeze({
 		__proto__: null,
+		BackIn: BackIn,
+		BackInOut: BackInOut,
+		BackOut: BackOut,
+		BounceIn: BounceIn,
+		BounceInOut: BounceInOut,
+		BounceOut: BounceOut,
 		COLOR_HEX_MAP: COLOR_HEX_MAP,
+		CircularIn: CircularIn,
+		CircularInOut: CircularInOut,
+		CircularOut: CircularOut,
 		ColorGPU: ColorGPU,
 		ColorRGB: ColorRGB,
 		ColorRGBA: ColorRGBA,
+		CubicIn: CubicIn,
+		CubicInOut: CubicInOut,
+		CubicOut: CubicOut,
+		ElasticIn: ElasticIn,
+		ElasticInOut: ElasticInOut,
+		ElasticOut: ElasticOut,
 		Euler: Euler,
+		ExponentialIn: ExponentialIn,
+		ExponentialInOut: ExponentialInOut,
+		ExponentialOut: ExponentialOut,
+		Linear: Linear,
 		Matrix2: Matrix2,
 		Matrix3: Matrix3,
 		Matrix4: Matrix4,
+		QuadraticIn: QuadraticIn,
+		QuadraticInOut: QuadraticInOut,
+		QuadraticOut: QuadraticOut,
+		QuarticIn: QuarticIn,
+		QuarticInOut: QuarticInOut,
+		QuarticOut: QuarticOut,
 		Quaternion: Quaternion,
+		QuinticIn: QuinticIn,
+		QuinticInOut: QuinticInOut,
+		QuinticOut: QuinticOut,
 		Rectangle2: Rectangle2$1,
+		SinusoidalIn: SinusoidalIn,
+		SinusoidalInOut: SinusoidalInOut,
+		SinusoidalOut: SinusoidalOut,
 		Triangle3: Triangle3$1,
 		Vector2: Vector2,
 		Vector3: Vector3,
@@ -4699,6 +5099,7 @@ struct VertexOutput {
 		floorPowerOfTwo: floorPowerOfTwo,
 		floorToZero: floorToZeroCommon,
 		isPowerOfTwo: isPowerOfTwo,
+		lerp: lerp$4,
 		mapRange: mapRange,
 		randFloat: randFloat,
 		randInt: randInt,
@@ -5359,6 +5760,49 @@ struct VertexOutput {
 	    }
 	}
 
+	const canvases = []; // 储存多个canvas，可能存在n个图同时画
+	function drawSpriteBlock(image, width, height, frame) {
+	    return __awaiter(this, void 0, void 0, function* () {
+	        let canvas = canvases.pop() || document.createElement("canvas");
+	        let ctx = canvas.getContext("2d");
+	        canvas.width = width;
+	        canvas.height = height;
+	        ctx.clearRect(0, 0, canvas.width, canvas.height);
+	        ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
+	        let result = yield createImageBitmap(canvas);
+	        canvases.push(canvas);
+	        return result;
+	    });
+	}
+
+	class AtlasTexture extends Component$1 {
+	    constructor(json, name = "atlas-texture") {
+	        super(name);
+	        this.loaded = false;
+	        this.dirty = false;
+	        this.width = 0;
+	        this.height = 0;
+	        this.framesBitmap = [];
+	        this.width = json.spriteSize.w;
+	        this.height = json.spriteSize.h;
+	        this.setImage(json);
+	    }
+	    setImage(json) {
+	        return __awaiter(this, void 0, void 0, function* () {
+	            this.loaded = false;
+	            this.dirty = false;
+	            let img = new Image();
+	            img.src = json.image;
+	            this.image = img;
+	            yield img.decode();
+	            this.data = yield drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
+	            this.dirty = true;
+	            this.loaded = true;
+	            return this;
+	        });
+	    }
+	}
+
 	class ImageBitmapTexture extends Component$1 {
 	    constructor(img, width, height, name = "image-texture") {
 	        super(name);
@@ -5402,28 +5846,6 @@ struct VertexOutput {
 	    }
 	}
 
-	const canvases = []; // 储存多个canvas，可能存在n个图同时画
-	function drawSpriteBlock(image, width, height, frame) {
-	    return __awaiter(this, void 0, void 0, function* () {
-	        let canvas = canvases.pop() || document.createElement("canvas");
-	        let ctx = canvas.getContext("2d");
-	        canvas.width = width;
-	        canvas.height = height;
-	        ctx.clearRect(0, 0, canvas.width, canvas.height);
-	        ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-	        let result = yield createImageBitmap(canvas);
-	        canvases.push(canvas);
-	        return result;
-	    });
-	}
-
-	// const canvas = document.createElement("canvas");
-	// const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-	// async function drawSpriteBlock(image: HTMLImageElement, frame: IFrame): Promise<ImageBitmap> {
-	//     ctx.clearRect(0, 0, canvas.width, canvas.height);
-	//     ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-	//     return await createImageBitmap(canvas);
-	// }
 	class SpritesheetTexture extends Component$1 {
 	    constructor(json, name = "spritesheet-texture") {
 	        super(name);
@@ -5894,7 +6316,7 @@ struct VertexOutput {
 	`
 	};
 
-	class RenderSystem extends ASystem$1 {
+	class RenderSystem extends System$1 {
 	    constructor(engine, clearer, viewport, scissor) {
 	        super("Render System", (entity) => {
 	            var _a;
@@ -5912,7 +6334,7 @@ struct VertexOutput {
 	        engine.context.configure({
 	            device: engine.device,
 	            format: engine.preferredFormat,
-	            size: [engine.canvas.clientWidth, engine.canvas.clientHeight]
+	            size: [engine.canvas.width, engine.canvas.height]
 	        });
 	        this.setScissor(scissor).setViewport(viewport);
 	    }
@@ -5929,6 +6351,7 @@ struct VertexOutput {
 	    }
 	    destroy() {
 	        this.rendererMap.clear();
+	        return this;
 	    }
 	    handle(entity, store) {
 	        var _a, _b;
@@ -5977,17 +6400,26 @@ struct VertexOutput {
 	const IdGeneratorInstance = new IdGenerator();
 
 	let weakMapTmp;
-	class ASystem {
+	class System {
+	    id = IdGeneratorInstance.next();
+	    isSystem = true;
+	    name = "";
+	    loopTimes = 0;
+	    entitySet = new WeakMap();
+	    usedBy = [];
+	    cache = new WeakMap();
+	    rule;
+	    _disabled = false;
+	    get disabled() {
+	        return this._disabled;
+	    }
+	    set disabled(value) {
+	        this._disabled = value;
+	    }
 	    constructor(name = "", fitRule) {
-	        this.id = IdGeneratorInstance.next();
-	        this.isSystem = true;
-	        this.name = "";
-	        this.disabled = false;
-	        this.loopTimes = 0;
-	        this.entitySet = new WeakMap();
-	        this.usedBy = [];
 	        this.name = name;
-	        this.queryRule = fitRule;
+	        this.disabled = false;
+	        this.rule = fitRule;
 	    }
 	    checkUpdatedEntities(manager) {
 	        if (manager) {
@@ -6029,7 +6461,7 @@ struct VertexOutput {
 	        return this;
 	    }
 	    query(entity) {
-	        return this.queryRule(entity);
+	        return this.rule(entity);
 	    }
 	    run(world) {
 	        if (world.entityManager) {
@@ -6039,53 +6471,197 @@ struct VertexOutput {
 	        }
 	        return this;
 	    }
+	    destroy() {
+	        for (let i = this.usedBy.length - 1; i > -1; i--) {
+	            this.usedBy[i].removeElement(this);
+	        }
+	        return this;
+	    }
+	}
+
+	class PureSystem extends System {
+	    handler;
+	    constructor(name = "", fitRule, handler) {
+	        super(name, fitRule);
+	        this.handler = handler;
+	    }
+	    handle(entity, params) {
+	        this.handler(entity, params);
+	        return this;
+	    }
 	}
 
 	class Component {
+	    static unserialize(json) {
+	        const component = new Component(json.name, json.data);
+	        component.disabled = json.disabled;
+	        return component;
+	    }
+	    isComponent = true;
+	    id = IdGeneratorInstance.next();
+	    data = null;
+	    disabled = false;
+	    name;
+	    usedBy = [];
+	    dirty = false;
 	    constructor(name, data = null) {
-	        this.isComponent = true;
-	        this.data = null;
-	        this.disabled = false;
-	        this.usedBy = [];
-	        this.dirty = false;
 	        this.name = name;
 	        this.data = data;
 	    }
 	    clone() {
 	        return new Component(this.name, this.data);
 	    }
+	    serialize() {
+	        return {
+	            data: this.data,
+	            disabled: this.disabled,
+	            name: this.name,
+	            type: "component"
+	        };
+	    }
 	}
 
-	// 私有全局变量，外部无法访问
-	let componentTmp;
-	var EComponentEvent;
-	(function (EComponentEvent) {
-	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
-	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
-	})(EComponentEvent || (EComponentEvent = {}));
-	class ComponentManager {
-	    constructor() {
-	        this.elements = new Map();
-	        this.disabled = false;
-	        this.usedBy = [];
-	        this.isComponentManager = true;
-	    }
-	    add(component) {
-	        if (this.has(component)) {
-	            this.removeByInstance(component);
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin$1 = (Base = Object, eventKeyList = []) => {
+	    return class EventFirer extends Base {
+	        static mixin = mixin$1;
+	        eventKeyList = eventKeyList;
+	        /**
+	         * store all the filters
+	         */
+	        filters = [];
+	        /**
+	         * store all the listeners by key
+	         */
+	        listeners = new Map();
+	        all(listener) {
+	            return this.filt(() => true, listener);
 	        }
-	        return this.addComponentDirect(component);
+	        clearListenersByKey(eventKey) {
+	            this.listeners.delete(eventKey);
+	            return this;
+	        }
+	        clearAllListeners() {
+	            const keys = this.listeners.keys();
+	            for (const key of keys) {
+	                this.listeners.delete(key);
+	            }
+	            return this;
+	        }
+	        filt(rule, listener) {
+	            this.filters.push({
+	                listener,
+	                rule
+	            });
+	            return this;
+	        }
+	        fire(eventKey, target) {
+	            if (!this.checkEventKeyAvailable(eventKey)) {
+	                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+	                return this;
+	            }
+	            const array = this.listeners.get(eventKey) || [];
+	            let len = array.length;
+	            let item;
+	            for (let i = 0; i < len; i++) {
+	                item = array[i];
+	                item.listener(target);
+	                item.times--;
+	                if (item.times <= 0) {
+	                    array.splice(i--, 1);
+	                    --len;
+	                }
+	            }
+	            return this.checkFilt(eventKey, target);
+	        }
+	        off(eventKey, listener) {
+	            const array = this.listeners.get(eventKey);
+	            if (!array) {
+	                return this;
+	            }
+	            const len = array.length;
+	            for (let i = 0; i < len; i++) {
+	                if (array[i].listener === listener) {
+	                    array.splice(i, 1);
+	                    break;
+	                }
+	            }
+	            return this;
+	        }
+	        on(eventKey, listener) {
+	            if (eventKey instanceof Array) {
+	                for (let i = 0, j = eventKey.length; i < j; i++) {
+	                    this.times(eventKey[i], Infinity, listener);
+	                }
+	                return this;
+	            }
+	            return this.times(eventKey, Infinity, listener);
+	        }
+	        once(eventKey, listener) {
+	            return this.times(eventKey, 1, listener);
+	        }
+	        times(eventKey, times, listener) {
+	            if (!this.checkEventKeyAvailable(eventKey)) {
+	                console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+	                return this;
+	            }
+	            const array = this.listeners.get(eventKey) || [];
+	            if (!this.listeners.has(eventKey)) {
+	                this.listeners.set(eventKey, array);
+	            }
+	            array.push({
+	                listener,
+	                times
+	            });
+	            return this;
+	        }
+	        checkFilt(eventKey, target) {
+	            for (const item of this.filters) {
+	                if (item.rule(eventKey, target)) {
+	                    item.listener(target, eventKey);
+	                }
+	            }
+	            return this;
+	        }
+	        checkEventKeyAvailable(eventKey) {
+	            if (this.eventKeyList.length) {
+	                return this.eventKeyList.includes(eventKey);
+	            }
+	            return true;
+	        }
+	    };
+	};
+	var EventFirer = mixin$1(Object);
+
+	// 私有全局变量，外部无法访问
+	let elementTmp;
+	var EElementChangeEvent;
+	(function (EElementChangeEvent) {
+	    EElementChangeEvent["ADD"] = "add";
+	    EElementChangeEvent["REMOVE"] = "remove";
+	})(EElementChangeEvent || (EElementChangeEvent = {}));
+	class Manager extends EventFirer {
+	    static Events = EElementChangeEvent;
+	    // private static eventObject: EventObject = {
+	    // 	component: null as any,
+	    // 	element: null as any,
+	    // 	eventKey: null as any,
+	    // 	manager: null as any
+	    // };
+	    elements = new Map();
+	    disabled = false;
+	    usedBy = [];
+	    isManager = true;
+	    addElement(component) {
+	        if (this.has(component)) {
+	            this.removeElementByInstance(component);
+	        }
+	        return this.addElementDirect(component);
 	    }
-	    addComponentDirect(component) {
+	    addElementDirect(component) {
 	        this.elements.set(component.name, component);
 	        component.usedBy.push(this);
-	        ComponentManager.eventObject = {
-	            component,
-	            eventKey: ComponentManager.ADD_COMPONENT,
-	            manager: this,
-	            target: component
-	        };
-	        this.entityComponentChangeDispatch(ComponentManager.ADD_COMPONENT, ComponentManager.eventObject);
+	        this.elementChangeDispatch(Manager.Events.ADD, this);
 	        return this;
 	    }
 	    clear() {
@@ -6093,8 +6669,8 @@ struct VertexOutput {
 	        return this;
 	    }
 	    get(name) {
-	        componentTmp = this.elements.get(name);
-	        return componentTmp ? componentTmp : null;
+	        elementTmp = this.elements.get(name);
+	        return elementTmp ? elementTmp : null;
 	    }
 	    has(component) {
 	        if (typeof component === "string") {
@@ -6104,83 +6680,183 @@ struct VertexOutput {
 	            return this.elements.has(component.name);
 	        }
 	    }
-	    // TODO
-	    isMixedFrom(componentManager) {
-	        console.log(componentManager);
-	        return false;
-	    }
-	    // TODO
-	    mixFrom(componentManager) {
-	        console.log(componentManager);
-	        return this;
-	    }
-	    remove(component) {
+	    removeElement(component) {
 	        return typeof component === "string"
-	            ? this.removeByName(component)
-	            : this.removeByInstance(component);
+	            ? this.removeElementByName(component)
+	            : this.removeElementByInstance(component);
 	    }
-	    removeByName(name) {
-	        componentTmp = this.elements.get(name);
-	        if (componentTmp) {
+	    removeElementByName(name) {
+	        elementTmp = this.elements.get(name);
+	        if (elementTmp) {
 	            this.elements.delete(name);
-	            componentTmp.usedBy.splice(componentTmp.usedBy.indexOf(this), 1);
-	            ComponentManager.eventObject = {
-	                component: componentTmp,
-	                eventKey: ComponentManager.REMOVE_COMPONENT,
-	                manager: this,
-	                target: componentTmp
-	            };
-	            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+	            elementTmp.usedBy.splice(elementTmp.usedBy.indexOf(this), 1);
+	            this.elementChangeDispatch(Manager.Events.REMOVE, this);
 	        }
 	        return this;
 	    }
-	    removeByInstance(component) {
+	    removeElementByInstance(component) {
 	        if (this.elements.has(component.name)) {
 	            this.elements.delete(component.name);
 	            component.usedBy.splice(component.usedBy.indexOf(this), 1);
-	            ComponentManager.eventObject = {
-	                component,
-	                eventKey: ComponentManager.REMOVE_COMPONENT,
-	                manager: this,
-	                target: component
-	            };
-	            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+	            this.elementChangeDispatch(Manager.Events.REMOVE, this);
 	        }
 	        return this;
 	    }
-	    entityComponentChangeDispatch(type, eventObject) {
+	    elementChangeDispatch(type, eventObject) {
 	        for (const entity of this.usedBy) {
-	            entity.fire(type, eventObject);
+	            entity.fire?.(type, eventObject);
 	            for (const manager of entity.usedBy) {
 	                manager.updatedEntities.add(entity);
 	            }
 	        }
 	    }
 	}
-	ComponentManager.ADD_COMPONENT = EComponentEvent.ADD_COMPONENT;
-	ComponentManager.REMOVE_COMPONENT = EComponentEvent.REMOVE_COMPONENT;
-	ComponentManager.eventObject = {
-	    component: null,
-	    eventKey: null,
-	    manager: null,
-	    target: null
+
+	// import { IdGeneratorInstance } from "./Global";
+	// 私有全局变量，外部无法访问
+	// let componentTmp: IComponent<any> | undefined;
+	var EComponentEvent;
+	(function (EComponentEvent) {
+	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
+	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
+	})(EComponentEvent || (EComponentEvent = {}));
+	class ComponentManager extends Manager {
+	    isComponentManager = true;
+	    usedBy = [];
+	}
+
+	const FIND_LEAVES_VISITOR = {
+	    enter: (node, result) => {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
 	};
+	const ARRAY_VISITOR = {
+	    enter: (node, result) => {
+	        result.push(node);
+	    }
+	};
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin = (Base = Object) => {
+	    return class TreeNode extends Base {
+	        static mixin = mixin;
+	        static addNode(node, child) {
+	            if (TreeNode.hasAncestor(node, child)) {
+	                throw new Error("The node added is one of the ancestors of current one.");
+	            }
+	            node.children.push(child);
+	            child.parent = node;
+	            return node;
+	        }
+	        static depth(node) {
+	            if (!node.children.length) {
+	                return 1;
+	            }
+	            else {
+	                const childrenDepth = [];
+	                for (const item of node.children) {
+	                    item && childrenDepth.push(this.depth(item));
+	                }
+	                let max = 0;
+	                for (const item of childrenDepth) {
+	                    max = Math.max(max, item);
+	                }
+	                return 1 + max;
+	            }
+	        }
+	        static findLeaves(node) {
+	            const result = [];
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            return result;
+	        }
+	        static findRoot(node) {
+	            if (node.parent) {
+	                return this.findRoot(node.parent);
+	            }
+	            return node;
+	        }
+	        static hasAncestor(node, ancestor) {
+	            if (!node.parent) {
+	                return false;
+	            }
+	            else {
+	                if (node.parent === ancestor) {
+	                    return true;
+	                }
+	                else {
+	                    return TreeNode.hasAncestor(node.parent, ancestor);
+	                }
+	            }
+	        }
+	        static removeNode(node, child) {
+	            if (node.children.includes(child)) {
+	                node.children.splice(node.children.indexOf(child), 1);
+	                child.parent = null;
+	            }
+	            return node;
+	        }
+	        static toArray(node) {
+	            const result = [];
+	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            return result;
+	        }
+	        static traverse(node, visitor, rest) {
+	            visitor.enter?.(node, rest);
+	            visitor.visit?.(node, rest);
+	            for (const item of node.children) {
+	                item && TreeNode.traverse(item, visitor, rest);
+	            }
+	            visitor.leave?.(node, rest);
+	            return node;
+	        }
+	        parent = null;
+	        children = [];
+	        addNode(node) {
+	            return TreeNode.addNode(this, node);
+	        }
+	        depth() {
+	            return TreeNode.depth(this);
+	        }
+	        findLeaves() {
+	            return TreeNode.findLeaves(this);
+	        }
+	        findRoot() {
+	            return TreeNode.findRoot(this);
+	        }
+	        hasAncestor(ancestor) {
+	            return TreeNode.hasAncestor(this, ancestor);
+	        }
+	        removeNode(child) {
+	            return TreeNode.removeNode(this, child);
+	        }
+	        toArray() {
+	            return TreeNode.toArray(this);
+	        }
+	        traverse(visitor, rest) {
+	            return TreeNode.traverse(this, visitor, rest);
+	        }
+	    };
+	};
+	var TreeNode = mixin(Object);
+
+	const TreeNodeWithEvent = mixin$1(TreeNode);
 
 	let arr$1;
-	class Entity extends EventDispatcher {
+	class Entity extends TreeNodeWithEvent {
+	    id = IdGeneratorInstance.next();
+	    isEntity = true;
+	    componentManager = null;
+	    name = "";
+	    usedBy = [];
 	    constructor(name = "", componentManager) {
 	        super();
-	        this.id = IdGeneratorInstance.next();
-	        this.isEntity = true;
-	        this.componentManager = null;
-	        this.name = "";
-	        this.usedBy = [];
 	        this.name = name;
 	        this.registerComponentManager(componentManager);
 	    }
 	    addComponent(component) {
 	        if (this.componentManager) {
-	            this.componentManager.add(component);
+	            this.componentManager.addElement(component);
 	        }
 	        else {
 	            throw new Error("Current entity hasn't registered a component manager yet.");
@@ -6188,12 +6864,12 @@ struct VertexOutput {
 	        return this;
 	    }
 	    addTo(manager) {
-	        manager.add(this);
+	        manager.addElement(this);
 	        return this;
 	    }
 	    addToWorld(world) {
 	        if (world.entityManager) {
-	            world.entityManager.add(this);
+	            world.entityManager.addElement(this);
 	        }
 	        return this;
 	    }
@@ -6213,7 +6889,7 @@ struct VertexOutput {
 	    }
 	    removeComponent(component) {
 	        if (this.componentManager) {
-	            this.componentManager.remove(component);
+	            this.componentManager.removeElement(component);
 	        }
 	        return this;
 	    }
@@ -6230,18 +6906,18 @@ struct VertexOutput {
 	// 私有全局变量，外部无法访问
 	let entityTmp;
 	class EntityManager {
+	    elements = new Map();
+	    data = null;
+	    disabled = false;
+	    updatedEntities = new Set();
+	    isEntityManager = true;
+	    usedBy = [];
 	    constructor(world) {
-	        this.elements = new Map();
-	        this.data = null;
-	        this.disabled = false;
-	        this.updatedEntities = new Set();
-	        this.isEntityManager = true;
-	        this.usedBy = [];
 	        if (world) {
 	            this.usedBy.push(world);
 	        }
 	    }
-	    add(entity) {
+	    addElement(entity) {
 	        if (this.has(entity)) {
 	            this.removeByInstance(entity);
 	        }
@@ -6257,6 +6933,11 @@ struct VertexOutput {
 	        this.elements.clear();
 	        return this;
 	    }
+	    createEntity(name) {
+	        const entity = new Entity(name);
+	        this.addElement(entity);
+	        return entity;
+	    }
 	    get(name) {
 	        entityTmp = this.elements.get(name);
 	        return entityTmp ? entityTmp : null;
@@ -6269,7 +6950,7 @@ struct VertexOutput {
 	            return this.elements.has(entity.name);
 	        }
 	    }
-	    remove(entity) {
+	    removeElement(entity) {
 	        return typeof entity === "string"
 	            ? this.removeByName(entity)
 	            : this.removeByInstance(entity);
@@ -6309,18 +6990,25 @@ struct VertexOutput {
 	    ESystemEvent["BEFORE_RUN"] = "beforeRun";
 	    ESystemEvent["AFTER_RUN"] = "afterRun";
 	})(ESystemEvent || (ESystemEvent = {}));
-	class SystemManager extends EventDispatcher {
+	class SystemManager extends Manager {
+	    static AFTER_RUN = ESystemEvent.AFTER_RUN;
+	    static BEFORE_RUN = ESystemEvent.BEFORE_RUN;
+	    static eventObject = {
+	        eventKey: null,
+	        manager: null,
+	        target: null
+	    };
+	    disabled = false;
+	    elements = new Map();
+	    loopTimes = 0;
+	    usedBy = [];
 	    constructor(world) {
 	        super();
-	        this.disabled = false;
-	        this.elements = new Map();
-	        this.loopTimes = 0;
-	        this.usedBy = [];
 	        if (world) {
 	            this.usedBy.push(world);
 	        }
 	    }
-	    add(system) {
+	    addElement(system) {
 	        if (this.elements.has(system.name)) {
 	            return this;
 	        }
@@ -6331,23 +7019,6 @@ struct VertexOutput {
 	    clear() {
 	        this.elements.clear();
 	        return this;
-	    }
-	    get(name) {
-	        systemTmp = this.elements.get(name);
-	        return systemTmp ? systemTmp : null;
-	    }
-	    has(element) {
-	        if (typeof element === "string") {
-	            return this.elements.has(element);
-	        }
-	        else {
-	            return this.elements.has(element.name);
-	        }
-	    }
-	    remove(system) {
-	        return typeof system === "string"
-	            ? this.removeByName(system)
-	            : this.removeByInstance(system);
 	    }
 	    removeByName(name) {
 	        systemTmp = this.elements.get(name);
@@ -6399,22 +7070,16 @@ struct VertexOutput {
 	        return this;
 	    }
 	}
-	SystemManager.AFTER_RUN = ESystemEvent.AFTER_RUN;
-	SystemManager.BEFORE_RUN = ESystemEvent.BEFORE_RUN;
-	SystemManager.eventObject = {
-	    eventKey: null,
-	    manager: null,
-	    target: null
-	};
 
 	let arr;
 	class World {
+	    name;
+	    entityManager = null;
+	    systemManager = null;
+	    store = new Map();
+	    id = IdGeneratorInstance.next();
+	    isWorld = true;
 	    constructor(name = "", entityManager, systemManager) {
-	        this.entityManager = null;
-	        this.systemManager = null;
-	        this.store = new Map();
-	        this.id = IdGeneratorInstance.next();
-	        this.isWorld = true;
 	        this.name = name;
 	        this.registerEntityManager(entityManager);
 	        this.registerSystemManager(systemManager);
@@ -6429,7 +7094,7 @@ struct VertexOutput {
 	    }
 	    addEntity(entity) {
 	        if (this.entityManager) {
-	            this.entityManager.add(entity);
+	            this.entityManager.addElement(entity);
 	        }
 	        else {
 	            throw new Error("The world doesn't have an entityManager yet.");
@@ -6438,7 +7103,7 @@ struct VertexOutput {
 	    }
 	    addSystem(system) {
 	        if (this.systemManager) {
-	            this.systemManager.add(system);
+	            this.systemManager.addElement(system);
 	        }
 	        else {
 	            throw new Error("The world doesn't have a systemManager yet.");
@@ -6450,6 +7115,9 @@ struct VertexOutput {
 	            this.entityManager.clear();
 	        }
 	        return this;
+	    }
+	    createEntity(name) {
+	        return this.entityManager?.createEntity(name) || null;
 	    }
 	    hasEntity(entity) {
 	        if (this.entityManager) {
@@ -6489,13 +7157,13 @@ struct VertexOutput {
 	    }
 	    removeEntity(entity) {
 	        if (this.entityManager) {
-	            this.entityManager.remove(entity);
+	            this.entityManager.removeElement(entity);
 	        }
 	        return this;
 	    }
 	    removeSystem(system) {
 	        if (this.systemManager) {
-	            this.systemManager.remove(system);
+	            this.systemManager.removeElement(system);
 	        }
 	        return this;
 	    }
@@ -6561,8 +7229,8 @@ struct VertexOutput {
 	exports.AProjection3 = AProjection3;
 	exports.ARotation3 = ARotation3;
 	exports.AScale3 = AScale3;
-	exports.ASystem = ASystem;
 	exports.ATTRIBUTE_NAME = constants;
+	exports.AtlasTexture = AtlasTexture;
 	exports.COMPONENT_NAME = constants$1;
 	exports.ColorMaterial = ColorMaterial;
 	exports.Component = Component;
@@ -6578,16 +7246,19 @@ struct VertexOutput {
 	exports.Geometry3Factory = index$2;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;
+	exports.Manager = Manager;
 	exports.Mathx = Mathx_module;
 	exports.Matrix4Component = Matrix4Component;
 	exports.NormalMaterial = NormalMaterial;
 	exports.Object3 = Object3;
 	exports.OrthogonalProjection = PerspectiveProjection$1;
 	exports.PerspectiveProjection = PerspectiveProjection;
+	exports.PureSystem = PureSystem;
 	exports.Renderable = Renderable;
 	exports.Sampler = Sampler;
 	exports.ShaderMaterial = ShaderMaterial;
 	exports.SpritesheetTexture = SpritesheetTexture;
+	exports.System = System;
 	exports.SystemManager = SystemManager;
 	exports.TextureMaterial = TextureMaterial;
 	exports.Vector3Scale3 = Vector3Scale3;

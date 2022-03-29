@@ -20,7 +20,7 @@
 		positionProxy.z = -5;
 		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
 
-		const perspectiveProjection = new Nova.PerspectiveProjection(Math.PI / 3, 16 / 9, 1, 9);
+		const perspectiveProjection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 1, 9);
 		const orthogonalProjection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
 		const camera = Nova.EntityFactory.createCamera(perspectiveProjection, "test-camera", world);
 

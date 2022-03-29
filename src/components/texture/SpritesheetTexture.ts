@@ -1,16 +1,6 @@
 import Component from "@valeera/x/src/Component";
 import { drawSpriteBlock } from "../../utils/drawSpriteBlock";
-import IFrame from "./spritesheet/IFrame";
 import ISpritesheet from "./spritesheet/ISpritesheet";
-
-// const canvas = document.createElement("canvas");
-// const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
-// async function drawSpriteBlock(image: HTMLImageElement, frame: IFrame): Promise<ImageBitmap> {
-//     ctx.clearRect(0, 0, canvas.width, canvas.height);
-//     ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-//     return await createImageBitmap(canvas);
-// }
 
 export default class SpritesheetTexture extends Component<ImageBitmap> {
     loaded = false;

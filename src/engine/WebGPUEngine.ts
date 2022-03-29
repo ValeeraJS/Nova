@@ -2,6 +2,7 @@ import EventDispatcher from "@valeera/eventdispatcher";
 import IEngine, { DEFAULT_ENGINE_OPTIONS, EngineEvents, EngineOptions } from "./IEngine";
 
 export default class WebGPUEngine extends EventDispatcher implements IEngine {
+	public options:  Required<EngineOptions>;
 	public static async detect(
 		canvas: HTMLCanvasElement = document.createElement("canvas"),
 	): Promise<{context: GPUCanvasContext, adapter: GPUAdapter, device: GPUDevice}> {
@@ -35,16 +36,22 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 	public inited: boolean = false;
 	public preferredFormat!: GPUTextureFormat;
 
-	public constructor(canvas: HTMLCanvasElement = document.createElement("canvas"), options: EngineOptions = DEFAULT_ENGINE_OPTIONS) {
+	public constructor(canvas: HTMLCanvasElement = document.createElement("canvas"), options: EngineOptions = {}) {
 		super();
 		this.canvas = canvas;
-		this.resize(options.width ?? DEFAULT_ENGINE_OPTIONS.width, options.height ?? DEFAULT_ENGINE_OPTIONS.height, options.resolution ?? DEFAULT_ENGINE_OPTIONS.resolution);
+		this.options = {
+			...DEFAULT_ENGINE_OPTIONS,
+			...options,
+		}
+		this.resize(options.width ?? window.innerWidth, options.height ?? window.innerHeight, options.resolution ?? window.devicePixelRatio);
+		
 		WebGPUEngine.detect(canvas).then(({context, adapter, device})=> {
 			this.context = context;
 			this.adapter = adapter;
 			this.device = device;
 			this.inited = true;
 			this.preferredFormat = context.getPreferredFormat(adapter);
+			
 			this.fire(EngineEvents.INITED, {
 				eventKey: EngineEvents.INITED,
 				target: this

@@ -1,5 +1,5 @@
 import WebGPUEngine from "../../engine/WebGPUEngine";
-import ASystem from "@valeera/x/src/ASystem"
+import System from "@valeera/x/src/System"
 import Clearer from "./Clearer";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Renderable from "../../components/tag/Renderable";
@@ -8,10 +8,9 @@ import IWebGPURenderer from "./IWebGPURenderer";
 import IViewport from "../IViewport";
 import IScissor from "./../IScissor";
 
-export default class RenderSystem extends ASystem {
+export default class RenderSystem extends System {
 	engine: WebGPUEngine;
 	clearer: Clearer;
-	// swapChain: GPUSwapChain;
 	rendererMap: Map<string, IWebGPURenderer>;
 	scissor: IScissor = {
 		x: 0, y: 0, width: 0, height: 0,
@@ -29,7 +28,7 @@ export default class RenderSystem extends ASystem {
 		engine.context.configure({
 			device: engine.device,
 			format: engine.preferredFormat,
-			size: [engine.canvas.clientWidth, engine.canvas.clientHeight]
+			size: [engine.canvas.width, engine.canvas.height]
 		});
 		this.setScissor(scissor).setViewport(viewport);
 	}
@@ -47,6 +46,8 @@ export default class RenderSystem extends ASystem {
 
 	destroy() {
 		this.rendererMap.clear();
+
+		return this;
 	}
 
 	handle(entity: IEntity, store: TWorldInjection): this {

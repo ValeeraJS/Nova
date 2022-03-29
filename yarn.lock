@@ -417,38 +417,40 @@
   resolved "https://registry.npm.taobao.org/@ungap/promise-all-settled/download/@ungap/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha1-qlgEJxHW4ydd033Fl+XTHowpCkQ=
 
-"@valeera/eventdispatcher@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.npm.taobao.org/@valeera/eventdispatcher/download/@valeera/eventdispatcher-2.1.0.tgz#6429a144f0660afd16d31401d503bae075abe923"
-  integrity sha1-ZCmhRPBmCv0W0xQB1QO64HWr6SM=
+"@valeera/eventdispatcher@2.2.2":
+  version "2.2.2"
+  resolved "https://registry.npmmirror.com/@valeera/eventdispatcher/-/eventdispatcher-2.2.2.tgz#9f008e1e5e63c830fd655875f9780c6fa21e36b5"
+  integrity sha512-LgS2NTbWrth/naXTrjfYFr32eZh5i8jLrFzECls+RIm/iLetJjnOox1Ya0JAW0uWijPTxjubCrFOiifFX0UEog==
 
-"@valeera/eventdispatcher@^2.1.2":
-  version "2.1.2"
-  resolved "https://registry.nlark.com/@valeera/eventdispatcher/download/@valeera/eventdispatcher-2.1.2.tgz?cache=0&sync_timestamp=1626879696394&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40valeera%2Feventdispatcher%2Fdownload%2F%40valeera%2Feventdispatcher-2.1.2.tgz#28c3703d129e06290df8733789bfa5d4dfd0238a"
-  integrity sha1-KMNwPRKeBikN+HM3ib+l1N/QI4o=
+"@valeera/idgenerator@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.npmmirror.com/@valeera/idgenerator/-/idgenerator-1.1.0.tgz#8dafebdcbb3f3ac951f34bb1df28db8d60391316"
+  integrity sha512-R8xmtuUPdwLzewZLV6/C/AFXVlpbLl0N2htBqxWR4RsxP7EL3w71GxVdJbrAHpsRzZ90w6PmGSMkYOJSmIBC7g==
 
-"@valeera/idgenerator@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@valeera/idgenerator/-/idgenerator-0.1.0.tgz#b333fe032fccf83d2fa2243eae2cb90c4d080f48"
-  integrity sha512-p6/msWBhkN6m363I7y9G54ovnqGIf+fMSN9+q1XhxtgcDXJcZrL1OHHIe/q3kSh/wTMvMJY7GJ/WGF/JnMUpAg==
+"@valeera/mathx@0.1.18":
+  version "0.1.18"
+  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.18.tgz#3fa7b056792394664941767bc7505fb6451b1f3e"
+  integrity sha512-rkQfZHDRD1RploQQ5BBJ4d8kzv7bGkWWOCWd+cEv5ovshnWq/J0SRk1ezrIrimVF1KZ8DM/iWjB3qPGQpQ8B9g==
 
-"@valeera/mathx@^0.1.15":
-  version "0.1.15"
-  resolved "https://registry.npmmirror.com/@valeera/mathx/download/@valeera/mathx-0.1.15.tgz?cache=0&sync_timestamp=1633357292898&other_urls=https%3A%2F%2Fregistry.npmmirror.com%2F%40valeera%2Fmathx%2Fdownload%2F%40valeera%2Fmathx-0.1.15.tgz#04bb8b093c5ad0dacd494dd8f7845e9a7de88c96"
-  integrity sha1-BLuLCTxa0NrNSU3Y94Remn3ojJY=
+"@valeera/tree@0.1.5":
+  version "0.1.5"
+  resolved "https://registry.npmmirror.com/@valeera/tree/-/tree-0.1.5.tgz#993fe77a92e76c667ecfea0e54401734b2aa0002"
+  integrity sha512-797reUTeol9/d0o0iyWyQXZDco3zCClT6o36JAGXpWmy4L6y26jiRuCi1QzHGunyGJcccnfpLr1URLiypyz/Ug==
 
-"@valeera/webgpu-constant@^0.1.1":
+"@valeera/webgpu-constant@0.1.1":
   version "0.1.1"
   resolved "https://registry.npmmirror.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.1.tgz#dee1727f33e599c7520a593a711ec31d0ac0bd69"
   integrity sha512-74n1qjoMiAorlLdi9eRWFU7Rl9z1YBXD0kr1ixmV39sprbkGFXva4OPFib179FxXmvM0D9OFFSz5qyIxH5GwuA==
 
-"@valeera/x@^0.1.14":
-  version "0.1.14"
-  resolved "https://registry.npm.taobao.org/@valeera/x/download/@valeera/x-0.1.14.tgz?cache=0&sync_timestamp=1618670747578&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40valeera%2Fx%2Fdownload%2F%40valeera%2Fx-0.1.14.tgz#eae08285295ac9fd6cbfda8e7589353381dfbbe1"
-  integrity sha1-6uCChSlayf1sv9qOdYk1M4Hfu+E=
+"@valeera/x@0.1.15-c":
+  version "0.1.15-c"
+  resolved "https://registry.npmmirror.com/@valeera/x/-/x-0.1.15-c.tgz#45252561cd228cb0b42d4b33e2ef5dbf37066e3d"
+  integrity sha512-JJ8UhCH/o4czv9CVeLfxLyfk74G8A3fecuJOVx/Ij5ULN5a2ZeeeOsbGte8gkUjKwmmmx8afyOT9DV8aXZ6oZA==
   dependencies:
-    "@valeera/eventdispatcher" "^2.1.0"
-    "@valeera/idgenerator" "^0.1.0"
+    "@valeera/eventdispatcher" "2.2.2"
+    "@valeera/idgenerator" "1.1.0"
+    "@valeera/tree" "0.1.5"
+    clone-deep "^4.0.1"
 
 "@webgpu/types@^0.1.12":
   version "0.1.12"
@@ -757,6 +759,15 @@ clone-buffer@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/clone-buffer/-/clone-buffer-1.0.0.tgz#e3e25b207ac4e701af721e2cb5a16792cac3dc58"
   integrity sha1-4+JbIHrE5wGvch4staFnksrD3Fg=
+
+clone-deep@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.npmmirror.com/clone-deep/-/clone-deep-4.0.1.tgz#c19fd9bdbbf85942b4fd979c84dcf7d5f07c2387"
+  integrity sha512-neHB9xuzh/wk0dIHweyAXv2aPGZIVk3pLMe+/RNzINf17fe0OG96QroktYAUm7SM1PBnzTabaLboqqxDyMU+SQ==
+  dependencies:
+    is-plain-object "^2.0.4"
+    kind-of "^6.0.2"
+    shallow-clone "^3.0.0"
 
 clone-stats@^1.0.0:
   version "1.0.0"
@@ -1670,6 +1681,13 @@ is-plain-obj@^2.1.0:
   resolved "https://registry.npm.taobao.org/is-plain-obj/download/is-plain-obj-2.1.0.tgz#45e42e37fccf1f40da8e5f76ee21515840c09287"
   integrity sha1-ReQuN/zPH0Dajl927iFRWEDAkoc=
 
+is-plain-object@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.npmmirror.com/is-plain-object/-/is-plain-object-2.0.4.tgz#2c163b3fafb1b606d9d17928f05c2a1c38e07677"
+  integrity sha512-h5PpgXkWitc38BBMYawTYMWJHFZJVnBquFE57xFpjB8pJFiF6gZ+bU+WyI/yqXiFR5mdLsgYNaPe8uao6Uv9Og==
+  dependencies:
+    isobject "^3.0.1"
+
 is-stream@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npm.taobao.org/is-stream/download/is-stream-2.0.0.tgz#bde9c32680d6fae04129d6ac9d921ce7815f78e3"
@@ -1699,6 +1717,11 @@ isexe@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
   integrity sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=
+
+isobject@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.npmmirror.com/isobject/-/isobject-3.0.1.tgz#4e431e92b11a9731636aa1f9c8d1ccbcfdab78df"
+  integrity sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==
 
 istanbul-lib-coverage@^3.0.0, istanbul-lib-coverage@^3.0.0-alpha.1:
   version "3.0.0"
@@ -1811,6 +1834,11 @@ jsonfile@^6.0.1:
     universalify "^2.0.0"
   optionalDependencies:
     graceful-fs "^4.1.6"
+
+kind-of@^6.0.2:
+  version "6.0.3"
+  resolved "https://registry.npmmirror.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
+  integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
 levn@^0.4.1:
   version "0.4.1"
@@ -2418,6 +2446,13 @@ set-blocking@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npm.taobao.org/set-blocking/download/set-blocking-2.0.0.tgz#045f9782d011ae9a6803ddd382b24392b3d890f7"
   integrity sha1-BF+XgtARrppoA93TgrJDkrPYkPc=
+
+shallow-clone@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.npmmirror.com/shallow-clone/-/shallow-clone-3.0.1.tgz#8f2981ad92531f55035b01fb230769a40e02efa3"
+  integrity sha512-/6KqX+GVUdqPuPPd2LxDDxzX6CAbjJehAAOKlNpqqUpAqPM6HeL8f+o3a+JsyGjn2lv0WY8UsTgUJjU9Ok55NA==
+  dependencies:
+    kind-of "^6.0.2"
 
 shebang-command@^2.0.0:
   version "2.0.0"

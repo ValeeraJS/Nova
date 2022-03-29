@@ -127,18 +127,21 @@
 
 	var WebGPUEngine = /** @class */ (function (_super) {
 	    __extends(WebGPUEngine, _super);
-	    function WebGPUEngine(canvas) {
+	    function WebGPUEngine(canvas, options) {
 	        if (canvas === void 0) { canvas = document.createElement("canvas"); }
+	        if (options === void 0) { options = {}; }
 	        var _this = _super.call(this) || this;
 	        _this.inited = false;
 	        _this.canvas = canvas;
 	        WebGPUEngine.detect(canvas).then(function (_a) {
+	            var _b, _c, _d;
 	            var context = _a.context, adapter = _a.adapter, device = _a.device;
 	            _this.context = context;
 	            _this.adapter = adapter;
 	            _this.device = device;
 	            _this.inited = true;
 	            _this.preferredFormat = context.getPreferredFormat(adapter);
+	            _this.resize((_b = options.width) !== null && _b !== void 0 ? _b : window.innerWidth, (_c = options.height) !== null && _c !== void 0 ? _c : window.innerHeight, (_d = options.resolution) !== null && _d !== void 0 ? _d : window.devicePixelRatio);
 	            _this.fire(exports.EngineEvents.INITED, {
 	                eventKey: exports.EngineEvents.INITED,
 	                target: _this
@@ -176,6 +179,13 @@
 	                }
 	            });
 	        });
+	    };
+	    WebGPUEngine.prototype.resize = function (width, height, resolution) {
+	        this.canvas.style.width = width + 'px';
+	        this.canvas.style.height = height + 'px';
+	        this.canvas.width = width * resolution;
+	        this.canvas.height = height * resolution;
+	        return this;
 	    };
 	    WebGPUEngine.prototype.createRenderer = function () {
 	    };
@@ -221,10 +231,13 @@
 	    return WebGLEngine;
 	}(EventDispatcher__default["default"]));
 
+	var IdGeneratorInstance = new IdGenerator__default["default"]();
+
 	var Component = /** @class */ (function () {
 	    function Component(name, data) {
 	        if (data === void 0) { data = null; }
 	        this.isComponent = true;
+	        this.id = IdGeneratorInstance.next();
 	        this.data = null;
 	        this.disabled = false;
 	        this.usedBy = [];
@@ -232,8 +245,21 @@
 	        this.name = name;
 	        this.data = data;
 	    }
+	    Component.unserialize = function (json) {
+	        var component = new Component(json.name, json.data);
+	        component.disabled = json.disabled;
+	        return component;
+	    };
 	    Component.prototype.clone = function () {
 	        return new Component(this.name, this.data);
+	    };
+	    Component.prototype.serialize = function () {
+	        return {
+	            data: this.data,
+	            disabled: this.disabled,
+	            name: this.name,
+	            type: "component"
+	        };
 	    };
 	    return Component;
 	}());
@@ -754,23 +780,33 @@
 		createTriangle3: createTriangle3
 	});
 
-	var IdGeneratorInstance = new IdGenerator__default["default"]();
-
 	var weakMapTmp;
-	var ASystem = /** @class */ (function () {
-	    function ASystem(name, fitRule) {
+	var System = /** @class */ (function () {
+	    function System(name, fitRule) {
 	        if (name === void 0) { name = ""; }
 	        this.id = IdGeneratorInstance.next();
 	        this.isSystem = true;
 	        this.name = "";
-	        this.disabled = false;
 	        this.loopTimes = 0;
 	        this.entitySet = new WeakMap();
 	        this.usedBy = [];
+	        this.cache = new WeakMap();
+	        this._disabled = false;
 	        this.name = name;
-	        this.queryRule = fitRule;
+	        this.disabled = false;
+	        this.rule = fitRule;
 	    }
-	    ASystem.prototype.checkUpdatedEntities = function (manager) {
+	    Object.defineProperty(System.prototype, "disabled", {
+	        get: function () {
+	            return this._disabled;
+	        },
+	        set: function (value) {
+	            this._disabled = value;
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    System.prototype.checkUpdatedEntities = function (manager) {
 	        var _this = this;
 	        if (manager) {
 	            weakMapTmp = this.entitySet.get(manager);
@@ -789,7 +825,7 @@
 	        }
 	        return this;
 	    };
-	    ASystem.prototype.checkEntityManager = function (manager) {
+	    System.prototype.checkEntityManager = function (manager) {
 	        var _this = this;
 	        if (manager) {
 	            weakMapTmp = this.entitySet.get(manager);
@@ -811,10 +847,10 @@
 	        }
 	        return this;
 	    };
-	    ASystem.prototype.query = function (entity) {
-	        return this.queryRule(entity);
+	    System.prototype.query = function (entity) {
+	        return this.rule(entity);
 	    };
-	    ASystem.prototype.run = function (world) {
+	    System.prototype.run = function (world) {
 	        var _this = this;
 	        var _a;
 	        if (world.entityManager) {
@@ -824,50 +860,218 @@
 	        }
 	        return this;
 	    };
-	    return ASystem;
-	}());
-
-	// 私有全局变量，外部无法访问
-	var componentTmp;
-	var EComponentEvent;
-	(function (EComponentEvent) {
-	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
-	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
-	})(EComponentEvent || (EComponentEvent = {}));
-	var ComponentManager = /** @class */ (function () {
-	    function ComponentManager() {
-	        this.elements = new Map();
-	        this.disabled = false;
-	        this.usedBy = [];
-	        this.isComponentManager = true;
-	    }
-	    ComponentManager.prototype.add = function (component) {
-	        if (this.has(component)) {
-	            this.removeByInstance(component);
+	    System.prototype.destroy = function () {
+	        for (var i = this.usedBy.length - 1; i > -1; i--) {
+	            this.usedBy[i].removeElement(this);
 	        }
-	        return this.addComponentDirect(component);
-	    };
-	    ComponentManager.prototype.addComponentDirect = function (component) {
-	        this.elements.set(component.name, component);
-	        component.usedBy.push(this);
-	        ComponentManager.eventObject = {
-	            component: component,
-	            eventKey: ComponentManager.ADD_COMPONENT,
-	            manager: this,
-	            target: component
-	        };
-	        this.entityComponentChangeDispatch(ComponentManager.ADD_COMPONENT, ComponentManager.eventObject);
 	        return this;
 	    };
-	    ComponentManager.prototype.clear = function () {
+	    return System;
+	}());
+
+	/** @class */ ((function (_super) {
+	    __extends(PureSystem, _super);
+	    function PureSystem(name, fitRule, handler) {
+	        if (name === void 0) { name = ""; }
+	        var _this = _super.call(this, name, fitRule) || this;
+	        _this.handler = handler;
+	        return _this;
+	    }
+	    PureSystem.prototype.handle = function (entity, params) {
+	        this.handler(entity, params);
+	        return this;
+	    };
+	    return PureSystem;
+	})(System));
+
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	var mixin$1 = function (Base, eventKeyList) {
+	    var _a;
+	    if (Base === void 0) { Base = Object; }
+	    if (eventKeyList === void 0) { eventKeyList = []; }
+	    return _a = /** @class */ (function (_super) {
+	            __extends(EventFirer, _super);
+	            function EventFirer() {
+	                var _this = _super !== null && _super.apply(this, arguments) || this;
+	                _this.eventKeyList = eventKeyList;
+	                /**
+	                 * store all the filters
+	                 */
+	                _this.filters = [];
+	                /**
+	                 * store all the listeners by key
+	                 */
+	                _this.listeners = new Map();
+	                return _this;
+	            }
+	            EventFirer.prototype.all = function (listener) {
+	                return this.filt(function () { return true; }, listener);
+	            };
+	            EventFirer.prototype.clearListenersByKey = function (eventKey) {
+	                this.listeners.delete(eventKey);
+	                return this;
+	            };
+	            EventFirer.prototype.clearAllListeners = function () {
+	                var e_1, _a;
+	                var keys = this.listeners.keys();
+	                try {
+	                    for (var keys_1 = __values(keys), keys_1_1 = keys_1.next(); !keys_1_1.done; keys_1_1 = keys_1.next()) {
+	                        var key = keys_1_1.value;
+	                        this.listeners.delete(key);
+	                    }
+	                }
+	                catch (e_1_1) { e_1 = { error: e_1_1 }; }
+	                finally {
+	                    try {
+	                        if (keys_1_1 && !keys_1_1.done && (_a = keys_1.return)) _a.call(keys_1);
+	                    }
+	                    finally { if (e_1) throw e_1.error; }
+	                }
+	                return this;
+	            };
+	            EventFirer.prototype.filt = function (rule, listener) {
+	                this.filters.push({
+	                    listener: listener,
+	                    rule: rule
+	                });
+	                return this;
+	            };
+	            EventFirer.prototype.fire = function (eventKey, target) {
+	                if (!this.checkEventKeyAvailable(eventKey)) {
+	                    console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+	                    return this;
+	                }
+	                var array = this.listeners.get(eventKey) || [];
+	                var len = array.length;
+	                var item;
+	                for (var i = 0; i < len; i++) {
+	                    item = array[i];
+	                    item.listener(target);
+	                    item.times--;
+	                    if (item.times <= 0) {
+	                        array.splice(i--, 1);
+	                        --len;
+	                    }
+	                }
+	                return this.checkFilt(eventKey, target);
+	            };
+	            EventFirer.prototype.off = function (eventKey, listener) {
+	                var array = this.listeners.get(eventKey);
+	                if (!array) {
+	                    return this;
+	                }
+	                var len = array.length;
+	                for (var i = 0; i < len; i++) {
+	                    if (array[i].listener === listener) {
+	                        array.splice(i, 1);
+	                        break;
+	                    }
+	                }
+	                return this;
+	            };
+	            EventFirer.prototype.on = function (eventKey, listener) {
+	                if (eventKey instanceof Array) {
+	                    for (var i = 0, j = eventKey.length; i < j; i++) {
+	                        this.times(eventKey[i], Infinity, listener);
+	                    }
+	                    return this;
+	                }
+	                return this.times(eventKey, Infinity, listener);
+	            };
+	            EventFirer.prototype.once = function (eventKey, listener) {
+	                return this.times(eventKey, 1, listener);
+	            };
+	            EventFirer.prototype.times = function (eventKey, times, listener) {
+	                if (!this.checkEventKeyAvailable(eventKey)) {
+	                    console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+	                    return this;
+	                }
+	                var array = this.listeners.get(eventKey) || [];
+	                if (!this.listeners.has(eventKey)) {
+	                    this.listeners.set(eventKey, array);
+	                }
+	                array.push({
+	                    listener: listener,
+	                    times: times
+	                });
+	                return this;
+	            };
+	            EventFirer.prototype.checkFilt = function (eventKey, target) {
+	                var e_2, _a;
+	                try {
+	                    for (var _b = __values(this.filters), _c = _b.next(); !_c.done; _c = _b.next()) {
+	                        var item = _c.value;
+	                        if (item.rule(eventKey, target)) {
+	                            item.listener(target, eventKey);
+	                        }
+	                    }
+	                }
+	                catch (e_2_1) { e_2 = { error: e_2_1 }; }
+	                finally {
+	                    try {
+	                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+	                    }
+	                    finally { if (e_2) throw e_2.error; }
+	                }
+	                return this;
+	            };
+	            EventFirer.prototype.checkEventKeyAvailable = function (eventKey) {
+	                if (this.eventKeyList.length) {
+	                    return this.eventKeyList.includes(eventKey);
+	                }
+	                return true;
+	            };
+	            return EventFirer;
+	        }(Base)),
+	        _a.mixin = mixin$1,
+	        _a;
+	};
+	var EventFirer = mixin$1(Object);
+
+	// 私有全局变量，外部无法访问
+	var elementTmp;
+	var EElementChangeEvent;
+	(function (EElementChangeEvent) {
+	    EElementChangeEvent["ADD"] = "add";
+	    EElementChangeEvent["REMOVE"] = "remove";
+	})(EElementChangeEvent || (EElementChangeEvent = {}));
+	var Manager = /** @class */ (function (_super) {
+	    __extends(Manager, _super);
+	    function Manager() {
+	        var _this = _super !== null && _super.apply(this, arguments) || this;
+	        // private static eventObject: EventObject = {
+	        // 	component: null as any,
+	        // 	element: null as any,
+	        // 	eventKey: null as any,
+	        // 	manager: null as any
+	        // };
+	        _this.elements = new Map();
+	        _this.disabled = false;
+	        _this.usedBy = [];
+	        _this.isManager = true;
+	        return _this;
+	    }
+	    Manager.prototype.addElement = function (component) {
+	        if (this.has(component)) {
+	            this.removeElementByInstance(component);
+	        }
+	        return this.addElementDirect(component);
+	    };
+	    Manager.prototype.addElementDirect = function (component) {
+	        this.elements.set(component.name, component);
+	        component.usedBy.push(this);
+	        this.elementChangeDispatch(Manager.Events.ADD, this);
+	        return this;
+	    };
+	    Manager.prototype.clear = function () {
 	        this.elements.clear();
 	        return this;
 	    };
-	    ComponentManager.prototype.get = function (name) {
-	        componentTmp = this.elements.get(name);
-	        return componentTmp ? componentTmp : null;
+	    Manager.prototype.get = function (name) {
+	        elementTmp = this.elements.get(name);
+	        return elementTmp ? elementTmp : null;
 	    };
-	    ComponentManager.prototype.has = function (component) {
+	    Manager.prototype.has = function (component) {
 	        if (typeof component === "string") {
 	            return this.elements.has(component);
 	        }
@@ -875,66 +1079,45 @@
 	            return this.elements.has(component.name);
 	        }
 	    };
-	    // TODO
-	    ComponentManager.prototype.isMixedFrom = function (componentManager) {
-	        console.log(componentManager);
-	        return false;
-	    };
-	    // TODO
-	    ComponentManager.prototype.mixFrom = function (componentManager) {
-	        console.log(componentManager);
-	        return this;
-	    };
-	    ComponentManager.prototype.remove = function (component) {
+	    Manager.prototype.removeElement = function (component) {
 	        return typeof component === "string"
-	            ? this.removeByName(component)
-	            : this.removeByInstance(component);
+	            ? this.removeElementByName(component)
+	            : this.removeElementByInstance(component);
 	    };
-	    ComponentManager.prototype.removeByName = function (name) {
-	        componentTmp = this.elements.get(name);
-	        if (componentTmp) {
+	    Manager.prototype.removeElementByName = function (name) {
+	        elementTmp = this.elements.get(name);
+	        if (elementTmp) {
 	            this.elements.delete(name);
-	            componentTmp.usedBy.splice(componentTmp.usedBy.indexOf(this), 1);
-	            ComponentManager.eventObject = {
-	                component: componentTmp,
-	                eventKey: ComponentManager.REMOVE_COMPONENT,
-	                manager: this,
-	                target: componentTmp
-	            };
-	            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+	            elementTmp.usedBy.splice(elementTmp.usedBy.indexOf(this), 1);
+	            this.elementChangeDispatch(Manager.Events.REMOVE, this);
 	        }
 	        return this;
 	    };
-	    ComponentManager.prototype.removeByInstance = function (component) {
+	    Manager.prototype.removeElementByInstance = function (component) {
 	        if (this.elements.has(component.name)) {
 	            this.elements.delete(component.name);
 	            component.usedBy.splice(component.usedBy.indexOf(this), 1);
-	            ComponentManager.eventObject = {
-	                component: component,
-	                eventKey: ComponentManager.REMOVE_COMPONENT,
-	                manager: this,
-	                target: component
-	            };
-	            this.entityComponentChangeDispatch(ComponentManager.REMOVE_COMPONENT, ComponentManager.eventObject);
+	            this.elementChangeDispatch(Manager.Events.REMOVE, this);
 	        }
 	        return this;
 	    };
-	    ComponentManager.prototype.entityComponentChangeDispatch = function (type, eventObject) {
+	    Manager.prototype.elementChangeDispatch = function (type, eventObject) {
 	        var e_1, _a, e_2, _b;
+	        var _c, _d;
 	        try {
-	            for (var _c = __values(this.usedBy), _d = _c.next(); !_d.done; _d = _c.next()) {
-	                var entity = _d.value;
-	                entity.fire(type, eventObject);
+	            for (var _e = __values(this.usedBy), _f = _e.next(); !_f.done; _f = _e.next()) {
+	                var entity = _f.value;
+	                (_d = (_c = entity).fire) === null || _d === void 0 ? void 0 : _d.call(_c, type, eventObject);
 	                try {
-	                    for (var _e = (e_2 = void 0, __values(entity.usedBy)), _f = _e.next(); !_f.done; _f = _e.next()) {
-	                        var manager = _f.value;
+	                    for (var _g = (e_2 = void 0, __values(entity.usedBy)), _h = _g.next(); !_h.done; _h = _g.next()) {
+	                        var manager = _h.value;
 	                        manager.updatedEntities.add(entity);
 	                    }
 	                }
 	                catch (e_2_1) { e_2 = { error: e_2_1 }; }
 	                finally {
 	                    try {
-	                        if (_f && !_f.done && (_b = _e.return)) _b.call(_e);
+	                        if (_h && !_h.done && (_b = _g.return)) _b.call(_g);
 	                    }
 	                    finally { if (e_2) throw e_2.error; }
 	                }
@@ -943,21 +1126,191 @@
 	        catch (e_1_1) { e_1 = { error: e_1_1 }; }
 	        finally {
 	            try {
-	                if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+	                if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
 	            }
 	            finally { if (e_1) throw e_1.error; }
 	        }
 	    };
-	    ComponentManager.ADD_COMPONENT = EComponentEvent.ADD_COMPONENT;
-	    ComponentManager.REMOVE_COMPONENT = EComponentEvent.REMOVE_COMPONENT;
-	    ComponentManager.eventObject = {
-	        component: null,
-	        eventKey: null,
-	        manager: null,
-	        target: null
-	    };
+	    Manager.Events = EElementChangeEvent;
+	    return Manager;
+	}(EventFirer));
+
+	// 私有全局变量，外部无法访问
+	// let componentTmp: IComponent<any> | undefined;
+	var EComponentEvent;
+	(function (EComponentEvent) {
+	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
+	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
+	})(EComponentEvent || (EComponentEvent = {}));
+	var ComponentManager = /** @class */ (function (_super) {
+	    __extends(ComponentManager, _super);
+	    function ComponentManager() {
+	        var _this = _super !== null && _super.apply(this, arguments) || this;
+	        _this.isComponentManager = true;
+	        _this.usedBy = [];
+	        return _this;
+	    }
 	    return ComponentManager;
-	}());
+	}(Manager));
+
+	var FIND_LEAVES_VISITOR = {
+	    enter: function (node, result) {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
+	};
+	var ARRAY_VISITOR = {
+	    enter: function (node, result) {
+	        result.push(node);
+	    }
+	};
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	var mixin = function (Base) {
+	    var _a;
+	    if (Base === void 0) { Base = Object; }
+	    return _a = /** @class */ (function (_super) {
+	            __extends(TreeNode, _super);
+	            function TreeNode() {
+	                var _this = _super !== null && _super.apply(this, arguments) || this;
+	                _this.parent = null;
+	                _this.children = [];
+	                return _this;
+	            }
+	            TreeNode.addNode = function (node, child) {
+	                if (TreeNode.hasAncestor(node, child)) {
+	                    throw new Error("The node added is one of the ancestors of current one.");
+	                }
+	                node.children.push(child);
+	                child.parent = node;
+	                return node;
+	            };
+	            TreeNode.depth = function (node) {
+	                var e_1, _a, e_2, _b;
+	                if (!node.children.length) {
+	                    return 1;
+	                }
+	                else {
+	                    var childrenDepth = [];
+	                    try {
+	                        for (var _c = __values(node.children), _d = _c.next(); !_d.done; _d = _c.next()) {
+	                            var item = _d.value;
+	                            item && childrenDepth.push(this.depth(item));
+	                        }
+	                    }
+	                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+	                    finally {
+	                        try {
+	                            if (_d && !_d.done && (_a = _c.return)) _a.call(_c);
+	                        }
+	                        finally { if (e_1) throw e_1.error; }
+	                    }
+	                    var max = 0;
+	                    try {
+	                        for (var childrenDepth_1 = __values(childrenDepth), childrenDepth_1_1 = childrenDepth_1.next(); !childrenDepth_1_1.done; childrenDepth_1_1 = childrenDepth_1.next()) {
+	                            var item = childrenDepth_1_1.value;
+	                            max = Math.max(max, item);
+	                        }
+	                    }
+	                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+	                    finally {
+	                        try {
+	                            if (childrenDepth_1_1 && !childrenDepth_1_1.done && (_b = childrenDepth_1.return)) _b.call(childrenDepth_1);
+	                        }
+	                        finally { if (e_2) throw e_2.error; }
+	                    }
+	                    return 1 + max;
+	                }
+	            };
+	            TreeNode.findLeaves = function (node) {
+	                var result = [];
+	                TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	                return result;
+	            };
+	            TreeNode.findRoot = function (node) {
+	                if (node.parent) {
+	                    return this.findRoot(node.parent);
+	                }
+	                return node;
+	            };
+	            TreeNode.hasAncestor = function (node, ancestor) {
+	                if (!node.parent) {
+	                    return false;
+	                }
+	                else {
+	                    if (node.parent === ancestor) {
+	                        return true;
+	                    }
+	                    else {
+	                        return TreeNode.hasAncestor(node.parent, ancestor);
+	                    }
+	                }
+	            };
+	            TreeNode.removeNode = function (node, child) {
+	                if (node.children.includes(child)) {
+	                    node.children.splice(node.children.indexOf(child), 1);
+	                    child.parent = null;
+	                }
+	                return node;
+	            };
+	            TreeNode.toArray = function (node) {
+	                var result = [];
+	                TreeNode.traverse(node, ARRAY_VISITOR, result);
+	                return result;
+	            };
+	            TreeNode.traverse = function (node, visitor, rest) {
+	                var e_3, _a;
+	                var _b, _c, _d;
+	                (_b = visitor.enter) === null || _b === void 0 ? void 0 : _b.call(visitor, node, rest);
+	                (_c = visitor.visit) === null || _c === void 0 ? void 0 : _c.call(visitor, node, rest);
+	                try {
+	                    for (var _e = __values(node.children), _f = _e.next(); !_f.done; _f = _e.next()) {
+	                        var item = _f.value;
+	                        item && TreeNode.traverse(item, visitor, rest);
+	                    }
+	                }
+	                catch (e_3_1) { e_3 = { error: e_3_1 }; }
+	                finally {
+	                    try {
+	                        if (_f && !_f.done && (_a = _e.return)) _a.call(_e);
+	                    }
+	                    finally { if (e_3) throw e_3.error; }
+	                }
+	                (_d = visitor.leave) === null || _d === void 0 ? void 0 : _d.call(visitor, node, rest);
+	                return node;
+	            };
+	            TreeNode.prototype.addNode = function (node) {
+	                return TreeNode.addNode(this, node);
+	            };
+	            TreeNode.prototype.depth = function () {
+	                return TreeNode.depth(this);
+	            };
+	            TreeNode.prototype.findLeaves = function () {
+	                return TreeNode.findLeaves(this);
+	            };
+	            TreeNode.prototype.findRoot = function () {
+	                return TreeNode.findRoot(this);
+	            };
+	            TreeNode.prototype.hasAncestor = function (ancestor) {
+	                return TreeNode.hasAncestor(this, ancestor);
+	            };
+	            TreeNode.prototype.removeNode = function (child) {
+	                return TreeNode.removeNode(this, child);
+	            };
+	            TreeNode.prototype.toArray = function () {
+	                return TreeNode.toArray(this);
+	            };
+	            TreeNode.prototype.traverse = function (visitor, rest) {
+	                return TreeNode.traverse(this, visitor, rest);
+	            };
+	            return TreeNode;
+	        }(Base)),
+	        _a.mixin = mixin,
+	        _a;
+	};
+	var TreeNode = mixin(Object);
+
+	var TreeNodeWithEvent = mixin$1(TreeNode);
 
 	var arr;
 	var Entity = /** @class */ (function (_super) {
@@ -976,7 +1329,7 @@
 	    }
 	    Entity.prototype.addComponent = function (component) {
 	        if (this.componentManager) {
-	            this.componentManager.add(component);
+	            this.componentManager.addElement(component);
 	        }
 	        else {
 	            throw new Error("Current entity hasn't registered a component manager yet.");
@@ -984,12 +1337,12 @@
 	        return this;
 	    };
 	    Entity.prototype.addTo = function (manager) {
-	        manager.add(this);
+	        manager.addElement(this);
 	        return this;
 	    };
 	    Entity.prototype.addToWorld = function (world) {
 	        if (world.entityManager) {
-	            world.entityManager.add(this);
+	            world.entityManager.addElement(this);
 	        }
 	        return this;
 	    };
@@ -1010,7 +1363,7 @@
 	    };
 	    Entity.prototype.removeComponent = function (component) {
 	        if (this.componentManager) {
-	            this.componentManager.remove(component);
+	            this.componentManager.removeElement(component);
 	        }
 	        return this;
 	    };
@@ -1023,7 +1376,7 @@
 	        return this;
 	    };
 	    return Entity;
-	}(EventDispatcher__default["default"]));
+	}(TreeNodeWithEvent));
 
 	var systemTmp;
 	var ESystemEvent;
@@ -1044,7 +1397,7 @@
 	        }
 	        return _this;
 	    }
-	    SystemManager.prototype.add = function (system) {
+	    SystemManager.prototype.addElement = function (system) {
 	        if (this.elements.has(system.name)) {
 	            return this;
 	        }
@@ -1055,23 +1408,6 @@
 	    SystemManager.prototype.clear = function () {
 	        this.elements.clear();
 	        return this;
-	    };
-	    SystemManager.prototype.get = function (name) {
-	        systemTmp = this.elements.get(name);
-	        return systemTmp ? systemTmp : null;
-	    };
-	    SystemManager.prototype.has = function (element) {
-	        if (typeof element === "string") {
-	            return this.elements.has(element);
-	        }
-	        else {
-	            return this.elements.has(element.name);
-	        }
-	    };
-	    SystemManager.prototype.remove = function (system) {
-	        return typeof system === "string"
-	            ? this.removeByName(system)
-	            : this.removeByInstance(system);
 	    };
 	    SystemManager.prototype.removeByName = function (name) {
 	        systemTmp = this.elements.get(name);
@@ -1152,7 +1488,7 @@
 	        target: null
 	    };
 	    return SystemManager;
-	})(EventDispatcher__default["default"]));
+	})(Manager));
 
 	var wgslShaders$2 = {
 	    vertex: "\n\t\tstruct Uniforms {\n\t\t\tmodelViewProjectionMatrix : mat4x4<f32>;\n\t  \t};\n\t  \t@binding(0) @group(0) var<uniform> uniforms : Uniforms;\n\n\t\tstruct VertexOutput {\n\t\t\t@builtin(position) position : vec4<f32>;\n\t\t};\n\n\t\t@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {\n\t\t\tvar out: VertexOutput;\n\t\t\tout.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);\n\t\t\treturn out;\n\t\t}\n\t",
@@ -2112,6 +2448,72 @@
 	    return Object3;
 	}(Component));
 
+	var canvases = []; // 储存多个canvas，可能存在n个图同时画
+	function drawSpriteBlock(image, width, height, frame) {
+	    return __awaiter(this, void 0, void 0, function () {
+	        var canvas, ctx, result;
+	        return __generator(this, function (_a) {
+	            switch (_a.label) {
+	                case 0:
+	                    canvas = canvases.pop() || document.createElement("canvas");
+	                    ctx = canvas.getContext("2d");
+	                    canvas.width = width;
+	                    canvas.height = height;
+	                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+	                    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
+	                    return [4 /*yield*/, createImageBitmap(canvas)];
+	                case 1:
+	                    result = _a.sent();
+	                    canvases.push(canvas);
+	                    return [2 /*return*/, result];
+	            }
+	        });
+	    });
+	}
+
+	var AtlasTexture = /** @class */ (function (_super) {
+	    __extends(AtlasTexture, _super);
+	    function AtlasTexture(json, name) {
+	        if (name === void 0) { name = "atlas-texture"; }
+	        var _this = _super.call(this, name) || this;
+	        _this.loaded = false;
+	        _this.dirty = false;
+	        _this.width = 0;
+	        _this.height = 0;
+	        _this.framesBitmap = [];
+	        _this.width = json.spriteSize.w;
+	        _this.height = json.spriteSize.h;
+	        _this.setImage(json);
+	        return _this;
+	    }
+	    AtlasTexture.prototype.setImage = function (json) {
+	        return __awaiter(this, void 0, void 0, function () {
+	            var img, _a;
+	            return __generator(this, function (_b) {
+	                switch (_b.label) {
+	                    case 0:
+	                        this.loaded = false;
+	                        this.dirty = false;
+	                        img = new Image();
+	                        img.src = json.image;
+	                        this.image = img;
+	                        return [4 /*yield*/, img.decode()];
+	                    case 1:
+	                        _b.sent();
+	                        _a = this;
+	                        return [4 /*yield*/, drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame)];
+	                    case 2:
+	                        _a.data = _b.sent();
+	                        this.dirty = true;
+	                        this.loaded = true;
+	                        return [2 /*return*/, this];
+	                }
+	            });
+	        });
+	    };
+	    return AtlasTexture;
+	}(Component));
+
 	var ImageBitmapTexture = /** @class */ (function (_super) {
 	    __extends(ImageBitmapTexture, _super);
 	    function ImageBitmapTexture(img, width, height, name) {
@@ -2170,21 +2572,6 @@
 	    return ImageBitmapTexture;
 	}(Component));
 
-	var canvas = document.createElement("canvas");
-	var ctx = canvas.getContext("2d");
-	function drawSpriteBlock(image, frame) {
-	    return __awaiter(this, void 0, void 0, function () {
-	        return __generator(this, function (_a) {
-	            switch (_a.label) {
-	                case 0:
-	                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-	                    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-	                    return [4 /*yield*/, createImageBitmap(canvas)];
-	                case 1: return [2 /*return*/, _a.sent()];
-	            }
-	        });
-	    });
-	}
 	var SpritesheetTexture = /** @class */ (function (_super) {
 	    __extends(SpritesheetTexture, _super);
 	    function SpritesheetTexture(json, name) {
@@ -2216,8 +2603,6 @@
 	                        return [4 /*yield*/, img.decode()];
 	                    case 1:
 	                        _f.sent();
-	                        canvas.width = json.spriteSize.w;
-	                        canvas.height = json.spriteSize.h;
 	                        _f.label = 2;
 	                    case 2:
 	                        _f.trys.push([2, 7, 8, 9]);
@@ -2227,7 +2612,7 @@
 	                        if (!!_b.done) return [3 /*break*/, 6];
 	                        item = _b.value;
 	                        _d = (_c = this.framesBitmap).push;
-	                        return [4 /*yield*/, drawSpriteBlock(this.image, item)];
+	                        return [4 /*yield*/, drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, item)];
 	                    case 4:
 	                        _d.apply(_c, [_f.sent()]);
 	                        _f.label = 5;
@@ -2716,6 +3101,7 @@
 	    };
 	    RenderSystem.prototype.destroy = function () {
 	        this.rendererMap.clear();
+	        return this;
 	    };
 	    RenderSystem.prototype.handle = function (entity, store) {
 	        var _a, _b;
@@ -2760,7 +3146,7 @@
 	        return this;
 	    };
 	    return RenderSystem;
-	}(ASystem));
+	}(System));
 
 	var createCamera = (function (projection, name, world) {
 	    if (name === void 0) { name = "camera"; }
@@ -2804,6 +3190,7 @@
 	exports.ARotation3 = ARotation3;
 	exports.AScale3 = AScale3;
 	exports.ATTRIBUTE_NAME = constants;
+	exports.AtlasTexture = AtlasTexture;
 	exports.COMPONENT_NAME = constants$1;
 	exports.ColorMaterial = ColorMaterial;
 	exports.ComponentProxy = index$1;

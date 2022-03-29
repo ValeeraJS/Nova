@@ -72,10 +72,10 @@
 		"directories": {}
 	},
 	"dependencies": {
-		"@valeera/eventdispatcher": "^2.2.0",
-		"@valeera/mathx": "^0.1.15",
-		"@valeera/webgpu-constant": "^0.1.1",
-		"@valeera/x": "^0.1.15"
+		"@valeera/eventdispatcher": "2.2.2",
+		"@valeera/mathx": "0.1.18",
+		"@valeera/webgpu-constant": "0.1.1",
+		"@valeera/x": "0.1.15-c"
 	},
 	"publishConfig": {
 		"access": "public"

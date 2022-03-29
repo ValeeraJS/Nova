@@ -29,7 +29,7 @@
 			position.data[14] = -5;
 			position.dirty = true;
 
-			const projection = new Nova.PerspectiveProjection(Math.PI / 3, 16 / 9, 0.01, 10);
+			const projection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
 			const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 
 			let renderSystem = new Nova.WebGPURenderSystem(engine, new Nova.WebGPUClearer(engine, clearColor));

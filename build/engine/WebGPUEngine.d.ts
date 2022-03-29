@@ -1,6 +1,6 @@
 /// <reference types="dist" />
 import EventDispatcher from "@valeera/eventdispatcher";
-import IEngine, { EngineEvents } from "./IEngine";
+import IEngine, { EngineEvents, EngineOptions } from "./IEngine";
 export default class WebGPUEngine extends EventDispatcher implements IEngine {
     static detect(canvas?: HTMLCanvasElement): Promise<{
         context: GPUCanvasContext;
@@ -14,6 +14,7 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
     device: GPUDevice;
     inited: boolean;
     preferredFormat: GPUTextureFormat;
-    constructor(canvas?: HTMLCanvasElement);
+    constructor(canvas?: HTMLCanvasElement, options?: EngineOptions);
+    resize(width: number, height: number, resolution: number): this;
     createRenderer(): void;
 }
