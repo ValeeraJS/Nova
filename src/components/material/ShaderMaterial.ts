@@ -1,9 +1,9 @@
-import { Component } from "@valeera/x";
-import IMaterial, { IShaderCode, IUniformSlot } from "./IMatrial";
+import { IUniformSlot } from "./IMatrial";
+import Material from "./Material";
 
-export default class ShaderMaterial extends Component<IShaderCode> implements IMaterial {
-	constructor(vertex: string, fragment: string, uniforms: IUniformSlot[] = []) {
-		super("material", { vertex, fragment, uniforms });
+export default class ShaderMaterial extends Material {
+	constructor(vertex: string, fragment: string, uniforms: IUniformSlot[] = [], blend?: GPUBlendState) {
+		super(vertex, fragment, uniforms, blend);
 		this.dirty = true;
 	}
 }

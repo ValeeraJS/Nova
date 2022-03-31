@@ -1,5 +1,4 @@
-import { Component } from "@valeera/x";
-import IMaterial, { IShaderCode } from "./IMatrial";
+import Material from "./Material";
 
 const wgslShaders = {
 	vertex: `
@@ -30,21 +29,18 @@ const wgslShaders = {
 	`
 };
 
-export default class ColorMaterial extends Component<IShaderCode> implements IMaterial {
+export default class ColorMaterial extends Material {
 	constructor(color: Float32Array = new Float32Array([1, 1, 1, 1])) {
-		super("material", {
-			...wgslShaders,
-			uniforms: [{
-				name: "color",
-				value: color,
-				binding: 1,
-				dirty: true,
-				type: "uniform-buffer",
-				buffer: {
-					type: "",
-				}
-			}]
-		});
+		super(wgslShaders.vertex, wgslShaders.fragment, [{
+			name: "color",
+			value: color,
+			binding: 1,
+			dirty: true,
+			type: "uniform-buffer",
+			buffer: {
+				type: "",
+			}
+		}]);
 		this.dirty = true;
 	}
 

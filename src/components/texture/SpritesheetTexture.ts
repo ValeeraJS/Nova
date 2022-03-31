@@ -11,7 +11,7 @@ export default class SpritesheetTexture extends Component<ImageBitmap> {
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[] = [];
     constructor(json: ISpritesheet, name: string = "spritesheet-texture") {
-        super(name);
+        super(name, null as any);
         this.width = json.spriteSize.w;
         this.height = json.spriteSize.h;
 

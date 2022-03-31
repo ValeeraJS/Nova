@@ -1,8 +1,8 @@
-import { Component } from "@valeera/x";
 import AtlasTexture from "../texture/AtlasTexture";
 import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
 import IMaterial, { IShaderCode } from "./IMatrial";
+import Material from "./Material";
 
 const wgslShaders = {
 	vertex: `
@@ -33,28 +33,25 @@ const wgslShaders = {
 	`
 };
 
-export default class TextureMaterial extends Component<IShaderCode> implements IMaterial {
+export default class TextureMaterial extends Material implements IMaterial {
 	data!: IShaderCode;
 	constructor(texture: ImageBitmapTexture | AtlasTexture, sampler: Sampler = new Sampler()) {
-		super("material", {
-			...wgslShaders,
-			uniforms: [
-				{
-					name: "mySampler",
-					type: "sampler",
-					value: sampler,
-					binding: 1,
-					dirty: true
-				},
-				{
-					name: "myTexture",
-					type: "sampled-texture",
-					value: texture,
-					binding: 2,
-					dirty: true
-				}
-			]
-		});
+		super(wgslShaders.vertex, wgslShaders.fragment, [
+			{
+				name: "mySampler",
+				type: "sampler",
+				value: sampler,
+				binding: 1,
+				dirty: true
+			},
+			{
+				name: "myTexture",
+				type: "sampled-texture",
+				value: texture,
+				binding: 2,
+				dirty: true
+			}
+		]);
 		this.dirty = true;
 	}
 

@@ -9,7 +9,7 @@ export default class ImageBitmapTexture extends Component<ImageBitmap> {
 	image: HTMLImageElement = new Image();
 
 	constructor(img: HTMLImageElement | string, width: number, height: number, name: string = "image-texture") {
-		super(name);
+		super(name, null as any);
 		this.width = width;
 		this.height = height;
 		this.setImage(img);

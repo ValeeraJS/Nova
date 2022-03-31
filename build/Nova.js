@@ -421,10 +421,9 @@
 	const IdGeneratorInstance$1 = new IdGenerator();
 
 	class Component$1 {
-	    constructor(name, data = null) {
+	    constructor(name, data) {
 	        this.isComponent = true;
 	        this.id = IdGeneratorInstance$1.next();
-	        this.data = null;
 	        this.disabled = false;
 	        this.usedBy = [];
 	        this.dirty = false;
@@ -1153,12 +1152,12 @@
 	    }
 	    isComponent = true;
 	    id = IdGeneratorInstance.next();
-	    data = null;
+	    data;
 	    disabled = false;
 	    name;
 	    usedBy = [];
 	    dirty = false;
-	    constructor(name, data = null) {
+	    constructor(name, data) {
 	        this.name = name;
 	        this.data = data;
 	    }
@@ -1618,6 +1617,44 @@
 	    }
 	}
 
+	const DEFAULT_BLEND_STATE = {
+	    color: {
+	        srcFactor: 'src-alpha',
+	        dstFactor: 'one-minus-src-alpha',
+	        operation: 'add',
+	    },
+	    alpha: {
+	        srcFactor: 'zero',
+	        dstFactor: 'one',
+	        operation: 'add',
+	    }
+	};
+
+	class Material extends Component {
+	    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
+	        super("material", { vertex, fragment, uniforms, blend });
+	        this.dirty = true;
+	    }
+	    get blend() {
+	        return this.data.blend;
+	    }
+	    set blend(blend) {
+	        this.data.blend = blend;
+	    }
+	    get vertexShader() {
+	        return this.data.vertex;
+	    }
+	    set vertexShader(code) {
+	        this.data.vertex = code;
+	    }
+	    get fragmentShader() {
+	        return this.data.fragment;
+	    }
+	    set fragmentShader(code) {
+	        this.data.fragment = code;
+	    }
+	}
+
 	const wgslShaders$2 = {
 	    vertex: `
 		struct Uniforms {
@@ -1646,18 +1683,18 @@
 		}
 	`
 	};
-	class ColorMaterial extends Component {
+	class ColorMaterial extends Material {
 	    constructor(color = new Float32Array([1, 1, 1, 1])) {
-	        super("material", Object.assign(Object.assign({}, wgslShaders$2), { uniforms: [{
-	                    name: "color",
-	                    value: color,
-	                    binding: 1,
-	                    dirty: true,
-	                    type: "uniform-buffer",
-	                    buffer: {
-	                        type: "",
-	                    }
-	                }] }));
+	        super(wgslShaders$2.vertex, wgslShaders$2.fragment, [{
+	                name: "color",
+	                value: color,
+	                binding: 1,
+	                dirty: true,
+	                type: "uniform-buffer",
+	                buffer: {
+	                    type: "",
+	                }
+	            }]);
 	        this.dirty = true;
 	    }
 	    setColor(r, g, b, a) {
@@ -1695,13 +1732,9 @@ struct VertexOutput {
 	var fragCoordZ: f32 = (depth.x / depth.y);
 	return vec4<f32>(fragCoordZ, fragCoordZ, fragCoordZ, 1.0);
 }`;
-	class NormalMaterial$1 extends Component {
+	class NormalMaterial$1 extends Material {
 	    constructor() {
-	        super("material", {
-	            vertex: vertexShader$1,
-	            fragment: fragmentShader$1,
-	            uniforms: []
-	        });
+	        super(vertexShader$1, fragmentShader$1, []);
 	        this.dirty = true;
 	    }
 	}
@@ -1727,20 +1760,16 @@ struct VertexOutput {
 @stage(fragment) fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
-	class NormalMaterial extends Component {
+	class NormalMaterial extends Material {
 	    constructor() {
-	        super("material", {
-	            vertex: vertexShader,
-	            fragment: fragmentShader,
-	            uniforms: []
-	        });
+	        super(vertexShader, fragmentShader, []);
 	        this.dirty = true;
 	    }
 	}
 
-	class ShaderMaterial extends Component {
-	    constructor(vertex, fragment, uniforms = []) {
-	        super("material", { vertex, fragment, uniforms });
+	class ShaderMaterial extends Material {
+	    constructor(vertex, fragment, uniforms = [], blend) {
+	        super(vertex, fragment, uniforms, blend);
 	        this.dirty = true;
 	    }
 	}
@@ -1811,24 +1840,24 @@ struct VertexOutput {
 		}
 	`
 	};
-	class TextureMaterial extends Component {
+	class TextureMaterial extends Material {
 	    constructor(texture, sampler = new Sampler()) {
-	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [
-	                {
-	                    name: "mySampler",
-	                    type: "sampler",
-	                    value: sampler,
-	                    binding: 1,
-	                    dirty: true
-	                },
-	                {
-	                    name: "myTexture",
-	                    type: "sampled-texture",
-	                    value: texture,
-	                    binding: 2,
-	                    dirty: true
-	                }
-	            ] }));
+	        super(wgslShaders$1.vertex, wgslShaders$1.fragment, [
+	            {
+	                name: "mySampler",
+	                type: "sampler",
+	                value: sampler,
+	                binding: 1,
+	                dirty: true
+	            },
+	            {
+	                name: "myTexture",
+	                type: "sampled-texture",
+	                value: texture,
+	                binding: 2,
+	                dirty: true
+	            }
+	        ]);
 	        this.dirty = true;
 	    }
 	    get sampler() {
@@ -5991,7 +6020,7 @@ struct VertexOutput {
 
 	class AtlasTexture extends Component$1 {
 	    constructor(json, name = "atlas-texture") {
-	        super(name);
+	        super(name, null);
 	        this.loaded = false;
 	        this.dirty = false;
 	        this.width = 0;
@@ -6019,7 +6048,7 @@ struct VertexOutput {
 
 	class ImageBitmapTexture extends Component$1 {
 	    constructor(img, width, height, name = "image-texture") {
-	        super(name);
+	        super(name, null);
 	        this.loaded = false;
 	        this.dirty = false;
 	        this.width = 0;
@@ -6062,7 +6091,7 @@ struct VertexOutput {
 
 	class SpritesheetTexture extends Component$1 {
 	    constructor(json, name = "spritesheet-texture") {
-	        super(name);
+	        super(name, null);
 	        this.loaded = false;
 	        this.dirty = false;
 	        this.frame = 0; // 当前帧索引
@@ -6250,9 +6279,9 @@ struct VertexOutput {
 	        this.engine = engine;
 	    }
 	    render(mesh, camera, passEncoder, _scissor) {
-	        var _a, _b;
+	        var _a, _b, _c;
 	        let cacheData = this.entityCacheData.get(mesh);
-	        if (!cacheData) {
+	        if (!cacheData || ((_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty)) {
 	            cacheData = this.createCacheData(mesh);
 	            this.entityCacheData.set(mesh, cacheData);
 	        }
@@ -6267,8 +6296,8 @@ struct VertexOutput {
 	            passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
 	        }
 	        const mvp = cacheData.mvp;
-	        multiply((_a = camera.getComponent(PROJECTION_3D)) === null || _a === void 0 ? void 0 : _a.data, invert(updateModelMatrixComponent(camera).data), mvp);
-	        multiply(mvp, (_b = mesh.getComponent(MODEL_3D)) === null || _b === void 0 ? void 0 : _b.data, mvp);
+	        multiply((_b = camera.getComponent(PROJECTION_3D)) === null || _b === void 0 ? void 0 : _b.data, invert(updateModelMatrixComponent(camera).data), mvp);
+	        multiply(mvp, (_c = mesh.getComponent(MODEL_3D)) === null || _c === void 0 ? void 0 : _c.data, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
 	            if (uniform.type === "uniform-buffer" && uniform.dirty) {
@@ -6482,18 +6511,7 @@ struct VertexOutput {
 	            targets: [
 	                {
 	                    format: this.engine.preferredFormat,
-	                    blend: {
-	                        color: {
-	                            srcFactor: 'src-alpha',
-	                            dstFactor: 'one',
-	                            operation: 'add',
-	                        },
-	                        alpha: {
-	                            srcFactor: 'zero',
-	                            dstFactor: 'one',
-	                            operation: 'add',
-	                        },
-	                    },
+	                    blend: material === null || material === void 0 ? void 0 : material.data.blend
 	                }
 	            ]
 	        };

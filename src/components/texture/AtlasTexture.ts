@@ -10,7 +10,7 @@ export default class AtlasTexture extends Component<ImageBitmap> {
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[] = [];
     constructor(json: IAltas, name: string = "atlas-texture") {
-        super(name);
+        super(name, null as any);
         this.width = json.spriteSize.w;
         this.height = json.spriteSize.h;
 

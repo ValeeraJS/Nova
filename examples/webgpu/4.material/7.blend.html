@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geo = Nova.Geometry3Factory.createPlane3(3, 3);
+		const mesh = Nova.EntityFactory.createMesh(geo, "background", world);
+		const material = new Nova.TextureMaterial(
+			new Nova.ImageBitmapTexture("./../../textures/back.png", 512, 512)
+		);
+		mesh.addComponent(material);
+
+		const geo2 = Nova.Geometry3Factory.createPlane3(2, 2);
+		const mesh2 = Nova.EntityFactory.createMesh(geo2, "plane", world);
+		const material2 = new Nova.TextureMaterial(
+			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+		);
+		mesh2.addComponent(material2);
+		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh2);
+
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
+		positionProxy.z = 5;
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+		});
+
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
+			world.run();
+			rotationProxy.z += 0.005;
+		});
+		timeline.start();
+
+        createGUI();
+		function createGUI() {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("color");
+			const options = material2.data.blend;
+			f.add(options.color, "srcFactor", [
+				"zero",
+				"one",
+				"src",
+				"one-minus-src",
+				"src-alpha",
+				"one-minus-src-alpha",
+				"dst",
+				"one-minus-dst",
+				"dst-alpha",
+				"one-minus-dst-alpha",
+				"src-alpha-saturated",
+				"constant",
+				"one-minus-constant"
+			]).onChange(onChange);
+			f.add(options.color, "dstFactor", [
+				"zero",
+				"one",
+				"src",
+				"one-minus-src",
+				"src-alpha",
+				"one-minus-src-alpha",
+				"dst",
+				"one-minus-dst",
+				"dst-alpha",
+				"one-minus-dst-alpha",
+				"src-alpha-saturated",
+				"constant",
+				"one-minus-constant"
+			]).onChange(onChange);
+			f.add(options.color, "operation", [
+				"add",
+				"subtract",
+				"reverse-subtract",
+				"min",
+				"max"
+			]).onChange(onChange);
+
+			function onChange(val) {
+				material2.dirty = true;
+                console.log(material2);
+			}
+		}
+	</script>
+</body>

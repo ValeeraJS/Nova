@@ -1,7 +1,7 @@
-import { Component } from "@valeera/x";
 import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
 import IMaterial, { IShaderCode } from "./IMatrial";
+import Material from "./Material";
 
 const CommonData = {
     date: new Date(),
@@ -24,14 +24,10 @@ const CommonData = {
     `
 }
 
-export default class ShadertoyMaterial extends Component<IShaderCode> implements IMaterial {
+export default class ShadertoyMaterial extends Material implements IMaterial {
     data!: IShaderCode;
 
     public constructor(fs: string, texture: ImageBitmapTexture, sampler: Sampler = new Sampler()) {
-        super("material", {
-            vertex: CommonData.vs,
-            fragment: fs,
-            uniforms: []
-        });
+        super( CommonData.vs,fs, []);
     }
 }

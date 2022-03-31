@@ -1,5 +1,4 @@
-import { Component } from "@valeera/x";
-import IMaterial, { IShaderCode } from "./IMatrial";
+import Material from "./Material";
 
 const vertexShader = `
 struct Uniforms {
@@ -24,13 +23,9 @@ const fragmentShader = `
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
 
-export default class NormalMaterial extends Component<IShaderCode> implements IMaterial {	
+export default class NormalMaterial extends Material {	
 	constructor() {
-		super("material", {
-			vertex: vertexShader,
-			fragment: fragmentShader,
-			uniforms: []
-		});
+		super(vertexShader, fragmentShader, []);
 		this.dirty = true;
 	}
 }

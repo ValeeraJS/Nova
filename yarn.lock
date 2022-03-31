@@ -447,10 +447,10 @@
   resolved "https://registry.npmmirror.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.1.tgz#dee1727f33e599c7520a593a711ec31d0ac0bd69"
   integrity sha512-74n1qjoMiAorlLdi9eRWFU7Rl9z1YBXD0kr1ixmV39sprbkGFXva4OPFib179FxXmvM0D9OFFSz5qyIxH5GwuA==
 
-"@valeera/x@0.1.15-e":
-  version "0.1.15-e"
-  resolved "https://registry.npmmirror.com/@valeera/x/-/x-0.1.15-e.tgz#44d22fd1cfdba333bb2f444bb1f17ab83e994ce3"
-  integrity sha512-neh8DOvSnN1tUo8NQ37uOgBSOBGaOHARnk5tEd5WhCQRpzz/4mCklKm1hYQLe151wF3eoGRPFlfmcn6BqxR+fg==
+"@valeera/x@0.1.16":
+  version "0.1.16"
+  resolved "https://registry.npmmirror.com/@valeera/x/-/x-0.1.16.tgz#d8197b4e2ac7babae9486e08dc1329c11a6f35dd"
+  integrity sha512-NlRS5kb8C5ChPsBE2mWVGu9UY4ZjMPsl9Eh7GEsknod+hJ77J2N1FCUfIOmh3ebkZPdSKKACBuQh+KsqIPDS8g==
   dependencies:
     "@valeera/eventdispatcher" "2.2.4"
     "@valeera/idgenerator" "1.1.0"
