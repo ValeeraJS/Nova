@@ -201,7 +201,10 @@ export default class MeshRenderer implements IWebGLRenderer {
 			primitiveTopology: geometry.topology,
 			colorStates: [
 				{
-					format: "bgra8unorm"
+					format: "bgra8unorm",
+					blend: {
+						operation: "add",
+					}
 				}
 			],
 			depthStencilState: {

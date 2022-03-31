@@ -1,6 +1,6 @@
 {
 	"name": "@valeera/nova",
-	"version": "0.1.1-a",
+	"version": "0.1.1-e",
 	"description": "Event dispatcher fit for most framework.",
 	"main": "build/Nova.js",
 	"repository": "ValeeraJS/Nova",
@@ -39,7 +39,7 @@
 		"@rollup/plugin-node-resolve": "^13.1.3",
 		"@typescript-eslint/eslint-plugin": "^5.11.0",
 		"@typescript-eslint/parser": "^5.11.0",
-		"@webgpu/types": "^0.1.12",
+		"@webgpu/types": "^0.1.13",
 		"chai": "^4.3.6",
 		"concurrently": "^7.0.0",
 		"eslint": "^8.9.0",
@@ -72,10 +72,11 @@
 		"directories": {}
 	},
 	"dependencies": {
-		"@valeera/eventdispatcher": "2.2.2",
+		"@valeera/eventdispatcher": "2.2.4",
 		"@valeera/mathx": "0.1.18",
+		"@valeera/timeline": "0.1.1",
 		"@valeera/webgpu-constant": "0.1.1",
-		"@valeera/x": "0.1.15-c"
+		"@valeera/x": "0.1.16"
 	},
 	"publishConfig": {
 		"access": "public"

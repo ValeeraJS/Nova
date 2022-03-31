@@ -33,13 +33,13 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			loop();
 		});
 
-		function loop() {
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
 			world.run();
 			rotationProxy.y -= 0.01;
-			requestAnimationFrame(loop);
-		}
+		});
+		timeline.start();
 	</script>
 </body>

@@ -15,11 +15,16 @@
 		const geo = Nova.Geometry3Factory.createTriangle3();
 		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 		// 新建一个位置组件替换默认的位置矩阵组件。EuclidPosition3组件是修改平移矩阵的便于开发者操作的组件
-		mesh.addComponent(new Nova.EuclidPosition3([0, 0 , -5]));
+		mesh.addComponent(new Nova.EuclidPosition3([0, 0, -5]));
 		// 新建一个欧拉角旋转组件替换默认的旋转矩阵组件。EulerRotation3组件是修改旋转矩阵的便于开发者操作的组件
 		mesh.addComponent(new Nova.EulerRotation3());
 
-		const projection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
 		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
@@ -27,14 +32,13 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			loop();
 		});
 
-		function loop() {
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
 			world.run();
 			mesh.getComponent("rotation3").y -= 0.01;
-			mesh.getComponent("rotation3").dirty = true;
-			requestAnimationFrame(loop);
-		}
+		});
+		timeline.start();
 	</script>
 </body>

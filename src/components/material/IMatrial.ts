@@ -12,7 +12,8 @@ export interface IUniformSlot {
 export interface IShaderCode {
     vertex: string;
     fragment: string;
-    uniforms: IUniformSlot[]
+    uniforms: IUniformSlot[],
+    blend?: GPUBlendComponent
 }
 
 export default interface IMaterial extends IComponent<IShaderCode> {}

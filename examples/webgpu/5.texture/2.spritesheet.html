@@ -34,7 +34,7 @@
 				const engine = new Nova.WebGPUEngine(canvas);
 				const world = new Nova.World();
 
-				const geo = Nova.Geometry3Factory.createTriangle3();
+				const geo = Nova.Geometry3Factory.createPlane3(3, 3);
 				const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 				const texture = new Nova.SpritesheetTexture(spritesheetJson);
 				const material = new Nova.TextureMaterial(texture);
@@ -51,20 +51,19 @@
 						r: 0,
 						g: 0,
 						b: 0,
-						a: 0
+						a: 1
 					});
 					let renderSystem = new Nova.WebGPURenderSystem(engine, clearer);
 					let renderer = new Nova.WebGPUMeshRenderer(engine);
 					renderSystem.addRenderer(renderer);
 					world.addSystem(renderSystem);
-					loop();
 				});
 
-				function loop() {
+				let timeline = new Nova.Timeline();
+				timeline.addTask(() => {
 					world.run();
-					// rotationProxy.y -= 0.01;
-					requestAnimationFrame(loop);
-				}
+				});
+				timeline.start();
 
 				createGUI();
 

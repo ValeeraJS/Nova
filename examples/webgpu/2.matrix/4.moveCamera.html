@@ -15,7 +15,12 @@
 		const geo = Nova.Geometry3Factory.createTriangle3();
 		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 
-		const projection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
 		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
 		positionProxy.z = 5;
@@ -26,14 +31,14 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			loop();
 		});
 
-		function loop() {
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
 			world.run();
 			positionProxy.z = Math.sin(performance.now() / 300) + 5;
 			rotationProxy.y = Math.sin(performance.now() / 800) / 2;
-			requestAnimationFrame(loop);
-		}
+		});
+		timeline.start();
 	</script>
 </body>

@@ -18,7 +18,12 @@
 		position.data[14] = -5;
 		position.dirty = true;
 
-		const projection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
 		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
@@ -27,13 +32,13 @@
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			createGUI(renderSystem);
-			loop();
 		});
 
-		function loop() {
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
 			world.run();
-			requestAnimationFrame(loop);
-		}
+		});
+		timeline.start();
 
 		function createGUI(renderSystem) {
 			window.r = renderSystem;

@@ -54,6 +54,7 @@ export default class EulerRotation3 extends ARotation3 {
 
     update() {
         fromEuler(this.euler, this.data);
+        this.dirty = true;
 
         return this;
     }

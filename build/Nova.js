@@ -4,35 +4,107 @@
 	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Nova = {}));
 })(this, (function (exports) { 'use strict';
 
-	/*! *****************************************************************************
-	Copyright (c) Microsoft Corporation.
-
-	Permission to use, copy, modify, and/or distribute this software for any
-	purpose with or without fee is hereby granted.
-
-	THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-	REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-	AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-	INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-	LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-	OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-	PERFORMANCE OF THIS SOFTWARE.
-	***************************************************************************** */
-
-	function __awaiter(thisArg, _arguments, P, generator) {
-	    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-	    return new (P || (P = Promise))(function (resolve, reject) {
-	        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-	        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-	        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-	        step((generator = generator.apply(thisArg, _arguments || [])).next());
-	    });
+	class Timeline {
+	    static State = {
+	        PAUSED: "paused",
+	        RUNNING: "running",
+	        STOPPED: "stopped"
+	    };
+	    delta = 0;
+	    state = Timeline.State.STOPPED;
+	    time = 0;
+	    timeScale;
+	    current = 0;
+	    last = 0;
+	    pauseWhenPageHide = false;
+	    raf;
+	    tasks = [];
+	    taskTimeMap = new WeakMap();
+	    constructor(timeScale = 1, pauseWhenPageHide = false) {
+	        this.timeScale = timeScale;
+	        this.pauseWhenPageHide = pauseWhenPageHide;
+	        if (this.pauseWhenPageHide) {
+	            window.addEventListener("pageshow", this.setPageHideTime, false);
+	        }
+	    }
+	    addTask(task, needTimeReset) {
+	        this.tasks.push(task);
+	        if (needTimeReset) {
+	            this.taskTimeMap.set(task, this.time);
+	        }
+	        return this;
+	    }
+	    destroy() {
+	        this.stop();
+	        this.tasks.length = 0;
+	        if (this.pauseWhenPageHide) {
+	            window.removeEventListener("pageshow", this.setPageHideTime, false);
+	        }
+	    }
+	    pause() {
+	        if (this.state !== Timeline.State.RUNNING) {
+	            return this;
+	        }
+	        this.state = Timeline.State.PAUSED;
+	        return this;
+	    }
+	    removeTask(task) {
+	        this.tasks.splice(this.tasks.indexOf(task), 1);
+	        return this;
+	    }
+	    resume() {
+	        if (this.state !== Timeline.State.PAUSED) {
+	            return this;
+	        }
+	        this.current = performance.now();
+	        this.state = Timeline.State.RUNNING;
+	        return this;
+	    }
+	    start() {
+	        if (this.state !== Timeline.State.STOPPED) {
+	            return this;
+	        }
+	        this.time = 0;
+	        this.current = performance.now();
+	        this.state = Timeline.State.RUNNING;
+	        this.run();
+	        return this;
+	    }
+	    stop() {
+	        this.state = Timeline.State.STOPPED;
+	        if (typeof this.raf === "number") {
+	            cancelAnimationFrame(this.raf);
+	            this.raf = undefined;
+	        }
+	        return this;
+	    }
+	    setPageHideTime() {
+	        this.current = performance.now();
+	        return this;
+	    }
+	    update(time, delta) {
+	        for (const task of this.tasks) {
+	            task(time - (this.taskTimeMap.get(task) || 0), delta);
+	        }
+	        return this;
+	    }
+	    run = () => {
+	        if (this.state === Timeline.State.RUNNING) {
+	            this.last = this.current;
+	            this.current = performance.now();
+	            this.delta = (this.current - this.last) * this.timeScale;
+	            this.time += this.delta;
+	            this.update(this.time, this.delta);
+	        }
+	        this.raf = requestAnimationFrame(this.run);
+	        return this;
+	    };
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$4 = (Base = Object, eventKeyList = []) => {
+	const mixin$1 = (Base = Object, eventKeyList = []) => {
 	    return class EventFirer extends Base {
-	        static mixin = mixin$4;
+	        static mixin = mixin$1;
 	        eventKeyList = eventKeyList;
 	        /**
 	         * store all the filters
@@ -139,7 +211,32 @@
 	        }
 	    };
 	};
-	var EventDispatcher = mixin$4(Object);
+	var EventDispatcher = mixin$1(Object);
+
+	/*! *****************************************************************************
+	Copyright (c) Microsoft Corporation.
+
+	Permission to use, copy, modify, and/or distribute this software for any
+	purpose with or without fee is hereby granted.
+
+	THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+	REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+	AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+	INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+	LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+	OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+	PERFORMANCE OF THIS SOFTWARE.
+	***************************************************************************** */
+
+	function __awaiter(thisArg, _arguments, P, generator) {
+	    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+	    return new (P || (P = Promise))(function (resolve, reject) {
+	        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+	        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+	        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+	        step((generator = generator.apply(thisArg, _arguments || [])).next());
+	    });
+	}
 
 	exports.EngineEvents = void 0;
 	(function (EngineEvents) {
@@ -839,26 +936,144 @@
 		createTriangle3: createTriangle3
 	});
 
+	const FIND_LEAVES_VISITOR = {
+	    enter: (node, result) => {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
+	};
+	const ARRAY_VISITOR = {
+	    enter: (node, result) => {
+	        result.push(node);
+	    }
+	};
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin = (Base = Object) => {
+	    return class TreeNode extends Base {
+	        static mixin = mixin;
+	        static addNode(node, child) {
+	            if (TreeNode.hasAncestor(node, child)) {
+	                throw new Error("The node added is one of the ancestors of current one.");
+	            }
+	            node.children.push(child);
+	            child.parent = node;
+	            return node;
+	        }
+	        static depth(node) {
+	            if (!node.children.length) {
+	                return 1;
+	            }
+	            else {
+	                const childrenDepth = [];
+	                for (const item of node.children) {
+	                    item && childrenDepth.push(this.depth(item));
+	                }
+	                let max = 0;
+	                for (const item of childrenDepth) {
+	                    max = Math.max(max, item);
+	                }
+	                return 1 + max;
+	            }
+	        }
+	        static findLeaves(node) {
+	            const result = [];
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            return result;
+	        }
+	        static findRoot(node) {
+	            if (node.parent) {
+	                return this.findRoot(node.parent);
+	            }
+	            return node;
+	        }
+	        static hasAncestor(node, ancestor) {
+	            if (!node.parent) {
+	                return false;
+	            }
+	            else {
+	                if (node.parent === ancestor) {
+	                    return true;
+	                }
+	                else {
+	                    return TreeNode.hasAncestor(node.parent, ancestor);
+	                }
+	            }
+	        }
+	        static removeNode(node, child) {
+	            if (node.children.includes(child)) {
+	                node.children.splice(node.children.indexOf(child), 1);
+	                child.parent = null;
+	            }
+	            return node;
+	        }
+	        static toArray(node) {
+	            const result = [];
+	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            return result;
+	        }
+	        static traverse(node, visitor, rest) {
+	            visitor.enter?.(node, rest);
+	            visitor.visit?.(node, rest);
+	            for (const item of node.children) {
+	                item && TreeNode.traverse(item, visitor, rest);
+	            }
+	            visitor.leave?.(node, rest);
+	            return node;
+	        }
+	        parent = null;
+	        children = [];
+	        addNode(node) {
+	            return TreeNode.addNode(this, node);
+	        }
+	        depth() {
+	            return TreeNode.depth(this);
+	        }
+	        findLeaves() {
+	            return TreeNode.findLeaves(this);
+	        }
+	        findRoot() {
+	            return TreeNode.findRoot(this);
+	        }
+	        hasAncestor(ancestor) {
+	            return TreeNode.hasAncestor(this, ancestor);
+	        }
+	        removeNode(child) {
+	            return TreeNode.removeNode(this, child);
+	        }
+	        toArray() {
+	            return TreeNode.toArray(this);
+	        }
+	        traverse(visitor, rest) {
+	            return TreeNode.traverse(this, visitor, rest);
+	        }
+	    };
+	};
+	var TreeNode = mixin(Object);
+
+	const IdGeneratorInstance = new IdGenerator();
+
 	let weakMapTmp$1;
 	class System$1 {
-	    constructor(name = "", fitRule) {
-	        this.id = IdGeneratorInstance$1.next();
-	        this.isSystem = true;
-	        this.name = "";
-	        this.loopTimes = 0;
-	        this.entitySet = new WeakMap();
-	        this.usedBy = [];
-	        this.cache = new WeakMap();
-	        this._disabled = false;
-	        this.name = name;
-	        this.disabled = false;
-	        this.rule = fitRule;
-	    }
+	    id = IdGeneratorInstance.next();
+	    isSystem = true;
+	    name = "";
+	    loopTimes = 0;
+	    entitySet = new WeakMap();
+	    usedBy = [];
+	    cache = new WeakMap();
+	    rule;
+	    _disabled = false;
 	    get disabled() {
 	        return this._disabled;
 	    }
 	    set disabled(value) {
 	        this._disabled = value;
+	    }
+	    constructor(name = "", fitRule) {
+	        this.name = name;
+	        this.disabled = false;
+	        this.rule = fitRule;
 	    }
 	    checkUpdatedEntities(manager) {
 	        if (manager) {
@@ -903,9 +1118,8 @@
 	        return this.rule(entity);
 	    }
 	    run(world) {
-	        var _a;
 	        if (world.entityManager) {
-	            (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
+	            this.entitySet.get(world.entityManager)?.forEach((item) => {
 	                this.handle(item, world.store);
 	            });
 	        }
@@ -919,122 +1133,47 @@
 	    }
 	}
 
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$3 = (Base = Object, eventKeyList = []) => {
-	    var _a;
-	    return _a = class EventFirer extends Base {
-	            constructor() {
-	                super(...arguments);
-	                this.eventKeyList = eventKeyList;
-	                /**
-	                 * store all the filters
-	                 */
-	                this.filters = [];
-	                /**
-	                 * store all the listeners by key
-	                 */
-	                this.listeners = new Map();
-	            }
-	            all(listener) {
-	                return this.filt(() => true, listener);
-	            }
-	            clearListenersByKey(eventKey) {
-	                this.listeners.delete(eventKey);
-	                return this;
-	            }
-	            clearAllListeners() {
-	                const keys = this.listeners.keys();
-	                for (const key of keys) {
-	                    this.listeners.delete(key);
-	                }
-	                return this;
-	            }
-	            filt(rule, listener) {
-	                this.filters.push({
-	                    listener,
-	                    rule
-	                });
-	                return this;
-	            }
-	            fire(eventKey, target) {
-	                if (!this.checkEventKeyAvailable(eventKey)) {
-	                    console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
-	                    return this;
-	                }
-	                const array = this.listeners.get(eventKey) || [];
-	                let len = array.length;
-	                let item;
-	                for (let i = 0; i < len; i++) {
-	                    item = array[i];
-	                    item.listener(target);
-	                    item.times--;
-	                    if (item.times <= 0) {
-	                        array.splice(i--, 1);
-	                        --len;
-	                    }
-	                }
-	                return this.checkFilt(eventKey, target);
-	            }
-	            off(eventKey, listener) {
-	                const array = this.listeners.get(eventKey);
-	                if (!array) {
-	                    return this;
-	                }
-	                const len = array.length;
-	                for (let i = 0; i < len; i++) {
-	                    if (array[i].listener === listener) {
-	                        array.splice(i, 1);
-	                        break;
-	                    }
-	                }
-	                return this;
-	            }
-	            on(eventKey, listener) {
-	                if (eventKey instanceof Array) {
-	                    for (let i = 0, j = eventKey.length; i < j; i++) {
-	                        this.times(eventKey[i], Infinity, listener);
-	                    }
-	                    return this;
-	                }
-	                return this.times(eventKey, Infinity, listener);
-	            }
-	            once(eventKey, listener) {
-	                return this.times(eventKey, 1, listener);
-	            }
-	            times(eventKey, times, listener) {
-	                if (!this.checkEventKeyAvailable(eventKey)) {
-	                    console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
-	                    return this;
-	                }
-	                const array = this.listeners.get(eventKey) || [];
-	                if (!this.listeners.has(eventKey)) {
-	                    this.listeners.set(eventKey, array);
-	                }
-	                array.push({
-	                    listener,
-	                    times
-	                });
-	                return this;
-	            }
-	            checkFilt(eventKey, target) {
-	                for (const item of this.filters) {
-	                    if (item.rule(eventKey, target)) {
-	                        item.listener(target, eventKey);
-	                    }
-	                }
-	                return this;
-	            }
-	            checkEventKeyAvailable(eventKey) {
-	                if (this.eventKeyList.length) {
-	                    return this.eventKeyList.includes(eventKey);
-	                }
-	                return true;
-	            }
-	        },
-	        _a.mixin = mixin$3,
-	        _a;
-	};
-	var EventFirer$1 = mixin$3(Object);
+	class PureSystem extends System$1 {
+	    handler;
+	    constructor(name = "", fitRule, handler) {
+	        super(name, fitRule);
+	        this.handler = handler;
+	    }
+	    handle(entity, params) {
+	        this.handler(entity, params);
+	        return this;
+	    }
+	}
+
+	class Component {
+	    static unserialize(json) {
+	        const component = new Component(json.name, json.data);
+	        component.disabled = json.disabled;
+	        return component;
+	    }
+	    isComponent = true;
+	    id = IdGeneratorInstance.next();
+	    data = null;
+	    disabled = false;
+	    name;
+	    usedBy = [];
+	    dirty = false;
+	    constructor(name, data = null) {
+	        this.name = name;
+	        this.data = data;
+	    }
+	    clone() {
+	        return new Component(this.name, this.data);
+	    }
+	    serialize() {
+	        return {
+	            data: this.data,
+	            disabled: this.disabled,
+	            name: this.name,
+	            type: "component"
+	        };
+	    }
+	}
 
 	// 私有全局变量，外部无法访问
 	let elementTmp$1;
@@ -1043,20 +1182,18 @@
 	    EElementChangeEvent["ADD"] = "add";
 	    EElementChangeEvent["REMOVE"] = "remove";
 	})(EElementChangeEvent$1 || (EElementChangeEvent$1 = {}));
-	class Manager$1 extends EventFirer$1 {
-	    constructor() {
-	        super(...arguments);
-	        // private static eventObject: EventObject = {
-	        // 	component: null as any,
-	        // 	element: null as any,
-	        // 	eventKey: null as any,
-	        // 	manager: null as any
-	        // };
-	        this.elements = new Map();
-	        this.disabled = false;
-	        this.usedBy = [];
-	        this.isManager = true;
-	    }
+	class Manager$1 extends EventDispatcher {
+	    static Events = EElementChangeEvent$1;
+	    // private static eventObject: EventObject = {
+	    // 	component: null as any,
+	    // 	element: null as any,
+	    // 	eventKey: null as any,
+	    // 	manager: null as any
+	    // };
+	    elements = new Map();
+	    disabled = false;
+	    usedBy = [];
+	    isManager = true;
 	    addElement(component) {
 	        if (this.has(component)) {
 	            this.removeElementByInstance(component);
@@ -1108,16 +1245,14 @@
 	        return this;
 	    }
 	    elementChangeDispatch(type, eventObject) {
-	        var _a, _b;
 	        for (const entity of this.usedBy) {
-	            (_b = (_a = entity).fire) === null || _b === void 0 ? void 0 : _b.call(_a, type, eventObject);
+	            entity.fire?.(type, eventObject);
 	            for (const manager of entity.usedBy) {
 	                manager.updatedEntities.add(entity);
 	            }
 	        }
 	    }
 	}
-	Manager$1.Events = EElementChangeEvent$1;
 
 	// import { IdGeneratorInstance } from "./Global";
 	// 私有全局变量，外部无法访问
@@ -1128,145 +1263,21 @@
 	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
 	})(EComponentEvent$1 || (EComponentEvent$1 = {}));
 	class ComponentManager$1 extends Manager$1 {
-	    constructor() {
-	        super(...arguments);
-	        this.isComponentManager = true;
-	        this.usedBy = [];
-	    }
+	    isComponentManager = true;
+	    usedBy = [];
 	}
 
-	const FIND_LEAVES_VISITOR$1 = {
-	    enter: (node, result) => {
-	        if (!node.children.length) {
-	            result.push(node);
-	        }
-	    }
-	};
-	const ARRAY_VISITOR$1 = {
-	    enter: (node, result) => {
-	        result.push(node);
-	    }
-	};
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$2 = (Base = Object) => {
-	    var _a;
-	    return _a = class TreeNode extends Base {
-	            constructor() {
-	                super(...arguments);
-	                this.parent = null;
-	                this.children = [];
-	            }
-	            static addNode(node, child) {
-	                if (TreeNode.hasAncestor(node, child)) {
-	                    throw new Error("The node added is one of the ancestors of current one.");
-	                }
-	                node.children.push(child);
-	                child.parent = node;
-	                return node;
-	            }
-	            static depth(node) {
-	                if (!node.children.length) {
-	                    return 1;
-	                }
-	                else {
-	                    const childrenDepth = [];
-	                    for (const item of node.children) {
-	                        item && childrenDepth.push(this.depth(item));
-	                    }
-	                    let max = 0;
-	                    for (const item of childrenDepth) {
-	                        max = Math.max(max, item);
-	                    }
-	                    return 1 + max;
-	                }
-	            }
-	            static findLeaves(node) {
-	                const result = [];
-	                TreeNode.traverse(node, FIND_LEAVES_VISITOR$1, result);
-	                return result;
-	            }
-	            static findRoot(node) {
-	                if (node.parent) {
-	                    return this.findRoot(node.parent);
-	                }
-	                return node;
-	            }
-	            static hasAncestor(node, ancestor) {
-	                if (!node.parent) {
-	                    return false;
-	                }
-	                else {
-	                    if (node.parent === ancestor) {
-	                        return true;
-	                    }
-	                    else {
-	                        return TreeNode.hasAncestor(node.parent, ancestor);
-	                    }
-	                }
-	            }
-	            static removeNode(node, child) {
-	                if (node.children.includes(child)) {
-	                    node.children.splice(node.children.indexOf(child), 1);
-	                    child.parent = null;
-	                }
-	                return node;
-	            }
-	            static toArray(node) {
-	                const result = [];
-	                TreeNode.traverse(node, ARRAY_VISITOR$1, result);
-	                return result;
-	            }
-	            static traverse(node, visitor, rest) {
-	                var _a, _b, _c;
-	                (_a = visitor.enter) === null || _a === void 0 ? void 0 : _a.call(visitor, node, rest);
-	                (_b = visitor.visit) === null || _b === void 0 ? void 0 : _b.call(visitor, node, rest);
-	                for (const item of node.children) {
-	                    item && TreeNode.traverse(item, visitor, rest);
-	                }
-	                (_c = visitor.leave) === null || _c === void 0 ? void 0 : _c.call(visitor, node, rest);
-	                return node;
-	            }
-	            addNode(node) {
-	                return TreeNode.addNode(this, node);
-	            }
-	            depth() {
-	                return TreeNode.depth(this);
-	            }
-	            findLeaves() {
-	                return TreeNode.findLeaves(this);
-	            }
-	            findRoot() {
-	                return TreeNode.findRoot(this);
-	            }
-	            hasAncestor(ancestor) {
-	                return TreeNode.hasAncestor(this, ancestor);
-	            }
-	            removeNode(child) {
-	                return TreeNode.removeNode(this, child);
-	            }
-	            toArray() {
-	                return TreeNode.toArray(this);
-	            }
-	            traverse(visitor, rest) {
-	                return TreeNode.traverse(this, visitor, rest);
-	            }
-	        },
-	        _a.mixin = mixin$2,
-	        _a;
-	};
-	var TreeNode$1 = mixin$2(Object);
+	const TreeNodeWithEvent$1 = mixin$1(TreeNode);
 
-	const TreeNodeWithEvent$1 = mixin$3(TreeNode$1);
-
-	let arr$2;
+	let arr$1;
 	class Entity$1 extends TreeNodeWithEvent$1 {
+	    id = IdGeneratorInstance.next();
+	    isEntity = true;
+	    componentManager = null;
+	    name = "";
+	    usedBy = [];
 	    constructor(name = "", componentManager) {
 	        super();
-	        this.id = IdGeneratorInstance$1.next();
-	        this.isEntity = true;
-	        this.componentManager = null;
-	        this.name = "";
-	        this.usedBy = [];
 	        this.name = name;
 	        this.registerComponentManager(componentManager);
 	    }
@@ -1311,27 +1322,115 @@
 	    }
 	    unregisterComponentManager() {
 	        if (this.componentManager) {
-	            arr$2 = this.componentManager.usedBy;
-	            arr$2.splice(arr$2.indexOf(this) - 1, 1);
+	            arr$1 = this.componentManager.usedBy;
+	            arr$1.splice(arr$1.indexOf(this) - 1, 1);
 	            this.componentManager = null;
 	        }
 	        return this;
 	    }
 	}
 
-	let systemTmp$1;
-	var ESystemEvent$1;
+	// 私有全局变量，外部无法访问
+	let entityTmp;
+	class EntityManager {
+	    elements = new Map();
+	    data = null;
+	    disabled = false;
+	    updatedEntities = new Set();
+	    isEntityManager = true;
+	    usedBy = [];
+	    constructor(world) {
+	        if (world) {
+	            this.usedBy.push(world);
+	        }
+	    }
+	    addElement(entity) {
+	        if (this.has(entity)) {
+	            this.removeByInstance(entity);
+	        }
+	        return this.addComponentDirect(entity);
+	    }
+	    addComponentDirect(entity) {
+	        this.elements.set(entity.name, entity);
+	        entity.usedBy.push(this);
+	        this.updatedEntities.add(entity);
+	        return this;
+	    }
+	    clear() {
+	        this.elements.clear();
+	        return this;
+	    }
+	    createEntity(name) {
+	        const entity = new Entity$1(name);
+	        this.addElement(entity);
+	        return entity;
+	    }
+	    get(name) {
+	        entityTmp = this.elements.get(name);
+	        return entityTmp ? entityTmp : null;
+	    }
+	    has(entity) {
+	        if (typeof entity === "string") {
+	            return this.elements.has(entity);
+	        }
+	        else {
+	            return this.elements.has(entity.name);
+	        }
+	    }
+	    removeElement(entity) {
+	        return typeof entity === "string"
+	            ? this.removeByName(entity)
+	            : this.removeByInstance(entity);
+	    }
+	    removeByName(name) {
+	        entityTmp = this.elements.get(name);
+	        if (entityTmp) {
+	            this.elements.delete(name);
+	            this.deleteEntityFromSystemSet(entityTmp);
+	        }
+	        return this;
+	    }
+	    removeByInstance(entity) {
+	        if (this.elements.has(entity.name)) {
+	            this.elements.delete(entity.name);
+	            this.deleteEntityFromSystemSet(entity);
+	        }
+	        return this;
+	    }
+	    deleteEntityFromSystemSet(entity) {
+	        entity.usedBy.splice(entity.usedBy.indexOf(this), 1);
+	        for (const world of this.usedBy) {
+	            if (world.systemManager) {
+	                world.systemManager.elements.forEach((system) => {
+	                    if (system.entitySet.get(this)) {
+	                        system.entitySet.get(this).delete(entity);
+	                    }
+	                });
+	            }
+	        }
+	    }
+	}
+
+	let systemTmp;
+	var ESystemEvent;
 	(function (ESystemEvent) {
 	    ESystemEvent["BEFORE_RUN"] = "beforeRun";
 	    ESystemEvent["AFTER_RUN"] = "afterRun";
-	})(ESystemEvent$1 || (ESystemEvent$1 = {}));
-	class SystemManager$1 extends Manager$1 {
+	})(ESystemEvent || (ESystemEvent = {}));
+	class SystemManager extends Manager$1 {
+	    static AFTER_RUN = ESystemEvent.AFTER_RUN;
+	    static BEFORE_RUN = ESystemEvent.BEFORE_RUN;
+	    static eventObject = {
+	        eventKey: null,
+	        manager: null,
+	        target: null
+	    };
+	    disabled = false;
+	    elements = new Map();
+	    loopTimes = 0;
+	    usedBy = [];
 	    constructor(world) {
 	        super();
-	        this.disabled = false;
-	        this.elements = new Map();
-	        this.loopTimes = 0;
-	        this.usedBy = [];
 	        if (world) {
 	            this.usedBy.push(world);
 	        }
@@ -1349,11 +1448,11 @@
 	        return this;
 	    }
 	    removeByName(name) {
-	        systemTmp$1 = this.elements.get(name);
-	        if (systemTmp$1) {
+	        systemTmp = this.elements.get(name);
+	        if (systemTmp) {
 	            this.elements.delete(name);
-	            this.updateSystemEntitySetByRemovedFromManager(systemTmp$1);
-	            systemTmp$1.usedBy.splice(systemTmp$1.usedBy.indexOf(this), 1);
+	            this.updateSystemEntitySetByRemovedFromManager(systemTmp);
+	            systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
 	        }
 	        return this;
 	    }
@@ -1366,9 +1465,9 @@
 	        return this;
 	    }
 	    run(world) {
-	        SystemManager$1.eventObject.eventKey = SystemManager$1.BEFORE_RUN;
-	        SystemManager$1.eventObject.manager = this;
-	        this.fire(SystemManager$1.BEFORE_RUN, SystemManager$1.eventObject);
+	        SystemManager.eventObject.eventKey = SystemManager.BEFORE_RUN;
+	        SystemManager.eventObject.manager = this;
+	        this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
 	        this.elements.forEach((item) => {
 	            item.checkUpdatedEntities(world.entityManager);
 	            item.run(world);
@@ -1377,8 +1476,8 @@
 	            world.entityManager.updatedEntities.clear();
 	        }
 	        this.loopTimes++;
-	        SystemManager$1.eventObject.eventKey = SystemManager$1.AFTER_RUN;
-	        this.fire(SystemManager$1.BEFORE_RUN, SystemManager$1.eventObject);
+	        SystemManager.eventObject.eventKey = SystemManager.AFTER_RUN;
+	        this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
 	        return this;
 	    }
 	    updateSystemEntitySetByRemovedFromManager(system) {
@@ -1398,13 +1497,126 @@
 	        return this;
 	    }
 	}
-	SystemManager$1.AFTER_RUN = ESystemEvent$1.AFTER_RUN;
-	SystemManager$1.BEFORE_RUN = ESystemEvent$1.BEFORE_RUN;
-	SystemManager$1.eventObject = {
-	    eventKey: null,
-	    manager: null,
-	    target: null
-	};
+
+	let arr$2;
+	class World {
+	    name;
+	    entityManager = null;
+	    systemManager = null;
+	    store = new Map();
+	    id = IdGeneratorInstance.next();
+	    isWorld = true;
+	    constructor(name = "", entityManager, systemManager) {
+	        this.name = name;
+	        this.registerEntityManager(entityManager);
+	        this.registerSystemManager(systemManager);
+	    }
+	    add(element) {
+	        if (element.isEntity) {
+	            return this.addEntity(element);
+	        }
+	        else {
+	            return this.addSystem(element);
+	        }
+	    }
+	    addEntity(entity) {
+	        if (this.entityManager) {
+	            this.entityManager.addElement(entity);
+	        }
+	        else {
+	            throw new Error("The world doesn't have an entityManager yet.");
+	        }
+	        return this;
+	    }
+	    addSystem(system) {
+	        if (this.systemManager) {
+	            this.systemManager.addElement(system);
+	        }
+	        else {
+	            throw new Error("The world doesn't have a systemManager yet.");
+	        }
+	        return this;
+	    }
+	    clearAllEntities() {
+	        if (this.entityManager) {
+	            this.entityManager.clear();
+	        }
+	        return this;
+	    }
+	    createEntity(name) {
+	        return this.entityManager?.createEntity(name) || null;
+	    }
+	    hasEntity(entity) {
+	        if (this.entityManager) {
+	            return this.entityManager.has(entity);
+	        }
+	        return false;
+	    }
+	    hasSystem(system) {
+	        if (this.systemManager) {
+	            return this.systemManager.has(system);
+	        }
+	        return false;
+	    }
+	    registerEntityManager(manager) {
+	        this.unregisterEntityManager();
+	        this.entityManager = manager || new EntityManager(this);
+	        if (!this.entityManager.usedBy.includes(this)) {
+	            this.entityManager.usedBy.push(this);
+	        }
+	        return this;
+	    }
+	    registerSystemManager(manager) {
+	        this.unregisterSystemManager();
+	        this.systemManager = manager || new SystemManager(this);
+	        if (!this.systemManager.usedBy.includes(this)) {
+	            this.systemManager.usedBy.push(this);
+	        }
+	        return this;
+	    }
+	    remove(element) {
+	        if (element.isEntity) {
+	            return this.removeEntity(element);
+	        }
+	        else {
+	            return this.removeSystem(element);
+	        }
+	    }
+	    removeEntity(entity) {
+	        if (this.entityManager) {
+	            this.entityManager.removeElement(entity);
+	        }
+	        return this;
+	    }
+	    removeSystem(system) {
+	        if (this.systemManager) {
+	            this.systemManager.removeElement(system);
+	        }
+	        return this;
+	    }
+	    run() {
+	        if (this.systemManager) {
+	            this.systemManager.run(this);
+	        }
+	        return this;
+	    }
+	    unregisterEntityManager() {
+	        if (this.entityManager) {
+	            arr$2 = this.entityManager.usedBy;
+	            arr$2.splice(arr$2.indexOf(this) - 1, 1);
+	            this.entityManager = null;
+	        }
+	        return this;
+	    }
+	    unregisterSystemManager() {
+	        if (this.systemManager) {
+	            arr$2 = this.systemManager.usedBy;
+	            arr$2.splice(arr$2.indexOf(this) - 1, 1);
+	            this.entityManager = null;
+	        }
+	        return this;
+	    }
+	}
 
 	const wgslShaders$2 = {
 	    vertex: `
@@ -1434,7 +1646,7 @@
 		}
 	`
 	};
-	class ColorMaterial extends Component$1 {
+	class ColorMaterial extends Component {
 	    constructor(color = new Float32Array([1, 1, 1, 1])) {
 	        super("material", Object.assign(Object.assign({}, wgslShaders$2), { uniforms: [{
 	                    name: "color",
@@ -1483,7 +1695,7 @@ struct VertexOutput {
 	var fragCoordZ: f32 = (depth.x / depth.y);
 	return vec4<f32>(fragCoordZ, fragCoordZ, fragCoordZ, 1.0);
 }`;
-	class NormalMaterial$1 extends Component$1 {
+	class NormalMaterial$1 extends Component {
 	    constructor() {
 	        super("material", {
 	            vertex: vertexShader$1,
@@ -1515,7 +1727,7 @@ struct VertexOutput {
 @stage(fragment) fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
-	class NormalMaterial extends Component$1 {
+	class NormalMaterial extends Component {
 	    constructor() {
 	        super("material", {
 	            vertex: vertexShader,
@@ -1526,7 +1738,7 @@ struct VertexOutput {
 	    }
 	}
 
-	class ShaderMaterial extends Component$1 {
+	class ShaderMaterial extends Component {
 	    constructor(vertex, fragment, uniforms = []) {
 	        super("material", { vertex, fragment, uniforms });
 	        this.dirty = true;
@@ -1599,7 +1811,7 @@ struct VertexOutput {
 		}
 	`
 	};
-	class TextureMaterial extends Component$1 {
+	class TextureMaterial extends Component {
 	    constructor(texture, sampler = new Sampler()) {
 	        super("material", Object.assign(Object.assign({}, wgslShaders$1), { uniforms: [
 	                {
@@ -5208,6 +5420,7 @@ struct VertexOutput {
 	    }
 	    update() {
 	        Matrix4.fromTranslation(this.vec3, this.data);
+	        this.dirty = true;
 	        return this;
 	    }
 	}
@@ -5572,6 +5785,7 @@ struct VertexOutput {
 	    }
 	    update() {
 	        fromEuler(this.euler, this.data);
+	        this.dirty = true;
 	        return this;
 	    }
 	}
@@ -6180,7 +6394,7 @@ struct VertexOutput {
 	            },
 	            depthStencil: {
 	                depthWriteEnabled: true,
-	                depthCompare: 'less',
+	                depthCompare: 'always',
 	                format: 'depth24plus',
 	            },
 	        });
@@ -6268,6 +6482,18 @@ struct VertexOutput {
 	            targets: [
 	                {
 	                    format: this.engine.preferredFormat,
+	                    blend: {
+	                        color: {
+	                            srcFactor: 'src-alpha',
+	                            dstFactor: 'one',
+	                            operation: 'add',
+	                        },
+	                        alpha: {
+	                            srcFactor: 'zero',
+	                            dstFactor: 'one',
+	                            operation: 'add',
+	                        },
+	                    },
 	                }
 	            ]
 	        };
@@ -6316,7 +6542,87 @@ struct VertexOutput {
 	`
 	};
 
-	class RenderSystem extends System$1 {
+	let weakMapTmp;
+	class System {
+	    constructor(name = "", fitRule) {
+	        this.id = IdGeneratorInstance$1.next();
+	        this.isSystem = true;
+	        this.name = "";
+	        this.loopTimes = 0;
+	        this.entitySet = new WeakMap();
+	        this.usedBy = [];
+	        this.cache = new WeakMap();
+	        this._disabled = false;
+	        this.name = name;
+	        this.disabled = false;
+	        this.rule = fitRule;
+	    }
+	    get disabled() {
+	        return this._disabled;
+	    }
+	    set disabled(value) {
+	        this._disabled = value;
+	    }
+	    checkUpdatedEntities(manager) {
+	        if (manager) {
+	            weakMapTmp = this.entitySet.get(manager);
+	            if (!weakMapTmp) {
+	                weakMapTmp = new Set();
+	                this.entitySet.set(manager, weakMapTmp);
+	            }
+	            manager.updatedEntities.forEach((item) => {
+	                if (this.query(item)) {
+	                    weakMapTmp.add(item);
+	                }
+	                else {
+	                    weakMapTmp.delete(item);
+	                }
+	            });
+	        }
+	        return this;
+	    }
+	    checkEntityManager(manager) {
+	        if (manager) {
+	            weakMapTmp = this.entitySet.get(manager);
+	            if (!weakMapTmp) {
+	                weakMapTmp = new Set();
+	                this.entitySet.set(manager, weakMapTmp);
+	            }
+	            else {
+	                weakMapTmp.clear();
+	            }
+	            manager.elements.forEach((item) => {
+	                if (this.query(item)) {
+	                    weakMapTmp.add(item);
+	                }
+	                else {
+	                    weakMapTmp.delete(item);
+	                }
+	            });
+	        }
+	        return this;
+	    }
+	    query(entity) {
+	        return this.rule(entity);
+	    }
+	    run(world) {
+	        var _a;
+	        if (world.entityManager) {
+	            (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
+	                this.handle(item, world.store);
+	            });
+	        }
+	        return this;
+	    }
+	    destroy() {
+	        for (let i = this.usedBy.length - 1; i > -1; i--) {
+	            this.usedBy[i].removeElement(this);
+	        }
+	        return this;
+	    }
+	}
+
+	class RenderSystem extends System {
 	    constructor(engine, clearer, viewport, scissor) {
 	        super("Render System", (entity) => {
 	            var _a;
@@ -6334,7 +6640,8 @@ struct VertexOutput {
 	        engine.context.configure({
 	            device: engine.device,
 	            format: engine.preferredFormat,
-	            size: [engine.canvas.width, engine.canvas.height]
+	            size: [engine.canvas.width, engine.canvas.height],
+	            compositingAlphaMode: "opaque"
 	        });
 	        this.setScissor(scissor).setViewport(viewport);
 	    }
@@ -6397,242 +6704,6 @@ struct VertexOutput {
 	    }
 	}
 
-	const IdGeneratorInstance = new IdGenerator();
-
-	let weakMapTmp;
-	class System {
-	    id = IdGeneratorInstance.next();
-	    isSystem = true;
-	    name = "";
-	    loopTimes = 0;
-	    entitySet = new WeakMap();
-	    usedBy = [];
-	    cache = new WeakMap();
-	    rule;
-	    _disabled = false;
-	    get disabled() {
-	        return this._disabled;
-	    }
-	    set disabled(value) {
-	        this._disabled = value;
-	    }
-	    constructor(name = "", fitRule) {
-	        this.name = name;
-	        this.disabled = false;
-	        this.rule = fitRule;
-	    }
-	    checkUpdatedEntities(manager) {
-	        if (manager) {
-	            weakMapTmp = this.entitySet.get(manager);
-	            if (!weakMapTmp) {
-	                weakMapTmp = new Set();
-	                this.entitySet.set(manager, weakMapTmp);
-	            }
-	            manager.updatedEntities.forEach((item) => {
-	                if (this.query(item)) {
-	                    weakMapTmp.add(item);
-	                }
-	                else {
-	                    weakMapTmp.delete(item);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    checkEntityManager(manager) {
-	        if (manager) {
-	            weakMapTmp = this.entitySet.get(manager);
-	            if (!weakMapTmp) {
-	                weakMapTmp = new Set();
-	                this.entitySet.set(manager, weakMapTmp);
-	            }
-	            else {
-	                weakMapTmp.clear();
-	            }
-	            manager.elements.forEach((item) => {
-	                if (this.query(item)) {
-	                    weakMapTmp.add(item);
-	                }
-	                else {
-	                    weakMapTmp.delete(item);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    query(entity) {
-	        return this.rule(entity);
-	    }
-	    run(world) {
-	        if (world.entityManager) {
-	            this.entitySet.get(world.entityManager)?.forEach((item) => {
-	                this.handle(item, world.store);
-	            });
-	        }
-	        return this;
-	    }
-	    destroy() {
-	        for (let i = this.usedBy.length - 1; i > -1; i--) {
-	            this.usedBy[i].removeElement(this);
-	        }
-	        return this;
-	    }
-	}
-
-	class PureSystem extends System {
-	    handler;
-	    constructor(name = "", fitRule, handler) {
-	        super(name, fitRule);
-	        this.handler = handler;
-	    }
-	    handle(entity, params) {
-	        this.handler(entity, params);
-	        return this;
-	    }
-	}
-
-	class Component {
-	    static unserialize(json) {
-	        const component = new Component(json.name, json.data);
-	        component.disabled = json.disabled;
-	        return component;
-	    }
-	    isComponent = true;
-	    id = IdGeneratorInstance.next();
-	    data = null;
-	    disabled = false;
-	    name;
-	    usedBy = [];
-	    dirty = false;
-	    constructor(name, data = null) {
-	        this.name = name;
-	        this.data = data;
-	    }
-	    clone() {
-	        return new Component(this.name, this.data);
-	    }
-	    serialize() {
-	        return {
-	            data: this.data,
-	            disabled: this.disabled,
-	            name: this.name,
-	            type: "component"
-	        };
-	    }
-	}
-
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$1 = (Base = Object, eventKeyList = []) => {
-	    return class EventFirer extends Base {
-	        static mixin = mixin$1;
-	        eventKeyList = eventKeyList;
-	        /**
-	         * store all the filters
-	         */
-	        filters = [];
-	        /**
-	         * store all the listeners by key
-	         */
-	        listeners = new Map();
-	        all(listener) {
-	            return this.filt(() => true, listener);
-	        }
-	        clearListenersByKey(eventKey) {
-	            this.listeners.delete(eventKey);
-	            return this;
-	        }
-	        clearAllListeners() {
-	            const keys = this.listeners.keys();
-	            for (const key of keys) {
-	                this.listeners.delete(key);
-	            }
-	            return this;
-	        }
-	        filt(rule, listener) {
-	            this.filters.push({
-	                listener,
-	                rule
-	            });
-	            return this;
-	        }
-	        fire(eventKey, target) {
-	            if (!this.checkEventKeyAvailable(eventKey)) {
-	                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
-	                return this;
-	            }
-	            const array = this.listeners.get(eventKey) || [];
-	            let len = array.length;
-	            let item;
-	            for (let i = 0; i < len; i++) {
-	                item = array[i];
-	                item.listener(target);
-	                item.times--;
-	                if (item.times <= 0) {
-	                    array.splice(i--, 1);
-	                    --len;
-	                }
-	            }
-	            return this.checkFilt(eventKey, target);
-	        }
-	        off(eventKey, listener) {
-	            const array = this.listeners.get(eventKey);
-	            if (!array) {
-	                return this;
-	            }
-	            const len = array.length;
-	            for (let i = 0; i < len; i++) {
-	                if (array[i].listener === listener) {
-	                    array.splice(i, 1);
-	                    break;
-	                }
-	            }
-	            return this;
-	        }
-	        on(eventKey, listener) {
-	            if (eventKey instanceof Array) {
-	                for (let i = 0, j = eventKey.length; i < j; i++) {
-	                    this.times(eventKey[i], Infinity, listener);
-	                }
-	                return this;
-	            }
-	            return this.times(eventKey, Infinity, listener);
-	        }
-	        once(eventKey, listener) {
-	            return this.times(eventKey, 1, listener);
-	        }
-	        times(eventKey, times, listener) {
-	            if (!this.checkEventKeyAvailable(eventKey)) {
-	                console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
-	                return this;
-	            }
-	            const array = this.listeners.get(eventKey) || [];
-	            if (!this.listeners.has(eventKey)) {
-	                this.listeners.set(eventKey, array);
-	            }
-	            array.push({
-	                listener,
-	                times
-	            });
-	            return this;
-	        }
-	        checkFilt(eventKey, target) {
-	            for (const item of this.filters) {
-	                if (item.rule(eventKey, target)) {
-	                    item.listener(target, eventKey);
-	                }
-	            }
-	            return this;
-	        }
-	        checkEventKeyAvailable(eventKey) {
-	            if (this.eventKeyList.length) {
-	                return this.eventKeyList.includes(eventKey);
-	            }
-	            return true;
-	        }
-	    };
-	};
-	var EventFirer = mixin$1(Object);
-
 	// 私有全局变量，外部无法访问
 	let elementTmp;
 	var EElementChangeEvent;
@@ -6640,18 +6711,20 @@ struct VertexOutput {
 	    EElementChangeEvent["ADD"] = "add";
 	    EElementChangeEvent["REMOVE"] = "remove";
 	})(EElementChangeEvent || (EElementChangeEvent = {}));
-	class Manager extends EventFirer {
-	    static Events = EElementChangeEvent;
-	    // private static eventObject: EventObject = {
-	    // 	component: null as any,
-	    // 	element: null as any,
-	    // 	eventKey: null as any,
-	    // 	manager: null as any
-	    // };
-	    elements = new Map();
-	    disabled = false;
-	    usedBy = [];
-	    isManager = true;
+	class Manager extends EventDispatcher {
+	    constructor() {
+	        super(...arguments);
+	        // private static eventObject: EventObject = {
+	        // 	component: null as any,
+	        // 	element: null as any,
+	        // 	eventKey: null as any,
+	        // 	manager: null as any
+	        // };
+	        this.elements = new Map();
+	        this.disabled = false;
+	        this.usedBy = [];
+	        this.isManager = true;
+	    }
 	    addElement(component) {
 	        if (this.has(component)) {
 	            this.removeElementByInstance(component);
@@ -6703,14 +6776,16 @@ struct VertexOutput {
 	        return this;
 	    }
 	    elementChangeDispatch(type, eventObject) {
+	        var _a, _b;
 	        for (const entity of this.usedBy) {
-	            entity.fire?.(type, eventObject);
+	            (_b = (_a = entity).fire) === null || _b === void 0 ? void 0 : _b.call(_a, type, eventObject);
 	            for (const manager of entity.usedBy) {
 	                manager.updatedEntities.add(entity);
 	            }
 	        }
 	    }
 	}
+	Manager.Events = EElementChangeEvent;
 
 	// import { IdGeneratorInstance } from "./Global";
 	// 私有全局变量，外部无法访问
@@ -6721,136 +6796,24 @@ struct VertexOutput {
 	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
 	})(EComponentEvent || (EComponentEvent = {}));
 	class ComponentManager extends Manager {
-	    isComponentManager = true;
-	    usedBy = [];
+	    constructor() {
+	        super(...arguments);
+	        this.isComponentManager = true;
+	        this.usedBy = [];
+	    }
 	}
-
-	const FIND_LEAVES_VISITOR = {
-	    enter: (node, result) => {
-	        if (!node.children.length) {
-	            result.push(node);
-	        }
-	    }
-	};
-	const ARRAY_VISITOR = {
-	    enter: (node, result) => {
-	        result.push(node);
-	    }
-	};
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base = Object) => {
-	    return class TreeNode extends Base {
-	        static mixin = mixin;
-	        static addNode(node, child) {
-	            if (TreeNode.hasAncestor(node, child)) {
-	                throw new Error("The node added is one of the ancestors of current one.");
-	            }
-	            node.children.push(child);
-	            child.parent = node;
-	            return node;
-	        }
-	        static depth(node) {
-	            if (!node.children.length) {
-	                return 1;
-	            }
-	            else {
-	                const childrenDepth = [];
-	                for (const item of node.children) {
-	                    item && childrenDepth.push(this.depth(item));
-	                }
-	                let max = 0;
-	                for (const item of childrenDepth) {
-	                    max = Math.max(max, item);
-	                }
-	                return 1 + max;
-	            }
-	        }
-	        static findLeaves(node) {
-	            const result = [];
-	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
-	            return result;
-	        }
-	        static findRoot(node) {
-	            if (node.parent) {
-	                return this.findRoot(node.parent);
-	            }
-	            return node;
-	        }
-	        static hasAncestor(node, ancestor) {
-	            if (!node.parent) {
-	                return false;
-	            }
-	            else {
-	                if (node.parent === ancestor) {
-	                    return true;
-	                }
-	                else {
-	                    return TreeNode.hasAncestor(node.parent, ancestor);
-	                }
-	            }
-	        }
-	        static removeNode(node, child) {
-	            if (node.children.includes(child)) {
-	                node.children.splice(node.children.indexOf(child), 1);
-	                child.parent = null;
-	            }
-	            return node;
-	        }
-	        static toArray(node) {
-	            const result = [];
-	            TreeNode.traverse(node, ARRAY_VISITOR, result);
-	            return result;
-	        }
-	        static traverse(node, visitor, rest) {
-	            visitor.enter?.(node, rest);
-	            visitor.visit?.(node, rest);
-	            for (const item of node.children) {
-	                item && TreeNode.traverse(item, visitor, rest);
-	            }
-	            visitor.leave?.(node, rest);
-	            return node;
-	        }
-	        parent = null;
-	        children = [];
-	        addNode(node) {
-	            return TreeNode.addNode(this, node);
-	        }
-	        depth() {
-	            return TreeNode.depth(this);
-	        }
-	        findLeaves() {
-	            return TreeNode.findLeaves(this);
-	        }
-	        findRoot() {
-	            return TreeNode.findRoot(this);
-	        }
-	        hasAncestor(ancestor) {
-	            return TreeNode.hasAncestor(this, ancestor);
-	        }
-	        removeNode(child) {
-	            return TreeNode.removeNode(this, child);
-	        }
-	        toArray() {
-	            return TreeNode.toArray(this);
-	        }
-	        traverse(visitor, rest) {
-	            return TreeNode.traverse(this, visitor, rest);
-	        }
-	    };
-	};
-	var TreeNode = mixin(Object);
 
 	const TreeNodeWithEvent = mixin$1(TreeNode);
 
-	let arr$1;
+	let arr;
 	class Entity extends TreeNodeWithEvent {
-	    id = IdGeneratorInstance.next();
-	    isEntity = true;
-	    componentManager = null;
-	    name = "";
-	    usedBy = [];
 	    constructor(name = "", componentManager) {
 	        super();
+	        this.id = IdGeneratorInstance$1.next();
+	        this.isEntity = true;
+	        this.componentManager = null;
+	        this.name = "";
+	        this.usedBy = [];
 	        this.name = name;
 	        this.registerComponentManager(componentManager);
 	    }
@@ -6895,304 +6858,16 @@ struct VertexOutput {
 	    }
 	    unregisterComponentManager() {
 	        if (this.componentManager) {
-	            arr$1 = this.componentManager.usedBy;
-	            arr$1.splice(arr$1.indexOf(this) - 1, 1);
+	            arr = this.componentManager.usedBy;
+	            arr.splice(arr.indexOf(this) - 1, 1);
 	            this.componentManager = null;
 	        }
 	        return this;
 	    }
 	}
 
-	// 私有全局变量，外部无法访问
-	let entityTmp;
-	class EntityManager {
-	    elements = new Map();
-	    data = null;
-	    disabled = false;
-	    updatedEntities = new Set();
-	    isEntityManager = true;
-	    usedBy = [];
-	    constructor(world) {
-	        if (world) {
-	            this.usedBy.push(world);
-	        }
-	    }
-	    addElement(entity) {
-	        if (this.has(entity)) {
-	            this.removeByInstance(entity);
-	        }
-	        return this.addComponentDirect(entity);
-	    }
-	    addComponentDirect(entity) {
-	        this.elements.set(entity.name, entity);
-	        entity.usedBy.push(this);
-	        this.updatedEntities.add(entity);
-	        return this;
-	    }
-	    clear() {
-	        this.elements.clear();
-	        return this;
-	    }
-	    createEntity(name) {
-	        const entity = new Entity(name);
-	        this.addElement(entity);
-	        return entity;
-	    }
-	    get(name) {
-	        entityTmp = this.elements.get(name);
-	        return entityTmp ? entityTmp : null;
-	    }
-	    has(entity) {
-	        if (typeof entity === "string") {
-	            return this.elements.has(entity);
-	        }
-	        else {
-	            return this.elements.has(entity.name);
-	        }
-	    }
-	    removeElement(entity) {
-	        return typeof entity === "string"
-	            ? this.removeByName(entity)
-	            : this.removeByInstance(entity);
-	    }
-	    removeByName(name) {
-	        entityTmp = this.elements.get(name);
-	        if (entityTmp) {
-	            this.elements.delete(name);
-	            this.deleteEntityFromSystemSet(entityTmp);
-	        }
-	        return this;
-	    }
-	    removeByInstance(entity) {
-	        if (this.elements.has(entity.name)) {
-	            this.elements.delete(entity.name);
-	            this.deleteEntityFromSystemSet(entity);
-	        }
-	        return this;
-	    }
-	    deleteEntityFromSystemSet(entity) {
-	        entity.usedBy.splice(entity.usedBy.indexOf(this), 1);
-	        for (const world of this.usedBy) {
-	            if (world.systemManager) {
-	                world.systemManager.elements.forEach((system) => {
-	                    if (system.entitySet.get(this)) {
-	                        system.entitySet.get(this).delete(entity);
-	                    }
-	                });
-	            }
-	        }
-	    }
-	}
-
-	let systemTmp;
-	var ESystemEvent;
-	(function (ESystemEvent) {
-	    ESystemEvent["BEFORE_RUN"] = "beforeRun";
-	    ESystemEvent["AFTER_RUN"] = "afterRun";
-	})(ESystemEvent || (ESystemEvent = {}));
-	class SystemManager extends Manager {
-	    static AFTER_RUN = ESystemEvent.AFTER_RUN;
-	    static BEFORE_RUN = ESystemEvent.BEFORE_RUN;
-	    static eventObject = {
-	        eventKey: null,
-	        manager: null,
-	        target: null
-	    };
-	    disabled = false;
-	    elements = new Map();
-	    loopTimes = 0;
-	    usedBy = [];
-	    constructor(world) {
-	        super();
-	        if (world) {
-	            this.usedBy.push(world);
-	        }
-	    }
-	    addElement(system) {
-	        if (this.elements.has(system.name)) {
-	            return this;
-	        }
-	        this.elements.set(system.name, system);
-	        this.updateSystemEntitySetByAddFromManager(system);
-	        return this;
-	    }
-	    clear() {
-	        this.elements.clear();
-	        return this;
-	    }
-	    removeByName(name) {
-	        systemTmp = this.elements.get(name);
-	        if (systemTmp) {
-	            this.elements.delete(name);
-	            this.updateSystemEntitySetByRemovedFromManager(systemTmp);
-	            systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
-	        }
-	        return this;
-	    }
-	    removeByInstance(system) {
-	        if (this.elements.has(system.name)) {
-	            this.elements.delete(system.name);
-	            this.updateSystemEntitySetByRemovedFromManager(system);
-	            system.usedBy.splice(system.usedBy.indexOf(this), 1);
-	        }
-	        return this;
-	    }
-	    run(world) {
-	        SystemManager.eventObject.eventKey = SystemManager.BEFORE_RUN;
-	        SystemManager.eventObject.manager = this;
-	        this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
-	        this.elements.forEach((item) => {
-	            item.checkUpdatedEntities(world.entityManager);
-	            item.run(world);
-	        });
-	        if (world.entityManager) {
-	            world.entityManager.updatedEntities.clear();
-	        }
-	        this.loopTimes++;
-	        SystemManager.eventObject.eventKey = SystemManager.AFTER_RUN;
-	        this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
-	        return this;
-	    }
-	    updateSystemEntitySetByRemovedFromManager(system) {
-	        for (const item of this.usedBy) {
-	            if (item.entityManager) {
-	                system.entitySet.delete(item.entityManager);
-	            }
-	        }
-	        return this;
-	    }
-	    updateSystemEntitySetByAddFromManager(system) {
-	        for (const item of this.usedBy) {
-	            if (item.entityManager) {
-	                system.checkEntityManager(item.entityManager);
-	            }
-	        }
-	        return this;
-	    }
-	}
-
-	let arr;
-	class World {
-	    name;
-	    entityManager = null;
-	    systemManager = null;
-	    store = new Map();
-	    id = IdGeneratorInstance.next();
-	    isWorld = true;
-	    constructor(name = "", entityManager, systemManager) {
-	        this.name = name;
-	        this.registerEntityManager(entityManager);
-	        this.registerSystemManager(systemManager);
-	    }
-	    add(element) {
-	        if (element.isEntity) {
-	            return this.addEntity(element);
-	        }
-	        else {
-	            return this.addSystem(element);
-	        }
-	    }
-	    addEntity(entity) {
-	        if (this.entityManager) {
-	            this.entityManager.addElement(entity);
-	        }
-	        else {
-	            throw new Error("The world doesn't have an entityManager yet.");
-	        }
-	        return this;
-	    }
-	    addSystem(system) {
-	        if (this.systemManager) {
-	            this.systemManager.addElement(system);
-	        }
-	        else {
-	            throw new Error("The world doesn't have a systemManager yet.");
-	        }
-	        return this;
-	    }
-	    clearAllEntities() {
-	        if (this.entityManager) {
-	            this.entityManager.clear();
-	        }
-	        return this;
-	    }
-	    createEntity(name) {
-	        return this.entityManager?.createEntity(name) || null;
-	    }
-	    hasEntity(entity) {
-	        if (this.entityManager) {
-	            return this.entityManager.has(entity);
-	        }
-	        return false;
-	    }
-	    hasSystem(system) {
-	        if (this.systemManager) {
-	            return this.systemManager.has(system);
-	        }
-	        return false;
-	    }
-	    registerEntityManager(manager) {
-	        this.unregisterEntityManager();
-	        this.entityManager = manager || new EntityManager(this);
-	        if (!this.entityManager.usedBy.includes(this)) {
-	            this.entityManager.usedBy.push(this);
-	        }
-	        return this;
-	    }
-	    registerSystemManager(manager) {
-	        this.unregisterSystemManager();
-	        this.systemManager = manager || new SystemManager(this);
-	        if (!this.systemManager.usedBy.includes(this)) {
-	            this.systemManager.usedBy.push(this);
-	        }
-	        return this;
-	    }
-	    remove(element) {
-	        if (element.isEntity) {
-	            return this.removeEntity(element);
-	        }
-	        else {
-	            return this.removeSystem(element);
-	        }
-	    }
-	    removeEntity(entity) {
-	        if (this.entityManager) {
-	            this.entityManager.removeElement(entity);
-	        }
-	        return this;
-	    }
-	    removeSystem(system) {
-	        if (this.systemManager) {
-	            this.systemManager.removeElement(system);
-	        }
-	        return this;
-	    }
-	    run() {
-	        if (this.systemManager) {
-	            this.systemManager.run(this);
-	        }
-	        return this;
-	    }
-	    unregisterEntityManager() {
-	        if (this.entityManager) {
-	            arr = this.entityManager.usedBy;
-	            arr.splice(arr.indexOf(this) - 1, 1);
-	            this.entityManager = null;
-	        }
-	        return this;
-	    }
-	    unregisterSystemManager() {
-	        if (this.systemManager) {
-	            arr = this.systemManager.usedBy;
-	            arr.splice(arr.indexOf(this) - 1, 1);
-	            this.entityManager = null;
-	        }
-	        return this;
-	    }
-	}
-
 	var createCamera = (projection, name = "camera", world) => {
-	    const entity = new Entity$1(name);
+	    const entity = new Entity(name);
 	    entity.addComponent(projection)
 	        .addComponent(new Matrix4Component(TRANSLATION_3D))
 	        .addComponent(new Matrix4Component(ROTATION_3D))
@@ -7206,7 +6881,7 @@ struct VertexOutput {
 	};
 
 	var createMesh = (geometry, name = "mesh", world) => {
-	    const entity = new Entity$1(name);
+	    const entity = new Entity(name);
 	    entity.addComponent(geometry)
 	        .addComponent(new Matrix4Component(TRANSLATION_3D))
 	        .addComponent(new Matrix4Component(ROTATION_3D))
@@ -7234,19 +6909,20 @@ struct VertexOutput {
 	exports.COMPONENT_NAME = constants$1;
 	exports.ColorMaterial = ColorMaterial;
 	exports.Component = Component;
-	exports.ComponentManager = ComponentManager;
+	exports.ComponentManager = ComponentManager$1;
 	exports.ComponentProxy = index$1;
 	exports.DepthMaterial = NormalMaterial$1;
-	exports.Entity = Entity;
+	exports.Entity = Entity$1;
 	exports.EntityFactory = index;
 	exports.Entitymanager = EntityManager;
 	exports.EuclidPosition3 = EuclidPosition3;
 	exports.EulerRotation3 = EulerRotation3;
+	exports.EventFire = EventDispatcher;
 	exports.Geometry3 = Geometry3;
 	exports.Geometry3Factory = index$2;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;
-	exports.Manager = Manager;
+	exports.Manager = Manager$1;
 	exports.Mathx = Mathx_module;
 	exports.Matrix4Component = Matrix4Component;
 	exports.NormalMaterial = NormalMaterial;
@@ -7258,9 +6934,10 @@ struct VertexOutput {
 	exports.Sampler = Sampler;
 	exports.ShaderMaterial = ShaderMaterial;
 	exports.SpritesheetTexture = SpritesheetTexture;
-	exports.System = System;
+	exports.System = System$1;
 	exports.SystemManager = SystemManager;
 	exports.TextureMaterial = TextureMaterial;
+	exports.Timeline = Timeline;
 	exports.Vector3Scale3 = Vector3Scale3;
 	exports.WebGLEngine = WebGLEngine;
 	exports.WebGPUClearer = Clearer;

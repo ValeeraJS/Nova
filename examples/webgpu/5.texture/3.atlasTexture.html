@@ -32,7 +32,7 @@
 				const engine = new Nova.WebGPUEngine(canvas);
 				const world = new Nova.World();
 
-				const geo = Nova.Geometry3Factory.createTriangle3();
+				const geo = Nova.Geometry3Factory.createPlane3(3, 3);
 				const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 				const texture = new Nova.AtlasTexture(atlasJson);
 				const material = new Nova.TextureMaterial(texture);
@@ -55,28 +55,13 @@
 					let renderer = new Nova.WebGPUMeshRenderer(engine);
 					renderSystem.addRenderer(renderer);
 					world.addSystem(renderSystem);
-					loop();
 				});
 
-				function loop() {
+				let timeline = new Nova.Timeline();
+				timeline.addTask(() => {
 					world.run();
-					// rotationProxy.y -= 0.01;
-					requestAnimationFrame(loop);
-				}
-
-				// createGUI();
-
-				// function createGUI() {
-				// 	const gui = new dat.GUI();
-				// 	const options = {
-				// 		frame: 0
-				// 	};
-				// 	gui.add(options, "frame", 0, atlasJson.frames.length)
-				// 		.step(1)
-				// 		.onChange((v) => {
-				// 			texture.setFrame(v);
-				// 		});
-				// }
+				});
+				timeline.start();
 			});
 	</script>
 </body>

@@ -28,7 +28,8 @@ export default class RenderSystem extends System {
 		engine.context.configure({
 			device: engine.device,
 			format: engine.preferredFormat,
-			size: [engine.canvas.width, engine.canvas.height]
+			size: [engine.canvas.width, engine.canvas.height],
+			compositingAlphaMode: "opaque"
 		});
 		this.setScissor(scissor).setViewport(viewport);
 	}

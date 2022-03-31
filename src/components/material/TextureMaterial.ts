@@ -1,4 +1,5 @@
-import { Component } from "@valeera/x/src";
+import { Component } from "@valeera/x";
+import AtlasTexture from "../texture/AtlasTexture";
 import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
 import IMaterial, { IShaderCode } from "./IMatrial";
@@ -34,7 +35,7 @@ const wgslShaders = {
 
 export default class TextureMaterial extends Component<IShaderCode> implements IMaterial {
 	data!: IShaderCode;
-	constructor(texture: ImageBitmapTexture, sampler: Sampler = new Sampler()) {
+	constructor(texture: ImageBitmapTexture | AtlasTexture, sampler: Sampler = new Sampler()) {
 		super("material", {
 			...wgslShaders,
 			uniforms: [

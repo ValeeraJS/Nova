@@ -54,6 +54,7 @@ export default class EuclidPosition3 extends APosition3 {
 
     update() {
         Matrix4.fromTranslation(this.vec3, this.data);
+        this.dirty = true;
 
         return this;
     }

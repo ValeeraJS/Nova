@@ -1,4 +1,4 @@
-import { Component } from "@valeera/x/src";
+import { Component } from "@valeera/x";
 import IMaterial, { IShaderCode, IUniformSlot } from "./IMatrial";
 
 export default class ShaderMaterial extends Component<IShaderCode> implements IMaterial {

@@ -22,13 +22,13 @@
 			let renderSystem = new Nova.WebGPURenderSystem(engine, clearer);
 			world.addSystem(renderSystem);
 			createGUI(clearer);
-			loop();
 		});
 
-		function loop() {
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
 			world.run();
-			requestAnimationFrame(loop);
-		}
+		});
+		timeline.start();
 
 		function createGUI(clearer) {
 			const gui = new dat.GUI();

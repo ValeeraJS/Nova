@@ -197,7 +197,7 @@ export default class MeshRenderer implements IRenderer {
 			},
 			depthStencil: {
 				depthWriteEnabled: true,
-				depthCompare: 'less',
+				depthCompare: 'always',
 				format: 'depth24plus',
 			},
 		});
@@ -290,6 +290,19 @@ export default class MeshRenderer implements IRenderer {
 			targets: [
 				{
 					format: this.engine.preferredFormat,
+					blend: material?.data.blend
+					// blend: {
+					// 	color: {
+					// 		srcFactor: 'src-alpha',
+					// 		dstFactor: 'one',
+					// 		operation: 'add',
+					// 	},
+					// 	alpha: {
+					// 		srcFactor: 'zero',
+					// 		dstFactor: 'one',
+					// 		operation: 'add',
+					// 	},
+					// } as any,
 				}
 			]
 		};
