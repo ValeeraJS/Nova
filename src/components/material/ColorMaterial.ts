@@ -3,12 +3,12 @@ import Material from "./Material";
 const wgslShaders = {
 	vertex: `
 		struct Uniforms {
-			modelViewProjectionMatrix : mat4x4<f32>;
+			modelViewProjectionMatrix : mat4x4<f32>
 	  	};
 	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 		struct VertexOutput {
-			@builtin(position) position : vec4<f32>;
+			@builtin(position) position : vec4<f32>
 		};
 
 		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
@@ -19,7 +19,7 @@ const wgslShaders = {
 	`,
 	fragment: `
 		struct Uniforms {
-			color : vec4<f32>;
+			color : vec4<f32>
 	  	};
 	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
 
@@ -36,10 +36,7 @@ export default class ColorMaterial extends Material {
 			value: color,
 			binding: 1,
 			dirty: true,
-			type: "uniform-buffer",
-			buffer: {
-				type: "",
-			}
+			type: "uniform-buffer"
 		}]);
 		this.dirty = true;
 	}

@@ -45,7 +45,7 @@
 
 		function createGUI() {
 			const gui = new dat.GUI();
-			const f = gui.addFolder("set clear color");
+			const f = gui.addFolder("set color");
 			const options = {
 				color: {
 					r: 255,
@@ -64,6 +64,7 @@
 					options.color.b / 255,
 					options.alpha
 				);
+				console.log(material)
 			}
 		}
 	</script>

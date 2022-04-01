@@ -6,13 +6,13 @@ import Material from "./Material";
 const CommonData = {
     date: new Date(),
     vs: `struct Uniforms {
-        matrix: mat4x4<f32>;
+        matrix: mat4x4<f32>
     }
     @bind(0) @group(0) var<uniform<> uniforms: Uniforms;
 
     struct VertexOutput {
-        @builtin(position) position: vec4<f32>;
-        @location(0) uv: vec2<f32>;
+        @builtin(position) position: vec4<f32>,
+        @location(0) uv: vec2<f32>
     }
 
     @stage(vertex) fn main(@location(0) position: vec3<f32>, @location(2) uv: vec2<f32>) -> VertexOutput {
