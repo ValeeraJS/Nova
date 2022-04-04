@@ -469,6 +469,23 @@
 		VIEWING_3D: VIEWING_3D
 	});
 
+	const POSITION = "position";
+	const VERTICES = "vertices";
+	const VERTICES_COLOR = "vertices_color";
+	const NORMAL = "normal";
+	const INDEX = "index";
+	const UV = "uv";
+
+	var constants$1 = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		POSITION: POSITION,
+		VERTICES: VERTICES,
+		VERTICES_COLOR: VERTICES_COLOR,
+		NORMAL: NORMAL,
+		INDEX: INDEX,
+		UV: UV
+	});
+
 	class Geometry3 extends Component$1 {
 	    constructor(count = 0, topology = "triangle-list", cullMode = "none", data = []) {
 	        super(GEOMETRY_3D, data);
@@ -497,24 +514,32 @@
 	        });
 	        this.dirty = true;
 	    }
+	    transform(matrix) {
+	        for (let data of this.data) {
+	            for (let attr of data.attributes) {
+	                if (attr.name === POSITION) {
+	                    for (let i = 0; i < data.data.length; i += data.stride) {
+	                        transformMatrix4$2(data.data, matrix, i + attr.offset);
+	                    }
+	                    this.dirty = true;
+	                    return this;
+	                }
+	            }
+	        }
+	        return this;
+	    }
 	}
-
-	const POSITION = "position";
-	const VERTICES = "vertices";
-	const VERTICES_COLOR = "vertices_color";
-	const NORMAL = "normal";
-	const INDEX = "index";
-	const UV = "uv";
-
-	var constants$1 = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		POSITION: POSITION,
-		VERTICES: VERTICES,
-		VERTICES_COLOR: VERTICES_COLOR,
-		NORMAL: NORMAL,
-		INDEX: INDEX,
-		UV: UV
-	});
+	const transformMatrix4$2 = (a, m, offset) => {
+	    let ax = a[0 + offset];
+	    let ay = a[1 + offset];
+	    let az = a[2 + offset];
+	    let ag = m[3 + offset] * ax + m[7] * ay + m[11] * az + m[15];
+	    ag = ag || 1.0;
+	    a[0 + offset] = (m[0] * ax + m[4] * ay + m[8] * az + m[12]) / ag;
+	    a[1 + offset] = (m[1] * ax + m[5] * ay + m[9] * az + m[13]) / ag;
+	    a[2 + offset] = (m[2] * ax + m[6] * ay + m[10] * az + m[14]) / ag;
+	    return a;
+	};
 
 	const DEFAULT_OPTIONS = {
 	    hasNormal: true,
@@ -546,7 +571,6 @@
 	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	    // let count = len / 3;
 	    let geo = new Geometry3(len, options.topology, options.cullMode);
-	    console.log(indices, positions, normals, uvs);
 	    // TODO indices 现在都是非索引版本
 	    if (options.combine) {
 	        let pickers = [{
@@ -629,301 +653,6 @@
 	        //     result.set([0.5, 1], 4);
 	        //     geo.addAttribute(UV, result, 2);
 	        // }
-	        return geo;
-	    }
-	};
-
-	const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segmentX: 1, segmentY: 1 });
-	var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
-	    let stride = 3;
-	    const halfX = width * 0.5;
-	    const halfY = height * 0.5;
-	    const gridX = Math.max(1, Math.round(options.segmentX));
-	    const gridY = Math.max(1, Math.round(options.segmentY));
-	    const gridX1 = gridX + 1;
-	    const gridY1 = gridY + 1;
-	    const segmentWidth = width / gridX;
-	    const segmentHeight = height / gridY;
-	    const indices = [];
-	    const positions = [];
-	    const normals = [];
-	    const uvs = [];
-	    for (let iy = 0; iy < gridY1; iy++) {
-	        const y = iy * segmentHeight - halfY;
-	        for (let ix = 0; ix < gridX1; ix++) {
-	            const x = ix * segmentWidth - halfX;
-	            positions.push(x, -y, 0);
-	            normals.push(0, 0, 1);
-	            uvs.push(ix / gridX);
-	            uvs.push(iy / gridY);
-	        }
-	    }
-	    for (let iy = 0; iy < gridY; iy++) {
-	        for (let ix = 0; ix < gridX; ix++) {
-	            const a = ix + gridX1 * iy;
-	            const b = ix + gridX1 * (iy + 1);
-	            const c = (ix + 1) + gridX1 * (iy + 1);
-	            const d = (ix + 1) + gridX1 * iy;
-	            indices.push(a, b, d);
-	            indices.push(b, c, d);
-	        }
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    // let count = len / 3;
-	    let geo = new Geometry3(len, options.topology, options.cullMode);
-	    console.log(indices, positions, normals, uvs);
-	    // TODO indices 现在都是非索引版本
-	    if (options.combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (options.hasNormal && options.hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: 'uv',
-	                offset: 6,
-	                length: 2,
-	            });
-	        }
-	        else if (options.hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        else if (options.hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            result[2 + strideI] = positions[i3 + 2];
-	            if (options.hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (options.hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
-	                }
-	            }
-	            else if (options.hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        // result.set(t.a);
-	        // result.set(t.b, stride);
-	        // result.set(t.c, stride + stride);
-	        // if (options.hasNormal) {
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, stride + 3);
-	        //     result.set(normal, stride + stride + 3);
-	        //     pickers.push({
-	        //         name: 'normal',
-	        //         offset: 3,
-	        //         length: 3,
-	        //     });
-	        // }
-	        // if (options.hasUV) {
-	        //     let offset = options.hasNormal ? 6 : 3;
-	        //     result.set([0, 1], offset);
-	        //     result.set([1, 1], stride + offset);
-	        //     result.set([0.5, 0], stride + stride + offset);
-	        //     pickers.push({
-	        //         name: UV,
-	        //         offset,
-	        //         length: 2,
-	        //     });
-	        // }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        console.log(geo);
-	        return geo;
-	    }
-	    else {
-	        // let result = new Float32Array(9);
-	        // result.set(t.a);
-	        // result.set(t.b, 3);
-	        // result.set(t.c, 6);
-	        // geo.addAttribute(POSITION, result, 3);
-	        // if (options.hasNormal) {
-	        //     result = new Float32Array(9);
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 0);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, 6);
-	        //     geo.addAttribute(NORMAL, result, 3);
-	        // }
-	        // if (options.hasUV) {
-	        //     result = new Float32Array(6);
-	        //     result.set([0, 0], 0);
-	        //     result.set([1, 0], 2);
-	        //     result.set([0.5, 1], 4);
-	        //     geo.addAttribute(UV, result, 2);
-	        // }
-	        return geo;
-	    }
-	};
-
-	/**
-	 * @function clamp
-	 * @desc 将目标值限定在指定区间内。假定min小于等于max才能得到正确的结果。
-	 * @see clampSafe
-	 * @param {number} val 目标值
-	 * @param {number} min 最小值，必须小于等于max
-	 * @param {number} max 最大值，必须大于等于min
-	 * @returns {number} 限制之后的值
-	 * @example Mathx.clamp(1, 0, 2); // 1;
-	 * Mathx.clamp(-1, 0, 2); // 0;
-	 * Mathx.clamp(3, 0, 2); // 2;
-	 */
-	var clamp$2 = (val, min, max) => {
-	    return Math.max(min, Math.min(max, val));
-	};
-
-	let ax$3, ay$3, az$3, bx$3, by$3, bz$3;
-	const create$c = (x = 0, y = 0, z = 0, out = new Float32Array(3)) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    return out;
-	};
-	const cross$3 = (a, b, out = new Float32Array(3)) => {
-	    ax$3 = a[0];
-	    ay$3 = a[1];
-	    az$3 = a[2];
-	    bx$3 = b[0];
-	    by$3 = b[1];
-	    bz$3 = b[2];
-	    out[0] = ay$3 * bz$3 - az$3 * by$3;
-	    out[1] = az$3 * bx$3 - ax$3 * bz$3;
-	    out[2] = ax$3 * by$3 - ay$3 * bx$3;
-	    return out;
-	};
-	const divideScalar$2 = (a, b, out = new Float32Array(3)) => {
-	    out[0] = a[0] / b;
-	    out[1] = a[1] / b;
-	    out[2] = a[2] / b;
-	    return out;
-	};
-	const length$3 = (a) => {
-	    return Math.sqrt(lengthSquared$3(a));
-	};
-	const lengthSquared$3 = (a) => {
-	    return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
-	};
-	const minus$4 = (a, b, out = new Float32Array(3)) => {
-	    out[0] = a[0] - b[0];
-	    out[1] = a[1] - b[1];
-	    out[2] = a[2] - b[2];
-	    return out;
-	};
-	const normalize$3 = (a, out = new Float32Array(3)) => {
-	    return divideScalar$2(a, length$3(a) || 1, out);
-	};
-
-	const defaultA$1 = [-1, -1, 0];
-	const defaultB$1 = [1, -1, 0];
-	const defaultC$1 = [0, 1, 0];
-	const ab$1 = new Float32Array(3);
-	const bc$1 = new Float32Array(3);
-	const create$b = (a = new Float32Array(defaultA$1), b = new Float32Array(defaultB$1), c = new Float32Array(defaultC$1)) => {
-	    return { a, b, c };
-	};
-	const normal$1 = (t, out = create$c()) => {
-	    minus$4(t.c, t.b, bc$1);
-	    minus$4(t.b, t.a, ab$1);
-	    cross$3(ab$1, bc$1, out);
-	    return normalize$3(out);
-	};
-
-	var createTriangle3 = (t = create$b(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
-	    let geo = new Geometry3(3, topology, cullMode);
-	    let stride = 3;
-	    if (options.combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (options.hasNormal && options.hasUV) {
-	            stride = 8;
-	        }
-	        else if (options.hasNormal) {
-	            stride = 6;
-	        }
-	        else if (options.hasUV) {
-	            stride = 5;
-	        }
-	        let result = new Float32Array(stride * 3);
-	        result.set(t.a);
-	        result.set(t.b, stride);
-	        result.set(t.c, stride + stride);
-	        if (options.hasNormal) {
-	            let normal = normal$1(t);
-	            result.set(normal, 3);
-	            result.set(normal, stride + 3);
-	            result.set(normal, stride + stride + 3);
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        if (options.hasUV) {
-	            let offset = options.hasNormal ? 6 : 3;
-	            result.set([0, 1], offset);
-	            result.set([1, 1], stride + offset);
-	            result.set([0.5, 0], stride + stride + offset);
-	            pickers.push({
-	                name: UV,
-	                offset,
-	                length: 2,
-	            });
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        let result = new Float32Array(9);
-	        result.set(t.a);
-	        result.set(t.b, 3);
-	        result.set(t.c, 6);
-	        geo.addAttribute(POSITION, result, 3);
-	        if (options.hasNormal) {
-	            result = new Float32Array(9);
-	            let normal = normal$1(t);
-	            result.set(normal, 0);
-	            result.set(normal, 3);
-	            result.set(normal, 6);
-	            geo.addAttribute(NORMAL, result, 3);
-	        }
-	        if (options.hasUV) {
-	            result = new Float32Array(6);
-	            result.set([0, 0], 0);
-	            result.set([1, 0], 2);
-	            result.set([0.5, 1], 4);
-	            geo.addAttribute(UV, result, 2);
-	        }
 	        return geo;
 	    }
 	};
@@ -3682,7 +3411,7 @@
 		transformQuat: transformQuat
 	});
 
-	let ax, ay, az, aw, bx, by, bz, bw;
+	let ax$3, ay$3, az$3, aw, bx$3, by$3, bz$3, bw;
 	let s$1 = 0, c$1 = 0, rad = 0, dotTmp = 0, omega = 0, scale0 = 0, scale1 = 0;
 	let tmpVec3 = new Float32Array(3);
 	const angleTo = (a, b) => {
@@ -3749,16 +3478,16 @@
 	    return out;
 	};
 	const invert$4 = (a, out = new Float32Array(4)) => {
-	    ax = a[0],
-	        ay = a[1],
-	        az = a[2],
+	    ax$3 = a[0],
+	        ay$3 = a[1],
+	        az$3 = a[2],
 	        aw = a[3];
-	    dotTmp = ax * ax + ay * ay + az * az + aw * aw;
+	    dotTmp = ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw * aw;
 	    if (dotTmp) {
 	        c$1 = 1.0 / dotTmp;
-	        out[0] = -ax * c$1;
-	        out[1] = -ay * c$1;
-	        out[2] = -az * c$1;
+	        out[0] = -ax$3 * c$1;
+	        out[1] = -ay$3 * c$1;
+	        out[2] = -az$3 * c$1;
 	        out[3] = aw * c$1;
 	    }
 	    else {
@@ -3771,30 +3500,30 @@
 	};
 	const lerp$1 = lerp$2;
 	const multiply$1 = (a, b, out) => {
-	    ax = a[0],
-	        ay = a[1],
-	        az = a[2],
+	    ax$3 = a[0],
+	        ay$3 = a[1],
+	        az$3 = a[2],
 	        aw = a[3];
-	    bx = b[0],
-	        by = b[1],
-	        bz = b[2],
+	    bx$3 = b[0],
+	        by$3 = b[1],
+	        bz$3 = b[2],
 	        bw = b[3];
-	    out[0] = ax * bw + aw * bx + ay * bz - az * by;
-	    out[1] = ay * bw + aw * by + az * bx - ax * bz;
-	    out[2] = az * bw + aw * bz + ax * by - ay * bx;
-	    out[3] = aw * bw - ax * bx - ay * by - az * bz;
+	    out[0] = ax$3 * bw + aw * bx$3 + ay$3 * bz$3 - az$3 * by$3;
+	    out[1] = ay$3 * bw + aw * by$3 + az$3 * bx$3 - ax$3 * bz$3;
+	    out[2] = az$3 * bw + aw * bz$3 + ax$3 * by$3 - ay$3 * bx$3;
+	    out[3] = aw * bw - ax$3 * bx$3 - ay$3 * by$3 - az$3 * bz$3;
 	    return out;
 	};
 	const random$1 = (out) => {
-	    ax = Math.random();
-	    ay = Math.random();
-	    az = Math.random();
-	    c$1 = Math.sqrt(1 - ax);
-	    s$1 = Math.sqrt(ax);
-	    out[0] = c$1 * Math.sin(2.0 * Math.PI * ay);
-	    out[1] = c$1 * Math.cos(2.0 * Math.PI * ay);
-	    out[2] = s$1 * Math.sin(2.0 * Math.PI * az);
-	    out[3] = s$1 * Math.cos(2.0 * Math.PI * az);
+	    ax$3 = Math.random();
+	    ay$3 = Math.random();
+	    az$3 = Math.random();
+	    c$1 = Math.sqrt(1 - ax$3);
+	    s$1 = Math.sqrt(ax$3);
+	    out[0] = c$1 * Math.sin(2.0 * Math.PI * ay$3);
+	    out[1] = c$1 * Math.cos(2.0 * Math.PI * ay$3);
+	    out[2] = s$1 * Math.sin(2.0 * Math.PI * az$3);
+	    out[3] = s$1 * Math.cos(2.0 * Math.PI * az$3);
 	    return out;
 	};
 	const rotationTo = (a, b, out) => {
@@ -3826,61 +3555,61 @@
 	};
 	const rotateX = (a, rad, out) => {
 	    rad *= 0.5;
-	    ax = a[0],
-	        ay = a[1],
-	        az = a[2],
+	    ax$3 = a[0],
+	        ay$3 = a[1],
+	        az$3 = a[2],
 	        aw = a[3];
-	    bx = Math.sin(rad),
+	    bx$3 = Math.sin(rad),
 	        bw = Math.cos(rad);
-	    out[0] = ax * bw + aw * bx;
-	    out[1] = ay * bw + az * bx;
-	    out[2] = az * bw - ay * bx;
-	    out[3] = aw * bw - ax * bx;
+	    out[0] = ax$3 * bw + aw * bx$3;
+	    out[1] = ay$3 * bw + az$3 * bx$3;
+	    out[2] = az$3 * bw - ay$3 * bx$3;
+	    out[3] = aw * bw - ax$3 * bx$3;
 	    return out;
 	};
 	const rotateY = (a, rad, out) => {
 	    rad *= 0.5;
-	    ax = a[0],
-	        ay = a[1],
-	        az = a[2],
+	    ax$3 = a[0],
+	        ay$3 = a[1],
+	        az$3 = a[2],
 	        aw = a[3];
-	    by = Math.sin(rad),
+	    by$3 = Math.sin(rad),
 	        bw = Math.cos(rad);
-	    out[0] = ax * bw - az * by;
-	    out[1] = ay * bw + aw * by;
-	    out[2] = az * bw + ax * by;
-	    out[3] = aw * bw - ay * by;
+	    out[0] = ax$3 * bw - az$3 * by$3;
+	    out[1] = ay$3 * bw + aw * by$3;
+	    out[2] = az$3 * bw + ax$3 * by$3;
+	    out[3] = aw * bw - ay$3 * by$3;
 	    return out;
 	};
 	const rotateZ = (a, rad, out) => {
 	    rad *= 0.5;
-	    ax = a[0],
-	        ay = a[1],
-	        az = a[2],
+	    ax$3 = a[0],
+	        ay$3 = a[1],
+	        az$3 = a[2],
 	        aw = a[3];
-	    bz = Math.sin(rad),
+	    bz$3 = Math.sin(rad),
 	        bw = Math.cos(rad);
-	    out[0] = ax * bw + ay * bz;
-	    out[1] = ay * bw - ax * bz;
-	    out[2] = az * bw + aw * bz;
-	    out[3] = aw * bw - az * bz;
+	    out[0] = ax$3 * bw + ay$3 * bz$3;
+	    out[1] = ay$3 * bw - ax$3 * bz$3;
+	    out[2] = az$3 * bw + aw * bz$3;
+	    out[3] = aw * bw - az$3 * bz$3;
 	    return out;
 	};
 	const slerp = (a, b, t, out) => {
-	    ax = a[0],
-	        ay = a[1],
-	        az = a[2],
+	    ax$3 = a[0],
+	        ay$3 = a[1],
+	        az$3 = a[2],
 	        aw = a[3];
-	    bx = b[0],
-	        by = b[1],
-	        bz = b[2],
+	    bx$3 = b[0],
+	        by$3 = b[1],
+	        bz$3 = b[2],
 	        bw = b[3];
-	    c$1 = ax * bx + ay * by + az * bz + aw * bw;
+	    c$1 = ax$3 * bx$3 + ay$3 * by$3 + az$3 * bz$3 + aw * bw;
 	    if (c$1 < 0.0) {
 	        c$1 = -c$1;
-	        bx = -bx;
-	        by = -by;
-	        bz = -bz;
+	        bx$3 = -bx$3;
+	        by$3 = -by$3;
+	        bz$3 = -bz$3;
 	        bw = -bw;
 	    }
 	    if (1.0 - c$1 > EPSILON) {
@@ -3893,9 +3622,9 @@
 	        scale0 = 1.0 - t;
 	        scale1 = t;
 	    }
-	    out[0] = scale0 * ax + scale1 * bx;
-	    out[1] = scale0 * ay + scale1 * by;
-	    out[2] = scale0 * az + scale1 * bz;
+	    out[0] = scale0 * ax$3 + scale1 * bx$3;
+	    out[1] = scale0 * ay$3 + scale1 * by$3;
+	    out[2] = scale0 * az$3 + scale1 * bz$3;
 	    out[3] = scale0 * aw + scale1 * bw;
 	    return out;
 	};
@@ -3971,7 +3700,7 @@
 	    out[1] = Math.ceil(a[1]);
 	    return out;
 	};
-	const clamp = (a, min, max, out = new Float32Array(2)) => {
+	const clamp$2 = (a, min, max, out = new Float32Array(2)) => {
 	    out[0] = clampCommon(a[0], min[0], max[0]);
 	    out[1] = clampCommon(a[1], min[1], max[1]);
 	    return out;
@@ -4005,7 +3734,7 @@
 	    out[1] = a[1];
 	    return out;
 	};
-	const cross = (a, b) => {
+	const cross$3 = (a, b) => {
 	    return a[0] * b[1] - a[1] * b[0];
 	};
 	const create$2 = (x = 0, y = 0, out = new Float32Array(2)) => {
@@ -4031,7 +3760,7 @@
 	    out[1] = a[1] / b[1];
 	    return out;
 	};
-	const divideScalar = (a, scalar, out = new Float32Array(2)) => {
+	const divideScalar$2 = (a, scalar, out = new Float32Array(2)) => {
 	    return multiplyScalar(a, 1 / scalar, out);
 	};
 	const dot = (a, b) => {
@@ -4079,13 +3808,13 @@
 	    out[1] = 1 / a[1] || 0;
 	    return out;
 	};
-	const length = (a) => {
+	const length$3 = (a) => {
 	    return Math.sqrt(a[0] * a[0] + a[1] * a[1]);
 	};
 	const lengthManhattan = (a) => {
 	    return Math.abs(a[0]) + Math.abs(a[1]);
 	};
-	const lengthSquared = (a) => {
+	const lengthSquared$3 = (a) => {
 	    return a[0] * a[0] + a[1] * a[1];
 	};
 	const lerp = (a, b, alpha, out = new Float32Array(2)) => {
@@ -4103,7 +3832,7 @@
 	    out[1] = Math.min(a[1], b[1]);
 	    return out;
 	};
-	const minus = (a, b, out = new Float32Array(2)) => {
+	const minus$4 = (a, b, out = new Float32Array(2)) => {
 	    out[0] = a[0] - b[0];
 	    out[1] = a[1] - b[0];
 	    return out;
@@ -4128,8 +3857,8 @@
 	    out[1] = -a[1];
 	    return out;
 	};
-	const normalize = (a, out = new Float32Array(2)) => {
-	    return divideScalar(a, length(a) || 1, out);
+	const normalize$3 = (a, out = new Float32Array(2)) => {
+	    return divideScalar$2(a, length$3(a) || 1, out);
 	};
 	const random = (length = 1, out = new Float32Array(2)) => {
 	    x$4 = Math.random() * DEG_360_RAD;
@@ -4157,7 +3886,7 @@
 	    return out;
 	};
 	const setLength = (a, length, out = new Float32Array(2)) => {
-	    normalize(a, out);
+	    normalize$3(a, out);
 	    multiplyScalar(out, length, out);
 	    return out;
 	};
@@ -4167,7 +3896,7 @@
 	    return arr;
 	};
 	const toPalorJson = (a, p = { a: 0, r: 0 }) => {
-	    p.r = length(a);
+	    p.r = length$3(a);
 	    p.a = angle(a);
 	    return p;
 	};
@@ -4193,7 +3922,7 @@
 		addScalar: addScalar,
 		angle: angle,
 		ceil: ceil,
-		clamp: clamp,
+		clamp: clamp$2,
 		clampSafe: clampSafe,
 		clampLength: clampLength,
 		clampScalar: clampScalar,
@@ -4201,13 +3930,13 @@
 		closeToRect: closeToRect,
 		closeToManhattan: closeToManhattan,
 		clone: clone,
-		cross: cross,
+		cross: cross$3,
 		create: create$2,
 		distanceTo: distanceTo,
 		distanceToManhattan: distanceToManhattan,
 		distanceToSquared: distanceToSquared,
 		divide: divide,
-		divideScalar: divideScalar,
+		divideScalar: divideScalar$2,
 		dot: dot,
 		equals: equals$1,
 		floor: floor,
@@ -4218,18 +3947,18 @@
 		fromPolar: fromPolar,
 		fromScalar: fromScalar,
 		inverse: inverse,
-		length: length,
+		length: length$3,
 		lengthManhattan: lengthManhattan,
-		lengthSquared: lengthSquared,
+		lengthSquared: lengthSquared$3,
 		lerp: lerp,
 		max: max,
 		min: min,
-		minus: minus,
+		minus: minus$4,
 		minusScalar: minusScalar,
 		multiply: multiply$7,
 		multiplyScalar: multiplyScalar,
 		negate: negate,
-		normalize: normalize,
+		normalize: normalize$3,
 		random: random,
 		rotate: rotate,
 		round: round,
@@ -4266,7 +3995,7 @@
 	        rect.min[1] <= box.min[1] &&
 	        box.max[1] <= rect.max[1]);
 	};
-	const create$1 = (a = create$2(), b = create$2(1, 1)) => {
+	const create$1$1 = (a = create$2(), b = create$2(1, 1)) => {
 	    return {
 	        max: max(a, b),
 	        min: min(a, b)
@@ -4280,7 +4009,7 @@
 	    return multiplyScalar(out, 0.5, out);
 	};
 	const getSize = (a, out = create$2()) => {
-	    return minus(a.max, a.min, out);
+	    return minus$4(a.max, a.min, out);
 	};
 	const height = (a) => {
 	    return a.max[1] - a.min[1];
@@ -4315,7 +4044,7 @@
 		area: area$1,
 		containsPoint: containsPoint,
 		containsRectangle: containsRectangle,
-		create: create$1,
+		create: create$1$1,
 		equals: equals,
 		getCenter: getCenter,
 		getSize: getSize,
@@ -4327,13 +4056,13 @@
 		width: width
 	});
 
-	const defaultA = [-1, -1, 0];
-	const defaultB = [1, -1, 0];
-	const defaultC = [0, 1, 0];
-	const ab = new Float32Array(3);
-	const bc = new Float32Array(3);
+	const defaultA$1 = [-1, -1, 0];
+	const defaultB$1 = [1, -1, 0];
+	const defaultC$1 = [0, 1, 0];
+	const ab$1 = new Float32Array(3);
+	const bc$1 = new Float32Array(3);
 	class Triangle3 {
-	    constructor(a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) {
+	    constructor(a = new Float32Array(defaultA$1), b = new Float32Array(defaultB$1), c = new Float32Array(defaultC$1)) {
 	        this.a = a;
 	        this.b = b;
 	        this.c = c;
@@ -4346,7 +4075,7 @@
 	    const p = (c + a + b) / 2;
 	    return Math.sqrt(p * (p - a) * (p - b) * (p - c));
 	};
-	const create = (a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) => {
+	const create$b = (a = new Float32Array(defaultA$1), b = new Float32Array(defaultB$1), c = new Float32Array(defaultC$1)) => {
 	    return { a, b, c };
 	};
 	const getABLength = (t) => {
@@ -4358,10 +4087,10 @@
 	const getCALength = (t) => {
 	    return distanceTo$2(t.c, t.a);
 	};
-	const normal = (t, out = create$5()) => {
-	    minus$2(t.c, t.b, bc);
-	    minus$2(t.b, t.a, ab);
-	    cross$2(ab, bc, out);
+	const normal$1 = (t, out = create$5()) => {
+	    minus$2(t.c, t.b, bc$1);
+	    minus$2(t.b, t.a, ab$1);
+	    cross$2(ab$1, bc$1, out);
 	    return normalize$2(out);
 	};
 	const toFloat32Array = (t, out = new Float32Array(3)) => {
@@ -4375,11 +4104,11 @@
 		__proto__: null,
 		'default': Triangle3,
 		area: area,
-		create: create,
+		create: create$b,
 		getABLength: getABLength,
 		getBCLength: getBCLength,
 		getCALength: getCALength,
-		normal: normal,
+		normal: normal$1,
 		toFloat32Array: toFloat32Array
 	});
 
@@ -4419,6 +4148,495 @@
 		sum: sum,
 		sumArray: sumArray
 	});
+
+	const DEFAULT_SPHERE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 32, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: constants.DEG_360_RAD, cullMode: "back" });
+	var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
+	    let stride = 3;
+	    const indices = [];
+	    const vertices = [];
+	    const normals = [];
+	    const uvs = [];
+	    // helper variables
+	    let index = 0;
+	    const indexArray = [];
+	    const halfHeight = options.height / 2;
+	    // generate geometry
+	    generateTorso();
+	    if (options.openEnded === false) {
+	        if (options.radiusTop > 0)
+	            generateCap(true);
+	        if (options.radiusBottom > 0)
+	            generateCap(false);
+	    }
+	    // this.setIndex(indices);
+	    // this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+	    // this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
+	    // this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+	    function generateTorso() {
+	        const normal = new Float32Array(3);
+	        const vertex = new Float32Array(3);
+	        // this will be used to calculate the normal
+	        const slope = (options.radiusBottom - options.radiusTop) / options.height;
+	        // generate vertices, normals and uvs
+	        for (let y = 0; y <= options.heightSegments; y++) {
+	            const indexRow = [];
+	            const v = y / options.heightSegments;
+	            // calculate the radius of the current row
+	            const radius = v * (options.radiusBottom - options.radiusTop) + options.radiusTop;
+	            for (let x = 0; x <= options.radialSegments; x++) {
+	                const u = x / options.radialSegments;
+	                const theta = u * options.thetaLength + options.thetaStart;
+	                const sinTheta = Math.sin(theta);
+	                const cosTheta = Math.cos(theta);
+	                // vertex
+	                vertex[0] = radius * sinTheta;
+	                vertex[1] = -v * options.height + halfHeight;
+	                vertex[2] = radius * cosTheta;
+	                vertices.push(vertex[0], vertex[1], vertex[2]);
+	                // normal
+	                normal[0] = sinTheta;
+	                normal[1] = slope;
+	                normal[2] = cosTheta;
+	                Vector3.normalize(normal, normal);
+	                normals.push(normal[0], normal[1], normal[2]);
+	                // uv
+	                uvs.push(u, 1 - v);
+	                // save index of vertex in respective row
+	                indexRow.push(index++);
+	            }
+	            // now save vertices of the row in our index array
+	            indexArray.push(indexRow);
+	        }
+	        // generate indices
+	        for (let x = 0; x < options.radialSegments; x++) {
+	            for (let y = 0; y < options.heightSegments; y++) {
+	                // we use the index array to access the correct indices
+	                const a = indexArray[y][x];
+	                const b = indexArray[y + 1][x];
+	                const c = indexArray[y + 1][x + 1];
+	                const d = indexArray[y][x + 1];
+	                // faces
+	                indices.push(a, b, d);
+	                indices.push(b, c, d);
+	                // update group counter
+	            }
+	        }
+	    }
+	    function generateCap(top) {
+	        // save the index of the first center vertex
+	        const centerIndexStart = index;
+	        const uv = new Float32Array(2);
+	        const vertex = new Float32Array(3);
+	        const radius = (top === true) ? options.radiusTop : options.radiusBottom;
+	        const sign = (top === true) ? 1 : -1;
+	        // first we generate the center vertex data of the cap.
+	        // because the geometry needs one set of uvs per face,
+	        // we must generate a center vertex per face/segment
+	        for (let x = 1; x <= options.radialSegments; x++) {
+	            // vertex
+	            vertices.push(0, halfHeight * sign, 0);
+	            // normal
+	            normals.push(0, sign, 0);
+	            // uv
+	            uvs.push(0.5, 0.5);
+	            // increase index
+	            index++;
+	        }
+	        // save the index of the last center vertex
+	        const centerIndexEnd = index;
+	        // now we generate the surrounding vertices, normals and uvs
+	        for (let x = 0; x <= options.radialSegments; x++) {
+	            const u = x / options.radialSegments;
+	            const theta = u * options.thetaLength + options.thetaStart;
+	            const cosTheta = Math.cos(theta);
+	            const sinTheta = Math.sin(theta);
+	            // vertex
+	            vertex[0] = radius * sinTheta;
+	            vertex[1] = halfHeight * sign;
+	            vertex[2] = radius * cosTheta;
+	            vertices.push(vertex[0], vertex[1], vertex[2]);
+	            // normal
+	            normals.push(0, sign, 0);
+	            // uv
+	            uv[0] = (cosTheta * 0.5) + 0.5;
+	            uv[1] = (sinTheta * 0.5 * sign) + 0.5;
+	            uvs.push(uv[0], uv[1]);
+	            // increase index
+	            index++;
+	        }
+	        // generate indices
+	        for (let x = 0; x < options.radialSegments; x++) {
+	            const c = centerIndexStart + x;
+	            const i = centerIndexEnd + x;
+	            if (top === true) {
+	                // face top
+	                indices.push(i, i + 1, c);
+	            }
+	            else {
+	                // face bottom
+	                indices.push(i + 1, i, c);
+	            }
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let geo = new Geometry3(len, options.topology, options.cullMode);
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (options.hasNormal && options.hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: 'uv',
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (options.hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (options.hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = vertices[i3];
+	            result[1 + strideI] = vertices[i3 + 1];
+	            result[2 + strideI] = vertices[i3 + 2];
+	            if (options.hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (options.hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (options.hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    return geo;
+	};
+
+	const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segmentX: 1, segmentY: 1 });
+	var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
+	    let stride = 3;
+	    const halfX = width * 0.5;
+	    const halfY = height * 0.5;
+	    const gridX = Math.max(1, Math.round(options.segmentX));
+	    const gridY = Math.max(1, Math.round(options.segmentY));
+	    const gridX1 = gridX + 1;
+	    const gridY1 = gridY + 1;
+	    const segmentWidth = width / gridX;
+	    const segmentHeight = height / gridY;
+	    const indices = [];
+	    const positions = [];
+	    const normals = [];
+	    const uvs = [];
+	    for (let iy = 0; iy < gridY1; iy++) {
+	        const y = iy * segmentHeight - halfY;
+	        for (let ix = 0; ix < gridX1; ix++) {
+	            const x = ix * segmentWidth - halfX;
+	            positions.push(x, -y, 0);
+	            normals.push(0, 0, 1);
+	            uvs.push(ix / gridX);
+	            uvs.push(iy / gridY);
+	        }
+	    }
+	    for (let iy = 0; iy < gridY; iy++) {
+	        for (let ix = 0; ix < gridX; ix++) {
+	            const a = ix + gridX1 * iy;
+	            const b = ix + gridX1 * (iy + 1);
+	            const c = (ix + 1) + gridX1 * (iy + 1);
+	            const d = (ix + 1) + gridX1 * iy;
+	            indices.push(a, b, d);
+	            indices.push(b, c, d);
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry3(len, options.topology, options.cullMode);
+	    console.log(indices, positions, normals, uvs);
+	    // TODO indices 现在都是非索引版本
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (options.hasNormal && options.hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: 'uv',
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (options.hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (options.hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            result[2 + strideI] = positions[i3 + 2];
+	            if (options.hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (options.hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (options.hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        // result.set(t.a);
+	        // result.set(t.b, stride);
+	        // result.set(t.c, stride + stride);
+	        // if (options.hasNormal) {
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, stride + 3);
+	        //     result.set(normal, stride + stride + 3);
+	        //     pickers.push({
+	        //         name: 'normal',
+	        //         offset: 3,
+	        //         length: 3,
+	        //     });
+	        // }
+	        // if (options.hasUV) {
+	        //     let offset = options.hasNormal ? 6 : 3;
+	        //     result.set([0, 1], offset);
+	        //     result.set([1, 1], stride + offset);
+	        //     result.set([0.5, 0], stride + stride + offset);
+	        //     pickers.push({
+	        //         name: UV,
+	        //         offset,
+	        //         length: 2,
+	        //     });
+	        // }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        console.log(geo);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
+	/**
+	 * @function clamp
+	 * @desc 将目标值限定在指定区间内。假定min小于等于max才能得到正确的结果。
+	 * @see clampSafe
+	 * @param {number} val 目标值
+	 * @param {number} min 最小值，必须小于等于max
+	 * @param {number} max 最大值，必须大于等于min
+	 * @returns {number} 限制之后的值
+	 * @example Mathx.clamp(1, 0, 2); // 1;
+	 * Mathx.clamp(-1, 0, 2); // 0;
+	 * Mathx.clamp(3, 0, 2); // 2;
+	 */
+	var clamp = (val, min, max) => {
+	    return Math.max(min, Math.min(max, val));
+	};
+
+	let ax, ay, az, bx, by, bz;
+	const create$1 = (x = 0, y = 0, z = 0, out = new Float32Array(3)) => {
+	    out[0] = x;
+	    out[1] = y;
+	    out[2] = z;
+	    return out;
+	};
+	const cross = (a, b, out = new Float32Array(3)) => {
+	    ax = a[0];
+	    ay = a[1];
+	    az = a[2];
+	    bx = b[0];
+	    by = b[1];
+	    bz = b[2];
+	    out[0] = ay * bz - az * by;
+	    out[1] = az * bx - ax * bz;
+	    out[2] = ax * by - ay * bx;
+	    return out;
+	};
+	const divideScalar = (a, b, out = new Float32Array(3)) => {
+	    out[0] = a[0] / b;
+	    out[1] = a[1] / b;
+	    out[2] = a[2] / b;
+	    return out;
+	};
+	const length = (a) => {
+	    return Math.sqrt(lengthSquared(a));
+	};
+	const lengthSquared = (a) => {
+	    return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+	};
+	const minus = (a, b, out = new Float32Array(3)) => {
+	    out[0] = a[0] - b[0];
+	    out[1] = a[1] - b[1];
+	    out[2] = a[2] - b[2];
+	    return out;
+	};
+	const normalize = (a, out = new Float32Array(3)) => {
+	    return divideScalar(a, length(a) || 1, out);
+	};
+
+	const defaultA = [-1, -1, 0];
+	const defaultB = [1, -1, 0];
+	const defaultC = [0, 1, 0];
+	const ab = new Float32Array(3);
+	const bc = new Float32Array(3);
+	const create = (a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) => {
+	    return { a, b, c };
+	};
+	const normal = (t, out = create$1()) => {
+	    minus(t.c, t.b, bc);
+	    minus(t.b, t.a, ab);
+	    cross(ab, bc, out);
+	    return normalize(out);
+	};
+
+	var createTriangle3 = (t = create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+	    let geo = new Geometry3(3, topology, cullMode);
+	    let stride = 3;
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (options.hasNormal && options.hasUV) {
+	            stride = 8;
+	        }
+	        else if (options.hasNormal) {
+	            stride = 6;
+	        }
+	        else if (options.hasUV) {
+	            stride = 5;
+	        }
+	        let result = new Float32Array(stride * 3);
+	        result.set(t.a);
+	        result.set(t.b, stride);
+	        result.set(t.c, stride + stride);
+	        if (options.hasNormal) {
+	            let normal$1 = normal(t);
+	            result.set(normal$1, 3);
+	            result.set(normal$1, stride + 3);
+	            result.set(normal$1, stride + stride + 3);
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        if (options.hasUV) {
+	            let offset = options.hasNormal ? 6 : 3;
+	            result.set([0, 1], offset);
+	            result.set([1, 1], stride + offset);
+	            result.set([0.5, 0], stride + stride + offset);
+	            pickers.push({
+	                name: UV,
+	                offset,
+	                length: 2,
+	            });
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        let result = new Float32Array(9);
+	        result.set(t.a);
+	        result.set(t.b, 3);
+	        result.set(t.c, 6);
+	        geo.addAttribute(POSITION, result, 3);
+	        if (options.hasNormal) {
+	            result = new Float32Array(9);
+	            let normal$1 = normal(t);
+	            result.set(normal$1, 0);
+	            result.set(normal$1, 3);
+	            result.set(normal$1, 6);
+	            geo.addAttribute(NORMAL, result, 3);
+	        }
+	        if (options.hasUV) {
+	            result = new Float32Array(6);
+	            result.set([0, 0], 0);
+	            result.set([1, 0], 2);
+	            result.set([0.5, 1], 4);
+	            geo.addAttribute(UV, result, 2);
+	        }
+	        return geo;
+	    }
+	};
 
 	const DEFAULT_SPHERE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radius: 1, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI, widthSegments: 32, heightSegments: 32, cullMode: "back" });
 	var createSphere3 = (options = DEFAULT_SPHERE_OPTIONS) => {
@@ -4532,31 +4750,6 @@
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
 	        }
-	        // result.set(t.a);
-	        // result.set(t.b, stride);
-	        // result.set(t.c, stride + stride);
-	        // if (options.hasNormal) {
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, stride + 3);
-	        //     result.set(normal, stride + stride + 3);
-	        //     pickers.push({
-	        //         name: 'normal',
-	        //         offset: 3,
-	        //         length: 3,
-	        //     });
-	        // }
-	        // if (options.hasUV) {
-	        //     let offset = options.hasNormal ? 6 : 3;
-	        //     result.set([0, 1], offset);
-	        //     result.set([1, 1], stride + offset);
-	        //     result.set([0.5, 0], stride + stride + offset);
-	        //     pickers.push({
-	        //         name: UV,
-	        //         offset,
-	        //         length: 2,
-	        //     });
-	        // }
 	        geo.addAttribute(VERTICES, result, stride, pickers);
 	        return geo;
 	    }
@@ -4566,6 +4759,7 @@
 	var index$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		createCircle3: createCircle3,
+		createCylinder3: createCylinder3,
 		createPlane3: createPlane3,
 		createTriangle3: createTriangle3,
 		createSphere3: createSphere3
@@ -5871,7 +6065,7 @@ struct VertexOutput {
 	    const m31 = matrix[2], m32 = matrix[6], m33 = matrix[10];
 	    switch (out.order) {
 	        case EulerRotationOrders.XYZ:
-	            out.y = Math.asin(clamp$2(m13, -1, 1));
+	            out.y = Math.asin(clamp(m13, -1, 1));
 	            if (Math.abs(m13) < 0.9999999) {
 	                out.x = Math.atan2(-m23, m33);
 	                out.z = Math.atan2(-m12, m11);
@@ -5882,7 +6076,7 @@ struct VertexOutput {
 	            }
 	            break;
 	        case EulerRotationOrders.YXZ:
-	            out.x = Math.asin(-clamp$2(m23, -1, 1));
+	            out.x = Math.asin(-clamp(m23, -1, 1));
 	            if (Math.abs(m23) < 0.9999999) {
 	                out.y = Math.atan2(m13, m33);
 	                out.z = Math.atan2(m21, m22);
@@ -5893,7 +6087,7 @@ struct VertexOutput {
 	            }
 	            break;
 	        case EulerRotationOrders.ZXY:
-	            out.x = Math.asin(clamp$2(m32, -1, 1));
+	            out.x = Math.asin(clamp(m32, -1, 1));
 	            if (Math.abs(m32) < 0.9999999) {
 	                out.y = Math.atan2(-m31, m33);
 	                out.z = Math.atan2(-m12, m22);
@@ -5904,7 +6098,7 @@ struct VertexOutput {
 	            }
 	            break;
 	        case EulerRotationOrders.ZYX:
-	            out.y = Math.asin(-clamp$2(m31, -1, 1));
+	            out.y = Math.asin(-clamp(m31, -1, 1));
 	            if (Math.abs(m31) < 0.9999999) {
 	                out.x = Math.atan2(m32, m33);
 	                out.z = Math.atan2(m21, m11);
@@ -5915,7 +6109,7 @@ struct VertexOutput {
 	            }
 	            break;
 	        case EulerRotationOrders.YZX:
-	            out.z = Math.asin(clamp$2(m21, -1, 1));
+	            out.z = Math.asin(clamp(m21, -1, 1));
 	            if (Math.abs(m21) < 0.9999999) {
 	                out.x = Math.atan2(-m23, m22);
 	                out.y = Math.atan2(-m31, m11);
@@ -5926,7 +6120,7 @@ struct VertexOutput {
 	            }
 	            break;
 	        case EulerRotationOrders.XZY:
-	            out.z = Math.asin(-clamp$2(m12, -1, 1));
+	            out.z = Math.asin(-clamp(m12, -1, 1));
 	            if (Math.abs(m12) < 0.9999999) {
 	                out.x = Math.atan2(m32, m22);
 	                out.y = Math.atan2(m13, m11);

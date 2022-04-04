@@ -52,7 +52,7 @@ export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geome
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
     let geo = new Geometry3(len, options.topology, options.cullMode);
-    console.log(indices, positions, normals, uvs);
+
     // TODO indices 现在都是非索引版本
     if (options.combine) {
         let pickers: AttributePicker[] = [{
