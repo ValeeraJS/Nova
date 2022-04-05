@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script>
+		const fragment = `
+		struct Uniforms {
+			iDate: vec4<f32>,
+			iResolution: vec2<f32>,
+			iMouse: vec2<f32>,
+			iTime: f32
+		};
+
+		@binding(1) @group(0) var iSampler0: sampler;
+		@binding(2) @group(0) var iChannel0: texture_2d<f32>;
+		@binding(3) @group(0) var<uniform> uniforms: Uniforms;
+
+		`;
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geo = Nova.Geometry3Factory.createTriangle3();
+		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
+		const material = new Nova.ColorMaterial(new Float32Array([1, 0, 0, 1]));
+		mesh.addComponent(material);
+		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
+
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
+		positionProxy.z = 5;
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			createGUI();
+		});
+
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
+			world.run();
+			rotationProxy.y -= 0.01;
+		});
+		timeline.start();
+
+		function createGUI() {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("set color");
+			const options = {
+				color: {
+					r: 255,
+					g: 0,
+					b: 0
+				},
+				alpha: 1
+			};
+			f.addColor(options, "color").onChange(onChange);
+			f.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
+
+			function onChange(val) {
+				material.setColor(
+					options.color.r / 255,
+					options.color.g / 255,
+					options.color.b / 255,
+					options.alpha
+				);
+				console.log(material)
+			}
+		}
+	</script>
+</body>

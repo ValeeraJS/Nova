@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
+		const geometry = Nova.Geometry3Factory.createCylinder3({
+			hasNormal: true,
+			hasUV: true,
+			hasIndices: false,
+			combine: true,
+			topology: "triangle-list",
+			hasIndices: true,
+			combine: true,
+			radiusTop: 0.2,
+			radiusBottom: 0,
+			height: 0.8,
+			radialSegments: 16,
+			heightSegments: 1,
+			openEnded: false,
+			thetaStart: 0,
+			thetaLength: Math.PI * 2,
+			cullMode: "back"
+		});
+		geometry.transform(Nova.Mathx.Matrix4.fromEuler({
+			x: Math.PI / 2,
+			y: 0,
+			z: 0,
+			order: 'xyz'
+		}));
+		const geometry2 = Nova.Geometry3Factory.createSphere3({
+			hasNormal: true,
+			hasUV: true,
+			combine: true,
+			topology: "triangle-list",
+			hasIndices: true,
+			combine: true,
+			radius: 0.25,
+			phiStart: 0,
+			phiLength: Math.PI * 2,
+			thetaStart: 0,
+			thetaLength: Math.PI,
+			widthSegments: 32,
+			heightSegments: 32,
+			cullMode: "back"
+		});
+
+		const cylinder = Nova.EntityFactory.createMesh(geometry, "cylinder", world);
+		const matrixRotation = cylinder.getComponent("rotation3");
+		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(cylinder);
+		positionProxy.z = -5;
+		positionProxy.y = -2;
+		const material = new Nova.NormalMaterial();
+		cylinder.addComponent(material);
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			100
+		);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+		const ball = Nova.EntityFactory.createMesh(geometry2, "ball", world);
+		ball.addComponent(material);
+		const positionProxy2 = Nova.ComponentProxy.getEuclidPosition3Proxy(ball);
+		positionProxy2.z = -5;
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+		});
+
+		let timeline = new Nova.Timeline();
+		let pos = [0, 0, 0];
+		let eye = [0, -2, -5];
+		timeline.addTask((time) => {
+			world.run();
+			pos[0] = Math.sin(time / 1000);
+			pos[1] = Math.cos(time / 700);
+			pos[2] = Math.sin(time / 1300) - 5;
+			positionProxy2.x = pos[0];
+			positionProxy2.y = pos[1];
+			positionProxy2.z = pos[2];
+
+			Nova.Mathx.Matrix4.targetTo(eye, pos, Nova.Mathx.Vector3.VECTOR3_TOP, matrixRotation.data);
+			matrixRotation.dirty = true;
+		});
+		timeline.start();
+	</script>
+</body>

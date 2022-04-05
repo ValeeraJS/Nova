@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas, {
+			width: 800,
+			height: 450
+		});
+		const world = new Nova.World();
+
+		const geometry = Nova.Geometry3Factory.createPlane3(2, 2);
+		const mesh = Nova.EntityFactory.createMesh(geometry, "plane", world);
+		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(mesh);
+		positionProxy.z = -5;
+		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
+
+		const perspectiveProjection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
+		
+		const camera = Nova.EntityFactory.createCamera(
+			perspectiveProjection,
+			"test-camera",
+			world
+		);
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			loop();
+			createGUI();
+		});
+
+		function loop() {
+			world.run();
+			rotationProxy.y -= 0.01;
+			requestAnimationFrame(loop);
+		}
+
+		function createGUI() {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("Perspective camera");
+			const options = {
+				width: 800,
+				height: 450
+			};
+			f.add(options, "width", 400, 1200).step(1).onChange(onChange);
+			f.add(options, "height", 225, 675).step(1).onChange(onChange);
+
+			function onChange(val) {
+				engine.resize(options.width, options.height);
+				perspectiveProjection.aspect = options.width / options.height;
+			}
+		}
+	</script>
+</body>

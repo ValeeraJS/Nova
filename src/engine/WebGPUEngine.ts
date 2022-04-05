@@ -61,7 +61,10 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
 		});
 	}
 
-	public resize(width: number, height: number, resolution: number): this {
+	public resize(width: number, height: number, resolution: number = this.options.resolution): this {
+		this.options.width = width;
+		this.options.height = height;
+		this.options.resolution = resolution;
 		this.canvas.style.width = width + 'px';
 		this.canvas.style.height = height + 'px';
 		this.canvas.width = width * resolution;
