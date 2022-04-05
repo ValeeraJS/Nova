@@ -5641,7 +5641,7 @@ const CommonData = {
     vs: `struct Uniforms {
         matrix: mat4x4<f32>
     }
-    @bind(0) @group(0) var<uniform<> uniforms: Uniforms;
+    @binding(0) @group(0) var<uniform> uniforms: Uniforms;
 
     struct VertexOutput {
         @builtin(position) position: vec4<f32>,

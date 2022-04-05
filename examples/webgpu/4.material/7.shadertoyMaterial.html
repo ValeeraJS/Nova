@@ -20,14 +20,58 @@
 		@binding(2) @group(0) var iChannel0: texture_2d<f32>;
 		@binding(3) @group(0) var<uniform> uniforms: Uniforms;
 
+		fn mod(a: f32, b: f32) -> f32 {
+			return a - b * floor(a / b);
+		}
+
+		let numSamples: i32 = 6;
+		let C: vec2<f32> = vec2<f32>(0.5, 0.5);
+		let TwoPi: f32 = 6.2831;
+
+		fn line(uv: vec2<f32>, p1: vec2<f32>, p2: vec2<f32>, w: f32, f: f32) -> f32 {
+			let dif: vec2<f32> = p2 - p1;
+			return 1.0 - clamp((distance((uv-p1) - clamp(dot(uv - p1, dif) / dot(dif, dif), 0.0, 1.0) * dif, vec2<f32>(0.0, 0.0)) - w) / f, 0.0, 1.0);
+		}
+
+		fn orbit(rot: f32, dist: f32) -> vec2<f32> {
+			let v: f32 = -rot - 0.5;
+			return vec2<f32>(sin(v * TwoPi), cos(v * TwoPi)) * dist;
+		}
+
+		@stage(fragment) fn main(@location(0) uv2: vec2<f32>) -> @location(0) vec4<f32> {
+			var clock: vec4<f32> = vec4<f32>(0.0);
+			var ar: f32 = uniforms.iResolution.x / uniforms.iResolution.y;
+			var v: f32 = ar - 1.0;
+			var uv: vec2<f32> = vec2<f32>(uv2.x, uv2.y) * vec2<f32>(ar, 1.0) - vec2<f32>(v / 2.0, 0.0);
+
+			clock.x = 0.0;
+
+			var HP: vec2<f32> = orbit(1.0 / 43200.0 * uniforms.iDate.w, 0.22);
+			var MP: vec2<f32> = orbit(1.0 / 3600.0 * uniforms.iDate.w, 0.33);
+			var SP: vec2<f32> = orbit(1.0 / 60.0 * uniforms.iDate.w, 0.44);
+
+			clock.x = clock.x + line(uv - C, vec2<f32>(0.0, 0.0) - HP * 0.2, HP, 0.015, 0.0025) 
+				+ line(uv - C, vec2<f32>(0.0, 0.0) - MP * 0.2, MP, 0.0075, 0.0025)
+				+ line(uv - C, vec2<f32>(0.0, 0.0) - SP * 0.2, SP, 0.005, 0.0025);
+
+			for (var i: i32 = 0; i < 60; i = i + 1) {
+				var IsHour: f32 = ceil((f32(i) % 5.0) / 5.0);
+				var point1: vec2<f32> = orbit(1.0 / 60.0 * f32(i), mix(0.35, 0.4, IsHour));
+				var point2: vec2<f32> = point1 * mix(1.3, 1.15, IsHour);
+				clock.x = clock.x + line(uv - C, point1, point2, mix(0.01, 0.002, IsHour), 0.0025);
+			}
+
+			return vec4<f32>(clock.x, clock.x, clock.x, 1.0);
+		}
 		`;
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createTriangle3();
+		const geo = Nova.Geometry3Factory.createPlane3(3, 3);
 		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
-		const material = new Nova.ColorMaterial(new Float32Array([1, 0, 0, 1]));
+		const texture = new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512);
+		const material = new Nova.ShadertoyMaterial(fragment, texture);
 		mesh.addComponent(material);
 		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
 
@@ -46,39 +90,19 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			createGUI();
 		});
 
 		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
+		timeline.addTask((ms) => {
 			world.run();
-			rotationProxy.y -= 0.01;
+			rotationProxy.y = Math.sin(ms / 1000);
+
+			material.time = ms / 1000;
+			material.date = new Date();
+
+
 		});
 		timeline.start();
 
-		function createGUI() {
-			const gui = new dat.GUI();
-			const f = gui.addFolder("set color");
-			const options = {
-				color: {
-					r: 255,
-					g: 0,
-					b: 0
-				},
-				alpha: 1
-			};
-			f.addColor(options, "color").onChange(onChange);
-			f.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
-
-			function onChange(val) {
-				material.setColor(
-					options.color.r / 255,
-					options.color.g / 255,
-					options.color.b / 255,
-					options.alpha
-				);
-				console.log(material)
-			}
-		}
 	</script>
 </body>
