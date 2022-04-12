@@ -1,5 +1,5 @@
-import { Vector2, Vector3, Vector4 } from "@valeera/mathx/src";
-import Component from "@valeera/x/src/Component";
+import { Vector2, Vector3, Vector4 } from "@valeera/mathx";
+import { Component } from "@valeera/x";
 
 export enum TWEEN_STATE {
 	IDLE = 0,
@@ -8,13 +8,14 @@ export enum TWEEN_STATE {
 	STOP = -1
 }
 
-export type InterpolationType {
+export type InterpolationType = {
 	type: 'number' | 'vector2' | 'vector3' | 'vector4';
 	origin: number | Float32Array; // 原始值
 	delta: number | Float32Array; // to和from值的差
 }
 
 export default class Tween extends Component<Map<string, InterpolationType>> {
+	public static States = TWEEN_STATE;
 	public from: any;
 	public to: any;
 	public duration: number;
@@ -48,7 +49,7 @@ export default class Tween extends Component<Map<string, InterpolationType>> {
 		for (let key in to) {
 			if (key in from) {
 				// TODO 目前只支持数字和F32数组插值，后续扩展
-				if (typeof to[key] === 'number' &&  'number' === from[key]) {
+				if (typeof to[key] === 'number' && 'number' === from[key]) {
 					map.set(key, {
 						type: 'number',
 						origin: from[key],
