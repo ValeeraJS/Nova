@@ -72,7 +72,7 @@
 					const options = {
 						frame: 0
 					};
-					gui.add(options, "frame", 0, spritesheetJson.frames.length)
+					gui.add(options, "frame", 0, spritesheetJson.frames.length - 1)
 						.step(1)
 						.onChange((v) => {
 							texture.setFrame(v);

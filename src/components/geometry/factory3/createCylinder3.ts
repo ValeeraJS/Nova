@@ -63,7 +63,7 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
 
     function generateTorso() {
 
-        const normal = new Float32Array(3);
+        const normal = new Vector3();
         const vertex = new Float32Array(3);
 
         // this will be used to calculate the normal

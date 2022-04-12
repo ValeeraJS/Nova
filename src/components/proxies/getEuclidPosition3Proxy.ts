@@ -1,5 +1,5 @@
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import { Matrix4Component } from "../matrix4";
+import Matrix4Component from "../matrix4/Matrix4Component";
 import { TRANSLATION_3D } from "../constants";
 
 export default (position: Matrix4Component | IEntity) => {

@@ -1,15 +1,15 @@
-import { createJson, IColorGPUJson } from "@valeera/mathx/src/color/ColorGPU";
+import { IColorGPUJson, IColorGPU, ColorGPU, IColorRGB, IColorRGBA, ColorRGB, ColorRGBA, IColorRGBAJson, IColorRGBJson  } from "@valeera/mathx";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 
 export default class Clearer {
-	public color: IColorGPUJson;
+	public color: IColorGPU = new ColorGPU();
 	public engine: WebGPUEngine;
 	private renderPassDescriptor: GPURenderPassDescriptor;
 	private depthTexture: GPUTexture;
-	public constructor(engine: WebGPUEngine, color: IColorGPUJson = createJson()) {
+	public constructor(engine: WebGPUEngine, color: IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA = new ColorGPU()) {
 		this.engine = engine;
-		this.color = color;
-		console.log(engine)
+		this.setColor(color);
+		
 		this.depthTexture = engine.device.createTexture({
 			size: { width: engine.canvas.width, height: engine.canvas.height, depthOrArrayLayers: 1 },
 			format: "depth24plus",
@@ -33,9 +33,31 @@ export default class Clearer {
 		} as any
 	}
 
-	public setColor(color: IColorGPUJson) {
-		this.color = color;
-
+	public setColor(color: IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson) {
+		if (color instanceof ColorGPU) {
+			this.color = color;
+		} else if (typeof color === "string") {
+			ColorGPU.fromString(color, this.color);
+		} else if (typeof color === "number") {
+			ColorGPU.fromHex(color, 1, this.color);
+		}  else if (color instanceof ColorRGB ) {
+			ColorGPU.fromColorRGB(color, this.color);
+		} else if (color instanceof ColorRGBA ) {
+			ColorGPU.fromColorRGBA(color, this.color);
+		} else if (color instanceof Float32Array || color instanceof Array) {
+			ColorGPU.fromArray(color, this.color);
+		} else if (color instanceof Float32Array || color instanceof Array) {
+			ColorGPU.fromArray(color, this.color);
+		} else {
+			if ("a" in color) {
+				ColorGPU.fromJson(color as IColorRGBAJson, this.color);
+			} else {
+				ColorGPU.fromJson({
+					...color as IColorRGBJson,
+					a: 1
+				}, this.color);
+			}
+		}
 		return this;
 	}
 

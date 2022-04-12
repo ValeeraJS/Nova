@@ -1,61 +1,74 @@
-import { Matrix4 } from "@valeera/mathx";
+import { Matrix4, Vector3 } from "@valeera/mathx";
 import APosition3 from "./APosition3";
 
 export default class EuclidPosition3 extends APosition3 {
-    vec3: Float32Array;
-    data = Matrix4.identity();
+	vec3: Vector3 = new Vector3();
+	data = Matrix4.identity();
 
-    constructor(vec3: Float32Array = new Float32Array(3)) {
-        super();
-        this.vec3 = vec3;
-        this.update();
-    }
+	constructor(vec3: Float32Array | number[] = new Float32Array(3)) {
+		super();
+		Vector3.fromArray(vec3, 0, this.vec3);
+		this.update();
+	}
 
-    get x() {
-        return this.vec3[0];
-    }
+	get x() {
+		return this.vec3[0];
+	}
 
-    set x(value: number) {
-        this.vec3[0] = value;
-        this.update();
-    }
+	set x(value: number) {
+		this.vec3[0] = value;
+		this.data[12] = value;
+		this.dirty = true;
+	}
 
-    get y() {
-        return this.vec3[1];
-    }
+	get y() {
+		return this.vec3[1];
+	}
 
-    set y(value: number) {
-        this.vec3[1] = value;
-        this.update();
-    }
+	set y(value: number) {
+		this.vec3[1] = value;
+		this.data[13] = value;
+		this.dirty = true;
+	}
 
-    get z() {
-        return this.vec3[1];
-    }
+	get z() {
+		return this.vec3[1];
+	}
 
-    set z(value: number) {
-        this.vec3[2] = value;
-        this.update();
-    }
+	set z(value: number) {
+		this.vec3[2] = value;
+		this.data[14] = value;
+		this.dirty = true;
+	}
 
-    set(arr: Float32Array | number[]) {
-        this.vec3.set(arr);
+	set(arr: Float32Array | number[]) {
+		this.vec3.set(arr);
 
-        return this.update();
-    }
-
-    setXYZ(x: number, y: number, z: number) {
-        this.vec3[0] = x;
-        this.vec3[1] = y;
-        this.vec3[2] = z;
-
-        return this.update();
-    }
-
-    update() {
-        Matrix4.fromTranslation(this.vec3, this.data);
+        this.data[12] = arr[0];
+        this.data[13] = arr[1];
+        this.data[14] = arr[2];
         this.dirty = true;
+		return this;
+	}
 
-        return this;
-    }
+	setXYZ(x: number, y: number, z: number) {
+		this.vec3[0] = x;
+		this.vec3[1] = y;
+		this.vec3[2] = z;
+
+
+		this.data[12] = x;
+		this.data[13] = y;
+		this.data[14] = z;
+		this.dirty = true;
+
+		return this;
+	}
+
+	update() {
+		Matrix4.fromTranslation(this.vec3, this.data);
+		this.dirty = true;
+
+		return this;
+	}
 }

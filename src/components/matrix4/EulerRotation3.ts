@@ -1,18 +1,15 @@
-import { Matrix4 } from "@valeera/mathx/src/matrix";
-import * as Euler from "@valeera/mathx/src/euler/Euler";
-import IEuler, { EulerRotationOrders }from "@valeera/mathx/src/euler/IEuler";
-import { fromEuler } from "@valeera/mathx/src/matrix/Matrix4";
+import { Matrix4, EulerAngle, IEulerAngle, EulerRotationOrders } from "@valeera/mathx";
 import ARotation3 from "./ARotation3";
 
 export default class EulerRotation3 extends ARotation3 {
-    euler: IEuler;
+    euler: IEulerAngle;
     data = Matrix4.identity();
 
-    constructor(euler: IEuler = {
+    constructor(euler: IEulerAngle = {
         x: 0,
         y: 0,
         z: 0,
-        order: EulerRotationOrders.XYZ,
+        order: EulerAngle.ORDERS.XYZ,
     }) {
         super();
         this.euler = euler;
@@ -45,15 +42,28 @@ export default class EulerRotation3 extends ARotation3 {
         this.euler.z = value;
         this.update();
     }
+    
 
-    set(arr: IEuler) {
-        Euler.from(arr, this.euler);
+    get order() {
+        return this.euler.order;
+    }
+
+    set order(value: EulerRotationOrders) {
+        this.euler.order = value;
+        this.update();
+    }
+
+    set(arr: IEulerAngle) {
+        this.x = arr.x;
+        this.y = arr.y;
+        this.z = arr.z;
+        this.order = arr.order;
 
         return this.update();
     }
 
     update() {
-        fromEuler(this.euler, this.data);
+        Matrix4.fromEuler(this.euler, this.data);
         this.dirty = true;
 
         return this;

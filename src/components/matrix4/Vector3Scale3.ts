@@ -19,7 +19,8 @@ export default class Vector3Scale3 extends AScale3 {
 
     set x(value: number) {
         this.vec3[0] = value;
-        this.update();
+        this.data[0] = value;
+        this.dirty = true;
     }
 
     get y() {
@@ -28,7 +29,8 @@ export default class Vector3Scale3 extends AScale3 {
 
     set y(value: number) {
         this.vec3[1] = value;
-        this.update();
+        this.data[5] = value;
+        this.dirty = true;
     }
 
     get z() {
@@ -37,7 +39,8 @@ export default class Vector3Scale3 extends AScale3 {
 
     set z(value: number) {
         this.vec3[2] = value;
-        this.update();
+        this.data[10] = value;
+        this.dirty = true;
     }
 
     set(arr: Float32Array | number[]) {
@@ -50,8 +53,13 @@ export default class Vector3Scale3 extends AScale3 {
         this.vec3[0] = x;
         this.vec3[1] = y;
         this.vec3[2] = z;
+        
+        this.data[0] = x;
+        this.data[5] = y;
+        this.data[10] = z;
+        this.dirty = true;
 
-        return this.update();
+        return this;
     }
 
     update() {
