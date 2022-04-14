@@ -1,3 +1,4 @@
+/// <reference types="dist" />
 import IComponent from "@valeera/x/src/interfaces/IComponent";
 export interface IUniformSlot {
     name: string;
@@ -11,6 +12,7 @@ export interface IShaderCode {
     vertex: string;
     fragment: string;
     uniforms: IUniformSlot[];
+    blend: GPUBlendState;
 }
 export default interface IMaterial extends IComponent<IShaderCode> {
 }

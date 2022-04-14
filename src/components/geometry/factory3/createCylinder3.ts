@@ -43,7 +43,6 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
     let index = 0;
     const indexArray: number[][] = [];
     const halfHeight = options.height / 2;
-    let groupStart = 0;
 
     // generate geometry
 

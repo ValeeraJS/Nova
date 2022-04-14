@@ -1,4 +1,3 @@
-import { Vector3 } from "@valeera/mathx/build/Mathx.module";
 import Component from "@valeera/x/src/Component";
 import { GEOMETRY_3D } from "../constants";
 import { POSITION } from "./constants";

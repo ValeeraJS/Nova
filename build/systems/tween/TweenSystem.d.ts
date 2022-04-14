@@ -1,9 +1,9 @@
-import ASystem from "@valeera/x/src/ASystem";
+import System from "@valeera/x/src/System";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
-export default class TweenSystem extends ASystem {
+export default class TweenSystem extends System {
     query(entity: IEntity): boolean;
-    destroy(): void;
+    destroy(): this;
     run(world: IWorld): this;
-    handle(entity: IEntity, params: TWorldInjection): this;
+    handle(entity: IEntity, _params: TWorldInjection): this;
 }

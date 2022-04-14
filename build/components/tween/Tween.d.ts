@@ -1,4 +1,4 @@
-import Component from "@valeera/x/src/Component";
+import { Component } from "@valeera/x";
 export declare enum TWEEN_STATE {
     IDLE = 0,
     START = 1,
@@ -11,6 +11,7 @@ export declare type InterpolationType = {
     delta: number | Float32Array;
 };
 export default class Tween extends Component<Map<string, InterpolationType>> {
+    static States: typeof TWEEN_STATE;
     from: any;
     to: any;
     duration: number;

@@ -1,5 +1,5 @@
 import AProjection3 from "./AProjection3";
-export default abstract class PerspectiveProjection extends AProjection3 {
+export default class PerspectiveProjection extends AProjection3 {
     data: Float32Array;
     options: {
         left: number;

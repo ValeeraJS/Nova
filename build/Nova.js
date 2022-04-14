@@ -9334,7 +9334,7 @@ struct VertexOutput {
 	    run(world) {
 	        return super.run(world);
 	    }
-	    handle(entity, params) {
+	    handle(entity, _params) {
 	        let tweenC = entity.getComponent("tween");
 	        let map = tweenC.data;
 	        let from = tweenC.from;
@@ -9579,6 +9579,7 @@ struct VertexOutput {
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;
 	exports.Manager = Manager$1;
+	exports.Material = Material;
 	exports.Mathx = Mathx_module;
 	exports.Matrix4Component = Matrix4Component;
 	exports.NormalMaterial = NormalMaterial;

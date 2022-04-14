@@ -1,8 +1,9 @@
+import { Matrix4, Vector3 } from "@valeera/mathx";
 import APosition3 from "./APosition3";
 export default class EuclidPosition3 extends APosition3 {
-    vec3: Float32Array;
-    data: Float32Array;
-    constructor(vec3?: Float32Array);
+    vec3: Vector3;
+    data: Matrix4;
+    constructor(vec3?: Float32Array | number[]);
     get x(): number;
     set x(value: number);
     get y(): number;

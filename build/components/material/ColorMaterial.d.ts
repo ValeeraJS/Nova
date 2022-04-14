@@ -1,6 +1,5 @@
-import { Component } from "@valeera/x/src";
-import IMaterial, { IShaderCode } from "./IMatrial";
-export default class ColorMaterial extends Component<IShaderCode> implements IMaterial {
+import Material from "./Material";
+export default class ColorMaterial extends Material {
     constructor(color?: Float32Array);
     setColor(r: number, g: number, b: number, a: number): this;
 }

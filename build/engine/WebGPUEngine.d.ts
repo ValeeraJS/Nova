@@ -2,6 +2,7 @@
 import EventDispatcher from "@valeera/eventdispatcher";
 import IEngine, { EngineEvents, EngineOptions } from "./IEngine";
 export default class WebGPUEngine extends EventDispatcher implements IEngine {
+    options: Required<EngineOptions>;
     static detect(canvas?: HTMLCanvasElement): Promise<{
         context: GPUCanvasContext;
         adapter: GPUAdapter;
@@ -15,6 +16,6 @@ export default class WebGPUEngine extends EventDispatcher implements IEngine {
     inited: boolean;
     preferredFormat: GPUTextureFormat;
     constructor(canvas?: HTMLCanvasElement, options?: EngineOptions);
-    resize(width: number, height: number, resolution: number): this;
+    resize(width: number, height: number, resolution?: number): this;
     createRenderer(): void;
 }

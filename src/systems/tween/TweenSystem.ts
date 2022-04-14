@@ -19,7 +19,7 @@ export default class TweenSystem extends System {
         return super.run(world);
     }
 
-    public handle(entity: IEntity, params: TWorldInjection): this {
+    public handle(entity: IEntity, _params: TWorldInjection): this {
         let tweenC = entity.getComponent("tween") as Tween;
         let map = tweenC.data;
         let from= tweenC.from;
