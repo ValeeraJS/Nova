@@ -6355,16 +6355,36 @@ function drawSpriteBlock(image, width, height, frame) {
     });
 }
 
-class AtlasTexture extends Component$1 {
-    constructor(json, name = "atlas-texture") {
-        super(name, null);
-        this.loaded = false;
+class Texture extends Component$1 {
+    constructor(width, height, img, name = "texture") {
+        super(name, img);
         this.dirty = false;
         this.width = 0;
         this.height = 0;
+        this.width = width;
+        this.height = height;
+    }
+    destroy() {
+        var _a;
+        (_a = this.data) === null || _a === void 0 ? void 0 : _a.close();
+        this.data = undefined;
+        this.width = 0;
+        this.height = 0;
+    }
+    get imageBitmap() {
+        return this.data;
+    }
+    set imageBitmap(img) {
+        this.dirty = true;
+        this.data = img;
+    }
+}
+
+class AtlasTexture extends Texture {
+    constructor(json, name = "atlas-texture") {
+        super(json.spriteSize.w, json.spriteSize.h, null, name);
+        this.loaded = false;
         this.framesBitmap = [];
-        this.width = json.spriteSize.w;
-        this.height = json.spriteSize.h;
         this.setImage(json);
     }
     setImage(json) {
@@ -6375,25 +6395,19 @@ class AtlasTexture extends Component$1 {
             img.src = json.image;
             this.image = img;
             yield img.decode();
-            this.data = yield drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
-            this.dirty = true;
+            this.imageBitmap = yield drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
             this.loaded = true;
             return this;
         });
     }
 }
 
-class ImageBitmapTexture extends Component$1 {
+class ImageBitmapTexture extends Texture {
     constructor(img, width, height, name = "image-texture") {
-        super(name, null);
+        super(width, height, null, name);
         this.loaded = false;
-        this.dirty = false;
-        this.width = 0;
-        this.height = 0;
         this.sizeChanged = false;
         this.image = new Image();
-        this.width = width;
-        this.height = height;
         this.setImage(img);
     }
     setImage(img) {
@@ -6426,17 +6440,12 @@ class ImageBitmapTexture extends Component$1 {
     }
 }
 
-class SpritesheetTexture extends Component$1 {
+class SpritesheetTexture extends Texture {
     constructor(json, name = "spritesheet-texture") {
-        super(name, null);
+        super(json.spriteSize.w, json.spriteSize.h, null, name);
         this.loaded = false;
-        this.dirty = false;
         this.frame = 0; // 当前帧索引
-        this.width = 0;
-        this.height = 0;
         this.framesBitmap = [];
-        this.width = json.spriteSize.w;
-        this.height = json.spriteSize.h;
         this.setImage(json);
     }
     setImage(json) {
@@ -9550,4 +9559,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, constants$1 as ATTRIBUTE_NAME, AtlasTexture, constants$2 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager$1 as ComponentManager, index$1 as ComponentProxy, NormalMaterial$1 as DepthMaterial, EngineEvents, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager$1 as Manager, Material, Mathx_module as Mathx, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, TextureMaterial, Timeline, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem, World };
+export { APosition3, AProjection3, ARotation3, AScale3, constants$1 as ATTRIBUTE_NAME, AtlasTexture, constants$2 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager$1 as ComponentManager, index$1 as ComponentProxy, NormalMaterial$1 as DepthMaterial, EngineEvents, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager$1 as Manager, Material, Mathx_module as Mathx, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem, World };

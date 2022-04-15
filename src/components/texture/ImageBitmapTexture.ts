@@ -1,17 +1,12 @@
-import Component from "@valeera/x/src/Component";
+import Texture from "./Texture";
 
-export default class ImageBitmapTexture extends Component<ImageBitmap> {
+export default class ImageBitmapTexture extends Texture {
 	loaded = false;
-	dirty = false;
-	width = 0;
-	height = 0;
 	sizeChanged = false;
 	image: HTMLImageElement = new Image();
 
 	constructor(img: HTMLImageElement | string, width: number, height: number, name: string = "image-texture") {
-		super(name, null as any);
-		this.width = width;
-		this.height = height;
+		super(width, height, null, name);
 		this.setImage(img);
 	}
 

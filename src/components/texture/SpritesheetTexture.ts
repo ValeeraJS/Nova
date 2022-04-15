@@ -1,19 +1,14 @@
-import Component from "@valeera/x/src/Component";
 import { drawSpriteBlock } from "../../utils/drawSpriteBlock";
 import ISpritesheet from "./spritesheet/ISpritesheet";
+import Texture from "./Texture";
 
-export default class SpritesheetTexture extends Component<ImageBitmap> {
+export default class SpritesheetTexture extends Texture {
     loaded = false;
-    dirty = false;
     frame = 0; // 当前帧索引
-    width = 0;
-    height = 0;
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[] = [];
     constructor(json: ISpritesheet, name: string = "spritesheet-texture") {
-        super(name, null as any);
-        this.width = json.spriteSize.w;
-        this.height = json.spriteSize.h;
+        super(json.spriteSize.w, json.spriteSize.h, null, name);
 
         this.setImage(json);
     }

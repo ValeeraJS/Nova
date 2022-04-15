@@ -6361,16 +6361,36 @@ struct VertexOutput {
 	    });
 	}
 
-	class AtlasTexture extends Component$1 {
-	    constructor(json, name = "atlas-texture") {
-	        super(name, null);
-	        this.loaded = false;
+	class Texture extends Component$1 {
+	    constructor(width, height, img, name = "texture") {
+	        super(name, img);
 	        this.dirty = false;
 	        this.width = 0;
 	        this.height = 0;
+	        this.width = width;
+	        this.height = height;
+	    }
+	    destroy() {
+	        var _a;
+	        (_a = this.data) === null || _a === void 0 ? void 0 : _a.close();
+	        this.data = undefined;
+	        this.width = 0;
+	        this.height = 0;
+	    }
+	    get imageBitmap() {
+	        return this.data;
+	    }
+	    set imageBitmap(img) {
+	        this.dirty = true;
+	        this.data = img;
+	    }
+	}
+
+	class AtlasTexture extends Texture {
+	    constructor(json, name = "atlas-texture") {
+	        super(json.spriteSize.w, json.spriteSize.h, null, name);
+	        this.loaded = false;
 	        this.framesBitmap = [];
-	        this.width = json.spriteSize.w;
-	        this.height = json.spriteSize.h;
 	        this.setImage(json);
 	    }
 	    setImage(json) {
@@ -6381,25 +6401,19 @@ struct VertexOutput {
 	            img.src = json.image;
 	            this.image = img;
 	            yield img.decode();
-	            this.data = yield drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
-	            this.dirty = true;
+	            this.imageBitmap = yield drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
 	            this.loaded = true;
 	            return this;
 	        });
 	    }
 	}
 
-	class ImageBitmapTexture extends Component$1 {
+	class ImageBitmapTexture extends Texture {
 	    constructor(img, width, height, name = "image-texture") {
-	        super(name, null);
+	        super(width, height, null, name);
 	        this.loaded = false;
-	        this.dirty = false;
-	        this.width = 0;
-	        this.height = 0;
 	        this.sizeChanged = false;
 	        this.image = new Image();
-	        this.width = width;
-	        this.height = height;
 	        this.setImage(img);
 	    }
 	    setImage(img) {
@@ -6432,17 +6446,12 @@ struct VertexOutput {
 	    }
 	}
 
-	class SpritesheetTexture extends Component$1 {
+	class SpritesheetTexture extends Texture {
 	    constructor(json, name = "spritesheet-texture") {
-	        super(name, null);
+	        super(json.spriteSize.w, json.spriteSize.h, null, name);
 	        this.loaded = false;
-	        this.dirty = false;
 	        this.frame = 0; // 当前帧索引
-	        this.width = 0;
-	        this.height = 0;
 	        this.framesBitmap = [];
-	        this.width = json.spriteSize.w;
-	        this.height = json.spriteSize.h;
 	        this.setImage(json);
 	    }
 	    setImage(json) {
@@ -9594,6 +9603,7 @@ struct VertexOutput {
 	exports.SpritesheetTexture = SpritesheetTexture;
 	exports.System = System$1;
 	exports.SystemManager = SystemManager;
+	exports.Texture = Texture;
 	exports.TextureMaterial = TextureMaterial;
 	exports.Timeline = Timeline;
 	exports.Tween = Tween;

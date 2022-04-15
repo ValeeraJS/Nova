@@ -1,18 +1,13 @@
-import Component from "@valeera/x/src/Component";
 import { drawSpriteBlock } from "../../utils/drawSpriteBlock";
 import { IAltas } from "./spritesheet/ISpritesheet";
+import Texture from "./Texture";
 
-export default class AtlasTexture extends Component<ImageBitmap> {
+export default class AtlasTexture extends Texture {
     loaded = false;
-    dirty = false;
-    width = 0;
-    height = 0;
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[] = [];
     constructor(json: IAltas, name: string = "atlas-texture") {
-        super(name, null as any);
-        this.width = json.spriteSize.w;
-        this.height = json.spriteSize.h;
+        super(json.spriteSize.w, json.spriteSize.h, null, name);
 
         this.setImage(json);
     }
@@ -26,9 +21,8 @@ export default class AtlasTexture extends Component<ImageBitmap> {
         this.image = img;
         await img.decode();
 
-        this.data = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
+        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
 
-        this.dirty = true;
         this.loaded = true;
         return this;
     }

@@ -1,6 +1,5 @@
-import AtlasTexture from "../texture/AtlasTexture";
-import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
+import Texture from "../texture/Texture";
 import IMaterial, { IShaderCode } from "./IMatrial";
 import Material from "./Material";
 
@@ -35,7 +34,7 @@ const wgslShaders = {
 
 export default class TextureMaterial extends Material implements IMaterial {
 	data!: IShaderCode;
-	constructor(texture: ImageBitmapTexture | AtlasTexture, sampler: Sampler = new Sampler()) {
+	constructor(texture: Texture, sampler: Sampler = new Sampler()) {
 		super(wgslShaders.vertex, wgslShaders.fragment, [
 			{
 				name: "mySampler",
@@ -64,16 +63,16 @@ export default class TextureMaterial extends Material implements IMaterial {
 		this.data.uniforms[0].value = sampler;
 	}
 
-	get texture(): ImageBitmapTexture {
-		return this.data.uniforms[1].value as ImageBitmapTexture;
+	get texture(): Texture {
+		return this.data.uniforms[1].value as Texture;
 	}
 
-	set texture(texture: ImageBitmapTexture) {
+	set texture(texture: Texture) {
 		this.data.uniforms[1].dirty = this.dirty = true;
 		this.data.uniforms[1].value = texture;
 	}
 
-	setTextureAndSampler(texture: ImageBitmapTexture, sampler?: Sampler): this {
+	setTextureAndSampler(texture: Texture, sampler?: Sampler): this {
 		this.texture = texture;
 		if (sampler) {
 			this.sampler = sampler;
