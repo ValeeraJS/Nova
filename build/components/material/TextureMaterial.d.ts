@@ -1,14 +1,13 @@
-import AtlasTexture from "../texture/AtlasTexture";
-import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
+import Texture from "../texture/Texture";
 import IMaterial, { IShaderCode } from "./IMatrial";
 import Material from "./Material";
 export default class TextureMaterial extends Material implements IMaterial {
     data: IShaderCode;
-    constructor(texture: ImageBitmapTexture | AtlasTexture, sampler?: Sampler);
+    constructor(texture: Texture, sampler?: Sampler);
     get sampler(): Sampler;
     set sampler(sampler: Sampler);
-    get texture(): ImageBitmapTexture;
-    set texture(texture: ImageBitmapTexture);
-    setTextureAndSampler(texture: ImageBitmapTexture, sampler?: Sampler): this;
+    get texture(): Texture;
+    set texture(texture: Texture);
+    setTextureAndSampler(texture: Texture, sampler?: Sampler): this;
 }

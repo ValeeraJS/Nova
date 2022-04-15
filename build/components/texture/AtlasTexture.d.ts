@@ -1,10 +1,7 @@
-import Component from "@valeera/x/src/Component";
 import { IAltas } from "./spritesheet/ISpritesheet";
-export default class AtlasTexture extends Component<ImageBitmap> {
+import Texture from "./Texture";
+export default class AtlasTexture extends Texture {
     loaded: boolean;
-    dirty: boolean;
-    width: number;
-    height: number;
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[];
     constructor(json: IAltas, name?: string);

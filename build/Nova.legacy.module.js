@@ -1889,18 +1889,46 @@ function drawSpriteBlock(image, width, height, frame) {
     });
 }
 
+var Texture = /** @class */ (function (_super) {
+    __extends(Texture, _super);
+    function Texture(width, height, img, name) {
+        if (name === void 0) { name = "texture"; }
+        var _this = _super.call(this, name, img) || this;
+        _this.dirty = false;
+        _this.width = 0;
+        _this.height = 0;
+        _this.width = width;
+        _this.height = height;
+        return _this;
+    }
+    Texture.prototype.destroy = function () {
+        var _a;
+        (_a = this.data) === null || _a === void 0 ? void 0 : _a.close();
+        this.data = undefined;
+        this.width = 0;
+        this.height = 0;
+    };
+    Object.defineProperty(Texture.prototype, "imageBitmap", {
+        get: function () {
+            return this.data;
+        },
+        set: function (img) {
+            this.dirty = true;
+            this.data = img;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return Texture;
+}(Component));
+
 var AtlasTexture = /** @class */ (function (_super) {
     __extends(AtlasTexture, _super);
     function AtlasTexture(json, name) {
         if (name === void 0) { name = "atlas-texture"; }
-        var _this = _super.call(this, name, null) || this;
+        var _this = _super.call(this, json.spriteSize.w, json.spriteSize.h, null, name) || this;
         _this.loaded = false;
-        _this.dirty = false;
-        _this.width = 0;
-        _this.height = 0;
         _this.framesBitmap = [];
-        _this.width = json.spriteSize.w;
-        _this.height = json.spriteSize.h;
         _this.setImage(json);
         return _this;
     }
@@ -1921,8 +1949,7 @@ var AtlasTexture = /** @class */ (function (_super) {
                         _a = this;
                         return [4 /*yield*/, drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame)];
                     case 2:
-                        _a.data = _b.sent();
-                        this.dirty = true;
+                        _a.imageBitmap = _b.sent();
                         this.loaded = true;
                         return [2 /*return*/, this];
                 }
@@ -1930,21 +1957,16 @@ var AtlasTexture = /** @class */ (function (_super) {
         });
     };
     return AtlasTexture;
-}(Component));
+}(Texture));
 
 var ImageBitmapTexture = /** @class */ (function (_super) {
     __extends(ImageBitmapTexture, _super);
     function ImageBitmapTexture(img, width, height, name) {
         if (name === void 0) { name = "image-texture"; }
-        var _this = _super.call(this, name, null) || this;
+        var _this = _super.call(this, width, height, null, name) || this;
         _this.loaded = false;
-        _this.dirty = false;
-        _this.width = 0;
-        _this.height = 0;
         _this.sizeChanged = false;
         _this.image = new Image();
-        _this.width = width;
-        _this.height = height;
         _this.setImage(img);
         return _this;
     }
@@ -1988,21 +2010,16 @@ var ImageBitmapTexture = /** @class */ (function (_super) {
         });
     };
     return ImageBitmapTexture;
-}(Component));
+}(Texture));
 
 var SpritesheetTexture = /** @class */ (function (_super) {
     __extends(SpritesheetTexture, _super);
     function SpritesheetTexture(json, name) {
         if (name === void 0) { name = "spritesheet-texture"; }
-        var _this = _super.call(this, name, null) || this;
+        var _this = _super.call(this, json.spriteSize.w, json.spriteSize.h, null, name) || this;
         _this.loaded = false;
-        _this.dirty = false;
         _this.frame = 0; // 当前帧索引
-        _this.width = 0;
-        _this.height = 0;
         _this.framesBitmap = [];
-        _this.width = json.spriteSize.w;
-        _this.height = json.spriteSize.h;
         _this.setImage(json);
         return _this;
     }
@@ -2063,7 +2080,7 @@ var SpritesheetTexture = /** @class */ (function (_super) {
         this.dirty = true;
     };
     return SpritesheetTexture;
-}(Component));
+}(Texture));
 
 var TWEEN_STATE;
 (function (TWEEN_STATE) {
@@ -5404,4 +5421,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, constants as ATTRIBUTE_NAME, AtlasTexture, constants$1 as COMPONENT_NAME, ColorMaterial, index$1 as ComponentProxy, NormalMaterial$1 as DepthMaterial, EngineEvents, index as EntityFactory, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, ImageBitmapTexture, Material, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, TextureMaterial, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem };
+export { APosition3, AProjection3, ARotation3, AScale3, constants as ATTRIBUTE_NAME, AtlasTexture, constants$1 as COMPONENT_NAME, ColorMaterial, index$1 as ComponentProxy, NormalMaterial$1 as DepthMaterial, EngineEvents, index as EntityFactory, EuclidPosition3, EulerRotation3, Geometry3, index$2 as Geometry3Factory, ImageBitmapTexture, Material, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, Texture, TextureMaterial, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem };
