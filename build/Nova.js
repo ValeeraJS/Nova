@@ -451,6 +451,7 @@
 	    }
 	}
 
+	const ANCHOR_3D = "anchor3";
 	const GEOMETRY_3D = "geometry3";
 	const MATERIAL = "material";
 	const MODEL_3D = "model3";
@@ -462,6 +463,7 @@
 
 	var constants$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
+		ANCHOR_3D: ANCHOR_3D,
 		GEOMETRY_3D: GEOMETRY_3D,
 		MATERIAL: MATERIAL,
 		MODEL_3D: MODEL_3D,
@@ -542,122 +544,6 @@
 	    a[1 + offset] = (m[1] * ax + m[5] * ay + m[9] * az + m[13]) / ag;
 	    a[2 + offset] = (m[2] * ax + m[6] * ay + m[10] * az + m[14]) / ag;
 	    return a;
-	};
-
-	const DEFAULT_OPTIONS = {
-	    hasNormal: true,
-	    hasUV: true,
-	    hasIndices: false,
-	    combine: true,
-	    topology: "triangle-list",
-	    cullMode: "none"
-	};
-
-	const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
-	var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
-	    let stride = 3;
-	    const indices = [];
-	    const positions = [0, 0, 0];
-	    const normals = [0, 0, 1];
-	    const uvs = [0.5, 0.5];
-	    const { segments, angleStart, angle, radius } = options;
-	    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
-	        const segment = angleStart + s / segments * angle;
-	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
-	        normals.push(0, 0, 1);
-	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
-	    }
-	    // indices
-	    for (let i = 1; i <= segments; i++) {
-	        indices.push(i, i + 1, 0);
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    // let count = len / 3;
-	    let geo = new Geometry3(len, options.topology, options.cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (options.combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (options.hasNormal && options.hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: 'uv',
-	                offset: 6,
-	                length: 2,
-	            });
-	        }
-	        else if (options.hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        else if (options.hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            result[2 + strideI] = positions[i3 + 2];
-	            if (options.hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (options.hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
-	                }
-	            }
-	            else if (options.hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        // let result = new Float32Array(9);
-	        // result.set(t.a);
-	        // result.set(t.b, 3);
-	        // result.set(t.c, 6);
-	        // geo.addAttribute(POSITION, result, 3);
-	        // if (options.hasNormal) {
-	        //     result = new Float32Array(9);
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 0);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, 6);
-	        //     geo.addAttribute(NORMAL, result, 3);
-	        // }
-	        // if (options.hasUV) {
-	        //     result = new Float32Array(6);
-	        //     result.set([0, 0], 0);
-	        //     result.set([1, 0], 2);
-	        //     result.set([0.5, 1], 4);
-	        //     geo.addAttribute(UV, result, 2);
-	        // }
-	        return geo;
-	    }
 	};
 
 	const DEG_TO_RAD = Math.PI / 180;
@@ -1667,6 +1553,9 @@
 	    out[3] = a00$2$1;
 	    return out;
 	};
+	Matrix2$1.clone = (source) => {
+	    return new Matrix2$1(source);
+	};
 	Matrix2$1.closeTo = (a, b) => {
 	    a00$2$1 = a[0];
 	    a10$2$1 = a[1];
@@ -1692,6 +1581,10 @@
 	};
 	Matrix2$1.frobNorm = (a) => {
 	    return Math.hypot(a[0], a[1], a[2], a[3]);
+	};
+	Matrix2$1.fromArray = (source, out = new Matrix2$1()) => {
+	    out.set(source);
+	    return out;
 	};
 	Matrix2$1.fromRotation = (rad, out = new Matrix2$1()) => {
 	    y$3$1 = Math.sin(rad);
@@ -1815,6 +1708,9 @@
 	    }
 	}
 	Matrix3$1.UNIT_MATRIX3 = new Matrix3$1(UNIT_MATRIX3_DATA$1);
+	Matrix3$1.clone = (source) => {
+	    return new Matrix3$1(source);
+	};
 	Matrix3$1.cofactor00 = (a) => {
 	    return a[4] * a[8] - a[5] * a[7];
 	};
@@ -1858,6 +1754,10 @@
 	    return (a00$1$1 * (a22$1$1 * a11$1$1 - a12$1$1 * a21$1$1) +
 	        a01$1$1 * (-a22$1$1 * a10$1$1 + a12$1$1 * a20$1$1) +
 	        a02$1$1 * (a21$1$1 * a10$1$1 - a11$1$1 * a20$1$1));
+	};
+	Matrix3$1.fromArray = (source, out = new Matrix3$1()) => {
+	    out.set(source);
+	    return out;
 	};
 	Matrix3$1.fromMatrix4 = (mat4, out = new Matrix3$1()) => {
 	    out[0] = mat4[0];
@@ -2407,13 +2307,16 @@
 	let a00$3 = 0, a01$3 = 0, a02$2 = 0, a03$1 = 0, a11$3 = 0, a10$3 = 0, a12$2 = 0, a13$1 = 0, a20$2 = 0, a21$2 = 0, a22$2 = 0, a23$1 = 0, a31$1 = 0, a30$1 = 0, a32$1 = 0, a33$1 = 0;
 	let b00$3 = 0, b01$3 = 0, b02$2 = 0, b03$1 = 0, b11$3 = 0, b10$3 = 0, b12$2 = 0, b13$1 = 0, b20$2 = 0, b21$2 = 0, b22$2 = 0, b23$1 = 0, b31$1 = 0, b30$1 = 0, b32$1 = 0, b33$1 = 0;
 	let x$1$1 = 0, y$1$1 = 0, z$1 = 0, det$2 = 0, len$2 = 0, s$2$1 = 0, t$1 = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
-	const UNIT_MATRIX4_DATA$1 = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+	const UNIT_MATRIX4_DATA$1 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 	class Matrix4$1 extends Float32Array {
 	    constructor(data = UNIT_MATRIX4_DATA$1) {
 	        super(data);
 	    }
 	}
 	Matrix4$1.UNIT_MATRIX4 = new Matrix4$1(UNIT_MATRIX4_DATA$1);
+	Matrix4$1.clone = (source) => {
+	    return new Matrix4$1(source);
+	};
 	Matrix4$1.create = () => {
 	    return new Matrix4$1(UNIT_MATRIX4_DATA$1);
 	};
@@ -2445,6 +2348,10 @@
 	    b20$2 = a20$2 * b02$2 - a21$2 * b01$3 + a22$2 * b00$3;
 	    b21$2 = a30$1 * b02$2 - a31$1 * b01$3 + a32$1 * b00$3;
 	    return a13$1 * b12$2 - a03$1 * b13$1 + a33$1 * b20$2 - a23$1 * b21$2;
+	};
+	Matrix4$1.fromArray = (source, out = new Matrix4$1()) => {
+	    out.set(source);
+	    return out;
 	};
 	Matrix4$1.fromEuler = (euler, out = new Matrix4$1()) => {
 	    x$1$1 = euler.x;
@@ -4396,6 +4303,278 @@
 		sumArray: sumArray
 	});
 
+	const DEFAULT_OPTIONS = {
+	    hasNormal: true,
+	    hasUV: true,
+	    hasIndices: false,
+	    combine: true,
+	    topology: "triangle-list",
+	    cullMode: "none"
+	};
+
+	const DEFAULT_BOX_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, depth: 1, widthSegments: 1, heightSegments: 1, depthSegments: 1, cullMode: "back" });
+	var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
+	    let stride = 3;
+	    const indices = [];
+	    const vertices = [];
+	    const normals = [];
+	    const uvs = [];
+	    const { depth, height, width, depthSegments, heightSegments, widthSegments } = options;
+	    let numberOfVertices = 0;
+	    buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
+	    buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
+	    buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
+	    buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
+	    buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
+	    buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
+	    function buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
+	        const segmentWidth = width / gridX;
+	        const segmentHeight = height / gridY;
+	        const widthHalf = width / 2;
+	        const heightHalf = height / 2;
+	        const depthHalf = depth / 2;
+	        const gridX1 = gridX + 1;
+	        const gridY1 = gridY + 1;
+	        let vertexCounter = 0;
+	        const vector = new Vector3$1();
+	        // generate vertices, normals and uvs
+	        for (let iy = 0; iy < gridY1; iy++) {
+	            const y = iy * segmentHeight - heightHalf;
+	            for (let ix = 0; ix < gridX1; ix++) {
+	                const x = ix * segmentWidth - widthHalf;
+	                // set values to correct vector component
+	                vector[u] = x * udir;
+	                vector[v] = y * vdir;
+	                vector[w] = depthHalf;
+	                // now apply vector to vertex buffer
+	                vertices.push(vector.x, vector.y, vector.z);
+	                // set values to correct vector component
+	                vector[u] = 0;
+	                vector[v] = 0;
+	                vector[w] = depth > 0 ? 1 : -1;
+	                // now apply vector to normal buffer
+	                normals.push(vector.x, vector.y, vector.z);
+	                // uvs
+	                uvs.push(ix / gridX);
+	                uvs.push(1 - (iy / gridY));
+	                // counters
+	                vertexCounter += 1;
+	            }
+	        }
+	        // indices
+	        // 1. you need three indices to draw a single face
+	        // 2. a single segment consists of two faces
+	        // 3. so we need to generate six (2*3) indices per segment
+	        for (let iy = 0; iy < gridY; iy++) {
+	            for (let ix = 0; ix < gridX; ix++) {
+	                const a = numberOfVertices + ix + gridX1 * iy;
+	                const b = numberOfVertices + ix + gridX1 * (iy + 1);
+	                const c = numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
+	                const d = numberOfVertices + (ix + 1) + gridX1 * iy;
+	                // faces
+	                indices.push(a, b, d);
+	                indices.push(b, c, d);
+	            }
+	        }
+	        // update total number of vertices
+	        numberOfVertices += vertexCounter;
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry3(len, options.topology, options.cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (options.hasNormal && options.hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: UV,
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (options.hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (options.hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = vertices[i3];
+	            result[1 + strideI] = vertices[i3 + 1];
+	            result[2 + strideI] = vertices[i3 + 2];
+	            if (options.hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (options.hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (options.hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
+	const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
+	var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
+	    let stride = 3;
+	    const indices = [];
+	    const positions = [0, 0, 0];
+	    const normals = [0, 0, 1];
+	    const uvs = [0.5, 0.5];
+	    const { segments, angleStart, angle, radius } = options;
+	    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
+	        const segment = angleStart + s / segments * angle;
+	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
+	        normals.push(0, 0, 1);
+	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
+	    }
+	    // indices
+	    for (let i = 1; i <= segments; i++) {
+	        indices.push(i, i + 1, 0);
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry3(len, options.topology, options.cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (options.hasNormal && options.hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: UV,
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (options.hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (options.hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: UV,
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            result[2 + strideI] = positions[i3 + 2];
+	            if (options.hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (options.hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (options.hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
 	const DEFAULT_SPHERE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 32, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: constants.DEG_360_RAD, cullMode: "back" });
 	var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
 	    let stride = 3;
@@ -4933,6 +5112,7 @@
 
 	var index$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
+		createBox3: createBox3,
 		createCircle3: createCircle3,
 		createCylinder3: createCylinder3,
 		createPlane3: createPlane3,
@@ -5996,17 +6176,23 @@ struct VertexOutput {
 	    let p3 = mesh.getComponent(TRANSLATION_3D);
 	    let r3 = mesh.getComponent(ROTATION_3D);
 	    let s3 = mesh.getComponent(SCALING_3D);
+	    let a3 = mesh.getComponent(ANCHOR_3D);
 	    let m3 = mesh.getComponent(MODEL_3D);
 	    if (!m3) {
 	        m3 = new Matrix4Component(MODEL_3D);
 	        mesh.addComponent(m3);
 	    }
-	    if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty)) {
-	        let matrixT = (p3 === null || p3 === void 0 ? void 0 : p3.data) || Matrix4$1.create();
-	        let matrixR = (r3 === null || r3 === void 0 ? void 0 : r3.data) || Matrix4$1.create();
-	        let matrixS = (s3 === null || s3 === void 0 ? void 0 : s3.data) || Matrix4$1.create();
-	        Matrix4$1.multiply(matrixT, matrixR, m3.data);
-	        Matrix4$1.multiply(m3.data, matrixS, m3.data);
+	    if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty) || (a3 === null || a3 === void 0 ? void 0 : a3.dirty)) {
+	        Matrix4$1.fromArray((p3 === null || p3 === void 0 ? void 0 : p3.data) || Matrix4$1.UNIT_MATRIX4, m3.data);
+	        if (r3) {
+	            Matrix4$1.multiply(m3.data, r3.data, m3.data);
+	        }
+	        if (s3) {
+	            Matrix4$1.multiply(m3.data, s3.data, m3.data);
+	        }
+	        if (a3) {
+	            Matrix4$1.multiply(m3.data, a3.data, m3.data);
+	        }
 	        if (p3) {
 	            p3.dirty = false;
 	        }
@@ -6016,9 +6202,68 @@ struct VertexOutput {
 	        if (s3) {
 	            s3.dirty = false;
 	        }
+	        if (a3) {
+	            a3.dirty = false;
+	        }
 	    }
 	    return m3;
 	};
+
+	class Anchor3 extends Matrix4Component {
+	    constructor(vec = Vector3$1.VECTOR3_ZERO) {
+	        super(ANCHOR_3D, Matrix4$1.create());
+	        this.vec3 = new Vector3$1();
+	        Vector3$1.fromArray(vec, 0, this.vec3);
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec3[0];
+	    }
+	    set x(value) {
+	        this.vec3[0] = value;
+	        this.data[12] = value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec3[1];
+	    }
+	    set y(value) {
+	        this.vec3[1] = value;
+	        this.data[13] = value;
+	        this.dirty = true;
+	    }
+	    get z() {
+	        return this.vec3[1];
+	    }
+	    set z(value) {
+	        this.vec3[2] = value;
+	        this.data[14] = value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        this.vec3.set(arr);
+	        this.data[12] = arr[0];
+	        this.data[13] = arr[1];
+	        this.data[14] = arr[2];
+	        this.dirty = true;
+	        return this;
+	    }
+	    setXYZ(x, y, z) {
+	        this.vec3[0] = x;
+	        this.vec3[1] = y;
+	        this.vec3[2] = z;
+	        this.data[12] = x;
+	        this.data[13] = y;
+	        this.data[14] = z;
+	        this.dirty = true;
+	        return this;
+	    }
+	    update() {
+	        Matrix4$1.fromTranslation(this.vec3, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
 
 	class APosition3 extends Matrix4Component {
 	    constructor(data = Matrix4$1.create()) {
@@ -6739,6 +6984,9 @@ struct VertexOutput {
 	    out[3] = a00$2;
 	    return out;
 	};
+	Matrix2.clone = (source) => {
+	    return new Matrix2(source);
+	};
 	Matrix2.closeTo = (a, b) => {
 	    a00$2 = a[0];
 	    a10$2 = a[1];
@@ -6764,6 +7012,10 @@ struct VertexOutput {
 	};
 	Matrix2.frobNorm = (a) => {
 	    return Math.hypot(a[0], a[1], a[2], a[3]);
+	};
+	Matrix2.fromArray = (source, out = new Matrix2()) => {
+	    out.set(source);
+	    return out;
 	};
 	Matrix2.fromRotation = (rad, out = new Matrix2()) => {
 	    y$3 = Math.sin(rad);
@@ -6887,6 +7139,9 @@ struct VertexOutput {
 	    }
 	}
 	Matrix3.UNIT_MATRIX3 = new Matrix3(UNIT_MATRIX3_DATA);
+	Matrix3.clone = (source) => {
+	    return new Matrix3(source);
+	};
 	Matrix3.cofactor00 = (a) => {
 	    return a[4] * a[8] - a[5] * a[7];
 	};
@@ -6930,6 +7185,10 @@ struct VertexOutput {
 	    return (a00$1 * (a22$1 * a11$1 - a12$1 * a21$1) +
 	        a01$1 * (-a22$1 * a10$1 + a12$1 * a20$1) +
 	        a02$1 * (a21$1 * a10$1 - a11$1 * a20$1));
+	};
+	Matrix3.fromArray = (source, out = new Matrix3()) => {
+	    out.set(source);
+	    return out;
 	};
 	Matrix3.fromMatrix4 = (mat4, out = new Matrix3()) => {
 	    out[0] = mat4[0];
@@ -7543,13 +7802,16 @@ struct VertexOutput {
 	let a00 = 0, a01 = 0, a02 = 0, a03 = 0, a11 = 0, a10 = 0, a12 = 0, a13 = 0, a20 = 0, a21 = 0, a22 = 0, a23 = 0, a31 = 0, a30 = 0, a32 = 0, a33 = 0;
 	let b00 = 0, b01 = 0, b02 = 0, b03 = 0, b11 = 0, b10 = 0, b12 = 0, b13 = 0, b20 = 0, b21 = 0, b22 = 0, b23 = 0, b31 = 0, b30 = 0, b32 = 0, b33 = 0;
 	let x$1 = 0, y$1 = 0, z = 0, det = 0, len$1 = 0, s$1 = 0, t = 0, a = 0, b = 0, c$1 = 0, d = 0, e = 0, f = 0;
-	const UNIT_MATRIX4_DATA = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+	const UNIT_MATRIX4_DATA = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 	class Matrix4 extends Float32Array {
 	    constructor(data = UNIT_MATRIX4_DATA) {
 	        super(data);
 	    }
 	}
 	Matrix4.UNIT_MATRIX4 = new Matrix4(UNIT_MATRIX4_DATA);
+	Matrix4.clone = (source) => {
+	    return new Matrix4(source);
+	};
 	Matrix4.create = () => {
 	    return new Matrix4(UNIT_MATRIX4_DATA);
 	};
@@ -7581,6 +7843,10 @@ struct VertexOutput {
 	    b20 = a20 * b02 - a21 * b01 + a22 * b00;
 	    b21 = a30 * b02 - a31 * b01 + a32 * b00;
 	    return a13 * b12 - a03 * b13 + a33 * b20 - a23 * b21;
+	};
+	Matrix4.fromArray = (source, out = new Matrix4()) => {
+	    out.set(source);
+	    return out;
 	};
 	Matrix4.fromEuler = (euler, out = new Matrix4()) => {
 	    x$1 = euler.x;
@@ -9570,6 +9836,7 @@ struct VertexOutput {
 	exports.ARotation3 = ARotation3;
 	exports.AScale3 = AScale3;
 	exports.ATTRIBUTE_NAME = constants$1;
+	exports.Anchor3 = Anchor3;
 	exports.AtlasTexture = AtlasTexture;
 	exports.COMPONENT_NAME = constants$2;
 	exports.ColorMaterial = ColorMaterial;

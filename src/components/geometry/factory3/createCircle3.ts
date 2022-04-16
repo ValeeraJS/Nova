@@ -1,4 +1,4 @@
-import { POSITION, VERTICES } from "../constants";
+import { NORMAL, POSITION, UV, VERTICES } from "../constants";
 import Geometry3, { AttributePicker } from "../Geometry3";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
@@ -23,7 +23,7 @@ export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
 export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geometry3 => {
     let stride = 3;
 
-    const indices = [];
+    const indices: number[] = [];
     const positions = [0, 0, 0];
     const normals = [0, 0, 1];
     const uvs = [0.5, 0.5];
@@ -63,26 +63,26 @@ export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geome
         if (options.hasNormal && options.hasUV) {
             stride = 8;
             pickers.push({
-                name: 'normal',
+                name: NORMAL,
                 offset: 3,
                 length: 3,
             });
             pickers.push({
-                name: 'uv',
+                name: UV,
                 offset: 6,
                 length: 2,
             });
         } else if (options.hasNormal) {
             stride = 6;
             pickers.push({
-                name: 'normal',
+                name: NORMAL,
                 offset: 3,
                 length: 3,
             });
         } else if (options.hasUV) {
             stride = 5;
             pickers.push({
-                name: 'uv',
+                name: UV,
                 offset: 3,
                 length: 2,
             });

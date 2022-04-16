@@ -1,3 +1,4 @@
+export {default as Anchor3} from "./Anchor3";
 export {default as APosition3} from "./APosition3";
 export {default as AProjection3} from "./AProjection3";
 export {default as ARotation3} from "./ARotation3";

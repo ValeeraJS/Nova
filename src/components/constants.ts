@@ -1,3 +1,4 @@
+export const ANCHOR_3D = "anchor3";
 export const GEOMETRY_3D = "geometry3";
 export const MATERIAL = "material";
 export const MODEL_3D = "model3";

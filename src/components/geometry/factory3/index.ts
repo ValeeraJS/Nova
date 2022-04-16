@@ -1,3 +1,4 @@
+export {default as createBox3} from "./createBox3";
 export {default as createCircle3} from "./createCircle3";
 export {default as createCylinder3} from "./createCylinder3";
 export {default as createPlane3} from "./createPlane3";
