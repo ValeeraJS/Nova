@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geo = Nova.Geometry3Factory.createTriangle3();
+		const mesh = Nova.EntityFactory.createMesh(geo, "1", world);
+		const mesh2 = Nova.EntityFactory.createMesh(geo, "2");
+
+		mesh.addChild(mesh2);
+
+		let position = mesh.getComponent("position3");
+		position.data[14] = -5;
+		position.data[13] = -1;
+		position.dirty = true;
+
+		let position2 = mesh2.getComponent("position3");
+		position2.data[14] = -5;
+		position2.data[13] = 1;
+		position2.dirty = true;
+
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			createGUI(renderSystem.clearer);
+		});
+
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
+			world.run();
+		});
+		timeline.start();
+
+		function createGUI(clearer) {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("set clear color");
+			const options = {
+				color: {
+					r: 0,
+					g: 0,
+					b: 0
+				},
+				alpha: 1
+			};
+			f.addColor(options, "color").onChange(onChange);
+			f.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
+
+			function onChange(val) {
+				clearer.setColor({
+					r: options.color.r / 255,
+					g: options.color.g / 255,
+					b: options.color.b / 255,
+					a: options.alpha
+				});
+			}
+		}
+	</script>
+</body>

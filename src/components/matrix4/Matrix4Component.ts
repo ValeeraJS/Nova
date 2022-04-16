@@ -1,7 +1,7 @@
 import Component from "@valeera/x/src/Component";
 import { Matrix4 } from "@valeera/mathx";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import { ANCHOR_3D, MODEL_3D, ROTATION_3D, SCALING_3D, TRANSLATION_3D } from "../constants";
+import { ANCHOR_3D, MODEL_3D, ROTATION_3D, SCALING_3D, TRANSLATION_3D, WORLD_MATRIX } from "../constants";
 
 export default class Matrix4Component extends Component<Float32Array> {
     data!: Float32Array;
@@ -16,10 +16,15 @@ export const updateModelMatrixComponent = (mesh: IEntity) => {
     let r3 = mesh.getComponent(ROTATION_3D) as Matrix4Component;
     let s3 = mesh.getComponent(SCALING_3D) as Matrix4Component;
     let a3 = mesh.getComponent(ANCHOR_3D) as Matrix4Component;
-    let m3 = mesh.getComponent(MODEL_3D) as Matrix4Component; 
+    let m3 = mesh.getComponent(MODEL_3D) as Matrix4Component;
+    let worldMatrix = mesh.getComponent(WORLD_MATRIX) as Matrix4Component;
+    if (!worldMatrix) {
+        worldMatrix = new Matrix4Component(WORLD_MATRIX);
+        mesh.addComponent(worldMatrix);
+    }
     if (!m3) {
         m3 = new Matrix4Component(MODEL_3D);
-        (mesh as any).addComponent(m3);
+        mesh.addComponent(m3);
     }
     if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
         Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
@@ -45,6 +50,13 @@ export const updateModelMatrixComponent = (mesh: IEntity) => {
         if (a3) {
             a3.dirty = false;
         }
+    }
+
+    if (mesh.parent) {
+        let parentWorldMatrix = (mesh.parent as IEntity).getComponent(WORLD_MATRIX)?.data || Matrix4.UNIT_MATRIX4;
+        Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+    } else {
+        Matrix4.fromArray(m3.data, worldMatrix.data);
     }
 
     return m3;

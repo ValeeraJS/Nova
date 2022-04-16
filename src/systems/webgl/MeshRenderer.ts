@@ -209,7 +209,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 			],
 			depthStencilState: {
 				depthWriteEnabled: true,
-				depthCompare: 'less',
+				depthCompare: 'always',
 				format: 'depth24plus-stencil8',
 			},
 			rasterizationState: {

@@ -459,6 +459,7 @@
 	const ROTATION_3D = "rotation3";
 	const SCALING_3D = "scale3";
 	const TRANSLATION_3D = "position3";
+	const WORLD_MATRIX = "world-matrix";
 	const VIEWING_3D = "viewing3";
 
 	var constants$2 = /*#__PURE__*/Object.freeze({
@@ -471,6 +472,7 @@
 		ROTATION_3D: ROTATION_3D,
 		SCALING_3D: SCALING_3D,
 		TRANSLATION_3D: TRANSLATION_3D,
+		WORLD_MATRIX: WORLD_MATRIX,
 		VIEWING_3D: VIEWING_3D
 	});
 
@@ -5136,7 +5138,7 @@
 	const mixin = (Base = Object) => {
 	    return class TreeNode extends Base {
 	        static mixin = mixin;
-	        static addNode(node, child) {
+	        static addChild(node, child) {
 	            if (TreeNode.hasAncestor(node, child)) {
 	                throw new Error("The node added is one of the ancestors of current one.");
 	            }
@@ -5184,7 +5186,7 @@
 	                }
 	            }
 	        }
-	        static removeNode(node, child) {
+	        static removeChild(node, child) {
 	            if (node.children.includes(child)) {
 	                node.children.splice(node.children.indexOf(child), 1);
 	                child.parent = null;
@@ -5207,8 +5209,8 @@
 	        }
 	        parent = null;
 	        children = [];
-	        addNode(node) {
-	            return TreeNode.addNode(this, node);
+	        addChild(node) {
+	            return TreeNode.addChild(this, node);
 	        }
 	        depth() {
 	            return TreeNode.depth(this);
@@ -5222,8 +5224,8 @@
 	        hasAncestor(ancestor) {
 	            return TreeNode.hasAncestor(this, ancestor);
 	        }
-	        removeNode(child) {
-	            return TreeNode.removeNode(this, child);
+	        removeChild(child) {
+	            return TreeNode.removeChild(this, child);
 	        }
 	        toArray() {
 	            return TreeNode.toArray(this);
@@ -5378,15 +5380,15 @@
 	    disabled = false;
 	    usedBy = [];
 	    isManager = true;
-	    addElement(component) {
-	        if (this.has(component)) {
-	            this.removeElementByInstance(component);
+	    addElement(element) {
+	        if (this.has(element)) {
+	            this.removeElementByInstance(element);
 	        }
-	        return this.addElementDirect(component);
+	        return this.addElementDirect(element);
 	    }
-	    addElementDirect(component) {
-	        this.elements.set(component.name, component);
-	        component.usedBy.push(this);
+	    addElementDirect(element) {
+	        this.elements.set(element.name, element);
+	        element.usedBy.push(this);
 	        this.elementChangeDispatch(Manager$1.Events.ADD, this);
 	        return this;
 	    }
@@ -5398,18 +5400,18 @@
 	        elementTmp$1 = this.elements.get(name);
 	        return elementTmp$1 ? elementTmp$1 : null;
 	    }
-	    has(component) {
-	        if (typeof component === "string") {
-	            return this.elements.has(component);
+	    has(element) {
+	        if (typeof element === "string") {
+	            return this.elements.has(element);
 	        }
 	        else {
-	            return this.elements.has(component.name);
+	            return this.elements.has(element.name);
 	        }
 	    }
-	    removeElement(component) {
-	        return typeof component === "string"
-	            ? this.removeElementByName(component)
-	            : this.removeElementByInstance(component);
+	    removeElement(element) {
+	        return typeof element === "string"
+	            ? this.removeElementByName(element)
+	            : this.removeElementByInstance(element);
 	    }
 	    removeElementByName(name) {
 	        elementTmp$1 = this.elements.get(name);
@@ -5420,10 +5422,10 @@
 	        }
 	        return this;
 	    }
-	    removeElementByInstance(component) {
-	        if (this.elements.has(component.name)) {
-	            this.elements.delete(component.name);
-	            component.usedBy.splice(component.usedBy.indexOf(this), 1);
+	    removeElementByInstance(element) {
+	        if (this.elements.has(element.name)) {
+	            this.elements.delete(element.name);
+	            element.usedBy.splice(element.usedBy.indexOf(this), 1);
 	            this.elementChangeDispatch(Manager$1.Events.REMOVE, this);
 	        }
 	        return this;
@@ -5431,8 +5433,10 @@
 	    elementChangeDispatch(type, eventObject) {
 	        for (const entity of this.usedBy) {
 	            entity.fire?.(type, eventObject);
-	            for (const manager of entity.usedBy) {
-	                manager.updatedEntities.add(entity);
+	            if (entity.usedBy) {
+	                for (const manager of entity.usedBy) {
+	                    manager.updatedEntities.add(entity);
+	                }
 	            }
 	        }
 	    }
@@ -5474,6 +5478,15 @@
 	        }
 	        return this;
 	    }
+	    addChild(entity) {
+	        super.addChild(entity);
+	        if (this.usedBy) {
+	            for (const manager of this.usedBy) {
+	                manager.addElement(entity);
+	            }
+	        }
+	        return this;
+	    }
 	    addTo(manager) {
 	        manager.addElement(this);
 	        return this;
@@ -5498,6 +5511,15 @@
 	        }
 	        return this;
 	    }
+	    removeChild(entity) {
+	        super.removeChild(entity);
+	        if (this.usedBy) {
+	            for (const manager of this.usedBy) {
+	                manager.removeElement(entity);
+	            }
+	        }
+	        return this;
+	    }
 	    removeComponent(component) {
 	        if (this.componentManager) {
 	            this.componentManager.removeElement(component);
@@ -5516,32 +5538,25 @@
 
 	// 私有全局变量，外部无法访问
 	let entityTmp;
-	class EntityManager {
-	    elements = new Map();
+	class EntityManager extends Manager$1 {
+	    // public elements: Map<string, IEntity> = new Map();
 	    data = null;
-	    disabled = false;
 	    updatedEntities = new Set();
 	    isEntityManager = true;
-	    usedBy = [];
 	    constructor(world) {
+	        super();
 	        if (world) {
 	            this.usedBy.push(world);
 	        }
 	    }
-	    addElement(entity) {
-	        if (this.has(entity)) {
-	            this.removeByInstance(entity);
-	        }
-	        return this.addComponentDirect(entity);
-	    }
-	    addComponentDirect(entity) {
-	        this.elements.set(entity.name, entity);
-	        entity.usedBy.push(this);
+	    addElementDirect(entity) {
+	        super.addElementDirect(entity);
 	        this.updatedEntities.add(entity);
-	        return this;
-	    }
-	    clear() {
-	        this.elements.clear();
+	        for (const child of entity.children) {
+	            if (child) {
+	                this.addElement(child);
+	            }
+	        }
 	        return this;
 	    }
 	    createEntity(name) {
@@ -5549,35 +5564,28 @@
 	        this.addElement(entity);
 	        return entity;
 	    }
-	    get(name) {
-	        entityTmp = this.elements.get(name);
-	        return entityTmp ? entityTmp : null;
-	    }
-	    has(entity) {
-	        if (typeof entity === "string") {
-	            return this.elements.has(entity);
-	        }
-	        else {
-	            return this.elements.has(entity.name);
-	        }
-	    }
-	    removeElement(entity) {
-	        return typeof entity === "string"
-	            ? this.removeByName(entity)
-	            : this.removeByInstance(entity);
-	    }
-	    removeByName(name) {
+	    removeElementByName(name) {
 	        entityTmp = this.elements.get(name);
 	        if (entityTmp) {
-	            this.elements.delete(name);
+	            super.removeElementByName(name);
 	            this.deleteEntityFromSystemSet(entityTmp);
+	            for (const child of entityTmp?.children) {
+	                if (child) {
+	                    this.removeElementByInstance(child);
+	                }
+	            }
 	        }
 	        return this;
 	    }
-	    removeByInstance(entity) {
+	    removeElementByInstance(entity) {
 	        if (this.elements.has(entity.name)) {
-	            this.elements.delete(entity.name);
+	            super.removeElementByInstance(entity);
 	            this.deleteEntityFromSystemSet(entity);
+	            for (const child of entity.children) {
+	                if (child) {
+	                    this.removeElementByInstance(child);
+	                }
+	            }
 	        }
 	        return this;
 	    }
@@ -5620,10 +5628,7 @@
 	        }
 	    }
 	    addElement(system) {
-	        if (this.elements.has(system.name)) {
-	            return this;
-	        }
-	        this.elements.set(system.name, system);
+	        super.addElement(system);
 	        this.updateSystemEntitySetByAddFromManager(system);
 	        return this;
 	    }
@@ -6173,11 +6178,17 @@ struct VertexOutput {
 	    }
 	}
 	const updateModelMatrixComponent = (mesh) => {
+	    var _a;
 	    let p3 = mesh.getComponent(TRANSLATION_3D);
 	    let r3 = mesh.getComponent(ROTATION_3D);
 	    let s3 = mesh.getComponent(SCALING_3D);
 	    let a3 = mesh.getComponent(ANCHOR_3D);
 	    let m3 = mesh.getComponent(MODEL_3D);
+	    let worldMatrix = mesh.getComponent(WORLD_MATRIX);
+	    if (!worldMatrix) {
+	        worldMatrix = new Matrix4Component(WORLD_MATRIX);
+	        mesh.addComponent(worldMatrix);
+	    }
 	    if (!m3) {
 	        m3 = new Matrix4Component(MODEL_3D);
 	        mesh.addComponent(m3);
@@ -6205,6 +6216,13 @@ struct VertexOutput {
 	        if (a3) {
 	            a3.dirty = false;
 	        }
+	    }
+	    if (mesh.parent) {
+	        let parentWorldMatrix = ((_a = mesh.parent.getComponent(WORLD_MATRIX)) === null || _a === void 0 ? void 0 : _a.data) || Matrix4$1.UNIT_MATRIX4;
+	        Matrix4$1.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+	    }
+	    else {
+	        Matrix4$1.fromArray(m3.data, worldMatrix.data);
 	    }
 	    return m3;
 	};
@@ -8678,7 +8696,7 @@ struct VertexOutput {
 	        }
 	        const mvp = cacheData.mvp;
 	        Matrix4.multiply((_b = camera.getComponent(PROJECTION_3D)) === null || _b === void 0 ? void 0 : _b.data, Matrix4.invert(updateModelMatrixComponent(camera).data), mvp);
-	        Matrix4.multiply(mvp, (_c = mesh.getComponent(MODEL_3D)) === null || _c === void 0 ? void 0 : _c.data, mvp);
+	        Matrix4.multiply(mvp, (_c = mesh.getComponent(WORLD_MATRIX)) === null || _c === void 0 ? void 0 : _c.data, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
 	            if (uniform.type === "uniform-buffer" && uniform.dirty) {
@@ -9656,15 +9674,15 @@ struct VertexOutput {
 	        this.usedBy = [];
 	        this.isManager = true;
 	    }
-	    addElement(component) {
-	        if (this.has(component)) {
-	            this.removeElementByInstance(component);
+	    addElement(element) {
+	        if (this.has(element)) {
+	            this.removeElementByInstance(element);
 	        }
-	        return this.addElementDirect(component);
+	        return this.addElementDirect(element);
 	    }
-	    addElementDirect(component) {
-	        this.elements.set(component.name, component);
-	        component.usedBy.push(this);
+	    addElementDirect(element) {
+	        this.elements.set(element.name, element);
+	        element.usedBy.push(this);
 	        this.elementChangeDispatch(Manager.Events.ADD, this);
 	        return this;
 	    }
@@ -9676,18 +9694,18 @@ struct VertexOutput {
 	        elementTmp = this.elements.get(name);
 	        return elementTmp ? elementTmp : null;
 	    }
-	    has(component) {
-	        if (typeof component === "string") {
-	            return this.elements.has(component);
+	    has(element) {
+	        if (typeof element === "string") {
+	            return this.elements.has(element);
 	        }
 	        else {
-	            return this.elements.has(component.name);
+	            return this.elements.has(element.name);
 	        }
 	    }
-	    removeElement(component) {
-	        return typeof component === "string"
-	            ? this.removeElementByName(component)
-	            : this.removeElementByInstance(component);
+	    removeElement(element) {
+	        return typeof element === "string"
+	            ? this.removeElementByName(element)
+	            : this.removeElementByInstance(element);
 	    }
 	    removeElementByName(name) {
 	        elementTmp = this.elements.get(name);
@@ -9698,10 +9716,10 @@ struct VertexOutput {
 	        }
 	        return this;
 	    }
-	    removeElementByInstance(component) {
-	        if (this.elements.has(component.name)) {
-	            this.elements.delete(component.name);
-	            component.usedBy.splice(component.usedBy.indexOf(this), 1);
+	    removeElementByInstance(element) {
+	        if (this.elements.has(element.name)) {
+	            this.elements.delete(element.name);
+	            element.usedBy.splice(element.usedBy.indexOf(this), 1);
 	            this.elementChangeDispatch(Manager.Events.REMOVE, this);
 	        }
 	        return this;
@@ -9710,8 +9728,10 @@ struct VertexOutput {
 	        var _a, _b;
 	        for (const entity of this.usedBy) {
 	            (_b = (_a = entity).fire) === null || _b === void 0 ? void 0 : _b.call(_a, type, eventObject);
-	            for (const manager of entity.usedBy) {
-	                manager.updatedEntities.add(entity);
+	            if (entity.usedBy) {
+	                for (const manager of entity.usedBy) {
+	                    manager.updatedEntities.add(entity);
+	                }
 	            }
 	        }
 	    }
@@ -9757,6 +9777,15 @@ struct VertexOutput {
 	        }
 	        return this;
 	    }
+	    addChild(entity) {
+	        super.addChild(entity);
+	        if (this.usedBy) {
+	            for (const manager of this.usedBy) {
+	                manager.addElement(entity);
+	            }
+	        }
+	        return this;
+	    }
 	    addTo(manager) {
 	        manager.addElement(this);
 	        return this;
@@ -9778,6 +9807,15 @@ struct VertexOutput {
 	        this.componentManager = manager;
 	        if (!this.componentManager.usedBy.includes(this)) {
 	            this.componentManager.usedBy.push(this);
+	        }
+	        return this;
+	    }
+	    removeChild(entity) {
+	        super.removeChild(entity);
+	        if (this.usedBy) {
+	            for (const manager of this.usedBy) {
+	                manager.removeElement(entity);
+	            }
 	        }
 	        return this;
 	    }
@@ -9818,6 +9856,7 @@ struct VertexOutput {
 	        .addComponent(new Matrix4Component(ROTATION_3D))
 	        .addComponent(new Matrix4Component(SCALING_3D))
 	        .addComponent(new Matrix4Component(MODEL_3D))
+	        .addComponent(new Matrix4Component(WORLD_MATRIX))
 	        .addComponent(new Renderable("mesh"));
 	    if (world) {
 	        world.addEntity(entity);
