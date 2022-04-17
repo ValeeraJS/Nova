@@ -14,22 +14,11 @@
 
 		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
 		const geometry = Nova.Geometry3Factory.createCylinder3({
-			hasNormal: true,
-			hasUV: true,
-			hasIndices: false,
-			combine: true,
-			topology: "triangle-list",
-			hasIndices: true,
-			combine: true,
 			radiusTop: 0.2,
 			radiusBottom: 0,
 			height: 0.8,
 			radialSegments: 16,
 			heightSegments: 1,
-			openEnded: false,
-			thetaStart: 0,
-			thetaLength: Math.PI * 2,
-			cullMode: "back"
 		});
 		geometry.transform(Nova.Mathx.Matrix4.fromEuler({
 			x: Math.PI / 2,
@@ -38,20 +27,7 @@
 			order: 'xyz'
 		}));
 		const geometry2 = Nova.Geometry3Factory.createSphere3({
-			hasNormal: true,
-			hasUV: true,
-			combine: true,
-			topology: "triangle-list",
-			hasIndices: true,
-			combine: true,
 			radius: 0.25,
-			phiStart: 0,
-			phiLength: Math.PI * 2,
-			thetaStart: 0,
-			thetaLength: Math.PI,
-			widthSegments: 32,
-			heightSegments: 32,
-			cullMode: "back"
 		});
 
 		const cylinder = Nova.EntityFactory.createMesh(geometry, "cylinder", world);
