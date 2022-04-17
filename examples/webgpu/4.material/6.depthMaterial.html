@@ -12,7 +12,10 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3(5, 5);
+		const geo = Nova.Geometry3Factory.createPlane3({
+			width: 5,
+			height: 5
+		});
 		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 		const material = new Nova.DepthMaterial();
 		mesh.addComponent(material);

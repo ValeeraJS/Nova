@@ -15,7 +15,10 @@
 		});
 		const world = new Nova.World();
 
-		const geometry = Nova.Geometry3Factory.createPlane3(2, 2);
+		const geometry = Nova.Geometry3Factory.createPlane3({
+			width: 3,
+			height: 3
+		});
 		const mesh = Nova.EntityFactory.createMesh(geometry, "plane", world);
 		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(mesh);
 		positionProxy.z = -5;
@@ -46,7 +49,7 @@
 
 		function createGUI() {
 			const gui = new dat.GUI();
-			const f = gui.addFolder("Perspective camera");
+			const f = gui.addFolder("canvas size");
 			const options = {
 				width: 800,
 				height: 450

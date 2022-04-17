@@ -34,14 +34,22 @@
 				const engine = new Nova.WebGPUEngine(canvas);
 				const world = new Nova.World();
 
-				const geo = Nova.Geometry3Factory.createPlane3(3, 3);
+				const geo = Nova.Geometry3Factory.createPlane3({
+					width: 3,
+					height: 3
+				});
 				const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 				const texture = new Nova.SpritesheetTexture(spritesheetJson);
 				const material = new Nova.TextureMaterial(texture);
 				mesh.addComponent(material);
 				const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
 
-				const projection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
+				const projection = new Nova.PerspectiveProjection(
+					Math.PI / 3,
+					canvas.width / canvas.height,
+					0.01,
+					10
+				);
 				const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 				const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
 				positionProxy.z = 5;

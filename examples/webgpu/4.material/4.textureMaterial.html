@@ -12,7 +12,7 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3(2, 2);
+		const geo = Nova.Geometry3Factory.createPlane3();
 		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 		const material = new Nova.TextureMaterial(
 			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)

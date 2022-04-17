@@ -12,14 +12,20 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3(3, 3);
+		const geo = Nova.Geometry3Factory.createPlane3({
+			width: 3,
+			height: 3
+		});
 		const mesh = Nova.EntityFactory.createMesh(geo, "background", world);
 		const material = new Nova.TextureMaterial(
 			new Nova.ImageBitmapTexture("./../../textures/back.png", 512, 512)
 		);
 		mesh.addComponent(material);
 
-		const geo2 = Nova.Geometry3Factory.createPlane3(2, 2);
+		const geo2 = Nova.Geometry3Factory.createPlane3({
+			width: 2,
+			height: 2
+		});
 		const mesh2 = Nova.EntityFactory.createMesh(geo2, "plane", world);
 		const material2 = new Nova.TextureMaterial(
 			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)

@@ -4309,13 +4309,13 @@ const DEFAULT_OPTIONS = {
 };
 
 const DEFAULT_BOX_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, depth: 1, widthSegments: 1, heightSegments: 1, depthSegments: 1, cullMode: "back" });
-var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
+var createBox3 = (options = {}) => {
     let stride = 3;
     const indices = [];
     const vertices = [];
     const normals = [];
     const uvs = [];
-    const { depth, height, width, depthSegments, heightSegments, widthSegments } = options;
+    const { depth, height, width, depthSegments, heightSegments, widthSegments, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_BOX_OPTIONS), options);
     let numberOfVertices = 0;
     buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
     buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
@@ -4377,15 +4377,15 @@ var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
     }
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
+    let geo = new Geometry3(len, topology, cullMode);
     // TODO indices 现在都是非索引版本
-    if (options.combine) {
+    if (combine) {
         let pickers = [{
                 name: POSITION,
                 offset: 0,
                 length: 3,
             }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: NORMAL,
@@ -4398,7 +4398,7 @@ var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
                 length: 2,
             });
         }
-        else if (options.hasNormal) {
+        else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: 'normal',
@@ -4406,7 +4406,7 @@ var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
                 length: 3,
             });
         }
-        else if (options.hasUV) {
+        else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: 'uv',
@@ -4422,16 +4422,16 @@ var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
             result[0 + strideI] = vertices[i3];
             result[1 + strideI] = vertices[i3 + 1];
             result[2 + strideI] = vertices[i3 + 2];
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
             }
-            else if (options.hasUV) {
+            else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }
@@ -4465,13 +4465,13 @@ var createBox3 = (options = DEFAULT_BOX_OPTIONS) => {
 };
 
 const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
-var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
+var createCircle3 = (options = {}) => {
     let stride = 3;
     const indices = [];
     const positions = [0, 0, 0];
     const normals = [0, 0, 1];
     const uvs = [0.5, 0.5];
-    const { segments, angleStart, angle, radius } = options;
+    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_CIRCLE_OPTIONS), options);
     for (let s = 0, i = 3; s <= segments; s++, i += 3) {
         const segment = angleStart + s / segments * angle;
         positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
@@ -4484,15 +4484,15 @@ var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
     }
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
+    let geo = new Geometry3(len, topology, cullMode);
     // TODO indices 现在都是非索引版本
-    if (options.combine) {
+    if (combine) {
         let pickers = [{
                 name: POSITION,
                 offset: 0,
                 length: 3,
             }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: NORMAL,
@@ -4505,7 +4505,7 @@ var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
                 length: 2,
             });
         }
-        else if (options.hasNormal) {
+        else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: NORMAL,
@@ -4513,7 +4513,7 @@ var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
                 length: 3,
             });
         }
-        else if (options.hasUV) {
+        else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: UV,
@@ -4529,16 +4529,16 @@ var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
             result[0 + strideI] = positions[i3];
             result[1 + strideI] = positions[i3 + 1];
             result[2 + strideI] = positions[i3 + 2];
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
             }
-            else if (options.hasUV) {
+            else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }
@@ -4572,47 +4572,43 @@ var createCircle3 = (options = DEFAULT_CIRCLE_OPTIONS) => {
 };
 
 const DEFAULT_SPHERE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 32, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: constants.DEG_360_RAD, cullMode: "back" });
-var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
+var createCylinder3 = (options = {}) => {
     let stride = 3;
     const indices = [];
     const vertices = [];
     const normals = [];
     const uvs = [];
-    // helper variables
+    const { height, radialSegments, radiusTop, radiusBottom, heightSegments, openEnded, thetaStart, thetaLength, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_SPHERE_OPTIONS$1), options);
     let index = 0;
     const indexArray = [];
-    const halfHeight = options.height / 2;
+    const halfHeight = height / 2;
     // generate geometry
     generateTorso();
-    if (options.openEnded === false) {
-        if (options.radiusTop > 0)
+    if (openEnded === false) {
+        if (radiusTop > 0)
             generateCap(true);
-        if (options.radiusBottom > 0)
+        if (radiusBottom > 0)
             generateCap(false);
     }
-    // this.setIndex(indices);
-    // this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-    // this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
-    // this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
     function generateTorso() {
         const normal = new Vector3$1();
         const vertex = new Float32Array(3);
         // this will be used to calculate the normal
-        const slope = (options.radiusBottom - options.radiusTop) / options.height;
+        const slope = (radiusBottom - radiusTop) / height;
         // generate vertices, normals and uvs
-        for (let y = 0; y <= options.heightSegments; y++) {
+        for (let y = 0; y <= heightSegments; y++) {
             const indexRow = [];
-            const v = y / options.heightSegments;
+            const v = y / heightSegments;
             // calculate the radius of the current row
-            const radius = v * (options.radiusBottom - options.radiusTop) + options.radiusTop;
-            for (let x = 0; x <= options.radialSegments; x++) {
-                const u = x / options.radialSegments;
-                const theta = u * options.thetaLength + options.thetaStart;
+            const radius = v * (radiusBottom - radiusTop) + radiusTop;
+            for (let x = 0; x <= radialSegments; x++) {
+                const u = x / radialSegments;
+                const theta = u * thetaLength + thetaStart;
                 const sinTheta = Math.sin(theta);
                 const cosTheta = Math.cos(theta);
                 // vertex
                 vertex[0] = radius * sinTheta;
-                vertex[1] = -v * options.height + halfHeight;
+                vertex[1] = -v * height + halfHeight;
                 vertex[2] = radius * cosTheta;
                 vertices.push(vertex[0], vertex[1], vertex[2]);
                 // normal
@@ -4630,8 +4626,8 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
             indexArray.push(indexRow);
         }
         // generate indices
-        for (let x = 0; x < options.radialSegments; x++) {
-            for (let y = 0; y < options.heightSegments; y++) {
+        for (let x = 0; x < radialSegments; x++) {
+            for (let y = 0; y < heightSegments; y++) {
                 // we use the index array to access the correct indices
                 const a = indexArray[y][x];
                 const b = indexArray[y + 1][x];
@@ -4649,12 +4645,12 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
         const centerIndexStart = index;
         const uv = new Float32Array(2);
         const vertex = new Float32Array(3);
-        const radius = (top === true) ? options.radiusTop : options.radiusBottom;
+        const radius = (top === true) ? radiusTop : radiusBottom;
         const sign = (top === true) ? 1 : -1;
         // first we generate the center vertex data of the cap.
         // because the geometry needs one set of uvs per face,
         // we must generate a center vertex per face/segment
-        for (let x = 1; x <= options.radialSegments; x++) {
+        for (let x = 1; x <= radialSegments; x++) {
             // vertex
             vertices.push(0, halfHeight * sign, 0);
             // normal
@@ -4667,9 +4663,9 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
         // save the index of the last center vertex
         const centerIndexEnd = index;
         // now we generate the surrounding vertices, normals and uvs
-        for (let x = 0; x <= options.radialSegments; x++) {
-            const u = x / options.radialSegments;
-            const theta = u * options.thetaLength + options.thetaStart;
+        for (let x = 0; x <= radialSegments; x++) {
+            const u = x / radialSegments;
+            const theta = u * thetaLength + thetaStart;
             const cosTheta = Math.cos(theta);
             const sinTheta = Math.sin(theta);
             // vertex
@@ -4687,7 +4683,7 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
             index++;
         }
         // generate indices
-        for (let x = 0; x < options.radialSegments; x++) {
+        for (let x = 0; x < radialSegments; x++) {
             const c = centerIndexStart + x;
             const i = centerIndexEnd + x;
             if (top === true) {
@@ -4701,14 +4697,14 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
         }
     }
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
-    if (options.combine) {
+    let geo = new Geometry3(len, topology, cullMode);
+    if (combine) {
         let pickers = [{
                 name: POSITION,
                 offset: 0,
                 length: 3,
             }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: 'normal',
@@ -4721,7 +4717,7 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
                 length: 2,
             });
         }
-        else if (options.hasNormal) {
+        else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: 'normal',
@@ -4729,7 +4725,7 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
                 length: 3,
             });
         }
-        else if (options.hasUV) {
+        else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: 'uv',
@@ -4745,16 +4741,16 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
             result[0 + strideI] = vertices[i3];
             result[1 + strideI] = vertices[i3 + 1];
             result[2 + strideI] = vertices[i3 + 2];
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
             }
-            else if (options.hasUV) {
+            else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }
@@ -4765,13 +4761,14 @@ var createCylinder3 = (options = DEFAULT_SPHERE_OPTIONS$1) => {
     return geo;
 };
 
-const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segmentX: 1, segmentY: 1 });
-var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
+const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, segmentX: 1, segmentY: 1 });
+var createPlane3 = (options = {}) => {
+    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_PLANE_OPTIONS), options);
     let stride = 3;
     const halfX = width * 0.5;
     const halfY = height * 0.5;
-    const gridX = Math.max(1, Math.round(options.segmentX));
-    const gridY = Math.max(1, Math.round(options.segmentY));
+    const gridX = Math.max(1, Math.round(segmentX));
+    const gridY = Math.max(1, Math.round(segmentY));
     const gridX1 = gridX + 1;
     const gridY1 = gridY + 1;
     const segmentWidth = width / gridX;
@@ -4802,16 +4799,15 @@ var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
     }
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
-    console.log(indices, positions, normals, uvs);
+    let geo = new Geometry3(len, topology, cullMode);
     // TODO indices 现在都是非索引版本
-    if (options.combine) {
+    if (combine) {
         let pickers = [{
                 name: POSITION,
                 offset: 0,
                 length: 3,
             }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: 'normal',
@@ -4824,7 +4820,7 @@ var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
                 length: 2,
             });
         }
-        else if (options.hasNormal) {
+        else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: 'normal',
@@ -4832,7 +4828,7 @@ var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
                 length: 3,
             });
         }
-        else if (options.hasUV) {
+        else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: 'uv',
@@ -4848,16 +4844,16 @@ var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
             result[0 + strideI] = positions[i3];
             result[1 + strideI] = positions[i3 + 1];
             result[2 + strideI] = positions[i3 + 2];
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
             }
-            else if (options.hasUV) {
+            else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }
@@ -4888,7 +4884,6 @@ var createPlane3 = (width = 1, height = 1, options = DEFAULT_PLANE_OPTIONS) => {
         //     });
         // }
         geo.addAttribute(VERTICES, result, stride, pickers);
-        console.log(geo);
         return geo;
     }
     else {

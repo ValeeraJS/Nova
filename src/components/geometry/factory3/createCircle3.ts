@@ -9,6 +9,8 @@ export type ICircleGeometryOptions = {
     radius: number,
 } & IGeometryOptions;
 
+export type ICircleGeometryOptionsInput = Partial<ICircleGeometryOptions>;
+
 export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
@@ -20,14 +22,17 @@ export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
 };
 
 
-export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geometry3 => {
+export default (options: ICircleGeometryOptionsInput = {}): Geometry3 => {
     let stride = 3;
 
     const indices: number[] = [];
     const positions = [0, 0, 0];
     const normals = [0, 0, 1];
     const uvs = [0.5, 0.5];
-    const { segments, angleStart, angle, radius } = options;
+    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, hasNormal, combine } = {
+        ...DEFAULT_CIRCLE_OPTIONS,
+        ...options
+    };
 
     for (let s = 0, i = 3; s <= segments; s++, i += 3) {
 
@@ -51,16 +56,16 @@ export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geome
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
+    let geo = new Geometry3(len, topology, cullMode);
 
     // TODO indices 现在都是非索引版本
-    if (options.combine) {
+    if (combine) {
         let pickers: AttributePicker[] = [{
             name: POSITION,
             offset: 0,
             length: 3,
         }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: NORMAL,
@@ -72,14 +77,14 @@ export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geome
                 offset: 6,
                 length: 2,
             });
-        } else if (options.hasNormal) {
+        } else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: NORMAL,
                 offset: 3,
                 length: 3,
             });
-        } else if (options.hasUV) {
+        } else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: UV,
@@ -97,15 +102,15 @@ export default (options: ICircleGeometryOptions = DEFAULT_CIRCLE_OPTIONS): Geome
             result[1 + strideI] = positions[i3 + 1];
             result[2 + strideI] = positions[i3 + 2];
 
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
-            } else if (options.hasUV) {
+            } else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }

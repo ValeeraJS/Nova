@@ -14,6 +14,8 @@ export type ICylinderGeometryOptions = {
     thetaLength: number
 } & IGeometryOptions;
 
+export type ICylinderGeometryOptionsInput = Partial<ICylinderGeometryOptions>;
+
 export const DEFAULT_SPHERE_OPTIONS: ICylinderGeometryOptions = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
@@ -30,7 +32,7 @@ export const DEFAULT_SPHERE_OPTIONS: ICylinderGeometryOptions = {
 };
 
 
-export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geometry3 => {
+export default (options: ICylinderGeometryOptionsInput = {}): Geometry3 => {
     let stride = 3;
 
     const indices: number[] = [];
@@ -38,27 +40,25 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
     const normals: number[] = [];
     const uvs: number[] = [];
 
-    // helper variables
+    const {height, radialSegments, radiusTop, radiusBottom, heightSegments, openEnded, thetaStart, thetaLength, topology, cullMode, hasUV, hasNormal, combine} = {
+        ...DEFAULT_SPHERE_OPTIONS,
+        ...options
+    };
 
     let index = 0;
     const indexArray: number[][] = [];
-    const halfHeight = options.height / 2;
+    const halfHeight = height / 2;
 
     // generate geometry
 
     generateTorso();
 
-    if (options.openEnded === false) {
+    if (openEnded === false) {
 
-        if (options.radiusTop > 0) generateCap(true);
-        if (options.radiusBottom > 0) generateCap(false);
+        if (radiusTop > 0) generateCap(true);
+        if (radiusBottom > 0) generateCap(false);
 
     }
-
-    // this.setIndex(indices);
-    // this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-    // this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
-    // this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
 
     function generateTorso() {
 
@@ -66,25 +66,25 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
         const vertex = new Float32Array(3);
 
         // this will be used to calculate the normal
-        const slope = (options.radiusBottom - options.radiusTop) / options.height;
+        const slope = (radiusBottom - radiusTop) / height;
 
         // generate vertices, normals and uvs
 
-        for (let y = 0; y <= options.heightSegments; y++) {
+        for (let y = 0; y <= heightSegments; y++) {
 
             const indexRow = [];
 
-            const v = y / options.heightSegments;
+            const v = y / heightSegments;
 
             // calculate the radius of the current row
 
-            const radius = v * (options.radiusBottom - options.radiusTop) + options.radiusTop;
+            const radius = v * (radiusBottom - radiusTop) + radiusTop;
 
-            for (let x = 0; x <= options.radialSegments; x++) {
+            for (let x = 0; x <= radialSegments; x++) {
 
-                const u = x / options.radialSegments;
+                const u = x / radialSegments;
 
-                const theta = u * options.thetaLength + options.thetaStart;
+                const theta = u * thetaLength + thetaStart;
 
                 const sinTheta = Math.sin(theta);
                 const cosTheta = Math.cos(theta);
@@ -92,7 +92,7 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
                 // vertex
 
                 vertex[0] = radius * sinTheta;
-                vertex[1] = - v * options.height + halfHeight;
+                vertex[1] = - v * height + halfHeight;
                 vertex[2] = radius * cosTheta;
                 vertices.push(vertex[0], vertex[1], vertex[2]);
 
@@ -121,9 +121,9 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
 
         // generate indices
 
-        for (let x = 0; x < options.radialSegments; x++) {
+        for (let x = 0; x < radialSegments; x++) {
 
-            for (let y = 0; y < options.heightSegments; y++) {
+            for (let y = 0; y < heightSegments; y++) {
 
                 // we use the index array to access the correct indices
 
@@ -150,14 +150,14 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
         const uv = new Float32Array(2);
         const vertex = new Float32Array(3);
 
-        const radius = (top === true) ? options.radiusTop : options.radiusBottom;
+        const radius = (top === true) ? radiusTop : radiusBottom;
         const sign = (top === true) ? 1 : - 1;
 
         // first we generate the center vertex data of the cap.
         // because the geometry needs one set of uvs per face,
         // we must generate a center vertex per face/segment
 
-        for (let x = 1; x <= options.radialSegments; x++) {
+        for (let x = 1; x <= radialSegments; x++) {
 
             // vertex
 
@@ -182,10 +182,10 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
 
         // now we generate the surrounding vertices, normals and uvs
 
-        for (let x = 0; x <= options.radialSegments; x++) {
+        for (let x = 0; x <= radialSegments; x++) {
 
-            const u = x / options.radialSegments;
-            const theta = u * options.thetaLength + options.thetaStart;
+            const u = x / radialSegments;
+            const theta = u * thetaLength + thetaStart;
 
             const cosTheta = Math.cos(theta);
             const sinTheta = Math.sin(theta);
@@ -215,7 +215,7 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
 
         // generate indices
 
-        for (let x = 0; x < options.radialSegments; x++) {
+        for (let x = 0; x < radialSegments; x++) {
 
             const c = centerIndexStart + x;
             const i = centerIndexEnd + x;
@@ -239,14 +239,14 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
     }
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
-    if (options.combine) {
+    let geo = new Geometry3(len, topology, cullMode);
+    if (combine) {
         let pickers: AttributePicker[] = [{
             name: POSITION,
             offset: 0,
             length: 3,
         }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: 'normal',
@@ -258,14 +258,14 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
                 offset: 6,
                 length: 2,
             });
-        } else if (options.hasNormal) {
+        } else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: 'normal',
                 offset: 3,
                 length: 3,
             });
-        } else if (options.hasUV) {
+        } else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: 'uv',
@@ -283,15 +283,15 @@ export default (options: ICylinderGeometryOptions = DEFAULT_SPHERE_OPTIONS): Geo
             result[1 + strideI] = vertices[i3 + 1];
             result[2 + strideI] = vertices[i3 + 2];
 
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
-            } else if (options.hasUV) {
+            } else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }

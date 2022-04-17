@@ -25,14 +25,19 @@ export const DEFAULT_BOX_OPTIONS: IBoxGeometryOptions = {
 	cullMode: "back"
 };
 
-export default (options: IBoxGeometryOptions = DEFAULT_BOX_OPTIONS): Geometry3 => {
+export type IBoxGeometryOptionsInput = Partial<IBoxGeometryOptions>;
+
+export default (options: IBoxGeometryOptionsInput = {}): Geometry3 => {
 	let stride = 3;
 	const indices: number[] = [];
 	const vertices: number[] = [];
 	const normals: number[] = [];
 	const uvs: number[] = [];
 
-	const { depth, height, width, depthSegments, heightSegments, widthSegments } = options;
+	const { depth, height, width, depthSegments, heightSegments, widthSegments, topology, cullMode, hasUV, hasNormal, combine } = {
+		...DEFAULT_BOX_OPTIONS,
+		...options
+	};
 
 	let numberOfVertices = 0;
 
@@ -56,7 +61,6 @@ export default (options: IBoxGeometryOptions = DEFAULT_BOX_OPTIONS): Geometry3 =
 		const gridY1 = gridY + 1;
 
 		let vertexCounter = 0;
-		let groupCount = 0;
 
 		const vector = new Vector3();
 
@@ -123,10 +127,6 @@ export default (options: IBoxGeometryOptions = DEFAULT_BOX_OPTIONS): Geometry3 =
 				indices.push(a, b, d);
 				indices.push(b, c, d);
 
-				// increase counter
-
-				groupCount += 6;
-
 			}
 
 		}
@@ -139,16 +139,16 @@ export default (options: IBoxGeometryOptions = DEFAULT_BOX_OPTIONS): Geometry3 =
 
 	let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	// let count = len / 3;
-	let geo = new Geometry3(len, options.topology, options.cullMode);
+	let geo = new Geometry3(len, topology, cullMode);
 
 	// TODO indices 现在都是非索引版本
-	if (options.combine) {
+	if (combine) {
 		let pickers: AttributePicker[] = [{
 			name: POSITION,
 			offset: 0,
 			length: 3,
 		}];
-		if (options.hasNormal && options.hasUV) {
+		if (hasNormal && hasUV) {
 			stride = 8;
 			pickers.push({
 				name: NORMAL,
@@ -160,14 +160,14 @@ export default (options: IBoxGeometryOptions = DEFAULT_BOX_OPTIONS): Geometry3 =
 				offset: 6,
 				length: 2,
 			});
-		} else if (options.hasNormal) {
+		} else if (hasNormal) {
 			stride = 6;
 			pickers.push({
 				name: 'normal',
 				offset: 3,
 				length: 3,
 			});
-		} else if (options.hasUV) {
+		} else if (hasUV) {
 			stride = 5;
 			pickers.push({
 				name: 'uv',
@@ -185,15 +185,15 @@ export default (options: IBoxGeometryOptions = DEFAULT_BOX_OPTIONS): Geometry3 =
 			result[1 + strideI] = vertices[i3 + 1];
 			result[2 + strideI] = vertices[i3 + 2];
 
-			if (options.hasNormal) {
+			if (hasNormal) {
 				result[3 + strideI] = normals[i3];
 				result[4 + strideI] = normals[i3 + 1];
 				result[5 + strideI] = normals[i3 + 2];
-				if (options.hasUV) {
+				if (hasUV) {
 					result[6 + strideI] = uvs[i2];
 					result[7 + strideI] = uvs[i2 + 1];
 				}
-			} else if (options.hasUV) {
+			} else if (hasUV) {
 				result[3 + strideI] = uvs[i2];
 				result[4 + strideI] = uvs[i2 + 1];
 			}

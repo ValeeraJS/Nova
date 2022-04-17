@@ -3,25 +3,37 @@ import Geometry3, { AttributePicker } from "../Geometry3";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
 export type IPlaneGeometryOptions = {
+    width: number,
+    height: number,
     segmentX: number,
     segmentY: number,
 } & IGeometryOptions;
+
+export type IPlaneGeometryOptionsInput = Partial<IPlaneGeometryOptions>;
 
 export const DEFAULT_PLANE_OPTIONS: IPlaneGeometryOptions = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
     combine: true,
+    width: 1,
+    height: 1,
     segmentX: 1,
     segmentY: 1,
 };
 
 
-export default (width = 1, height = 1, options: IPlaneGeometryOptions = DEFAULT_PLANE_OPTIONS): Geometry3 => {
+export default (options: IPlaneGeometryOptionsInput = {}): Geometry3 => {
+
+    const {width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine} = {
+        ...DEFAULT_PLANE_OPTIONS,
+        ...options
+    }
+
     let stride = 3;
     const halfX = width * 0.5;
     const halfY = height * 0.5;
-    const gridX = Math.max(1, Math.round(options.segmentX));
-    const gridY = Math.max(1, Math.round(options.segmentY));
+    const gridX = Math.max(1, Math.round(segmentX));
+    const gridY = Math.max(1, Math.round(segmentY));
 
     const gridX1 = gridX + 1;
     const gridY1 = gridY + 1;
@@ -60,16 +72,16 @@ export default (width = 1, height = 1, options: IPlaneGeometryOptions = DEFAULT_
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, options.topology, options.cullMode);
-    console.log(indices, positions, normals, uvs);
+    let geo = new Geometry3(len, topology, cullMode);
+
     // TODO indices 现在都是非索引版本
-    if (options.combine) {
+    if (combine) {
         let pickers: AttributePicker[] = [{
             name: POSITION,
             offset: 0,
             length: 3,
         }];
-        if (options.hasNormal && options.hasUV) {
+        if (hasNormal && hasUV) {
             stride = 8;
             pickers.push({
                 name: 'normal',
@@ -81,14 +93,14 @@ export default (width = 1, height = 1, options: IPlaneGeometryOptions = DEFAULT_
                 offset: 6,
                 length: 2,
             });
-        } else if (options.hasNormal) {
+        } else if (hasNormal) {
             stride = 6;
             pickers.push({
                 name: 'normal',
                 offset: 3,
                 length: 3,
             });
-        } else if (options.hasUV) {
+        } else if (hasUV) {
             stride = 5;
             pickers.push({
                 name: 'uv',
@@ -106,15 +118,15 @@ export default (width = 1, height = 1, options: IPlaneGeometryOptions = DEFAULT_
             result[1 + strideI] = positions[i3 + 1];
             result[2 + strideI] = positions[i3 + 2];
 
-            if (options.hasNormal) {
+            if (hasNormal) {
                 result[3 + strideI] = normals[i3];
                 result[4 + strideI] = normals[i3 + 1];
                 result[5 + strideI] = normals[i3 + 2];
-                if (options.hasUV) {
+                if (hasUV) {
                     result[6 + strideI] = uvs[i2];
                     result[7 + strideI] = uvs[i2 + 1];
                 }
-            } else if (options.hasUV) {
+            } else if (hasUV) {
                 result[3 + strideI] = uvs[i2];
                 result[4 + strideI] = uvs[i2 + 1];
             }
@@ -147,7 +159,7 @@ export default (width = 1, height = 1, options: IPlaneGeometryOptions = DEFAULT_
         //     });
         // }
         geo.addAttribute(VERTICES, result, stride, pickers);
-        console.log(geo)
+
         return geo;
     } else {
         // let result = new Float32Array(9);

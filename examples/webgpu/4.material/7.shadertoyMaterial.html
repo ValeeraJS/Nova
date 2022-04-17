@@ -68,7 +68,10 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3(3, 3);
+		const geo = Nova.Geometry3Factory.createPlane3({
+			width: 3,
+			height: 3,
+		});
 		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 		const texture = new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512);
 		const material = new Nova.ShadertoyMaterial(fragment, texture);
