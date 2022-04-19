@@ -33,46 +33,46 @@ const wgslShaders = {
 };
 
 export default class TextureMaterial extends Material implements IMaterial {
-	data!: IShaderCode;
-	constructor(texture: Texture, sampler: Sampler = new Sampler()) {
+	public data!: IShaderCode;
+	public constructor(texture: Texture, sampler: Sampler = new Sampler()) {
 		super(wgslShaders.vertex, wgslShaders.fragment, [
 			{
+				binding: 1,
 				name: "mySampler",
 				type: "sampler",
 				value: sampler,
-				binding: 1,
 				dirty: true
 			},
 			{
+				binding: 2,
 				name: "myTexture",
 				type: "sampled-texture",
 				value: texture,
-				binding: 2,
 				dirty: true
 			}
 		]);
 		this.dirty = true;
 	}
 
-	get sampler(): Sampler {
+	public get sampler(): Sampler {
 		return this.data.uniforms[0].value as Sampler;
 	}
 
-	set sampler(sampler: Sampler) {
+	public set sampler(sampler: Sampler) {
 		this.data.uniforms[0].dirty = this.dirty = true;
 		this.data.uniforms[0].value = sampler;
 	}
 
-	get texture(): Texture {
+	public get texture(): Texture {
 		return this.data.uniforms[1].value as Texture;
 	}
 
-	set texture(texture: Texture) {
+	public set texture(texture: Texture) {
 		this.data.uniforms[1].dirty = this.dirty = true;
 		this.data.uniforms[1].value = texture;
 	}
 
-	setTextureAndSampler(texture: Texture, sampler?: Sampler): this {
+	public setTextureAndSampler(texture: Texture, sampler?: Sampler): this {
 		this.texture = texture;
 		if (sampler) {
 			this.sampler = sampler;
