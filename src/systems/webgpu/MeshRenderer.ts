@@ -1,7 +1,7 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
-import { GEOMETRY_3D, MATERIAL, MODEL_3D, PROJECTION_3D, WORLD_MATRIX } from "../../components/constants";
+import { GEOMETRY_3D, MATERIAL, PROJECTION_3D, WORLD_MATRIX } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";

@@ -9,6 +9,7 @@ export declare type ISphereGeometryOptions = {
     thetaStart: number;
     thetaLength: number;
 } & IGeometryOptions;
+export declare type ISphereGeometryOptionsInput = Partial<ISphereGeometryOptions>;
 export declare const DEFAULT_SPHERE_OPTIONS: ISphereGeometryOptions;
-declare const _default: (options?: ISphereGeometryOptions) => Geometry3;
+declare const _default: (options?: ISphereGeometryOptionsInput) => Geometry3;
 export default _default;

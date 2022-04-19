@@ -137,8 +137,9 @@
 	    function WebGPUEngine(canvas, options) {
 	        if (canvas === void 0) { canvas = document.createElement("canvas"); }
 	        if (options === void 0) { options = {}; }
+	        var _this = this;
 	        var _a, _b, _c;
-	        var _this = _super.call(this) || this;
+	        _this = _super.call(this) || this;
 	        _this.inited = false;
 	        _this.canvas = canvas;
 	        _this.options = __assign(__assign({}, DEFAULT_ENGINE_OPTIONS), options);
@@ -274,6 +275,7 @@
 	    return Component;
 	}());
 
+	var ANCHOR_3D = "anchor3";
 	var GEOMETRY_3D = "geometry3";
 	var MATERIAL = "material";
 	var MODEL_3D = "model3";
@@ -281,10 +283,12 @@
 	var ROTATION_3D = "rotation3";
 	var SCALING_3D = "scale3";
 	var TRANSLATION_3D = "position3";
+	var WORLD_MATRIX = "world-matrix";
 	var VIEWING_3D = "viewing3";
 
 	var constants$1 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
+		ANCHOR_3D: ANCHOR_3D,
 		GEOMETRY_3D: GEOMETRY_3D,
 		MATERIAL: MATERIAL,
 		MODEL_3D: MODEL_3D,
@@ -292,6 +296,7 @@
 		ROTATION_3D: ROTATION_3D,
 		SCALING_3D: SCALING_3D,
 		TRANSLATION_3D: TRANSLATION_3D,
+		WORLD_MATRIX: WORLD_MATRIX,
 		VIEWING_3D: VIEWING_3D
 	});
 
@@ -406,49 +411,94 @@
 	    cullMode: "none"
 	};
 
-	var DEFAULT_CIRCLE_OPTIONS = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
-	var createCircle3 = (function (options) {
-	    if (options === void 0) { options = DEFAULT_CIRCLE_OPTIONS; }
+	var DEFAULT_BOX_OPTIONS = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, depth: 1, widthSegments: 1, heightSegments: 1, depthSegments: 1, cullMode: "back" });
+	var createBox3 = (function (options) {
+	    if (options === void 0) { options = {}; }
 	    var stride = 3;
 	    var indices = [];
-	    var positions = [0, 0, 0];
-	    var normals = [0, 0, 1];
-	    var uvs = [0.5, 0.5];
-	    var segments = options.segments, angleStart = options.angleStart, angle = options.angle, radius = options.radius;
-	    for (var s = 0, i = 3; s <= segments; s++, i += 3) {
-	        var segment = angleStart + s / segments * angle;
-	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
-	        normals.push(0, 0, 1);
-	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
-	    }
-	    // indices
-	    for (var i = 1; i <= segments; i++) {
-	        indices.push(i, i + 1, 0);
+	    var vertices = [];
+	    var normals = [];
+	    var uvs = [];
+	    var _a = __assign(__assign({}, DEFAULT_BOX_OPTIONS), options), depth = _a.depth, height = _a.height, width = _a.width, depthSegments = _a.depthSegments, heightSegments = _a.heightSegments, widthSegments = _a.widthSegments, topology = _a.topology, cullMode = _a.cullMode, hasUV = _a.hasUV, hasNormal = _a.hasNormal, combine = _a.combine;
+	    var numberOfVertices = 0;
+	    buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
+	    buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
+	    buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
+	    buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
+	    buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
+	    buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
+	    function buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
+	        var segmentWidth = width / gridX;
+	        var segmentHeight = height / gridY;
+	        var widthHalf = width / 2;
+	        var heightHalf = height / 2;
+	        var depthHalf = depth / 2;
+	        var gridX1 = gridX + 1;
+	        var gridY1 = gridY + 1;
+	        var vertexCounter = 0;
+	        var vector = new mathx.Vector3();
+	        // generate vertices, normals and uvs
+	        for (var iy = 0; iy < gridY1; iy++) {
+	            var y = iy * segmentHeight - heightHalf;
+	            for (var ix = 0; ix < gridX1; ix++) {
+	                var x = ix * segmentWidth - widthHalf;
+	                // set values to correct vector component
+	                vector[u] = x * udir;
+	                vector[v] = y * vdir;
+	                vector[w] = depthHalf;
+	                // now apply vector to vertex buffer
+	                vertices.push(vector.x, vector.y, vector.z);
+	                // set values to correct vector component
+	                vector[u] = 0;
+	                vector[v] = 0;
+	                vector[w] = depth > 0 ? 1 : -1;
+	                // now apply vector to normal buffer
+	                normals.push(vector.x, vector.y, vector.z);
+	                // uvs
+	                uvs.push(ix / gridX);
+	                uvs.push(1 - (iy / gridY));
+	                // counters
+	                vertexCounter += 1;
+	            }
+	        }
+	        // indices
+	        for (var iy = 0; iy < gridY; iy++) {
+	            for (var ix = 0; ix < gridX; ix++) {
+	                var a = numberOfVertices + ix + gridX1 * iy;
+	                var b = numberOfVertices + ix + gridX1 * (iy + 1);
+	                var c = numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
+	                var d = numberOfVertices + (ix + 1) + gridX1 * iy;
+	                // faces
+	                indices.push(a, b, d);
+	                indices.push(b, c, d);
+	            }
+	        }
+	        // update total number of vertices
+	        numberOfVertices += vertexCounter;
 	    }
 	    var len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	    // let count = len / 3;
-	    var geo = new Geometry3(len, options.topology, options.cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (options.combine) {
+	    var geo = new Geometry3(len, topology, cullMode);
+	    if (combine) {
 	        var pickers = [{
 	                name: POSITION,
 	                offset: 0,
 	                length: 3,
 	            }];
-	        if (options.hasNormal && options.hasUV) {
+	        if (hasNormal && hasUV) {
 	            stride = 8;
 	            pickers.push({
-	                name: 'normal',
+	                name: NORMAL,
 	                offset: 3,
 	                length: 3,
 	            });
 	            pickers.push({
-	                name: 'uv',
+	                name: UV,
 	                offset: 6,
 	                length: 2,
 	            });
 	        }
-	        else if (options.hasNormal) {
+	        else if (hasNormal) {
 	            stride = 6;
 	            pickers.push({
 	                name: 'normal',
@@ -456,7 +506,7 @@
 	                length: 3,
 	            });
 	        }
-	        else if (options.hasUV) {
+	        else if (hasUV) {
 	            stride = 5;
 	            pickers.push({
 	                name: 'uv',
@@ -469,19 +519,107 @@
 	            i2 = indices[i] << 1;
 	            i3 = indices[i] * 3;
 	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            result[2 + strideI] = positions[i3 + 2];
-	            if (options.hasNormal) {
+	            result[0 + strideI] = vertices[i3];
+	            result[1 + strideI] = vertices[i3 + 1];
+	            result[2 + strideI] = vertices[i3 + 2];
+	            if (hasNormal) {
 	                result[3 + strideI] = normals[i3];
 	                result[4 + strideI] = normals[i3 + 1];
 	                result[5 + strideI] = normals[i3 + 2];
-	                if (options.hasUV) {
+	                if (hasUV) {
 	                    result[6 + strideI] = uvs[i2];
 	                    result[7 + strideI] = uvs[i2 + 1];
 	                }
 	            }
-	            else if (options.hasUV) {
+	            else if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        return geo;
+	    }
+	});
+
+	var DEFAULT_CIRCLE_OPTIONS = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
+	var createCircle3 = (function (options) {
+	    if (options === void 0) { options = {}; }
+	    var stride = 3;
+	    var indices = [];
+	    var positions = [0, 0, 0];
+	    var normals = [0, 0, 1];
+	    var uvs = [0.5, 0.5];
+	    var _a = __assign(__assign({}, DEFAULT_CIRCLE_OPTIONS), options), segments = _a.segments, angleStart = _a.angleStart, angle = _a.angle, radius = _a.radius, topology = _a.topology, cullMode = _a.cullMode, hasUV = _a.hasUV, hasNormal = _a.hasNormal, combine = _a.combine;
+	    for (var s = 0, i = 3; s <= segments; s++, i += 3) {
+	        var segment = angleStart + s / segments * angle;
+	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
+	        normals.push(0, 0, 1);
+	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
+	    }
+	    // indices
+	    for (var i = 1; i <= segments; i++) {
+	        indices.push(i, i + 1, 0);
+	    }
+	    var len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    var geo = new Geometry3(len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        var pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (hasNormal && hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: UV,
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: UV,
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        var result = new Float32Array(stride * len);
+	        for (var i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            result[2 + strideI] = positions[i3 + 2];
+	            if (hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (hasUV) {
 	                result[3 + strideI] = uvs[i2];
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
@@ -516,47 +654,43 @@
 
 	var DEFAULT_SPHERE_OPTIONS$1 = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 32, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: mathx.Constants.DEG_360_RAD, cullMode: "back" });
 	var createCylinder3 = (function (options) {
-	    if (options === void 0) { options = DEFAULT_SPHERE_OPTIONS$1; }
+	    if (options === void 0) { options = {}; }
 	    var stride = 3;
 	    var indices = [];
 	    var vertices = [];
 	    var normals = [];
 	    var uvs = [];
-	    // helper variables
+	    var _a = __assign(__assign({}, DEFAULT_SPHERE_OPTIONS$1), options), height = _a.height, radialSegments = _a.radialSegments, radiusTop = _a.radiusTop, radiusBottom = _a.radiusBottom, heightSegments = _a.heightSegments, openEnded = _a.openEnded, thetaStart = _a.thetaStart, thetaLength = _a.thetaLength, topology = _a.topology, cullMode = _a.cullMode, hasUV = _a.hasUV, hasNormal = _a.hasNormal, combine = _a.combine;
 	    var index = 0;
 	    var indexArray = [];
-	    var halfHeight = options.height / 2;
+	    var halfHeight = height / 2;
 	    // generate geometry
 	    generateTorso();
-	    if (options.openEnded === false) {
-	        if (options.radiusTop > 0)
+	    if (openEnded === false) {
+	        if (radiusTop > 0)
 	            generateCap(true);
-	        if (options.radiusBottom > 0)
+	        if (radiusBottom > 0)
 	            generateCap(false);
 	    }
-	    // this.setIndex(indices);
-	    // this.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-	    // this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
-	    // this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
 	    function generateTorso() {
 	        var normal = new mathx.Vector3();
 	        var vertex = new Float32Array(3);
 	        // this will be used to calculate the normal
-	        var slope = (options.radiusBottom - options.radiusTop) / options.height;
+	        var slope = (radiusBottom - radiusTop) / height;
 	        // generate vertices, normals and uvs
-	        for (var y = 0; y <= options.heightSegments; y++) {
+	        for (var y = 0; y <= heightSegments; y++) {
 	            var indexRow = [];
-	            var v = y / options.heightSegments;
+	            var v = y / heightSegments;
 	            // calculate the radius of the current row
-	            var radius = v * (options.radiusBottom - options.radiusTop) + options.radiusTop;
-	            for (var x = 0; x <= options.radialSegments; x++) {
-	                var u = x / options.radialSegments;
-	                var theta = u * options.thetaLength + options.thetaStart;
+	            var radius = v * (radiusBottom - radiusTop) + radiusTop;
+	            for (var x = 0; x <= radialSegments; x++) {
+	                var u = x / radialSegments;
+	                var theta = u * thetaLength + thetaStart;
 	                var sinTheta = Math.sin(theta);
 	                var cosTheta = Math.cos(theta);
 	                // vertex
 	                vertex[0] = radius * sinTheta;
-	                vertex[1] = -v * options.height + halfHeight;
+	                vertex[1] = -v * height + halfHeight;
 	                vertex[2] = radius * cosTheta;
 	                vertices.push(vertex[0], vertex[1], vertex[2]);
 	                // normal
@@ -574,8 +708,8 @@
 	            indexArray.push(indexRow);
 	        }
 	        // generate indices
-	        for (var x = 0; x < options.radialSegments; x++) {
-	            for (var y = 0; y < options.heightSegments; y++) {
+	        for (var x = 0; x < radialSegments; x++) {
+	            for (var y = 0; y < heightSegments; y++) {
 	                // we use the index array to access the correct indices
 	                var a = indexArray[y][x];
 	                var b = indexArray[y + 1][x];
@@ -593,12 +727,12 @@
 	        var centerIndexStart = index;
 	        var uv = new Float32Array(2);
 	        var vertex = new Float32Array(3);
-	        var radius = (top === true) ? options.radiusTop : options.radiusBottom;
+	        var radius = (top === true) ? radiusTop : radiusBottom;
 	        var sign = (top === true) ? 1 : -1;
 	        // first we generate the center vertex data of the cap.
 	        // because the geometry needs one set of uvs per face,
 	        // we must generate a center vertex per face/segment
-	        for (var x = 1; x <= options.radialSegments; x++) {
+	        for (var x = 1; x <= radialSegments; x++) {
 	            // vertex
 	            vertices.push(0, halfHeight * sign, 0);
 	            // normal
@@ -611,9 +745,9 @@
 	        // save the index of the last center vertex
 	        var centerIndexEnd = index;
 	        // now we generate the surrounding vertices, normals and uvs
-	        for (var x = 0; x <= options.radialSegments; x++) {
-	            var u = x / options.radialSegments;
-	            var theta = u * options.thetaLength + options.thetaStart;
+	        for (var x = 0; x <= radialSegments; x++) {
+	            var u = x / radialSegments;
+	            var theta = u * thetaLength + thetaStart;
 	            var cosTheta = Math.cos(theta);
 	            var sinTheta = Math.sin(theta);
 	            // vertex
@@ -631,7 +765,7 @@
 	            index++;
 	        }
 	        // generate indices
-	        for (var x = 0; x < options.radialSegments; x++) {
+	        for (var x = 0; x < radialSegments; x++) {
 	            var c = centerIndexStart + x;
 	            var i = centerIndexEnd + x;
 	            if (top === true) {
@@ -645,14 +779,14 @@
 	        }
 	    }
 	    var len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    var geo = new Geometry3(len, options.topology, options.cullMode);
-	    if (options.combine) {
+	    var geo = new Geometry3(len, topology, cullMode);
+	    if (combine) {
 	        var pickers = [{
 	                name: POSITION,
 	                offset: 0,
 	                length: 3,
 	            }];
-	        if (options.hasNormal && options.hasUV) {
+	        if (hasNormal && hasUV) {
 	            stride = 8;
 	            pickers.push({
 	                name: 'normal',
@@ -665,7 +799,7 @@
 	                length: 2,
 	            });
 	        }
-	        else if (options.hasNormal) {
+	        else if (hasNormal) {
 	            stride = 6;
 	            pickers.push({
 	                name: 'normal',
@@ -673,7 +807,7 @@
 	                length: 3,
 	            });
 	        }
-	        else if (options.hasUV) {
+	        else if (hasUV) {
 	            stride = 5;
 	            pickers.push({
 	                name: 'uv',
@@ -689,16 +823,16 @@
 	            result[0 + strideI] = vertices[i3];
 	            result[1 + strideI] = vertices[i3 + 1];
 	            result[2 + strideI] = vertices[i3 + 2];
-	            if (options.hasNormal) {
+	            if (hasNormal) {
 	                result[3 + strideI] = normals[i3];
 	                result[4 + strideI] = normals[i3 + 1];
 	                result[5 + strideI] = normals[i3 + 2];
-	                if (options.hasUV) {
+	                if (hasUV) {
 	                    result[6 + strideI] = uvs[i2];
 	                    result[7 + strideI] = uvs[i2 + 1];
 	                }
 	            }
-	            else if (options.hasUV) {
+	            else if (hasUV) {
 	                result[3 + strideI] = uvs[i2];
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
@@ -709,16 +843,15 @@
 	    return geo;
 	});
 
-	var DEFAULT_PLANE_OPTIONS = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segmentX: 1, segmentY: 1 });
-	var createPlane3 = (function (width, height, options) {
-	    if (width === void 0) { width = 1; }
-	    if (height === void 0) { height = 1; }
-	    if (options === void 0) { options = DEFAULT_PLANE_OPTIONS; }
+	var DEFAULT_PLANE_OPTIONS = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, segmentX: 1, segmentY: 1 });
+	var createPlane3 = (function (options) {
+	    if (options === void 0) { options = {}; }
+	    var _a = __assign(__assign({}, DEFAULT_PLANE_OPTIONS), options), width = _a.width, height = _a.height, segmentX = _a.segmentX, segmentY = _a.segmentY, topology = _a.topology, cullMode = _a.cullMode, hasUV = _a.hasUV, hasNormal = _a.hasNormal, combine = _a.combine;
 	    var stride = 3;
 	    var halfX = width * 0.5;
 	    var halfY = height * 0.5;
-	    var gridX = Math.max(1, Math.round(options.segmentX));
-	    var gridY = Math.max(1, Math.round(options.segmentY));
+	    var gridX = Math.max(1, Math.round(segmentX));
+	    var gridY = Math.max(1, Math.round(segmentY));
 	    var gridX1 = gridX + 1;
 	    var gridY1 = gridY + 1;
 	    var segmentWidth = width / gridX;
@@ -749,16 +882,15 @@
 	    }
 	    var len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	    // let count = len / 3;
-	    var geo = new Geometry3(len, options.topology, options.cullMode);
-	    console.log(indices, positions, normals, uvs);
+	    var geo = new Geometry3(len, topology, cullMode);
 	    // TODO indices 现在都是非索引版本
-	    if (options.combine) {
+	    if (combine) {
 	        var pickers = [{
 	                name: POSITION,
 	                offset: 0,
 	                length: 3,
 	            }];
-	        if (options.hasNormal && options.hasUV) {
+	        if (hasNormal && hasUV) {
 	            stride = 8;
 	            pickers.push({
 	                name: 'normal',
@@ -771,7 +903,7 @@
 	                length: 2,
 	            });
 	        }
-	        else if (options.hasNormal) {
+	        else if (hasNormal) {
 	            stride = 6;
 	            pickers.push({
 	                name: 'normal',
@@ -779,7 +911,7 @@
 	                length: 3,
 	            });
 	        }
-	        else if (options.hasUV) {
+	        else if (hasUV) {
 	            stride = 5;
 	            pickers.push({
 	                name: 'uv',
@@ -795,16 +927,16 @@
 	            result[0 + strideI] = positions[i3];
 	            result[1 + strideI] = positions[i3 + 1];
 	            result[2 + strideI] = positions[i3 + 2];
-	            if (options.hasNormal) {
+	            if (hasNormal) {
 	                result[3 + strideI] = normals[i3];
 	                result[4 + strideI] = normals[i3 + 1];
 	                result[5 + strideI] = normals[i3 + 2];
-	                if (options.hasUV) {
+	                if (hasUV) {
 	                    result[6 + strideI] = uvs[i2];
 	                    result[7 + strideI] = uvs[i2 + 1];
 	                }
 	            }
-	            else if (options.hasUV) {
+	            else if (hasUV) {
 	                result[3 + strideI] = uvs[i2];
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
@@ -835,7 +967,6 @@
 	        //     });
 	        // }
 	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        console.log(geo);
 	        return geo;
 	    }
 	    else {
@@ -941,9 +1072,10 @@
 
 	var DEFAULT_SPHERE_OPTIONS = __assign(__assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radius: 1, phiStart: 0, phiLength: Math.PI * 2, thetaStart: 0, thetaLength: Math.PI, widthSegments: 32, heightSegments: 32, cullMode: "back" });
 	var createSphere3 = (function (options) {
-	    if (options === void 0) { options = DEFAULT_SPHERE_OPTIONS; }
+	    if (options === void 0) { options = {}; }
 	    var stride = 3;
-	    var thetaEnd = Math.min(options.thetaStart + options.thetaLength, Math.PI);
+	    var _a = __assign(__assign({}, DEFAULT_SPHERE_OPTIONS), options), radius = _a.radius, phiStart = _a.phiStart, phiLength = _a.phiLength, thetaStart = _a.thetaStart, thetaLength = _a.thetaLength, widthSegments = _a.widthSegments, heightSegments = _a.heightSegments, topology = _a.topology, cullMode = _a.cullMode, hasUV = _a.hasUV, hasNormal = _a.hasNormal, combine = _a.combine;
+	    var thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
 	    var index = 0;
 	    var grid = [];
 	    var vertex = new Float32Array(3);
@@ -953,23 +1085,23 @@
 	    var vertices = [];
 	    var normals = [];
 	    var uvs = [];
-	    for (var iy = 0; iy <= options.heightSegments; iy++) {
+	    for (var iy = 0; iy <= heightSegments; iy++) {
 	        var verticesRow = [];
-	        var v = iy / options.heightSegments;
+	        var v = iy / heightSegments;
 	        // special case for the poles
 	        var uOffset = 0;
-	        if (iy === 0 && options.thetaStart === 0) {
-	            uOffset = 0.5 / options.widthSegments;
+	        if (iy === 0 && thetaStart === 0) {
+	            uOffset = 0.5 / widthSegments;
 	        }
-	        else if (iy === options.heightSegments && thetaEnd === Math.PI) {
-	            uOffset = -0.5 / options.widthSegments;
+	        else if (iy === heightSegments && thetaEnd === Math.PI) {
+	            uOffset = -0.5 / widthSegments;
 	        }
-	        for (var ix = 0; ix <= options.widthSegments; ix++) {
-	            var u = ix / options.widthSegments;
+	        for (var ix = 0; ix <= widthSegments; ix++) {
+	            var u = ix / widthSegments;
 	            // vertex
-	            vertex[0] = -options.radius * Math.cos(options.phiStart + u * options.phiLength) * Math.sin(options.thetaStart + v * options.thetaLength);
-	            vertex[1] = options.radius * Math.cos(options.thetaStart + v * options.thetaLength);
-	            vertex[2] = options.radius * Math.sin(options.phiStart + u * options.phiLength) * Math.sin(options.thetaStart + v * options.thetaLength);
+	            vertex[0] = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+	            vertex[1] = radius * Math.cos(thetaStart + v * thetaLength);
+	            vertex[2] = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
 	            vertices.push(vertex[0], vertex[1], vertex[2]);
 	            // normal
 	            normal.set(mathx.Vector3.normalize(vertex));
@@ -980,28 +1112,28 @@
 	        }
 	        grid.push(verticesRow);
 	    }
-	    for (var iy = 0; iy < options.heightSegments; iy++) {
-	        for (var ix = 0; ix < options.widthSegments; ix++) {
+	    for (var iy = 0; iy < heightSegments; iy++) {
+	        for (var ix = 0; ix < widthSegments; ix++) {
 	            var a = grid[iy][ix + 1];
 	            var b = grid[iy][ix];
 	            var c = grid[iy + 1][ix];
 	            var d = grid[iy + 1][ix + 1];
-	            if (iy !== 0 || options.thetaStart > 0)
+	            if (iy !== 0 || thetaStart > 0)
 	                indices.push(a, b, d);
-	            if (iy !== options.heightSegments - 1 || thetaEnd < Math.PI)
+	            if (iy !== heightSegments - 1 || thetaEnd < Math.PI)
 	                indices.push(b, c, d);
 	        }
 	    }
 	    var len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    var geo = new Geometry3(len, options.topology, options.cullMode);
+	    var geo = new Geometry3(len, topology, cullMode);
 	    // TODO indices 现在都是非索引版本
-	    if (options.combine) {
+	    if (combine) {
 	        var pickers = [{
 	                name: POSITION,
 	                offset: 0,
 	                length: 3,
 	            }];
-	        if (options.hasNormal && options.hasUV) {
+	        if (hasNormal && hasUV) {
 	            stride = 8;
 	            pickers.push({
 	                name: 'normal',
@@ -1014,7 +1146,7 @@
 	                length: 2,
 	            });
 	        }
-	        else if (options.hasNormal) {
+	        else if (hasNormal) {
 	            stride = 6;
 	            pickers.push({
 	                name: 'normal',
@@ -1022,7 +1154,7 @@
 	                length: 3,
 	            });
 	        }
-	        else if (options.hasUV) {
+	        else if (hasUV) {
 	            stride = 5;
 	            pickers.push({
 	                name: 'uv',
@@ -1038,16 +1170,16 @@
 	            result[0 + strideI] = vertices[i3];
 	            result[1 + strideI] = vertices[i3 + 1];
 	            result[2 + strideI] = vertices[i3 + 2];
-	            if (options.hasNormal) {
+	            if (hasNormal) {
 	                result[3 + strideI] = normals[i3];
 	                result[4 + strideI] = normals[i3 + 1];
 	                result[5 + strideI] = normals[i3 + 2];
-	                if (options.hasUV) {
+	                if (hasUV) {
 	                    result[6 + strideI] = uvs[i2];
 	                    result[7 + strideI] = uvs[i2 + 1];
 	                }
 	            }
-	            else if (options.hasUV) {
+	            else if (hasUV) {
 	                result[3 + strideI] = uvs[i2];
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
@@ -1060,6 +1192,7 @@
 
 	var index$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
+		createBox3: createBox3,
 		createCircle3: createCircle3,
 		createCylinder3: createCylinder3,
 		createPlane3: createPlane3,
@@ -1409,20 +1542,32 @@
 	    return Matrix4Component;
 	}(Component));
 	var updateModelMatrixComponent = function (mesh) {
+	    var _a;
 	    var p3 = mesh.getComponent(TRANSLATION_3D);
 	    var r3 = mesh.getComponent(ROTATION_3D);
 	    var s3 = mesh.getComponent(SCALING_3D);
+	    var a3 = mesh.getComponent(ANCHOR_3D);
 	    var m3 = mesh.getComponent(MODEL_3D);
+	    var worldMatrix = mesh.getComponent(WORLD_MATRIX);
+	    if (!worldMatrix) {
+	        worldMatrix = new Matrix4Component(WORLD_MATRIX);
+	        mesh.addComponent(worldMatrix);
+	    }
 	    if (!m3) {
 	        m3 = new Matrix4Component(MODEL_3D);
 	        mesh.addComponent(m3);
 	    }
-	    if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty)) {
-	        var matrixT = (p3 === null || p3 === void 0 ? void 0 : p3.data) || mathx.Matrix4.create();
-	        var matrixR = (r3 === null || r3 === void 0 ? void 0 : r3.data) || mathx.Matrix4.create();
-	        var matrixS = (s3 === null || s3 === void 0 ? void 0 : s3.data) || mathx.Matrix4.create();
-	        mathx.Matrix4.multiply(matrixT, matrixR, m3.data);
-	        mathx.Matrix4.multiply(m3.data, matrixS, m3.data);
+	    if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty) || (a3 === null || a3 === void 0 ? void 0 : a3.dirty)) {
+	        mathx.Matrix4.fromArray((p3 === null || p3 === void 0 ? void 0 : p3.data) || mathx.Matrix4.UNIT_MATRIX4, m3.data);
+	        if (r3) {
+	            mathx.Matrix4.multiply(m3.data, r3.data, m3.data);
+	        }
+	        if (s3) {
+	            mathx.Matrix4.multiply(m3.data, s3.data, m3.data);
+	        }
+	        if (a3) {
+	            mathx.Matrix4.multiply(m3.data, a3.data, m3.data);
+	        }
 	        if (p3) {
 	            p3.dirty = false;
 	        }
@@ -1432,9 +1577,91 @@
 	        if (s3) {
 	            s3.dirty = false;
 	        }
+	        if (a3) {
+	            a3.dirty = false;
+	        }
+	    }
+	    if (mesh.parent) {
+	        var parentWorldMatrix = ((_a = mesh.parent.getComponent(WORLD_MATRIX)) === null || _a === void 0 ? void 0 : _a.data) || mathx.Matrix4.UNIT_MATRIX4;
+	        mathx.Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+	    }
+	    else {
+	        mathx.Matrix4.fromArray(m3.data, worldMatrix.data);
 	    }
 	    return m3;
 	};
+
+	var Anchor3 = /** @class */ (function (_super) {
+	    __extends(Anchor3, _super);
+	    function Anchor3(vec) {
+	        if (vec === void 0) { vec = mathx.Vector3.VECTOR3_ZERO; }
+	        var _this = _super.call(this, ANCHOR_3D, mathx.Matrix4.create()) || this;
+	        _this.vec3 = new mathx.Vector3();
+	        mathx.Vector3.fromArray(vec, 0, _this.vec3);
+	        _this.update();
+	        return _this;
+	    }
+	    Object.defineProperty(Anchor3.prototype, "x", {
+	        get: function () {
+	            return this.vec3[0];
+	        },
+	        set: function (value) {
+	            this.vec3[0] = value;
+	            this.data[12] = value;
+	            this.dirty = true;
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    Object.defineProperty(Anchor3.prototype, "y", {
+	        get: function () {
+	            return this.vec3[1];
+	        },
+	        set: function (value) {
+	            this.vec3[1] = value;
+	            this.data[13] = value;
+	            this.dirty = true;
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    Object.defineProperty(Anchor3.prototype, "z", {
+	        get: function () {
+	            return this.vec3[1];
+	        },
+	        set: function (value) {
+	            this.vec3[2] = value;
+	            this.data[14] = value;
+	            this.dirty = true;
+	        },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    Anchor3.prototype.set = function (arr) {
+	        this.vec3.set(arr);
+	        this.data[12] = arr[0];
+	        this.data[13] = arr[1];
+	        this.data[14] = arr[2];
+	        this.dirty = true;
+	        return this;
+	    };
+	    Anchor3.prototype.setXYZ = function (x, y, z) {
+	        this.vec3[0] = x;
+	        this.vec3[1] = y;
+	        this.vec3[2] = z;
+	        this.data[12] = x;
+	        this.data[13] = y;
+	        this.data[14] = z;
+	        this.dirty = true;
+	        return this;
+	    };
+	    Anchor3.prototype.update = function () {
+	        mathx.Matrix4.fromTranslation(this.vec3, this.data);
+	        this.dirty = true;
+	        return this;
+	    };
+	    return Anchor3;
+	}(Matrix4Component));
 
 	var APosition3 = /** @class */ (function (_super) {
 	    __extends(APosition3, _super);
@@ -2370,6 +2597,9 @@
 	        out[3] = a00$2;
 	        return out;
 	    };
+	    Matrix2.clone = function (source) {
+	        return new Matrix2(source);
+	    };
 	    Matrix2.closeTo = function (a, b) {
 	        a00$2 = a[0];
 	        a10$2 = a[1];
@@ -2396,6 +2626,11 @@
 	    };
 	    Matrix2.frobNorm = function (a) {
 	        return Math.hypot(a[0], a[1], a[2], a[3]);
+	    };
+	    Matrix2.fromArray = function (source, out) {
+	        if (out === void 0) { out = new Matrix2(); }
+	        out.set(source);
+	        return out;
 	    };
 	    Matrix2.fromRotation = function (rad, out) {
 	        if (out === void 0) { out = new Matrix2(); }
@@ -2532,6 +2767,9 @@
 	        return _super.call(this, data) || this;
 	    }
 	    Matrix3.UNIT_MATRIX3 = new Matrix3(UNIT_MATRIX3_DATA);
+	    Matrix3.clone = function (source) {
+	        return new Matrix3(source);
+	    };
 	    Matrix3.cofactor00 = function (a) {
 	        return a[4] * a[8] - a[5] * a[7];
 	    };
@@ -2575,6 +2813,11 @@
 	        return (a00$1 * (a22$1 * a11$1 - a12$1 * a21$1) +
 	            a01$1 * (-a22$1 * a10$1 + a12$1 * a20$1) +
 	            a02$1 * (a21$1 * a10$1 - a11$1 * a20$1));
+	    };
+	    Matrix3.fromArray = function (source, out) {
+	        if (out === void 0) { out = new Matrix3(); }
+	        out.set(source);
+	        return out;
 	    };
 	    Matrix3.fromMatrix4 = function (mat4, out) {
 	        if (out === void 0) { out = new Matrix3(); }
@@ -3259,7 +3502,7 @@
 	var a00 = 0, a01 = 0, a02 = 0, a03 = 0, a11 = 0, a10 = 0, a12 = 0, a13 = 0, a20 = 0, a21 = 0, a22 = 0, a23 = 0, a31 = 0, a30 = 0, a32 = 0, a33 = 0;
 	var b00 = 0, b01 = 0, b02 = 0, b03 = 0, b11 = 0, b10 = 0, b12 = 0, b13 = 0, b20 = 0, b21 = 0, b22 = 0, b23 = 0, b31 = 0, b30 = 0, b32 = 0, b33 = 0;
 	var x$1 = 0, y$1 = 0, z = 0, det = 0, len$1 = 0, s$1 = 0, t = 0, a = 0, b = 0, c$1 = 0, d = 0, e = 0, f = 0;
-	var UNIT_MATRIX4_DATA = Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+	var UNIT_MATRIX4_DATA = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 	var Matrix4 = /** @class */ (function (_super) {
 	    __extends(Matrix4, _super);
 	    function Matrix4(data) {
@@ -3267,6 +3510,9 @@
 	        return _super.call(this, data) || this;
 	    }
 	    Matrix4.UNIT_MATRIX4 = new Matrix4(UNIT_MATRIX4_DATA);
+	    Matrix4.clone = function (source) {
+	        return new Matrix4(source);
+	    };
 	    Matrix4.create = function () {
 	        return new Matrix4(UNIT_MATRIX4_DATA);
 	    };
@@ -3298,6 +3544,11 @@
 	        b20 = a20 * b02 - a21 * b01 + a22 * b00;
 	        b21 = a30 * b02 - a31 * b01 + a32 * b00;
 	        return a13 * b12 - a03 * b13 + a33 * b20 - a23 * b21;
+	    };
+	    Matrix4.fromArray = function (source, out) {
+	        if (out === void 0) { out = new Matrix4(); }
+	        out.set(source);
+	        return out;
 	    };
 	    Matrix4.fromEuler = function (euler, out) {
 	        if (out === void 0) { out = new Matrix4(); }
@@ -4156,7 +4407,7 @@
 	        }
 	        var mvp = cacheData.mvp;
 	        Matrix4.multiply((_b = camera.getComponent(PROJECTION_3D)) === null || _b === void 0 ? void 0 : _b.data, Matrix4.invert(updateModelMatrixComponent(camera).data), mvp);
-	        Matrix4.multiply(mvp, (_c = mesh.getComponent(MODEL_3D)) === null || _c === void 0 ? void 0 : _c.data, mvp);
+	        Matrix4.multiply(mvp, (_c = mesh.getComponent(WORLD_MATRIX)) === null || _c === void 0 ? void 0 : _c.data, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach(function (uniform, key) {
 	            if (uniform.type === "uniform-buffer" && uniform.dirty) {
@@ -5235,15 +5486,15 @@
 	        _this.isManager = true;
 	        return _this;
 	    }
-	    Manager.prototype.addElement = function (component) {
-	        if (this.has(component)) {
-	            this.removeElementByInstance(component);
+	    Manager.prototype.addElement = function (element) {
+	        if (this.has(element)) {
+	            this.removeElementByInstance(element);
 	        }
-	        return this.addElementDirect(component);
+	        return this.addElementDirect(element);
 	    };
-	    Manager.prototype.addElementDirect = function (component) {
-	        this.elements.set(component.name, component);
-	        component.usedBy.push(this);
+	    Manager.prototype.addElementDirect = function (element) {
+	        this.elements.set(element.name, element);
+	        element.usedBy.push(this);
 	        this.elementChangeDispatch(Manager.Events.ADD, this);
 	        return this;
 	    };
@@ -5255,18 +5506,18 @@
 	        elementTmp = this.elements.get(name);
 	        return elementTmp ? elementTmp : null;
 	    };
-	    Manager.prototype.has = function (component) {
-	        if (typeof component === "string") {
-	            return this.elements.has(component);
+	    Manager.prototype.has = function (element) {
+	        if (typeof element === "string") {
+	            return this.elements.has(element);
 	        }
 	        else {
-	            return this.elements.has(component.name);
+	            return this.elements.has(element.name);
 	        }
 	    };
-	    Manager.prototype.removeElement = function (component) {
-	        return typeof component === "string"
-	            ? this.removeElementByName(component)
-	            : this.removeElementByInstance(component);
+	    Manager.prototype.removeElement = function (element) {
+	        return typeof element === "string"
+	            ? this.removeElementByName(element)
+	            : this.removeElementByInstance(element);
 	    };
 	    Manager.prototype.removeElementByName = function (name) {
 	        elementTmp = this.elements.get(name);
@@ -5277,10 +5528,10 @@
 	        }
 	        return this;
 	    };
-	    Manager.prototype.removeElementByInstance = function (component) {
-	        if (this.elements.has(component.name)) {
-	            this.elements.delete(component.name);
-	            component.usedBy.splice(component.usedBy.indexOf(this), 1);
+	    Manager.prototype.removeElementByInstance = function (element) {
+	        if (this.elements.has(element.name)) {
+	            this.elements.delete(element.name);
+	            element.usedBy.splice(element.usedBy.indexOf(this), 1);
 	            this.elementChangeDispatch(Manager.Events.REMOVE, this);
 	        }
 	        return this;
@@ -5292,18 +5543,20 @@
 	            for (var _e = __values(this.usedBy), _f = _e.next(); !_f.done; _f = _e.next()) {
 	                var entity = _f.value;
 	                (_d = (_c = entity).fire) === null || _d === void 0 ? void 0 : _d.call(_c, type, eventObject);
-	                try {
-	                    for (var _g = (e_2 = void 0, __values(entity.usedBy)), _h = _g.next(); !_h.done; _h = _g.next()) {
-	                        var manager = _h.value;
-	                        manager.updatedEntities.add(entity);
-	                    }
-	                }
-	                catch (e_2_1) { e_2 = { error: e_2_1 }; }
-	                finally {
+	                if (entity.usedBy) {
 	                    try {
-	                        if (_h && !_h.done && (_b = _g.return)) _b.call(_g);
+	                        for (var _g = (e_2 = void 0, __values(entity.usedBy)), _h = _g.next(); !_h.done; _h = _g.next()) {
+	                            var manager = _h.value;
+	                            manager.updatedEntities.add(entity);
+	                        }
 	                    }
-	                    finally { if (e_2) throw e_2.error; }
+	                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+	                    finally {
+	                        try {
+	                            if (_h && !_h.done && (_b = _g.return)) _b.call(_g);
+	                        }
+	                        finally { if (e_2) throw e_2.error; }
+	                    }
 	                }
 	            }
 	        }
@@ -5363,6 +5616,26 @@
 	        }
 	        return this;
 	    };
+	    Entity.prototype.addChild = function (entity) {
+	        var e_1, _a;
+	        _super.prototype.addChild.call(this, entity);
+	        if (this.usedBy) {
+	            try {
+	                for (var _b = __values(this.usedBy), _c = _b.next(); !_c.done; _c = _b.next()) {
+	                    var manager = _c.value;
+	                    manager.addElement(entity);
+	                }
+	            }
+	            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+	            finally {
+	                try {
+	                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+	                }
+	                finally { if (e_1) throw e_1.error; }
+	            }
+	        }
+	        return this;
+	    };
 	    Entity.prototype.addTo = function (manager) {
 	        manager.addElement(this);
 	        return this;
@@ -5385,6 +5658,26 @@
 	        this.componentManager = manager;
 	        if (!this.componentManager.usedBy.includes(this)) {
 	            this.componentManager.usedBy.push(this);
+	        }
+	        return this;
+	    };
+	    Entity.prototype.removeChild = function (entity) {
+	        var e_2, _a;
+	        _super.prototype.removeChild.call(this, entity);
+	        if (this.usedBy) {
+	            try {
+	                for (var _b = __values(this.usedBy), _c = _b.next(); !_c.done; _c = _b.next()) {
+	                    var manager = _c.value;
+	                    manager.removeElement(entity);
+	                }
+	            }
+	            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+	            finally {
+	                try {
+	                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+	                }
+	                finally { if (e_2) throw e_2.error; }
+	            }
 	        }
 	        return this;
 	    };
@@ -5428,6 +5721,7 @@
 	        .addComponent(new Matrix4Component(ROTATION_3D))
 	        .addComponent(new Matrix4Component(SCALING_3D))
 	        .addComponent(new Matrix4Component(MODEL_3D))
+	        .addComponent(new Matrix4Component(WORLD_MATRIX))
 	        .addComponent(new Renderable("mesh"));
 	    if (world) {
 	        world.addEntity(entity);
@@ -5455,6 +5749,7 @@
 	exports.ARotation3 = ARotation3;
 	exports.AScale3 = AScale3;
 	exports.ATTRIBUTE_NAME = constants;
+	exports.Anchor3 = Anchor3;
 	exports.AtlasTexture = AtlasTexture;
 	exports.COMPONENT_NAME = constants$1;
 	exports.ColorMaterial = ColorMaterial;

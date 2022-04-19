@@ -4358,9 +4358,6 @@ var createBox3 = (options = {}) => {
             }
         }
         // indices
-        // 1. you need three indices to draw a single face
-        // 2. a single segment consists of two faces
-        // 3. so we need to generate six (2*3) indices per segment
         for (let iy = 0; iy < gridY; iy++) {
             for (let ix = 0; ix < gridX; ix++) {
                 const a = numberOfVertices + ix + gridX1 * iy;
@@ -4378,7 +4375,6 @@ var createBox3 = (options = {}) => {
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
     let geo = new Geometry3(len, topology, cullMode);
-    // TODO indices 现在都是非索引版本
     if (combine) {
         let pickers = [{
                 name: POSITION,
@@ -4440,26 +4436,6 @@ var createBox3 = (options = {}) => {
         return geo;
     }
     else {
-        // let result = new Float32Array(9);
-        // result.set(t.a);
-        // result.set(t.b, 3);
-        // result.set(t.c, 6);
-        // geo.addAttribute(POSITION, result, 3);
-        // if (options.hasNormal) {
-        //     result = new Float32Array(9);
-        //     let normal = Triangle3.normal(t);
-        //     result.set(normal, 0);
-        //     result.set(normal, 3);
-        //     result.set(normal, 6);
-        //     geo.addAttribute(NORMAL, result, 3);
-        // }
-        // if (options.hasUV) {
-        //     result = new Float32Array(6);
-        //     result.set([0, 0], 0);
-        //     result.set([1, 0], 2);
-        //     result.set([0.5, 1], 4);
-        //     geo.addAttribute(UV, result, 2);
-        // }
         return geo;
     }
 };

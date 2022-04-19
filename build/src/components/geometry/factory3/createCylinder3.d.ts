@@ -10,6 +10,7 @@ export declare type ICylinderGeometryOptions = {
     thetaStart: number;
     thetaLength: number;
 } & IGeometryOptions;
+export declare type ICylinderGeometryOptionsInput = Partial<ICylinderGeometryOptions>;
 export declare const DEFAULT_SPHERE_OPTIONS: ICylinderGeometryOptions;
-declare const _default: (options?: ICylinderGeometryOptions) => Geometry3;
+declare const _default: (options?: ICylinderGeometryOptionsInput) => Geometry3;
 export default _default;

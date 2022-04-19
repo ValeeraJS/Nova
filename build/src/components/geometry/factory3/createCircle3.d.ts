@@ -6,6 +6,7 @@ export declare type ICircleGeometryOptions = {
     angle: number;
     radius: number;
 } & IGeometryOptions;
+export declare type ICircleGeometryOptionsInput = Partial<ICircleGeometryOptions>;
 export declare const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions;
-declare const _default: (options?: ICircleGeometryOptions) => Geometry3;
+declare const _default: (options?: ICircleGeometryOptionsInput) => Geometry3;
 export default _default;
