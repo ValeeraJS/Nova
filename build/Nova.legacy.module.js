@@ -1462,17 +1462,17 @@ var TextureMaterial = /** @class */ (function (_super) {
         if (sampler === void 0) { sampler = new Sampler(); }
         var _this = _super.call(this, wgslShaders$1.vertex, wgslShaders$1.fragment, [
             {
+                binding: 1,
                 name: "mySampler",
                 type: "sampler",
                 value: sampler,
-                binding: 1,
                 dirty: true
             },
             {
+                binding: 2,
                 name: "myTexture",
                 type: "sampled-texture",
                 value: texture,
-                binding: 2,
                 dirty: true
             }
         ]) || this;
@@ -2414,6 +2414,10 @@ var getEuclidPosition3Proxy = (function (position) {
                 target.data[14] = value;
                 return true;
             }
+            else if (property === 'dirty') {
+                target.dirty = value;
+                return true;
+            }
             return false;
         },
     });
@@ -2442,6 +2446,10 @@ var getEulerRotation3Proxy = (function (position) {
                 target.dirty = true;
                 euler.order = value;
                 Matrix4$1.fromEuler(euler, target.data);
+                return true;
+            }
+            else if (property === 'dirty') {
+                target.dirty = value;
                 return true;
             }
             return false;
@@ -4693,7 +4701,9 @@ var System = /** @class */ (function () {
         var _a;
         if (world.entityManager) {
             (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach(function (item) {
-                _this.handle(item, world.store);
+                if (!item.disabled) {
+                    _this.handle(item, world.store);
+                }
             });
         }
         return this;
@@ -5581,6 +5591,7 @@ var Entity = /** @class */ (function (_super) {
         _this.id = IdGeneratorInstance.next();
         _this.isEntity = true;
         _this.componentManager = null;
+        _this.disabled = false;
         _this.name = "";
         _this.usedBy = [];
         _this.name = name;

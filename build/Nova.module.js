@@ -5272,7 +5272,9 @@ class System$1 {
     run(world) {
         if (world.entityManager) {
             this.entitySet.get(world.entityManager)?.forEach((item) => {
-                this.handle(item, world.store);
+                if (!item.disabled) {
+                    this.handle(item, world.store);
+                }
             });
         }
         return this;
@@ -5428,6 +5430,7 @@ class Entity$1 extends TreeNodeWithEvent$1 {
     id = IdGeneratorInstance.next();
     isEntity = true;
     componentManager = null;
+    disabled = false;
     name = "";
     usedBy = [];
     constructor(name = "", componentManager) {
@@ -5625,7 +5628,9 @@ class SystemManager extends Manager$1 {
         this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
         this.elements.forEach((item) => {
             item.checkUpdatedEntities(world.entityManager);
-            item.run(world);
+            if (!item.disabled) {
+                item.run(world);
+            }
         });
         if (world.entityManager) {
             world.entityManager.updatedEntities.clear();
@@ -6098,17 +6103,17 @@ class TextureMaterial extends Material {
     constructor(texture, sampler = new Sampler()) {
         super(wgslShaders$1.vertex, wgslShaders$1.fragment, [
             {
+                binding: 1,
                 name: "mySampler",
                 type: "sampler",
                 value: sampler,
-                binding: 1,
                 dirty: true
             },
             {
+                binding: 2,
                 name: "myTexture",
                 type: "sampled-texture",
                 value: texture,
-                binding: 2,
                 dirty: true
             }
         ]);
@@ -6809,6 +6814,10 @@ var getEuclidPosition3Proxy = (position) => {
                 target.data[14] = value;
                 return true;
             }
+            else if (property === 'dirty') {
+                target.dirty = value;
+                return true;
+            }
             return false;
         },
     });
@@ -6837,6 +6846,10 @@ var getEulerRotation3Proxy = (position) => {
                 target.dirty = true;
                 euler.order = value;
                 Matrix4$1.fromEuler(euler, target.data);
+                return true;
+            }
+            else if (property === 'dirty') {
+                target.dirty = value;
                 return true;
             }
             return false;
@@ -8992,7 +9005,9 @@ class System {
         var _a;
         if (world.entityManager) {
             (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
-                this.handle(item, world.store);
+                if (!item.disabled) {
+                    this.handle(item, world.store);
+                }
             });
         }
         return this;
@@ -9729,6 +9744,7 @@ class Entity extends TreeNodeWithEvent {
         this.id = IdGeneratorInstance$1.next();
         this.isEntity = true;
         this.componentManager = null;
+        this.disabled = false;
         this.name = "";
         this.usedBy = [];
         this.name = name;

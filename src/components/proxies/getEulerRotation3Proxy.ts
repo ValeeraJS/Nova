@@ -15,7 +15,7 @@ export default (position: Matrix4Component | IEntity) => {
             }
             return (target as any)[property];
         },
-        set: (target: Matrix4Component, property: string, value: number | EulerRotationOrders) => {
+        set: (target: Matrix4Component, property: string, value: number | EulerRotationOrders | boolean) => {
             if (property === 'x' || property === 'y' || property === 'z') {
                 target.dirty = true;
                 euler[property] = value as number;
@@ -26,6 +26,9 @@ export default (position: Matrix4Component | IEntity) => {
                 euler.order = value as EulerRotationOrders;
                 Matrix4.fromEuler(euler, target.data);
                 return true; 
+            } else if (property === 'dirty') {
+                target.dirty = value as boolean;
+                return true;
             }
             return false;
         },

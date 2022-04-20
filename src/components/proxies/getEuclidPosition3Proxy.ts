@@ -17,18 +17,21 @@ export default (position: Matrix4Component | IEntity) => {
             }
             return (target as any)[property];
         },
-        set: (target: Matrix4Component, property: string, value: number) => {
+        set: (target: Matrix4Component, property: string, value: number | boolean) => {
             if (property === 'x') {
                 target.dirty = true;
-                target.data[12] = value;
+                target.data[12] = value as number;
                 return true;
             } else if (property === 'y') {
                 target.dirty = true;
-                target.data[13] = value;
+                target.data[13] = value as number;
                 return true;
             } else if (property === 'z') {
                 target.dirty = true;
-                target.data[14] = value;
+                target.data[14] = value as number;
+                return true;
+            } else if (property === 'dirty') {
+                target.dirty = value as boolean;
                 return true;
             }
             return false;
