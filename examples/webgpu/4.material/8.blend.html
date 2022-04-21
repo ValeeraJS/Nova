@@ -21,6 +21,7 @@
 			new Nova.ImageBitmapTexture("./../../textures/back.png", 512, 512)
 		);
 		mesh.addComponent(material);
+		mesh.getComponent("position3").data[14] = -1
 
 		const geo2 = Nova.Geometry3Factory.createPlane3({
 			width: 2,
@@ -28,7 +29,7 @@
 		});
 		const mesh2 = Nova.EntityFactory.createMesh(geo2, "plane", world);
 		const material2 = new Nova.TextureMaterial(
-			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+			new Nova.ImageBitmapTexture("./../../textures/spider.webp", 512, 512)
 		);
 		mesh2.addComponent(material2);
 		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh2);

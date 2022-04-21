@@ -1,6 +1,6 @@
 {
 	"name": "@valeera/nova",
-	"version": "0.1.3",
+	"version": "0.1.3-b",
 	"description": "Event dispatcher fit for most framework.",
 	"main": "build/Nova.js",
 	"repository": "ValeeraJS/Nova",

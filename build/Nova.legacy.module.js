@@ -4572,7 +4572,7 @@ var MeshRenderer = /** @class */ (function () {
             },
             depthStencil: {
                 depthWriteEnabled: true,
-                depthCompare: 'always',
+                depthCompare: 'less',
                 format: 'depth24plus',
             },
         });
