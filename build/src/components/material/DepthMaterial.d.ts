@@ -1,4 +1,4 @@
 import Material from "./Material";
-export default class NormalMaterial extends Material {
+export default class DepthMaterial extends Material {
     constructor();
 }

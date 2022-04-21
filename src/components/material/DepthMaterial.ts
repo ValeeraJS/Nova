@@ -9,23 +9,31 @@ struct Uniforms {
 
 struct VertexOutput {
 	@builtin(position) position : vec4<f32>,
-	@location(0) depth : vec2<f32>
+	@location(0) depth : vec4<f32>
 };
 
 @stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	out.depth = vec2<f32>(out.position.z, out.position.w);
+	out.depth = out.position;
 	return out;
 }`;
 
 const fragmentShader = `
-@stage(fragment) fn main(@location(0) depth : vec2<f32>) -> @location(0) vec4<f32> {
-	var fragCoordZ: f32 = (depth.x / depth.y);
-	return vec4<f32>(fragCoordZ, fragCoordZ, fragCoordZ, 1.0);
+// let PackUpscale: f32 = 1.003921568627451;
+// let PackFactors: vec3<f32> = vec3<f32>( 256., 256., 256. );
+// let ShiftRight8: f32 = 0.00390625;
+// fn packDepthToRGBA(v: f32 ) -> vec4<f32> {
+// 	var r: vec4<f32> = vec4<f32>( fract( v * PackFactors ), v );
+// 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
+// 	return r * PackUpscale;
+// }
+@stage(fragment) fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
+	var fragCoordZ: f32 = depth.z / depth.w;
+	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 50.)), 1.0);
 }`;
 
-export default class NormalMaterial extends Material {
+export default class DepthMaterial extends Material {
 	constructor() {
 		super(vertexShader, fragmentShader, []);
 		this.dirty = true;

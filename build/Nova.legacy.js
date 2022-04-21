@@ -1286,16 +1286,16 @@
 	    return ColorMaterial;
 	}(Material));
 
-	var vertexShader$1 = "\nstruct Uniforms {\n\tmodelViewProjectionMatrix : mat4x4<f32>\n};\n\n@binding(0) @group(0) var<uniform> uniforms : Uniforms;\n\nstruct VertexOutput {\n\t@builtin(position) position : vec4<f32>,\n\t@location(0) depth : vec2<f32>\n};\n\n@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {\n\tvar out: VertexOutput;\n\tout.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);\n\tout.depth = vec2<f32>(out.position.z, out.position.w);\n\treturn out;\n}";
-	var fragmentShader$1 = "\n@stage(fragment) fn main(@location(0) depth : vec2<f32>) -> @location(0) vec4<f32> {\n\tvar fragCoordZ: f32 = (depth.x / depth.y);\n\treturn vec4<f32>(fragCoordZ, fragCoordZ, fragCoordZ, 1.0);\n}";
-	var NormalMaterial$1 = /** @class */ (function (_super) {
-	    __extends(NormalMaterial, _super);
-	    function NormalMaterial() {
+	var vertexShader$1 = "\nstruct Uniforms {\n\tmodelViewProjectionMatrix : mat4x4<f32>\n};\n\n@binding(0) @group(0) var<uniform> uniforms : Uniforms;\n\nstruct VertexOutput {\n\t@builtin(position) position : vec4<f32>,\n\t@location(0) depth : vec4<f32>\n};\n\n@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {\n\tvar out: VertexOutput;\n\tout.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);\n\tout.depth = out.position;\n\treturn out;\n}";
+	var fragmentShader$1 = "\n// let PackUpscale: f32 = 1.003921568627451;\n// let PackFactors: vec3<f32> = vec3<f32>( 256., 256., 256. );\n// let ShiftRight8: f32 = 0.00390625;\n// fn packDepthToRGBA(v: f32 ) -> vec4<f32> {\n// \tvar r: vec4<f32> = vec4<f32>( fract( v * PackFactors ), v );\n// \tr = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);\n// \treturn r * PackUpscale;\n// }\n@stage(fragment) fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {\n\tvar fragCoordZ: f32 = depth.z / depth.w;\n\treturn vec4<f32>(vec3<f32>(pow(fragCoordZ, 50.)), 1.0);\n}";
+	var DepthMaterial = /** @class */ (function (_super) {
+	    __extends(DepthMaterial, _super);
+	    function DepthMaterial() {
 	        var _this = _super.call(this, vertexShader$1, fragmentShader$1, []) || this;
 	        _this.dirty = true;
 	        return _this;
 	    }
-	    return NormalMaterial;
+	    return DepthMaterial;
 	}(Material));
 
 	var vertexShader = "\nstruct Uniforms {\n\tmodelViewProjectionMatrix : mat4x4<f32>\n};\n@binding(0) @group(0) var<uniform> uniforms : Uniforms;\n\nstruct VertexOutput {\n\t@builtin(position) position : vec4<f32>,\n\t@location(0) normal : vec4<f32>\n};\n\n@stage(vertex) fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {\n\tvar out: VertexOutput;\n\tout.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);\n\tout.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));\n\treturn out;\n}";
@@ -1944,7 +1944,7 @@
 	        return this.update();
 	    };
 	    PerspectiveProjection.prototype.update = function () {
-	        mathx.Matrix4.orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
+	        mathx.Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
 	        return this;
 	    };
@@ -2021,7 +2021,7 @@
 	        return this.update();
 	    };
 	    PerspectiveProjection.prototype.update = function () {
-	        mathx.Matrix4.perspective(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
+	        mathx.Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
 	        return this;
 	    };
@@ -4023,24 +4023,47 @@
 	    };
 	    Matrix4.orthogonal = function (left, right, bottom, top, near, far, out) {
 	        if (out === void 0) { out = new Matrix4(); }
-	        var lr = 1 / (left - right);
-	        var bt = 1 / (bottom - top);
-	        var nf = 1 / (near - far);
-	        out[0] = -2 * lr;
+	        c$1 = 1 / (left - right);
+	        b = 1 / (bottom - top);
+	        a = 1 / (near - far);
+	        out[0] = -2 * c$1;
 	        out[1] = 0;
 	        out[2] = 0;
 	        out[3] = 0;
 	        out[4] = 0;
-	        out[5] = -2 * bt;
+	        out[5] = -2 * b;
 	        out[6] = 0;
 	        out[7] = 0;
 	        out[8] = 0;
 	        out[9] = 0;
-	        out[10] = 2 * nf;
+	        out[10] = 2 * a;
 	        out[11] = 0;
-	        out[12] = (left + right) * lr;
-	        out[13] = (top + bottom) * bt;
-	        out[14] = (far + near) * nf;
+	        out[12] = (left + right) * c$1;
+	        out[13] = (top + bottom) * b;
+	        out[14] = (far + near) * a;
+	        out[15] = 1;
+	        return out;
+	    };
+	    Matrix4.orthogonalZ0 = function (left, right, bottom, top, near, far, out) {
+	        if (out === void 0) { out = new Matrix4(); }
+	        c$1 = 1 / (left - right);
+	        b = 1 / (bottom - top);
+	        a = 1 / (near - far);
+	        out[0] = -2 * c$1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = -2 * b;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = a;
+	        out[11] = 0;
+	        out[12] = (left + right) * c$1;
+	        out[13] = (top + bottom) * b;
+	        out[14] = near * a;
 	        out[15] = 1;
 	        return out;
 	    };
@@ -4069,6 +4092,34 @@
 	        else {
 	            out[10] = -1;
 	            out[14] = -2 * near;
+	        }
+	        return out;
+	    };
+	    Matrix4.perspectiveZ0 = function (fovy, aspect, near, far, out) {
+	        if (out === void 0) { out = new Matrix4(); }
+	        f = 1.0 / Math.tan(fovy / 2);
+	        out[0] = f / aspect;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = f;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[11] = -1;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[15] = 0;
+	        if (far !== null && far !== Infinity) {
+	            a = 1 / (near - far);
+	            out[10] = far * a;
+	            out[14] = far * near * a;
+	        }
+	        else {
+	            out[10] = -1;
+	            out[14] = -near;
 	        }
 	        return out;
 	    };
@@ -5765,7 +5816,7 @@
 	exports.COMPONENT_NAME = constants$1;
 	exports.ColorMaterial = ColorMaterial;
 	exports.ComponentProxy = index$1;
-	exports.DepthMaterial = NormalMaterial$1;
+	exports.DepthMaterial = DepthMaterial;
 	exports.EntityFactory = index;
 	exports.EuclidPosition3 = EuclidPosition3;
 	exports.EulerRotation3 = EulerRotation3;

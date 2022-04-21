@@ -1061,7 +1061,7 @@
 	    return num < 0 ? Math.ceil(num) : Math.floor(num);
 	};
 
-	let circle, v;
+	let circle, v$1;
 	/**
 	 * @function clampCircle
 	 * @desc 将目标值限定在指定周期区间内。假定min小于等于max才能得到正确的结果。
@@ -1074,14 +1074,14 @@
 	 */
 	var clampCircle = (val, min, max) => {
 	    circle = max - min;
-	    v = floorToZeroCommon$1(min / circle) * circle + (val % circle);
-	    if (v < min) {
-	        return v + circle;
+	    v$1 = floorToZeroCommon$1(min / circle) * circle + (val % circle);
+	    if (v$1 < min) {
+	        return v$1 + circle;
 	    }
-	    else if (v > max) {
-	        return v - circle;
+	    else if (v$1 > max) {
+	        return v$1 - circle;
 	    }
-	    return v;
+	    return v$1;
 	};
 
 	/**
@@ -1135,7 +1135,7 @@
 	    return (b - a) * p + a;
 	};
 
-	let d1 = 0, d2 = 0;
+	let d1 = 0, d2$1 = 0;
 	/**
 	 * @function mapRange
 	 * @desc 将目标值按照区间线性映射到另一个区间里面的值。
@@ -1149,8 +1149,8 @@
 	 */
 	var mapRange = (value, range1, range2) => {
 	    d1 = range1[1] - range1[0];
-	    d2 = range2[1] - range2[0];
-	    return (value - d1 * 0.5) / d2 / d1;
+	    d2$1 = range2[1] - range2[0];
+	    return (value - d1 * 0.5) / d2$1 / d1;
 	};
 
 	var randFloat = (min = 0, max = 1) => {
@@ -1532,7 +1532,7 @@
 
 	let a00$2$1 = 0, a01$2$1 = 0, a10$2$1 = 0, a11$2$1 = 0;
 	let b00$2$1 = 0, b01$2$1 = 0, b10$2$1 = 0, b11$2$1 = 0, det$1$1 = 0;
-	let x$3$1 = 0, y$3$1 = 0;
+	let x$4 = 0, y$4 = 0;
 	const UNIT_MATRIX2_DATA$1 = [1, 0, 0, 1];
 	class Matrix2$1 extends Float32Array {
 	    constructor(data = UNIT_MATRIX2_DATA$1) {
@@ -1589,12 +1589,12 @@
 	    return out;
 	};
 	Matrix2$1.fromRotation = (rad, out = new Matrix2$1()) => {
-	    y$3$1 = Math.sin(rad);
-	    x$3$1 = Math.cos(rad);
-	    out[0] = x$3$1;
-	    out[1] = y$3$1;
-	    out[2] = -y$3$1;
-	    out[3] = x$3$1;
+	    y$4 = Math.sin(rad);
+	    x$4 = Math.cos(rad);
+	    out[0] = x$4;
+	    out[1] = y$4;
+	    out[2] = -y$4;
+	    out[3] = x$4;
 	    return out;
 	};
 	Matrix2$1.fromScaling = (v, out = new Matrix2$1()) => {
@@ -1661,12 +1661,12 @@
 	    a10$2$1 = a[1];
 	    a01$2$1 = a[2];
 	    a11$2$1 = a[3];
-	    y$3$1 = Math.sin(rad);
-	    x$3$1 = Math.cos(rad);
-	    out[0] = a00$2$1 * x$3$1 + a01$2$1 * y$3$1;
-	    out[1] = a10$2$1 * x$3$1 + a11$2$1 * y$3$1;
-	    out[2] = a00$2$1 * -y$3$1 + a01$2$1 * x$3$1;
-	    out[3] = a10$2$1 * -y$3$1 + a11$2$1 * x$3$1;
+	    y$4 = Math.sin(rad);
+	    x$4 = Math.cos(rad);
+	    out[0] = a00$2$1 * x$4 + a01$2$1 * y$4;
+	    out[1] = a10$2$1 * x$4 + a11$2$1 * y$4;
+	    out[2] = a00$2$1 * -y$4 + a01$2$1 * x$4;
+	    out[3] = a10$2$1 * -y$4 + a11$2$1 * x$4;
 	    return out;
 	};
 	Matrix2$1.scale = (a, v, out = new Matrix2$1()) => {
@@ -1674,12 +1674,12 @@
 	    a10$2$1 = a[1];
 	    a01$2$1 = a[2];
 	    a11$2$1 = a[3];
-	    x$3$1 = v[0];
-	    y$3$1 = v[1];
-	    out[0] = a00$2$1 * x$3$1;
-	    out[1] = a10$2$1 * x$3$1;
-	    out[2] = a01$2$1 * y$3$1;
-	    out[3] = a11$2$1 * y$3$1;
+	    x$4 = v[0];
+	    y$4 = v[1];
+	    out[0] = a00$2$1 * x$4;
+	    out[1] = a10$2$1 * x$4;
+	    out[2] = a01$2$1 * y$4;
+	    out[3] = a11$2$1 * y$4;
 	    return out;
 	};
 	Matrix2$1.toString = (a) => {
@@ -1702,7 +1702,7 @@
 
 	let a00$1$1 = 0, a01$1$1 = 0, a02$1$1 = 0, a11$1$1 = 0, a10$1$1 = 0, a12$1$1 = 0, a20$1$1 = 0, a21$1$1 = 0, a22$1$1 = 0;
 	let b00$1$1 = 0, b01$1$1 = 0, b02$1$1 = 0, b11$1$1 = 0, b10$1$1 = 0, b12$1$1 = 0, b20$1$1 = 0, b21$1$1 = 0, b22$1$1 = 0;
-	let x$2$1 = 0, y$2$1 = 0;
+	let x$3$1 = 0, y$3$1 = 0;
 	const UNIT_MATRIX3_DATA$1 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 	class Matrix3$1 extends Float32Array {
 	    constructor(data = UNIT_MATRIX3_DATA$1) {
@@ -1774,13 +1774,13 @@
 	    return out;
 	};
 	Matrix3$1.fromRotation = (rad, out = new Matrix3$1()) => {
-	    y$2$1 = Math.sin(rad);
-	    x$2$1 = Math.cos(rad);
-	    out[0] = x$2$1;
-	    out[1] = y$2$1;
+	    y$3$1 = Math.sin(rad);
+	    x$3$1 = Math.cos(rad);
+	    out[0] = x$3$1;
+	    out[1] = y$3$1;
 	    out[2] = 0;
-	    out[3] = -y$2$1;
-	    out[4] = x$2$1;
+	    out[3] = -y$3$1;
+	    out[4] = x$3$1;
 	    out[5] = 0;
 	    out[6] = 0;
 	    out[7] = 0;
@@ -1892,28 +1892,28 @@
 	    a20$1$1 = a[6];
 	    a21$1$1 = a[7];
 	    a22$1$1 = a[8];
-	    y$2$1 = Math.sin(rad);
-	    x$2$1 = Math.cos(rad);
-	    out[0] = x$2$1 * a00$1$1 + y$2$1 * a10$1$1;
-	    out[1] = x$2$1 * a01$1$1 + y$2$1 * a11$1$1;
-	    out[2] = x$2$1 * a02$1$1 + y$2$1 * a12$1$1;
-	    out[3] = y$2$1 * a10$1$1 - x$2$1 * a00$1$1;
-	    out[4] = y$2$1 * a11$1$1 - x$2$1 * a01$1$1;
-	    out[5] = y$2$1 * a12$1$1 - x$2$1 * a02$1$1;
+	    y$3$1 = Math.sin(rad);
+	    x$3$1 = Math.cos(rad);
+	    out[0] = x$3$1 * a00$1$1 + y$3$1 * a10$1$1;
+	    out[1] = x$3$1 * a01$1$1 + y$3$1 * a11$1$1;
+	    out[2] = x$3$1 * a02$1$1 + y$3$1 * a12$1$1;
+	    out[3] = y$3$1 * a10$1$1 - x$3$1 * a00$1$1;
+	    out[4] = y$3$1 * a11$1$1 - x$3$1 * a01$1$1;
+	    out[5] = y$3$1 * a12$1$1 - x$3$1 * a02$1$1;
 	    out[6] = a20$1$1;
 	    out[7] = a21$1$1;
 	    out[8] = a22$1$1;
 	    return out;
 	};
 	Matrix3$1.scale = (a, v, out = new Matrix3$1()) => {
-	    x$2$1 = v[0];
-	    y$2$1 = v[1];
-	    out[0] = x$2$1 * a[0];
-	    out[1] = x$2$1 * a[1];
-	    out[2] = x$2$1 * a[2];
-	    out[3] = y$2$1 * a[3];
-	    out[4] = y$2$1 * a[4];
-	    out[5] = y$2$1 * a[5];
+	    x$3$1 = v[0];
+	    y$3$1 = v[1];
+	    out[0] = x$3$1 * a[0];
+	    out[1] = x$3$1 * a[1];
+	    out[2] = x$3$1 * a[2];
+	    out[3] = y$3$1 * a[3];
+	    out[4] = y$3$1 * a[4];
+	    out[5] = y$3$1 * a[5];
 	    out[6] = a[6];
 	    out[7] = a[7];
 	    out[8] = a[8];
@@ -1929,17 +1929,17 @@
 	    a20$1$1 = a[6];
 	    a21$1$1 = a[7];
 	    a22$1$1 = a[8];
-	    x$2$1 = v[0];
-	    y$2$1 = v[1];
+	    x$3$1 = v[0];
+	    y$3$1 = v[1];
 	    out[0] = a00$1$1;
 	    out[1] = a01$1$1;
 	    out[2] = a02$1$1;
 	    out[3] = a10$1$1;
 	    out[4] = a11$1$1;
 	    out[5] = a12$1$1;
-	    out[6] = x$2$1 * a00$1$1 + y$2$1 * a10$1$1 + a20$1$1;
-	    out[7] = x$2$1 * a01$1$1 + y$2$1 * a11$1$1 + a21$1$1;
-	    out[8] = x$2$1 * a02$1$1 + y$2$1 * a12$1$1 + a22$1$1;
+	    out[6] = x$3$1 * a00$1$1 + y$3$1 * a10$1$1 + a20$1$1;
+	    out[7] = x$3$1 * a01$1$1 + y$3$1 * a11$1$1 + a21$1$1;
+	    out[8] = x$3$1 * a02$1$1 + y$3$1 * a12$1$1 + a22$1$1;
 	    return out;
 	};
 	Matrix3$1.transpose = (a, out = new Matrix3$1()) => {
@@ -2308,7 +2308,7 @@
 	/* eslint-disable max-lines */
 	let a00$3 = 0, a01$3 = 0, a02$2 = 0, a03$1 = 0, a11$3 = 0, a10$3 = 0, a12$2 = 0, a13$1 = 0, a20$2 = 0, a21$2 = 0, a22$2 = 0, a23$1 = 0, a31$1 = 0, a30$1 = 0, a32$1 = 0, a33$1 = 0;
 	let b00$3 = 0, b01$3 = 0, b02$2 = 0, b03$1 = 0, b11$3 = 0, b10$3 = 0, b12$2 = 0, b13$1 = 0, b20$2 = 0, b21$2 = 0, b22$2 = 0, b23$1 = 0, b31$1 = 0, b30$1 = 0, b32$1 = 0, b33$1 = 0;
-	let x$1$1 = 0, y$1$1 = 0, z$1 = 0, det$2 = 0, len$2 = 0, s$2$1 = 0, t$1 = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
+	let x$2$1 = 0, y$2$1 = 0, z$1 = 0, det$2 = 0, len$2 = 0, s$2$1 = 0, t$1 = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
 	const UNIT_MATRIX4_DATA$1 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 	class Matrix4$1 extends Float32Array {
 	    constructor(data = UNIT_MATRIX4_DATA$1) {
@@ -2356,13 +2356,13 @@
 	    return out;
 	};
 	Matrix4$1.fromEuler = (euler, out = new Matrix4$1()) => {
-	    x$1$1 = euler.x;
-	    y$1$1 = euler.y;
+	    x$2$1 = euler.x;
+	    y$2$1 = euler.y;
 	    z$1 = euler.z;
-	    a$1 = Math.cos(x$1$1);
-	    b$1 = Math.sin(x$1$1);
-	    c$2 = Math.cos(y$1$1);
-	    d$1 = Math.sin(y$1$1);
+	    a$1 = Math.cos(x$2$1);
+	    b$1 = Math.sin(x$2$1);
+	    c$2 = Math.cos(y$2$1);
+	    d$1 = Math.sin(y$2$1);
 	    e$1 = Math.cos(z$1);
 	    f$1 = Math.sin(z$1);
 	    if (euler.order === EulerRotationOrders$1.XYZ) {
@@ -2481,30 +2481,30 @@
 	    return out;
 	};
 	Matrix4$1.fromRotation = (rad, axis, out = new Matrix4$1()) => {
-	    x$1$1 = axis[0];
-	    y$1$1 = axis[1];
+	    x$2$1 = axis[0];
+	    y$2$1 = axis[1];
 	    z$1 = axis[2];
-	    len$2 = Math.hypot(x$1$1, y$1$1, z$1);
+	    len$2 = Math.hypot(x$2$1, y$2$1, z$1);
 	    if (len$2 < EPSILON$1) {
 	        return null;
 	    }
 	    len$2 = 1 / len$2;
-	    x$1$1 *= len$2;
-	    y$1$1 *= len$2;
+	    x$2$1 *= len$2;
+	    y$2$1 *= len$2;
 	    z$1 *= len$2;
 	    s$2$1 = Math.sin(rad);
 	    c$2 = Math.cos(rad);
 	    t$1 = 1 - c$2;
-	    out[0] = x$1$1 * x$1$1 * t$1 + c$2;
-	    out[1] = y$1$1 * x$1$1 * t$1 + z$1 * s$2$1;
-	    out[2] = z$1 * x$1$1 * t$1 - y$1$1 * s$2$1;
+	    out[0] = x$2$1 * x$2$1 * t$1 + c$2;
+	    out[1] = y$2$1 * x$2$1 * t$1 + z$1 * s$2$1;
+	    out[2] = z$1 * x$2$1 * t$1 - y$2$1 * s$2$1;
 	    out[3] = 0;
-	    out[4] = x$1$1 * y$1$1 * t$1 - z$1 * s$2$1;
-	    out[5] = y$1$1 * y$1$1 * t$1 + c$2;
-	    out[6] = z$1 * y$1$1 * t$1 + x$1$1 * s$2$1;
+	    out[4] = x$2$1 * y$2$1 * t$1 - z$1 * s$2$1;
+	    out[5] = y$2$1 * y$2$1 * t$1 + c$2;
+	    out[6] = z$1 * y$2$1 * t$1 + x$2$1 * s$2$1;
 	    out[7] = 0;
-	    out[8] = x$1$1 * z$1 * t$1 + y$1$1 * s$2$1;
-	    out[9] = y$1$1 * z$1 * t$1 - x$1$1 * s$2$1;
+	    out[8] = x$2$1 * z$1 * t$1 + y$2$1 * s$2$1;
+	    out[9] = y$2$1 * z$1 * t$1 - x$2$1 * s$2$1;
 	    out[10] = z$1 * z$1 * t$1 + c$2;
 	    out[11] = 0;
 	    out[12] = 0;
@@ -2806,24 +2806,46 @@
 	    return out;
 	};
 	Matrix4$1.orthogonal = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
-	    const lr = 1 / (left - right);
-	    const bt = 1 / (bottom - top);
-	    const nf = 1 / (near - far);
-	    out[0] = -2 * lr;
+	    c$2 = 1 / (left - right);
+	    b$1 = 1 / (bottom - top);
+	    a$1 = 1 / (near - far);
+	    out[0] = -2 * c$2;
 	    out[1] = 0;
 	    out[2] = 0;
 	    out[3] = 0;
 	    out[4] = 0;
-	    out[5] = -2 * bt;
+	    out[5] = -2 * b$1;
 	    out[6] = 0;
 	    out[7] = 0;
 	    out[8] = 0;
 	    out[9] = 0;
-	    out[10] = 2 * nf;
+	    out[10] = 2 * a$1;
 	    out[11] = 0;
-	    out[12] = (left + right) * lr;
-	    out[13] = (top + bottom) * bt;
-	    out[14] = (far + near) * nf;
+	    out[12] = (left + right) * c$2;
+	    out[13] = (top + bottom) * b$1;
+	    out[14] = (far + near) * a$1;
+	    out[15] = 1;
+	    return out;
+	};
+	Matrix4$1.orthogonalZ0 = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
+	    c$2 = 1 / (left - right);
+	    b$1 = 1 / (bottom - top);
+	    a$1 = 1 / (near - far);
+	    out[0] = -2 * c$2;
+	    out[1] = 0;
+	    out[2] = 0;
+	    out[3] = 0;
+	    out[4] = 0;
+	    out[5] = -2 * b$1;
+	    out[6] = 0;
+	    out[7] = 0;
+	    out[8] = 0;
+	    out[9] = 0;
+	    out[10] = a$1;
+	    out[11] = 0;
+	    out[12] = (left + right) * c$2;
+	    out[13] = (top + bottom) * b$1;
+	    out[14] = near * a$1;
 	    out[15] = 1;
 	    return out;
 	};
@@ -2854,17 +2876,44 @@
 	    }
 	    return out;
 	};
+	Matrix4$1.perspectiveZ0 = (fovy, aspect, near, far, out = new Matrix4$1()) => {
+	    f$1 = 1.0 / Math.tan(fovy / 2);
+	    out[0] = f$1 / aspect;
+	    out[1] = 0;
+	    out[2] = 0;
+	    out[3] = 0;
+	    out[4] = 0;
+	    out[5] = f$1;
+	    out[6] = 0;
+	    out[7] = 0;
+	    out[8] = 0;
+	    out[9] = 0;
+	    out[11] = -1;
+	    out[12] = 0;
+	    out[13] = 0;
+	    out[15] = 0;
+	    if (far !== null && far !== Infinity) {
+	        a$1 = 1 / (near - far);
+	        out[10] = far * a$1;
+	        out[14] = far * near * a$1;
+	    }
+	    else {
+	        out[10] = -1;
+	        out[14] = -near;
+	    }
+	    return out;
+	};
 	Matrix4$1.rotate = (a, rad, axis, out = new Matrix4$1()) => {
-	    x$1$1 = axis[0];
-	    y$1$1 = axis[1];
+	    x$2$1 = axis[0];
+	    y$2$1 = axis[1];
 	    z$1 = axis[2];
-	    len$2 = Math.hypot(x$1$1, y$1$1, z$1);
+	    len$2 = Math.hypot(x$2$1, y$2$1, z$1);
 	    if (len$2 < EPSILON$1) {
 	        return null;
 	    }
 	    len$2 = 1 / len$2;
-	    x$1$1 *= len$2;
-	    y$1$1 *= len$2;
+	    x$2$1 *= len$2;
+	    y$2$1 *= len$2;
 	    z$1 *= len$2;
 	    s$2$1 = Math.sin(rad);
 	    c$2 = Math.cos(rad);
@@ -2881,14 +2930,14 @@
 	    a21$2 = a[9];
 	    a22$2 = a[10];
 	    a23$1 = a[11];
-	    b00$3 = x$1$1 * x$1$1 * t$1 + c$2;
-	    b01$3 = y$1$1 * x$1$1 * t$1 + z$1 * s$2$1;
-	    b02$2 = z$1 * x$1$1 * t$1 - y$1$1 * s$2$1;
-	    b10$3 = x$1$1 * y$1$1 * t$1 - z$1 * s$2$1;
-	    b11$3 = y$1$1 * y$1$1 * t$1 + c$2;
-	    b12$2 = z$1 * y$1$1 * t$1 + x$1$1 * s$2$1;
-	    b20$2 = x$1$1 * z$1 * t$1 + y$1$1 * s$2$1;
-	    b21$2 = y$1$1 * z$1 * t$1 - x$1$1 * s$2$1;
+	    b00$3 = x$2$1 * x$2$1 * t$1 + c$2;
+	    b01$3 = y$2$1 * x$2$1 * t$1 + z$1 * s$2$1;
+	    b02$2 = z$1 * x$2$1 * t$1 - y$2$1 * s$2$1;
+	    b10$3 = x$2$1 * y$2$1 * t$1 - z$1 * s$2$1;
+	    b11$3 = y$2$1 * y$2$1 * t$1 + c$2;
+	    b12$2 = z$1 * y$2$1 * t$1 + x$2$1 * s$2$1;
+	    b20$2 = x$2$1 * z$1 * t$1 + y$2$1 * s$2$1;
+	    b21$2 = y$2$1 * z$1 * t$1 - x$2$1 * s$2$1;
 	    b22$2 = z$1 * z$1 * t$1 + c$2;
 	    out[0] = a00$3 * b00$3 + a10$3 * b01$3 + a20$2 * b02$2;
 	    out[1] = a01$3 * b00$3 + a11$3 * b01$3 + a21$2 * b02$2;
@@ -3004,17 +3053,17 @@
 	    return out;
 	};
 	Matrix4$1.scale = (a, v, out = new Matrix4$1()) => {
-	    x$1$1 = v[0];
-	    y$1$1 = v[1];
+	    x$2$1 = v[0];
+	    y$2$1 = v[1];
 	    z$1 = v[2];
-	    out[0] = a[0] * x$1$1;
-	    out[1] = a[1] * x$1$1;
-	    out[2] = a[2] * x$1$1;
-	    out[3] = a[3] * x$1$1;
-	    out[4] = a[4] * y$1$1;
-	    out[5] = a[5] * y$1$1;
-	    out[6] = a[6] * y$1$1;
-	    out[7] = a[7] * y$1$1;
+	    out[0] = a[0] * x$2$1;
+	    out[1] = a[1] * x$2$1;
+	    out[2] = a[2] * x$2$1;
+	    out[3] = a[3] * x$2$1;
+	    out[4] = a[4] * y$2$1;
+	    out[5] = a[5] * y$2$1;
+	    out[6] = a[6] * y$2$1;
+	    out[7] = a[7] * y$2$1;
 	    out[8] = a[8] * z$1;
 	    out[9] = a[9] * z$1;
 	    out[10] = a[10] * z$1;
@@ -3064,14 +3113,14 @@
 	    return out;
 	};
 	Matrix4$1.translate = (a, v, out = new Matrix4$1()) => {
-	    x$1$1 = v[0];
-	    y$1$1 = v[1];
+	    x$2$1 = v[0];
+	    y$2$1 = v[1];
 	    z$1 = v[2];
 	    if (a === out) {
-	        out[12] = a[0] * x$1$1 + a[4] * y$1$1 + a[8] * z$1 + a[12];
-	        out[13] = a[1] * x$1$1 + a[5] * y$1$1 + a[9] * z$1 + a[13];
-	        out[14] = a[2] * x$1$1 + a[6] * y$1$1 + a[10] * z$1 + a[14];
-	        out[15] = a[3] * x$1$1 + a[7] * y$1$1 + a[11] * z$1 + a[15];
+	        out[12] = a[0] * x$2$1 + a[4] * y$2$1 + a[8] * z$1 + a[12];
+	        out[13] = a[1] * x$2$1 + a[5] * y$2$1 + a[9] * z$1 + a[13];
+	        out[14] = a[2] * x$2$1 + a[6] * y$2$1 + a[10] * z$1 + a[14];
+	        out[15] = a[3] * x$2$1 + a[7] * y$2$1 + a[11] * z$1 + a[15];
 	    }
 	    else {
 	        a00$3 = a[0];
@@ -3098,10 +3147,10 @@
 	        out[9] = a21$2;
 	        out[10] = a22$2;
 	        out[11] = a23$1;
-	        out[12] = a00$3 * x$1$1 + a10$3 * y$1$1 + a20$2 * z$1 + a[12];
-	        out[13] = a01$3 * x$1$1 + a11$3 * y$1$1 + a21$2 * z$1 + a[13];
-	        out[14] = a02$2 * x$1$1 + a12$2 * y$1$1 + a22$2 * z$1 + a[14];
-	        out[15] = a03$1 * x$1$1 + a13$1 * y$1$1 + a23$1 * z$1 + a[15];
+	        out[12] = a00$3 * x$2$1 + a10$3 * y$2$1 + a20$2 * z$1 + a[12];
+	        out[13] = a01$3 * x$2$1 + a11$3 * y$2$1 + a21$2 * z$1 + a[13];
+	        out[14] = a02$2 * x$2$1 + a12$2 * y$2$1 + a22$2 * z$1 + a[14];
+	        out[15] = a03$1 * x$2$1 + a13$1 * y$2$1 + a23$1 * z$1 + a[15];
 	    }
 	    return out;
 	};
@@ -3146,6 +3195,186 @@
 	    }
 	    return out;
 	};
+
+	let x$1$1, y$1$1;
+	/**
+	 * @class
+	 * @classdesc 极坐标
+	 * @implements {Mathx.IPolar}
+	 * @name Mathx.Polar
+	 * @desc 极坐标，遵守数学右手定则。规定逆时针方向为正方向。
+	 * @param {number} [r=0] | 距离极点距离
+	 * @param {number} [a=0] | 旋转弧度，规定0弧度为笛卡尔坐标系x轴方向
+	 */
+	class Polar {
+	    /**
+	     * @public
+	     * @member {number} Mathx.Polar.prototype.a
+	     * @desc 旋转弧度
+	     * @default 0
+	     */
+	    /**
+	     * @public
+	     * @member {number} Mathx.Polar.prototype.r
+	     * @desc 距离
+	     * @default 0
+	     */
+	    constructor(r = 0, a = 0) {
+	        this.r = r;
+	        this.a = a;
+	    }
+	    /**
+	     * @public
+	     * @method create
+	     * @memberof Mathx.Polar
+	     * @desc 创建一个极坐标
+	     * @param {number} [r=0] 距离
+	     * @param {number} [a=0] 弧度
+	     * @returns {Mathx.Polar} 新的极坐标实例
+	     */
+	    static create(r = 0, a = 0) {
+	        return new Polar(r, a);
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.distanceTo
+	     * @desc 求该坐标到另一个极坐标的欧几里得距离
+	     * @param {Mathx.IPolar} p | 目标极坐标
+	     * @returns {number} 欧几里得距离
+	     */
+	    distanceTo(p) {
+	        return Math.sqrt(this.distanceToSquared(p));
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.distanceToManhattan
+	     * @desc 求该坐标到另一个极坐标的曼哈顿距离
+	     * @param {Mathx.IPolar} p | 目标极坐标
+	     * @returns {number} 曼哈顿距离
+	     */
+	    distanceToManhattan({ r, a }) {
+	        return Math.cos(a) * r - this.x() + Math.sin(a) * r - this.y();
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.distanceToSquared
+	     * @desc 求该坐标到另一个极坐标的欧几里得距离平方
+	     * @param {Mathx.IPolar} p | 目标极坐标
+	     * @returns {number} 欧几里得距离平方
+	     */
+	    distanceToSquared({ r, a }) {
+	        return this.r * this.r + r * r - 2 * r * this.r * Math.cos(a - this.a);
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.fromVector2
+	     * @desc 将一个二维向量数据转化为自身的极坐标值
+	     * @param {Mathx.IVector2} vector2 | 二维向量
+	     * @returns {number} this
+	     */
+	    fromVector2(v) {
+	        x$1$1 = v[0];
+	        y$1$1 = v[1];
+	        this.r = Math.sqrt(x$1$1 * x$1$1 + y$1$1 * y$1$1);
+	        this.a = Math.atan2(y$1$1, x$1$1);
+	        return this;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.lengthManhattan
+	     * @desc 求自身离原点的曼哈顿距离
+	     * @returns {number} 曼哈顿距离
+	     */
+	    lengthManhattan() {
+	        return (Math.cos(this.a) + Math.sin(this.a)) * this.r;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.set
+	     * @desc 设置极坐标值
+	     * @param {number} [r=0] 距离
+	     * @param {number} [a=0] 弧度
+	     * @returns {number} this
+	     */
+	    set(r = 0, a = 0) {
+	        this.r = r;
+	        this.a = a;
+	        return this;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.setA
+	     * @desc 设置极坐标的弧度
+	     * @param {number} [a=0] 角度
+	     * @returns {number} this
+	     */
+	    setA(a = 0) {
+	        this.a = a;
+	        return this;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.setR
+	     * @desc 设置极坐标的弧度
+	     * @param {number} [r=0] 距离
+	     * @returns {number} this
+	     */
+	    setR(r = 0) {
+	        this.r = r;
+	        return this;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.toJson
+	     * @desc 将极坐标转化为纯json对象，纯数据
+	     * @param {IPolar} [json] 被修改的json对象，如果不传则会新创建json对象。
+	     * @returns {Mathx.IPolar} json
+	     */
+	    toJson(json = { a: 0, r: 0 }) {
+	        json.r = this.r;
+	        json.a = this.a;
+	        return json;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.toString
+	     * @desc 将极坐标转化为字符串
+	     * @returns {string} 形式为"(r, a)"的字符串
+	     */
+	    toString() {
+	        return `(${this.r}, ${this.a})`;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.toVector2Json
+	     * @desc 将极坐标转化为二维向量的json形式，纯数据
+	     * @param {IVector2} [json] 被修改的json对象，如果不传则会新创建json对象。
+	     * @returns {IVector2} json
+	     */
+	    toVector2Json(vec2) {
+	        vec2[0] = this.x();
+	        vec2[1] = this.y();
+	        return vec2;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.x
+	     * @desc 获取极坐标对应二维向量的x的值
+	     * @returns {number} x
+	     */
+	    x() {
+	        return Math.cos(this.a) * this.r;
+	    }
+	    /**
+	     * @public
+	     * @method Mathx.Polar.prototype.y
+	     * @desc 获取极坐标对应二维向量的y的值
+	     * @returns {number} y
+	     */
+	    y() {
+	        return Math.sin(this.a) * this.r;
+	    }
+	}
 
 	let ax$1$1, ay$1$1, az$1$1, aw$1, bx$1$1, by$1$1, bz$1$1, bw;
 	let s$1$1 = 0, c$1$1 = 0, rad = 0, dotTmp = 0, omega = 0, len$1$1 = 0, scale0 = 0, scale1 = 0;
@@ -3636,7 +3865,7 @@
 	    return true;
 	}
 
-	let x$4 = 0, y$4 = 0, c$3 = 0, s$4 = 0;
+	let x$5 = 0, y$5 = 0, c$3 = 0, s$4 = 0;
 	class Vector2$1 extends Float32Array {
 	    constructor(x = 0, y = 0) {
 	        super(2);
@@ -3722,17 +3951,17 @@
 	    return out;
 	};
 	Vector2$1.distanceTo = (a, b) => {
-	    x$4 = b[0] - a[0];
-	    y$4 = b[1] - a[1];
-	    return Math.hypot(x$4, y$4);
+	    x$5 = b[0] - a[0];
+	    y$5 = b[1] - a[1];
+	    return Math.hypot(x$5, y$5);
 	};
 	Vector2$1.distanceToManhattan = (a, b) => {
 	    return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 	};
 	Vector2$1.distanceToSquared = (a, b) => {
-	    x$4 = a[0] - b[0];
-	    y$4 = a[1] - b[1];
-	    return x$4 * x$4 + y$4 * y$4;
+	    x$5 = a[0] - b[0];
+	    y$5 = a[1] - b[1];
+	    return x$5 * x$5 + y$5 * y$5;
 	};
 	Vector2$1.divide = (a, b, out = new Vector2$1()) => {
 	    out[0] = a[0] / b[0];
@@ -3835,18 +4064,18 @@
 	    return Vector2$1.divideScalar(a, Vector2$1.norm(a) || 1, out);
 	};
 	Vector2$1.random = (norm = 1, out = new Vector2$1()) => {
-	    x$4 = Math.random() * DEG_360_RAD$1;
-	    out[0] = Math.cos(x$4) * norm;
-	    out[1] = Math.sin(x$4) * norm;
+	    x$5 = Math.random() * DEG_360_RAD$1;
+	    out[0] = Math.cos(x$5) * norm;
+	    out[1] = Math.sin(x$5) * norm;
 	    return out;
 	};
 	Vector2$1.rotate = (a, angle, center = Vector2$1.VECTOR2_ZERO, out = new Vector2$1(2)) => {
 	    c$3 = Math.cos(angle);
 	    s$4 = Math.sin(angle);
-	    x$4 = a[0] - center[0];
-	    y$4 = a[1] - center[1];
-	    out[0] = x$4 * c$3 - y$4 * s$4 + center[0];
-	    out[1] = x$4 * s$4 + y$4 * c$3 + center[1];
+	    x$5 = a[0] - center[0];
+	    y$5 = a[1] - center[1];
+	    out[0] = x$5 * c$3 - y$5 * s$4 + center[0];
+	    out[1] = x$5 * s$4 + y$5 * c$3 + center[1];
 	    return out;
 	};
 	Vector2$1.round = (a, out = new Vector2$1()) => {
@@ -3878,10 +4107,10 @@
 	    return `(${a[0]}, ${a[1]})`;
 	};
 	Vector2$1.transformMatrix3 = (a, m, out) => {
-	    x$4 = a[0];
-	    y$4 = a[1];
-	    out[0] = m[0] * x$4 + m[3] * y$4 + m[6];
-	    out[1] = m[1] * x$4 + m[4] * y$4 + m[7];
+	    x$5 = a[0];
+	    y$5 = a[1];
+	    out[0] = m[0] * x$5 + m[3] * y$5 + m[6];
+	    out[1] = m[1] * x$5 + m[4] * y$5 + m[7];
 	    return out;
 	};
 
@@ -4016,6 +4245,57 @@
 	    out.set(t.b, 3);
 	    out.set(t.c, 6);
 	    return Vector3$1.normalize(out);
+	};
+
+	let dis, r2, d2;
+	const v = new Vector3$1();
+	class Ray3 {
+	    constructor(position = new Vector3$1(), direction = new Vector3$1(0, 0, -1)) {
+	        this.position = position;
+	        this.direction = Vector3$1.normalize(direction);
+	    }
+	}
+	Ray3.at = (a, b, out = new Vector3$1()) => {
+	    return Vector3$1.multiplyScalar(a.direction, b, out);
+	};
+	Ray3.distanceToPoint = (a, point) => {
+	    return Math.sqrt(Ray3.distanceSqToPoint(a, point));
+	};
+	Ray3.distanceSqToPoint = (a, point) => {
+	    Vector3$1.minus(point, a.position, v);
+	    dis = Vector3$1.dot(v, a.direction);
+	    if (dis < 0) {
+	        return Vector3$1.distanceToSquared(a.position, point);
+	    }
+	    Vector3$1.multiplyScalar(a.direction, dis, v);
+	    Vector3$1.add(v, a.position, v);
+	    return Vector3$1.distanceToSquared(v, point);
+	};
+	Ray3.lookAt = (a, b, out = new Ray3()) => {
+	    if (a !== out) {
+	        Vector3$1.fromArray(a.position, 0, out.position);
+	    }
+	    Vector3$1.normalize(Vector3$1.minus(b, a.position, out.direction));
+	    return out;
+	};
+	Ray3.intersectSphere = (ray, sphere, target) => {
+	    Vector3$1.minus(sphere.position, ray.position, v);
+	    dis = Vector3$1.dot(v, ray.direction);
+	    d2 = Vector3$1.dot(v, v) - dis * dis;
+	    r2 = sphere.radius * sphere.radius;
+	    if (d2 > r2)
+	        return null;
+	    const thc = Math.sqrt(r2 - d2);
+	    const t0 = dis - thc;
+	    const t1 = dis + thc;
+	    if (t0 < 0 && t1 < 0)
+	        return null;
+	    if (t0 < 0)
+	        return Ray3.at(ray, t1, target);
+	    return Ray3.at(ray, t0, target);
+	};
+	Ray3.intersectsSphere = (ray, sphere) => {
+	    return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
 	};
 
 	// import clampCommon from "../common/clamp";
@@ -4279,7 +4559,9 @@
 		Matrix2: Matrix2$1,
 		Matrix3: Matrix3$1,
 		Matrix4: Matrix4$1,
+		Polar: Polar,
 		Quaternion: Quaternion,
+		Ray3: Ray3,
 		Rectangle2: Rectangle2,
 		Sphere: Sphere,
 		Triangle3: Triangle3,
@@ -5882,21 +6164,29 @@ struct Uniforms {
 
 struct VertexOutput {
 	@builtin(position) position : vec4<f32>,
-	@location(0) depth : vec2<f32>
+	@location(0) depth : vec4<f32>
 };
 
 @stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	out.depth = vec2<f32>(out.position.z, out.position.w);
+	out.depth = out.position;
 	return out;
 }`;
 	const fragmentShader$1 = `
-@stage(fragment) fn main(@location(0) depth : vec2<f32>) -> @location(0) vec4<f32> {
-	var fragCoordZ: f32 = (depth.x / depth.y);
-	return vec4<f32>(fragCoordZ, fragCoordZ, fragCoordZ, 1.0);
+// let PackUpscale: f32 = 1.003921568627451;
+// let PackFactors: vec3<f32> = vec3<f32>( 256., 256., 256. );
+// let ShiftRight8: f32 = 0.00390625;
+// fn packDepthToRGBA(v: f32 ) -> vec4<f32> {
+// 	var r: vec4<f32> = vec4<f32>( fract( v * PackFactors ), v );
+// 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
+// 	return r * PackUpscale;
+// }
+@stage(fragment) fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
+	var fragCoordZ: f32 = depth.z / depth.w;
+	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 50.)), 1.0);
 }`;
-	class NormalMaterial$1 extends Material {
+	class DepthMaterial extends Material {
 	    constructor() {
 	        super(vertexShader$1, fragmentShader$1, []);
 	        this.dirty = true;
@@ -6461,7 +6751,7 @@ struct VertexOutput {
 	        return this.update();
 	    }
 	    update() {
-	        Matrix4$1.orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
+	        Matrix4$1.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
 	        return this;
 	    }
@@ -6515,7 +6805,7 @@ struct VertexOutput {
 	        return this.update();
 	    }
 	    update() {
-	        Matrix4$1.perspective(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
+	        Matrix4$1.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
 	        return this;
 	    }
@@ -8302,24 +8592,46 @@ struct VertexOutput {
 	    return out;
 	};
 	Matrix4.orthogonal = (left, right, bottom, top, near, far, out = new Matrix4()) => {
-	    const lr = 1 / (left - right);
-	    const bt = 1 / (bottom - top);
-	    const nf = 1 / (near - far);
-	    out[0] = -2 * lr;
+	    c$1 = 1 / (left - right);
+	    b = 1 / (bottom - top);
+	    a = 1 / (near - far);
+	    out[0] = -2 * c$1;
 	    out[1] = 0;
 	    out[2] = 0;
 	    out[3] = 0;
 	    out[4] = 0;
-	    out[5] = -2 * bt;
+	    out[5] = -2 * b;
 	    out[6] = 0;
 	    out[7] = 0;
 	    out[8] = 0;
 	    out[9] = 0;
-	    out[10] = 2 * nf;
+	    out[10] = 2 * a;
 	    out[11] = 0;
-	    out[12] = (left + right) * lr;
-	    out[13] = (top + bottom) * bt;
-	    out[14] = (far + near) * nf;
+	    out[12] = (left + right) * c$1;
+	    out[13] = (top + bottom) * b;
+	    out[14] = (far + near) * a;
+	    out[15] = 1;
+	    return out;
+	};
+	Matrix4.orthogonalZ0 = (left, right, bottom, top, near, far, out = new Matrix4()) => {
+	    c$1 = 1 / (left - right);
+	    b = 1 / (bottom - top);
+	    a = 1 / (near - far);
+	    out[0] = -2 * c$1;
+	    out[1] = 0;
+	    out[2] = 0;
+	    out[3] = 0;
+	    out[4] = 0;
+	    out[5] = -2 * b;
+	    out[6] = 0;
+	    out[7] = 0;
+	    out[8] = 0;
+	    out[9] = 0;
+	    out[10] = a;
+	    out[11] = 0;
+	    out[12] = (left + right) * c$1;
+	    out[13] = (top + bottom) * b;
+	    out[14] = near * a;
 	    out[15] = 1;
 	    return out;
 	};
@@ -8347,6 +8659,33 @@ struct VertexOutput {
 	    else {
 	        out[10] = -1;
 	        out[14] = -2 * near;
+	    }
+	    return out;
+	};
+	Matrix4.perspectiveZ0 = (fovy, aspect, near, far, out = new Matrix4()) => {
+	    f = 1.0 / Math.tan(fovy / 2);
+	    out[0] = f / aspect;
+	    out[1] = 0;
+	    out[2] = 0;
+	    out[3] = 0;
+	    out[4] = 0;
+	    out[5] = f;
+	    out[6] = 0;
+	    out[7] = 0;
+	    out[8] = 0;
+	    out[9] = 0;
+	    out[11] = -1;
+	    out[12] = 0;
+	    out[13] = 0;
+	    out[15] = 0;
+	    if (far !== null && far !== Infinity) {
+	        a = 1 / (near - far);
+	        out[10] = far * a;
+	        out[14] = far * near * a;
+	    }
+	    else {
+	        out[10] = -1;
+	        out[14] = -near;
 	    }
 	    return out;
 	};
@@ -9870,7 +10209,7 @@ struct VertexOutput {
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager$1;
 	exports.ComponentProxy = index$1;
-	exports.DepthMaterial = NormalMaterial$1;
+	exports.DepthMaterial = DepthMaterial;
 	exports.Entity = Entity$1;
 	exports.EntityFactory = index;
 	exports.Entitymanager = EntityManager;

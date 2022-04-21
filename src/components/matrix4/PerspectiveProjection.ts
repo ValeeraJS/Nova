@@ -67,7 +67,7 @@ export default class PerspectiveProjection extends AProjection3 {
     }
 
     update() {
-        Matrix4.perspective(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
+        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
         this.dirty = true;
         return this;
     }

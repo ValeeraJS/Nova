@@ -24,7 +24,7 @@
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
 			canvas.width / canvas.height,
-			0.01,
+			0.1,
 			10
 		);
 		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);

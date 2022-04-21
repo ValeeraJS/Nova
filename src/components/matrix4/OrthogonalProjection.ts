@@ -91,7 +91,7 @@ export default class PerspectiveProjection extends AProjection3 {
     }
 
     update() {
-        Matrix4.orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
+        Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
         this.dirty = true;
 
         return this;
