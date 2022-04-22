@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geo1 = Nova.Geometry3Factory.createTriangle3();
+		const geo2 = Nova.Geometry3Factory.createBox3();
+		const geo3 = Nova.Geometry3Factory.createPlane3();
+		const mesh = Nova.EntityFactory.createMesh(geo1, "test-triangle", world);
+		const materialNormal = new Nova.NormalMaterial();
+		mesh.addComponent(materialNormal);
+		const materialTexture = new Nova.TextureMaterial(
+			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+		);
+		mesh.addComponent(new Nova.EuclidPosition3([0, 0, -5]));
+		mesh.addComponent(new Nova.EulerRotation3());
+
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+		});
+
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
+			world.run();
+			mesh.getComponent("rotation3").y -= 0.01;
+		});
+		timeline.start();
+
+		createGUI();
+
+		function createGUI() {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("entity");
+			let entity = {
+				geometry: "triangle",
+				material: "normal"
+			};
+			f.add(entity, "geometry", ["triangle", "plane", "box"]).onChange((val) => {
+				if (val === "triangle") {
+					mesh.addComponent(geo1);
+				} else if (val === "plane") {
+					mesh.addComponent(geo3);
+				} else if (val === "box") {
+					mesh.addComponent(geo2);
+				}
+			});
+			f.add(entity, "material", ["normal", "texture"]).onChange((val) => {
+				if (val === "normal") {
+					mesh.addComponent(materialNormal);
+				} else if (val === "texture") {
+					mesh.addComponent(materialTexture);
+				}
+			});
+			// f.add(entity, "toggleEntityDisabled");
+		}
+	</script>
+</body>

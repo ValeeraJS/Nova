@@ -6098,7 +6098,7 @@ class Material extends Component {
     }
 }
 
-const wgslShaders$2 = {
+const wgslShaders$1 = {
     vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -6128,7 +6128,7 @@ const wgslShaders$2 = {
 };
 class ColorMaterial extends Material {
     constructor(color = new Float32Array([1, 1, 1, 1])) {
-        super(wgslShaders$2.vertex, wgslShaders$2.fragment, [{
+        super(wgslShaders$1.vertex, wgslShaders$1.fragment, [{
                 name: "color",
                 value: color,
                 binding: 1,
@@ -6361,7 +6361,7 @@ class ShadertoyMaterial extends Material {
     }
 }
 
-const wgslShaders$1 = {
+const wgslShaders = {
     vertex: `
 		struct Uniforms {
 			 matrix : mat4x4<f32>
@@ -6391,7 +6391,7 @@ const wgslShaders$1 = {
 };
 class TextureMaterial extends Material {
     constructor(texture, sampler = new Sampler()) {
-        super(wgslShaders$1.vertex, wgslShaders$1.fragment, [
+        super(wgslShaders.vertex, wgslShaders.fragment, [
             {
                 binding: 1,
                 name: "mySampler",
@@ -8998,7 +8998,10 @@ class MeshRenderer {
     render(mesh, camera, passEncoder, _scissor) {
         var _a, _b, _c;
         let cacheData = this.entityCacheData.get(mesh);
-        if (!cacheData || ((_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty)) {
+        // 假设更换了几何体和材质则重新生成缓存
+        let material = mesh.getComponent(MATERIAL) || DEFAULT_MATERIAL;
+        let geometry = mesh.getComponent(GEOMETRY_3D);
+        if (!cacheData || ((_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
             cacheData = this.createCacheData(mesh);
             this.entityCacheData.set(mesh, cacheData);
         }
@@ -9035,7 +9038,7 @@ class MeshRenderer {
         return this;
     }
     createCacheData(mesh) {
-        var _a, _b, _c;
+        var _a, _b;
         updateModelMatrixComponent(mesh);
         let device = this.engine.device;
         let uniformBuffer = device.createBuffer({
@@ -9043,18 +9046,20 @@ class MeshRenderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         let buffers = [];
-        let nodes = (_a = mesh.getComponent(GEOMETRY_3D)) === null || _a === void 0 ? void 0 : _a.data;
+        let geometry = mesh.getComponent(GEOMETRY_3D);
+        let material = mesh.getComponent(MATERIAL) || DEFAULT_MATERIAL;
+        let nodes = geometry.data;
         for (let i = 0; i < nodes.length; i++) {
             buffers.push(createVerticesBuffer(device, nodes[i].data));
         }
-        let pipeline = this.createPipeline(mesh);
+        let pipeline = this.createPipeline(geometry, material);
         let groupEntries = [{
                 binding: 0,
                 resource: {
                     buffer: uniformBuffer,
                 },
             }];
-        let uniforms = (_c = (_b = mesh.getComponent(MATERIAL)) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c.uniforms;
+        let uniforms = (_b = (_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
         let uniformMap = new Map();
         if (uniforms) {
             for (let i = 0; i < uniforms.length; i++) {
@@ -9104,15 +9109,34 @@ class MeshRenderer {
             uniformBuffer,
             uniformBindGroup,
             pipeline,
-            uniformMap
+            uniformMap,
+            material,
+            geometry
         };
     }
-    createPipeline(mesh) {
+    createPipeline(geometry, material) {
         const pipelineLayout = this.engine.device.createPipelineLayout({
-            bindGroupLayouts: [this.createBindGroupLayout(mesh)],
+            bindGroupLayouts: [this.createBindGroupLayout(material)],
         });
-        let stages = this.createStages(mesh);
-        let geometry = mesh.getComponent(GEOMETRY_3D);
+        let vertexBuffers = this.parseGeometryBufferLayout(geometry);
+        let stages = this.createStages(material, vertexBuffers);
+        let pipeline = this.engine.device.createRenderPipeline({
+            layout: pipelineLayout,
+            vertex: stages.vertex,
+            fragment: stages.fragment,
+            primitive: {
+                topology: geometry.topology,
+                cullMode: geometry.cullMode,
+            },
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
+            },
+        });
+        return pipeline;
+    }
+    parseGeometryBufferLayout(geometry) {
         let vertexBuffers = [];
         let location = 0;
         for (let i = 0; i < geometry.data.length; i++) {
@@ -9130,25 +9154,10 @@ class MeshRenderer {
                 attributes: attributeDescripters
             });
         }
-        let pipeline = this.engine.device.createRenderPipeline({
-            layout: pipelineLayout,
-            vertex: stages.vertex,
-            fragment: stages.fragment,
-            primitive: {
-                topology: geometry.topology,
-                cullMode: geometry.cullMode,
-            },
-            depthStencil: {
-                depthWriteEnabled: true,
-                depthCompare: 'less',
-                format: 'depth24plus',
-            },
-        });
-        return pipeline;
+        return vertexBuffers;
     }
-    createBindGroupLayout(mesh) {
-        var _a, _b;
-        let uniforms = (_b = (_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
+    createBindGroupLayout(material) {
+        let uniforms = material.data.uniforms;
         let entries = [
             {
                 binding: 0,
@@ -9193,36 +9202,17 @@ class MeshRenderer {
             entries,
         });
     }
-    createStages(mesh) {
-        const material = mesh.getComponent(MATERIAL);
-        let geometry = mesh.getComponent(GEOMETRY_3D);
-        let vertexBuffers = [];
-        let location = 0;
-        for (let i = 0; i < geometry.data.length; i++) {
-            let data = geometry.data[i];
-            let attributeDescripters = [];
-            for (let j = 0; j < data.attributes.length; j++) {
-                attributeDescripters.push({
-                    shaderLocation: location++,
-                    offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
-                    format: "float32x" + data.attributes[j].length,
-                });
-            }
-            vertexBuffers.push({
-                arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
-                attributes: attributeDescripters
-            });
-        }
+    createStages(material, vertexBuffers) {
         let vertex = {
             module: this.engine.device.createShaderModule({
-                code: (material === null || material === void 0 ? void 0 : material.data.vertex) || wgslShaders.vertex,
+                code: material.data.vertex,
             }),
             entryPoint: "main",
             buffers: vertexBuffers
         };
         let fragment = {
             module: this.engine.device.createShaderModule({
-                code: (material === null || material === void 0 ? void 0 : material.data.fragment) || wgslShaders.fragment,
+                code: material.data.fragment,
             }),
             entryPoint: "main",
             targets: [
@@ -9239,43 +9229,40 @@ class MeshRenderer {
     }
 }
 MeshRenderer.renderTypes = "mesh";
-const wgslShaders = {
-    vertex: `
-		struct Uniforms {
-			modelViewProjectionMatrix : mat4x4<f32>
-	  	};
-	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+const DEFAULT_MATERIAL = new Material(`
+struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>
+  };
+  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
-		struct VertexOutput {
-			@builtin(position) Position : vec4<f32>
-		};
-
-		fn mapRange(
-			value: f32,
-			range1: vec2<f32>,
-			range2: vec2<f32>,
-		) -> f32 {
-			var d1: f32 = range1.y - range1.x;
-			var d2: f32 = range2.y - range2.x;
-		
-			return (value - d1 * 0.5) / d2 / d1;
-		};
-
-		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-			var output : VertexOutput;
-			output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-			if (output.Position.w == 1.0) {
-				output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
-			}
-			return output;
-		}
-	`,
-    fragment: `
-		@stage(fragment) fn main() -> @location(0) vec4<f32> {
-			return vec4<f32>(1., 1., 1., 1.0);
-		}
-	`
+struct VertexOutput {
+	@builtin(position) Position : vec4<f32>
 };
+
+fn mapRange(
+	value: f32,
+	range1: vec2<f32>,
+	range2: vec2<f32>,
+) -> f32 {
+	var d1: f32 = range1.y - range1.x;
+	var d2: f32 = range2.y - range2.x;
+
+	return (value - d1 * 0.5) / d2 / d1;
+};
+
+@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+	var output : VertexOutput;
+	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	if (output.Position.w == 1.0) {
+		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
+	}
+	return output;
+}
+`, `
+@stage(fragment) fn main() -> @location(0) vec4<f32> {
+	return vec4<f32>(1., 1., 1., 1.0);
+}
+`);
 
 let weakMapTmp;
 class System {
