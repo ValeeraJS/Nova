@@ -11,6 +11,7 @@ export default class MeshRenderer implements IRenderer {
     render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, _scissor?: any): this;
     private createCacheData;
     private createPipeline;
+    private parseGeometryBufferLayout;
     private createBindGroupLayout;
     private createStages;
 }
