@@ -4640,7 +4640,7 @@
 	                normals.push(vector.x, vector.y, vector.z);
 	                // uvs
 	                uvs.push(ix / gridX);
-	                uvs.push(1 - (iy / gridY));
+	                uvs.push(iy / gridY);
 	                // counters
 	                vertexCounter += 1;
 	            }

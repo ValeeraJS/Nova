@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geo1 = Nova.Geometry3Factory.createTriangle3();
+		const mesh = Nova.EntityFactory.createMesh(geo1, "test-triangle", world);
+		mesh.addComponent(new Nova.EuclidPosition3([0, 0, -5]));
+		mesh.addComponent(new Nova.EulerRotation3());
+
+		const projection = new Nova.PerspectiveProjection(
+			Math.PI / 3,
+			canvas.width / canvas.height,
+			0.01,
+			10
+		);
+		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+			createGUI(renderSystem);
+		});
+
+		let timeline = new Nova.Timeline();
+		timeline.addTask(() => {
+			world.run();
+			mesh.getComponent("rotation3").y -= 0.01;
+		});
+		timeline.start();
+
+
+		function createGUI(renderSystem) {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("system");
+			let system = {
+				addRenderSystem: true,
+			};
+			f.add(renderSystem, "disabled");
+			f.add(system, "addRenderSystem").onChange((val) => {
+				if (val) {
+					world.add(renderSystem);
+				} else {
+					world.remove(renderSystem);
+				}
+			});
+		}
+	</script>
+</body>
