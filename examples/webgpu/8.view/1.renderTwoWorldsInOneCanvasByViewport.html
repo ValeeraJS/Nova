@@ -13,7 +13,6 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 
 		function createWorld(engine, clearColor, viewport, type) {
-			engine.setClearColor(clearColor);
 			const world = new Nova.World();
 			const geo =
 				type === "triangle"
@@ -50,7 +49,6 @@
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			createWorld(
 				engine,
-				new Nova.Mathx.ColorGPU(1, 0, 0, 1),
 				{
 					x: 0,
 					y: 0,
@@ -63,7 +61,6 @@
 			);
 			createWorld(
 				engine,
-				new Nova.Mathx.ColorGPU(1, 0, 0, 1),
 				{
 					x: engine.canvas.width / 2,
 					y: 0,

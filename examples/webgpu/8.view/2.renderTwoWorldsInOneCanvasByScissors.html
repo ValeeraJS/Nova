@@ -12,8 +12,7 @@
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Nova.WebGPUEngine(canvas);
 
-		function createWorld(engine, clearColor, scissors, material) {
-			engine.setClearColor(clearColor);
+		function createWorld(engine, scissors, material) {
 			const world = new Nova.World();
 			const geo = Nova.Geometry3Factory.createBox3();
 			const mesh = Nova.EntityFactory.createMesh(geo, "triangle", world);
@@ -49,7 +48,6 @@
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			createWorld(
 				engine,
-				new Nova.Mathx.ColorGPU(1, 0, 0, 1),
 				{
 					x: 0,
 					y: 0,
@@ -62,7 +60,6 @@
 			);
 			createWorld(
 				engine,
-				new Nova.Mathx.ColorGPU(1, 0, 0, 1),
 				{
 					x: engine.canvas.width / 2,
 					y: 0,
