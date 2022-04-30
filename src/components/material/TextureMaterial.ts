@@ -1,3 +1,4 @@
+import { SAMPLER, TEXTURE_IMAGE } from "../constants";
 import Sampler from "../texture/Sampler";
 import Texture from "../texture/Texture";
 import IMaterial, { IShaderCode } from "./IMatrial";
@@ -39,14 +40,14 @@ export default class TextureMaterial extends Material implements IMaterial {
 			{
 				binding: 1,
 				name: "mySampler",
-				type: "sampler",
+				type: SAMPLER,
 				value: sampler,
 				dirty: true
 			},
 			{
 				binding: 2,
 				name: "myTexture",
-				type: "sampled-texture",
+				type: TEXTURE_IMAGE,
 				value: texture,
 				dirty: true
 			}

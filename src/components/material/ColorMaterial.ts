@@ -1,3 +1,4 @@
+import { BUFFER } from "../constants";
 import Material from "./Material";
 
 const wgslShaders = {
@@ -36,7 +37,7 @@ export default class ColorMaterial extends Material {
 			value: color,
 			binding: 1,
 			dirty: true,
-			type: "uniform-buffer"
+			type: BUFFER
 		}]);
 		this.dirty = true;
 	}

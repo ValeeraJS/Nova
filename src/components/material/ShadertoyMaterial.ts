@@ -1,3 +1,4 @@
+import { BUFFER, SAMPLER, TEXTURE_IMAGE } from "../constants";
 import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
 import IMaterial, { IShaderCode } from "./IMatrial";
@@ -32,21 +33,21 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
         super( CommonData.vs, fs, [
             {
                 name: "iSampler0",
-                type: "sampler",
+                type: SAMPLER,
                 value: sampler,
                 binding: 1,
                 dirty: true,
             },
             { 
                 name: "iChannel0",
-                type: "sampled-texture",
+                type: TEXTURE_IMAGE,
 				value: texture,
 				binding: 2,
 				dirty: true,
             },
 			{
 				name: "uniforms",
-				type: "uniform-buffer",
+				type: BUFFER,
 				value: new Float32Array([
 					CommonData.date.getFullYear(), // iDate 0-3
 					CommonData.date.getMonth(),

@@ -1,7 +1,7 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
-import { GEOMETRY_3D, MATERIAL, PROJECTION_3D, WORLD_MATRIX } from "../../components/constants";
+import { BUFFER, GEOMETRY_3D, MATERIAL, PROJECTION_3D, SAMPLER, TEXTURE_IMAGE, WORLD_MATRIX } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
@@ -64,7 +64,7 @@ export default class MeshRenderer implements IRenderer {
 		);
 
 		cacheData.uniformMap.forEach((uniform, key) => {
-			if (uniform.type === "uniform-buffer" && uniform.dirty) {
+			if (uniform.type === BUFFER && uniform.dirty) {
 				this.engine.device.queue.writeBuffer(
 					key,
 					0,
@@ -73,7 +73,7 @@ export default class MeshRenderer implements IRenderer {
 					uniform.value.byteLength
 				);
 				uniform.dirty = false;
-			} else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
+			} else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
 				if (uniform.value.loaded) {
 					if (uniform.value.data) {
 						this.engine.device.queue.copyExternalImageToTexture(
@@ -122,7 +122,7 @@ export default class MeshRenderer implements IRenderer {
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
 				let uniform = uniforms[i];
-				if (uniform.type === "uniform-buffer") {
+				if (uniform.type === BUFFER) {
 					let buffer: GPUBuffer = device.createBuffer({
 						size: uniform.value.length * 4,
 						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -134,14 +134,14 @@ export default class MeshRenderer implements IRenderer {
 							buffer
 						}
 					});
-				} else if (uniform.type === "sampler") {
+				} else if (uniform.type === SAMPLER) {
 					let sampler: GPUSampler = device.createSampler(uniform.value.data);
 					uniformMap.set(sampler, uniform);
 					groupEntries.push({
 						binding: uniform.binding,
 						resource: sampler
 					});
-				} else if (uniform.type === "sampled-texture") {
+				} else if (uniform.type === TEXTURE_IMAGE) {
 					let texture: GPUTexture = device.createTexture({
 						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',
@@ -234,7 +234,7 @@ export default class MeshRenderer implements IRenderer {
 		];
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
-				if (uniforms[i].type === "sampler") {
+				if (uniforms[i].type === SAMPLER) {
 					entries.push({
 						visibility: GPUShaderStage.FRAGMENT,
 						binding: uniforms[i].binding,
@@ -242,7 +242,7 @@ export default class MeshRenderer implements IRenderer {
 							type: 'filtering'
 						},
 					});
-				} else if (uniforms[i].type === "sampled-texture") {
+				} else if (uniforms[i].type === TEXTURE_IMAGE) {
 					entries.push({
 						visibility: GPUShaderStage.FRAGMENT,
 						binding: uniforms[i].binding,

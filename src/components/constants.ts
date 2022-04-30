@@ -1,3 +1,4 @@
+// component type
 export const ANCHOR_3D = "anchor3";
 export const GEOMETRY_3D = "geometry3";
 export const MATERIAL = "material";
@@ -8,3 +9,9 @@ export const SCALING_3D = "scale3";
 export const TRANSLATION_3D = "position3";
 export const WORLD_MATRIX = "world-matrix";
 export const VIEWING_3D = "viewing3";
+
+// uniform type
+export const SAMPLER = "sampler";
+export const BUFFER = "buffer";
+export const TEXTURE_IMAGE = "texture-image";
+export const TEXTURE_GPU = "texture-gpu";

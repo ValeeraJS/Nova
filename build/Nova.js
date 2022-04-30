@@ -4577,6 +4577,7 @@
 	    }
 	}
 
+	// component type
 	const ANCHOR_3D = "anchor3";
 	const GEOMETRY_3D = "geometry3";
 	const MATERIAL = "material";
@@ -4587,6 +4588,11 @@
 	const TRANSLATION_3D = "position3";
 	const WORLD_MATRIX = "world-matrix";
 	const VIEWING_3D = "viewing3";
+	// uniform type
+	const SAMPLER = "sampler";
+	const BUFFER = "buffer";
+	const TEXTURE_IMAGE = "texture-image";
+	const TEXTURE_GPU = "texture-gpu";
 
 	var constants$1 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
@@ -4599,7 +4605,11 @@
 		SCALING_3D: SCALING_3D,
 		TRANSLATION_3D: TRANSLATION_3D,
 		WORLD_MATRIX: WORLD_MATRIX,
-		VIEWING_3D: VIEWING_3D
+		VIEWING_3D: VIEWING_3D,
+		SAMPLER: SAMPLER,
+		BUFFER: BUFFER,
+		TEXTURE_IMAGE: TEXTURE_IMAGE,
+		TEXTURE_GPU: TEXTURE_GPU
 	});
 
 	const POSITION = "position";
@@ -6226,7 +6236,7 @@
 	                value: color,
 	                binding: 1,
 	                dirty: true,
-	                type: "uniform-buffer"
+	                type: BUFFER
 	            }]);
 	        this.dirty = true;
 	    }
@@ -6317,7 +6327,7 @@ struct VertexOutput {
 
 	class Sampler extends Component$1 {
 	    constructor(option = {}) {
-	        super("sampler", option);
+	        super(SAMPLER, option);
 	        this.data = {
 	            minFilter: 'linear',
 	            magFilter: 'linear',
@@ -6378,21 +6388,21 @@ struct VertexOutput {
 	        super(CommonData.vs, fs, [
 	            {
 	                name: "iSampler0",
-	                type: "sampler",
+	                type: SAMPLER,
 	                value: sampler,
 	                binding: 1,
 	                dirty: true,
 	            },
 	            {
 	                name: "iChannel0",
-	                type: "sampled-texture",
+	                type: TEXTURE_IMAGE,
 	                value: texture,
 	                binding: 2,
 	                dirty: true,
 	            },
 	            {
 	                name: "uniforms",
-	                type: "uniform-buffer",
+	                type: BUFFER,
 	                value: new Float32Array([
 	                    CommonData.date.getFullYear(),
 	                    CommonData.date.getMonth(),
@@ -6488,14 +6498,14 @@ struct VertexOutput {
 	            {
 	                binding: 1,
 	                name: "mySampler",
-	                type: "sampler",
+	                type: SAMPLER,
 	                value: sampler,
 	                dirty: true
 	            },
 	            {
 	                binding: 2,
 	                name: "myTexture",
-	                type: "sampled-texture",
+	                type: TEXTURE_IMAGE,
 	                value: texture,
 	                dirty: true
 	            }
@@ -9113,11 +9123,11 @@ struct VertexOutput {
 	        Matrix4.multiply(mvp, (_c = mesh.getComponent(WORLD_MATRIX)) === null || _c === void 0 ? void 0 : _c.data, mvp);
 	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
-	            if (uniform.type === "uniform-buffer" && uniform.dirty) {
+	            if (uniform.type === BUFFER && uniform.dirty) {
 	                this.engine.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
 	                uniform.dirty = false;
 	            }
-	            else if (uniform.type === "sampled-texture" && (uniform.dirty || uniform.value.dirty)) {
+	            else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
 	                if (uniform.value.loaded) {
 	                    if (uniform.value.data) {
 	                        this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
@@ -9157,7 +9167,7 @@ struct VertexOutput {
 	        if (uniforms) {
 	            for (let i = 0; i < uniforms.length; i++) {
 	                let uniform = uniforms[i];
-	                if (uniform.type === "uniform-buffer") {
+	                if (uniform.type === BUFFER) {
 	                    let buffer = device.createBuffer({
 	                        size: uniform.value.length * 4,
 	                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -9170,7 +9180,7 @@ struct VertexOutput {
 	                        }
 	                    });
 	                }
-	                else if (uniform.type === "sampler") {
+	                else if (uniform.type === SAMPLER) {
 	                    let sampler = device.createSampler(uniform.value.data);
 	                    uniformMap.set(sampler, uniform);
 	                    groupEntries.push({
@@ -9178,7 +9188,7 @@ struct VertexOutput {
 	                        resource: sampler
 	                    });
 	                }
-	                else if (uniform.type === "sampled-texture") {
+	                else if (uniform.type === TEXTURE_IMAGE) {
 	                    let texture = device.createTexture({
 	                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 	                        format: 'rgba8unorm',
@@ -9262,7 +9272,7 @@ struct VertexOutput {
 	        ];
 	        if (uniforms) {
 	            for (let i = 0; i < uniforms.length; i++) {
-	                if (uniforms[i].type === "sampler") {
+	                if (uniforms[i].type === SAMPLER) {
 	                    entries.push({
 	                        visibility: GPUShaderStage.FRAGMENT,
 	                        binding: uniforms[i].binding,
@@ -9271,7 +9281,7 @@ struct VertexOutput {
 	                        },
 	                    });
 	                }
-	                else if (uniforms[i].type === "sampled-texture") {
+	                else if (uniforms[i].type === TEXTURE_IMAGE) {
 	                    entries.push({
 	                        visibility: GPUShaderStage.FRAGMENT,
 	                        binding: uniforms[i].binding,

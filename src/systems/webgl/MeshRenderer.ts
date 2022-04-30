@@ -112,7 +112,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
 				let uniform = uniforms[i];
-				if (uniform.type === "uniform-buffer") {
+				if (uniform.type === BUFFER) {
 					let buffer: WebGLBuffer = gl.createBuffer() as WebGLBuffer;
 					uniformMap.set(buffer, uniform);
 					groupEntries.push({
