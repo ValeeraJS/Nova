@@ -37,15 +37,11 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			loop();
 			createGUI();
-		});
-
-		function loop() {
+		}).addTask(()=>{
 			world.run();
 			rotationProxy.y -= 0.01;
-			requestAnimationFrame(loop);
-		}
+		});
 
 		function createGUI() {
 			const gui = new dat.GUI();

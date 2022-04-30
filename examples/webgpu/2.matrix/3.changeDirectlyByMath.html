@@ -33,16 +33,14 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
+			engine.addTask(() => {
+				world.run();
+				vec3[2] = Math.sin(performance.now() / 300) - 4;
+				Nova.Mathx.Matrix4.fromTranslation(vec3, matrixPosition.data);
+				Nova.Mathx.Matrix4.rotateY(matrixRotation.data, 0.01, matrixRotation.data);
+				matrixPosition.dirty = matrixRotation.dirty = true;
+			});
 		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
-			world.run();
-			vec3[2] = Math.sin(performance.now() / 300) - 4;
-			Nova.Mathx.Matrix4.fromTranslation(vec3, matrixPosition.data);
-			Nova.Mathx.Matrix4.rotateY(matrixRotation.data, 0.01, matrixRotation.data);
-			matrixPosition.dirty = matrixRotation.dirty = true;
-		});
-		timeline.start();
 	</script>
 </body>

@@ -34,6 +34,15 @@
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			createGUI();
+		}).addTask(() => {
+			world.run();
+			rotationProxy.y -= 0.01;
+			material.setColor(
+				options.color.r / 255,
+				options.color.g / 255,
+				options.color.b / 255,
+				options.alpha
+			);
 		});
 
 		const options = {
@@ -44,18 +53,6 @@
 			},
 			alpha: 1
 		};
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
-			world.run();
-			rotationProxy.y -= 0.01;
-			material.setColor(
-				options.color.r / 255,
-				options.color.g / 255,
-				options.color.b / 255,
-				options.alpha
-			);
-		});
-		timeline.start();
 
 		function createGUI() {
 			const gui = new dat.GUI();
@@ -63,16 +60,6 @@
 
 			f.addColor(options, "color");
 			f.add(options, "alpha", 0, 1).step(0.01);
-
-			// function onChange(val) {
-			// 	material.setColor(
-			// 		options.color.r / 255,
-			// 		options.color.g / 255,
-			// 		options.color.b / 255,
-			// 		options.alpha
-			// 	);
-			// 	console.log(material);
-			// }
 		}
 	</script>
 </body>

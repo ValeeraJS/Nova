@@ -32,13 +32,11 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
-			world.run();
-			mesh.getComponent("rotation3").y -= 0.01;
+			engine.addTask(() => {
+				world.run();
+				mesh.getComponent("rotation3").y -= 0.01;
+			});
 		});
-		timeline.start();
 	</script>
 </body>

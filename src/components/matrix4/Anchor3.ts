@@ -31,7 +31,7 @@ export default class Anchor3 extends Matrix4Component {
 	}
 
 	get z() {
-		return this.vec3[1];
+		return this.vec3[2];
 	}
 
 	set z(value: number) {

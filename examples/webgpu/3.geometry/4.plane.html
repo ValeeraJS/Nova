@@ -30,11 +30,9 @@
 			world.addSystem(renderSystem);
 		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
+		engine.addTask(() => {
 			world.run();
 			rotationProxy.y -= 0.01;
 		});
-		timeline.start();
 	</script>
 </body>

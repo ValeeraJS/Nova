@@ -31,15 +31,10 @@
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			createGUI(renderSystem);
-		});
-
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
+		}).addTask(() => {
 			world.run();
 			mesh.getComponent("rotation3").y -= 0.01;
 		});
-		timeline.start();
-
 
 		function createGUI(renderSystem) {
 			const gui = new dat.GUI();

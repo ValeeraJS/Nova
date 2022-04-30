@@ -36,10 +36,8 @@
 			world.addSystem(renderSystem);
 		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
+		engine.addTask(() => {
 			world.run();
 		});
-		timeline.start();
 	</script>
 </body>

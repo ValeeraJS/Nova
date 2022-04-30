@@ -15,8 +15,6 @@
 		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
 		const geometry = Nova.Geometry3Factory.createBox3();
 
-		console.log(geometry);
-
 		const mesh = Nova.EntityFactory.createMesh(geometry, "test-triangle", world);
 		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(mesh);
 		positionProxy.z = -5;
@@ -32,11 +30,9 @@
 			world.addSystem(renderSystem);
 		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
+		engine.addTask(() => {
 			world.run();
 			rotationProxy.y -= 0.01;
 		});
-		timeline.start();
 	</script>
 </body>

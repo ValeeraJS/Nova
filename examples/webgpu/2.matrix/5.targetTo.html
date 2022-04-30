@@ -12,22 +12,23 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
 		const geometry = Nova.Geometry3Factory.createCylinder3({
 			radiusTop: 0.2,
 			radiusBottom: 0,
 			height: 0.8,
 			radialSegments: 16,
-			heightSegments: 1,
+			heightSegments: 1
 		});
-		geometry.transform(Nova.Mathx.Matrix4.fromEuler({
-			x: Math.PI / 2,
-			y: 0,
-			z: 0,
-			order: 'xyz'
-		}));
+		geometry.transform(
+			Nova.Mathx.Matrix4.fromEuler({
+				x: Math.PI / 2,
+				y: 0,
+				z: 0,
+				order: "xyz"
+			})
+		);
 		const geometry2 = Nova.Geometry3Factory.createSphere3({
-			radius: 0.25,
+			radius: 0.25
 		});
 
 		const cylinder = Nova.EntityFactory.createMesh(geometry, "cylinder", world);
@@ -56,10 +57,9 @@
 			world.addSystem(renderSystem);
 		});
 
-		let timeline = new Nova.Timeline();
 		let pos = [0, 0, 0];
 		let eye = [0, -2, -5];
-		timeline.addTask((time) => {
+		engine.addTask((time) => {
 			world.run();
 			pos[0] = Math.sin(time / 1000);
 			pos[1] = Math.cos(time / 700);
@@ -68,9 +68,13 @@
 			positionProxy2.y = pos[1];
 			positionProxy2.z = pos[2];
 
-			Nova.Mathx.Matrix4.targetTo(eye, pos, Nova.Mathx.Vector3.VECTOR3_TOP, matrixRotation.data);
+			Nova.Mathx.Matrix4.targetTo(
+				eye,
+				pos,
+				Nova.Mathx.Vector3.VECTOR3_TOP,
+				matrixRotation.data
+			);
 			matrixRotation.dirty = true;
 		});
-		timeline.start();
 	</script>
 </body>

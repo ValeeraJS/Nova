@@ -13,26 +13,21 @@
 		const world = new Nova.World();
 
 		const geo = Nova.Geometry3Factory.createTriangle3();
-		const mesh = Nova.EntityFactory.createMesh(geo, "1", world);
-		const mesh2 = Nova.EntityFactory.createMesh(geo, "2");
+		const meshParent = Nova.EntityFactory.createMesh(geo, "1", world);
+		const meshChild = Nova.EntityFactory.createMesh(geo, "2");
 
-		mesh.addChild(mesh2);
+		meshParent.addChild(meshChild);
+		let positionParent = new Nova.EuclidPosition3([0, -1, -5]);
+		meshParent.addComponent(positionParent);
 
-		let position = mesh.getComponent("position3");
-		position.data[14] = -5;
-		position.data[13] = -1;
-		position.dirty = true;
-
-		let position2 = mesh2.getComponent("position3");
-		position2.data[14] = -5;
-		position2.data[13] = 1;
-		position2.dirty = true;
+		let positionChild = new Nova.EuclidPosition3([0, 1, 0]);
+		meshChild.addComponent(positionChild);
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
 			canvas.width / canvas.height,
 			0.01,
-			10
+			100
 		);
 		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 
@@ -41,37 +36,24 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-			createGUI(renderSystem.clearer);
+			createGUI();
+
+			engine.addTask(() => {
+				world.run();
+			});
 		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
-			world.run();
-		});
-		timeline.start();
-
-		function createGUI(clearer) {
+		function createGUI() {
 			const gui = new dat.GUI();
-			const f = gui.addFolder("set clear color");
-			const options = {
-				color: {
-					r: 0,
-					g: 0,
-					b: 0
-				},
-				alpha: 1
-			};
-			f.addColor(options, "color").onChange(onChange);
-			f.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
+			const f = gui.addFolder("parent position");
 
-			function onChange(val) {
-				clearer.setColor({
-					r: options.color.r / 255,
-					g: options.color.g / 255,
-					b: options.color.b / 255,
-					a: options.alpha
-				});
-			}
+			f.add(positionParent, "x", -1, 1).step(0.01);
+			f.add(positionParent, "y", -1, 1).step(0.01);
+			
+			const f2 = gui.addFolder("child position");
+
+			f2.add(positionChild, "x", -1, 1).step(0.01);
+			f2.add(positionChild, "y", -1, 1).step(0.01);
 		}
 	</script>
 </body>

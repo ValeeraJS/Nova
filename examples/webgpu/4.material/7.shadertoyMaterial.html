@@ -93,19 +93,13 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-		});
-
-		let timeline = new Nova.Timeline();
-		timeline.addTask((ms) => {
+		}).addTask((ms) => {
 			world.run();
 			rotationProxy.y = Math.sin(ms / 1000);
 
 			material.time = ms / 1000;
 			material.date = new Date();
-
-
 		});
-		timeline.start();
 
 	</script>
 </body>

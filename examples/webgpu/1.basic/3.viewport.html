@@ -32,43 +32,26 @@
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 			createGUI(renderSystem);
-		});
 
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
-			world.run();
+			engine.addTask(() => {
+				world.run();
+			});
 		});
-		timeline.start();
 
 		function createGUI(renderSystem) {
 			window.r = renderSystem;
 			const gui = new dat.GUI();
-			const f = gui.addFolder("set viewport");
+			const f = gui.addFolder("viewport");
 			f.add(renderSystem.viewport, "width", 0, canvas.width).step(1);
 			f.add(renderSystem.viewport, "height", 0, canvas.height).step(1);
 			f.add(renderSystem.viewport, "x", 0, canvas.width).step(1);
 			f.add(renderSystem.viewport, "y", 0, canvas.height).step(1);
 
-			const f2 = gui.addFolder("set clear color");
-			const options = {
-				color: {
-					r: 0,
-					g: 0,
-					b: 0
-				},
-				alpha: 1
-			};
-			f2.addColor(options, "color").onChange(onChange);
-			f2.add(options, "alpha", 0, 1).step(0.01).onChange(onChange);
-
-			function onChange(val) {
-				renderSystem.clearer.setColor({
-					r: options.color.r / 255,
-					g: options.color.g / 255,
-					b: options.color.b / 255,
-					a: options.alpha
-				});
-			}
+			const f2 = gui.addFolder("clear color");
+			f2.add(engine.clearColor, "r", 0, 1).step(0.01);
+			f2.add(engine.clearColor, "g", 0, 1).step(0.01);
+			f2.add(engine.clearColor, "b", 0, 1).step(0.01);
+			f2.add(engine.clearColor, "a", 0, 1).step(0.01);
 		}
 	</script>
 </body>

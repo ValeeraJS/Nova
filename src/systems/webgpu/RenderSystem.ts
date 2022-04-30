@@ -1,6 +1,5 @@
 import WebGPUEngine from "../../engine/WebGPUEngine";
-import System from "@valeera/x/src/System"
-import Clearer from "./Clearer";
+import System from "@valeera/x/src/System";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Renderable from "../../components/tag/Renderable";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
@@ -10,7 +9,6 @@ import IScissor from "./../IScissor";
 
 export default class RenderSystem extends System {
 	engine: WebGPUEngine;
-	clearer: Clearer;
 	rendererMap: Map<string, IWebGPURenderer>;
 	scissor: IScissor = {
 		x: 0, y: 0, width: 0, height: 0,
@@ -18,18 +16,17 @@ export default class RenderSystem extends System {
 	viewport: IViewport = {
 		x: 0, y: 0, width: 0, height: 0, minDepth: 0, maxDepth: 1
 	};
-	constructor(engine: WebGPUEngine, clearer?: Clearer, viewport?: IViewport, scissor?: IViewport) {
+	constructor(engine: WebGPUEngine, viewport?: IViewport, scissor?: IViewport) {
 		super("Render System", (entity) => {
 			return entity.getComponent(Renderable.TAG_TEXT)?.data;
 		});
 		this.engine = engine;
-		this.clearer = clearer || new Clearer(engine);
 		this.rendererMap = new Map();
 		engine.context.configure({
 			device: engine.device,
 			format: engine.preferredFormat,
 			size: [engine.canvas.width, engine.canvas.height],
-			compositingAlphaMode: "opaque"
+			compositingAlphaMode: "premultiplied"
 		});
 		this.setScissor(scissor).setViewport(viewport);
 	}
@@ -57,10 +54,6 @@ export default class RenderSystem extends System {
 		return this;
 	}
 
-	setClearer(clearer: Clearer) {
-		this.clearer = clearer;
-	}
-
 	setViewport(viewport?: IViewport) {
 		this.viewport = viewport || {
 			x: 0,
@@ -84,18 +77,13 @@ export default class RenderSystem extends System {
 	}
 
 	run(world: IWorld) {
-		let device = this.engine.device;
-		let commandEncoder = device.createCommandEncoder();
-		let passEncoder = this.clearer.clear(commandEncoder);
+		let passEncoder = this.engine.renderPassEncoder;
 		passEncoder.setViewport(
 			this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height, this.viewport.minDepth, this.viewport.maxDepth);
 		passEncoder.setScissorRect(
 			this.scissor.x, this.scissor.y, this.scissor.width, this.scissor.height);
 		world.store.set("passEncoder", passEncoder);
 		super.run(world);
-		// finish
-		passEncoder.end();
-		device.queue.submit([commandEncoder.finish()]);
 		return this;
 	}
 }

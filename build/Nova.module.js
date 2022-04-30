@@ -72,14 +72,14 @@ class Timeline {
         }
         return this;
     }
-    setPageHideTime() {
-        this.current = performance.now();
-        return this;
-    }
     update(time, delta) {
         for (const task of this.tasks) {
             task(time - (this.taskTimeMap.get(task) || 0), delta);
         }
+        return this;
+    }
+    setPageHideTime() {
+        this.current = performance.now();
         return this;
     }
     run = () => {
@@ -232,316 +232,6 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
-var EngineEvents;
-(function (EngineEvents) {
-    EngineEvents["INITED"] = "inited";
-})(EngineEvents || (EngineEvents = {}));
-const DEFAULT_ENGINE_OPTIONS = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-    resolution: window.devicePixelRatio,
-    autoResize: true,
-};
-
-class WebGPUEngine extends EventDispatcher {
-    constructor(canvas = document.createElement("canvas"), options = {}) {
-        var _a, _b, _c;
-        super();
-        this.inited = false;
-        this.canvas = canvas;
-        this.options = Object.assign(Object.assign({}, DEFAULT_ENGINE_OPTIONS), options);
-        this.resize((_a = options.width) !== null && _a !== void 0 ? _a : window.innerWidth, (_b = options.height) !== null && _b !== void 0 ? _b : window.innerHeight, (_c = options.resolution) !== null && _c !== void 0 ? _c : window.devicePixelRatio);
-        WebGPUEngine.detect(canvas).then(({ context, adapter, device }) => {
-            this.context = context;
-            this.adapter = adapter;
-            this.device = device;
-            this.inited = true;
-            this.preferredFormat = context.getPreferredFormat(adapter);
-            this.fire(EngineEvents.INITED, {
-                eventKey: EngineEvents.INITED,
-                target: this
-            });
-        }).catch((error) => {
-            throw error;
-        });
-    }
-    static detect(canvas = document.createElement("canvas")) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            const context = canvas.getContext("webgpu");
-            if (!context) {
-                throw new Error('WebGPU not supported: ');
-            }
-            const adapter = yield ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.gpu) === null || _a === void 0 ? void 0 : _a.requestAdapter());
-            if (!adapter) {
-                throw new Error('WebGPU not supported: ');
-            }
-            const device = yield adapter.requestDevice();
-            if (!device) {
-                throw new Error('WebGPU not supported: ');
-            }
-            return { context, adapter, device };
-        });
-    }
-    resize(width, height, resolution = this.options.resolution) {
-        this.options.width = width;
-        this.options.height = height;
-        this.options.resolution = resolution;
-        this.canvas.style.width = width + 'px';
-        this.canvas.style.height = height + 'px';
-        this.canvas.width = width * resolution;
-        this.canvas.height = height * resolution;
-        return this;
-    }
-    createRenderer() {
-    }
-}
-WebGPUEngine.Events = EngineEvents;
-
-class WebGLEngine extends EventDispatcher {
-    constructor(canvas = document.createElement("canvas")) {
-        super();
-        this.inited = false;
-        this.canvas = canvas;
-        WebGLEngine.detect(canvas).then(({ context }) => {
-            this.context = context;
-            this.inited = true;
-            this.fire(EngineEvents.INITED, {
-                eventKey: EngineEvents.INITED,
-                target: this
-            });
-        }).catch((error) => {
-            throw error;
-        });
-    }
-    static detect(canvas = document.createElement("canvas")) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const context = canvas.getContext("webgl");
-            if (!context) {
-                throw new Error('WebGL not supported: ');
-            }
-            return { context };
-        });
-    }
-    createRenderer() {
-    }
-}
-
-const S4 = () => {
-    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-};
-/**
- * @class
- * @classdesc 数字id生成器，用于生成递增id
- * @param {number} [initValue = 0] 从几开始生成递增id
- * @implements IdGenerator.IIncreaser
- */
-class IdGenerator {
-    initValue;
-    value;
-    /**
-     * @member IdGenerator.initValue
-     * @desc id从该值开始递增，在创建实例时进行设置。设置之后将无法修改。
-     * @readonly
-     * @public
-     */
-    constructor(initValue = 0) {
-        this.value = this.initValue = initValue;
-    }
-    /**
-     * @method IdGenerator.prototype.current
-     * @desc 返回当前的id
-     * @readonly
-     * @public
-     * @returns {number} id
-     */
-    current() {
-        return this.value;
-    }
-    /**
-     * @method IdGenerator.prototype.next
-     * @desc 生成新的id
-     * @public
-     * @returns {number} id
-     */
-    next() {
-        return ++this.value;
-    }
-    /**
-     * @method IdGenerator.prototype.skip
-     * @desc 跳过一段值生成新的id
-     * @public
-     * @param {number} [value = 1] 跳过的范围，必须大于等于1
-     * @returns {number} id
-     */
-    skip(value = 1) {
-        if (value < 1) {
-            value = 1;
-        }
-        this.value += value;
-        return ++this.value;
-    }
-    /**
-     * @method IdGenerator.prototype.skip
-     * @desc 生成新的32位uuid
-     * @public
-     * @returns {string} uuid
-     */
-    uuid() {
-        if (crypto.randomUUID) {
-            return crypto.randomUUID();
-        }
-        else {
-            return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-        }
-    }
-    /**
-     * @method IdGenerator.prototype.skip
-     * @desc 生成新的32位BigInt
-     * @public
-     * @returns {BigInt} uuid
-     */
-    uuidBigInt() {
-        //return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
-        let arr = crypto.getRandomValues(new Uint16Array(8));
-        return BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[4]) * 65536n * 65536n * 65536n
-            + BigInt(arr[5]) * 65536n * 65536n
-            + BigInt(arr[6]) * 65536n
-            + BigInt(arr[6]);
-    }
-}
-
-const IdGeneratorInstance$1 = new IdGenerator();
-
-class Component$1 {
-    constructor(name, data) {
-        this.isComponent = true;
-        this.id = IdGeneratorInstance$1.next();
-        this.disabled = false;
-        this.usedBy = [];
-        this.dirty = false;
-        this.name = name;
-        this.data = data;
-    }
-    static unserialize(json) {
-        const component = new Component$1(json.name, json.data);
-        component.disabled = json.disabled;
-        return component;
-    }
-    clone() {
-        return new Component$1(this.name, this.data);
-    }
-    serialize() {
-        return {
-            data: this.data,
-            disabled: this.disabled,
-            name: this.name,
-            type: "component"
-        };
-    }
-}
-
-const ANCHOR_3D = "anchor3";
-const GEOMETRY_3D = "geometry3";
-const MATERIAL = "material";
-const MODEL_3D = "model3";
-const PROJECTION_3D = "projection3";
-const ROTATION_3D = "rotation3";
-const SCALING_3D = "scale3";
-const TRANSLATION_3D = "position3";
-const WORLD_MATRIX = "world-matrix";
-const VIEWING_3D = "viewing3";
-
-var constants$2 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	ANCHOR_3D: ANCHOR_3D,
-	GEOMETRY_3D: GEOMETRY_3D,
-	MATERIAL: MATERIAL,
-	MODEL_3D: MODEL_3D,
-	PROJECTION_3D: PROJECTION_3D,
-	ROTATION_3D: ROTATION_3D,
-	SCALING_3D: SCALING_3D,
-	TRANSLATION_3D: TRANSLATION_3D,
-	WORLD_MATRIX: WORLD_MATRIX,
-	VIEWING_3D: VIEWING_3D
-});
-
-const POSITION = "position";
-const VERTICES = "vertices";
-const VERTICES_COLOR = "vertices_color";
-const NORMAL = "normal";
-const INDEX = "index";
-const UV = "uv";
-
-var constants$1 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	POSITION: POSITION,
-	VERTICES: VERTICES,
-	VERTICES_COLOR: VERTICES_COLOR,
-	NORMAL: NORMAL,
-	INDEX: INDEX,
-	UV: UV
-});
-
-class Geometry3 extends Component$1 {
-    constructor(count = 0, topology = "triangle-list", cullMode = "none", data = []) {
-        super(GEOMETRY_3D, data);
-        this.data = [];
-        this.count = count;
-        this.topology = topology;
-        this.cullMode = cullMode;
-    }
-    addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
-        stride = Math.floor(stride);
-        if (stride * this.count < arr.length) {
-            throw new Error('not fit the geometry');
-        }
-        if (!attributes.length) {
-            attributes.push({
-                name,
-                offset: 0,
-                length: stride
-            });
-        }
-        this.data.push({
-            name,
-            data: arr,
-            stride,
-            attributes
-        });
-        this.dirty = true;
-    }
-    transform(matrix) {
-        for (let data of this.data) {
-            for (let attr of data.attributes) {
-                if (attr.name === POSITION) {
-                    for (let i = 0; i < data.data.length; i += data.stride) {
-                        transformMatrix4(data.data, matrix, i + attr.offset);
-                    }
-                    this.dirty = true;
-                    return this;
-                }
-            }
-        }
-        return this;
-    }
-}
-const transformMatrix4 = (a, m, offset) => {
-    let ax = a[0 + offset];
-    let ay = a[1 + offset];
-    let az = a[2 + offset];
-    let ag = m[3 + offset] * ax + m[7] * ay + m[11] * az + m[15];
-    ag = ag || 1.0;
-    a[0 + offset] = (m[0] * ax + m[4] * ay + m[8] * az + m[12]) / ag;
-    a[1 + offset] = (m[1] * ax + m[5] * ay + m[9] * az + m[13]) / ag;
-    a[2 + offset] = (m[2] * ax + m[6] * ay + m[10] * az + m[14]) / ag;
-    return a;
-};
-
 const DEG_TO_RAD = Math.PI / 180;
 const DEG_360_RAD$1 = Math.PI * 2;
 const DEG_90_RAD = Math.PI / 2;
@@ -551,7 +241,7 @@ const DEG_30_RAD = Math.PI / 6;
 const EPSILON$1 = Math.pow(2, -52);
 const RAD_TO_DEG = 180 / Math.PI;
 
-var constants = /*#__PURE__*/Object.freeze({
+var constants$2 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	DEG_TO_RAD: DEG_TO_RAD,
 	DEG_360_RAD: DEG_360_RAD$1,
@@ -4545,7 +4235,7 @@ var Mathx_module = /*#__PURE__*/Object.freeze({
 	ColorGPU: ColorGPU,
 	ColorRGB: ColorRGB,
 	ColorRGBA: ColorRGBA,
-	Constants: constants,
+	Constants: constants$2,
 	Cube: Cube,
 	Easing: index$3,
 	EulerAngle: EulerAngle,
@@ -4580,6 +4270,403 @@ var Mathx_module = /*#__PURE__*/Object.freeze({
 	sum: sum,
 	sumArray: sumArray
 });
+
+var getColorGPU = (color, result = new ColorGPU()) => {
+    if (color instanceof ColorGPU) {
+        result.set(color);
+    }
+    else if (typeof color === "string") {
+        ColorGPU.fromString(color, result);
+    }
+    else if (typeof color === "number") {
+        ColorGPU.fromHex(color, 1, result);
+    }
+    else if (color instanceof ColorRGB) {
+        ColorGPU.fromColorRGB(color, result);
+    }
+    else if (color instanceof ColorRGBA) {
+        ColorGPU.fromColorRGBA(color, result);
+    }
+    else if (color instanceof Float32Array || color instanceof Array) {
+        ColorGPU.fromArray(color, result);
+    }
+    else if (color instanceof Float32Array || color instanceof Array) {
+        ColorGPU.fromArray(color, result);
+    }
+    else {
+        if ("a" in color) {
+            ColorGPU.fromJson(color, result);
+        }
+        else {
+            ColorGPU.fromJson(Object.assign(Object.assign({}, color), { a: 1 }), result);
+        }
+    }
+    return result;
+};
+
+var EngineEvents;
+(function (EngineEvents) {
+    EngineEvents["INITED"] = "inited";
+})(EngineEvents || (EngineEvents = {}));
+const DEFAULT_ENGINE_OPTIONS = {
+    autoStart: true,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    resolution: window.devicePixelRatio,
+    autoResize: false,
+    noDepthTexture: false,
+    clearColor: new ColorGPU(0, 0, 0, 1),
+};
+
+class WebGPUEngine extends EventDispatcher.mixin(Timeline) {
+    constructor(canvas = document.createElement("canvas"), options = {}) {
+        var _a, _b, _c;
+        super();
+        this.clearColor = new ColorGPU(0, 0, 0, 1);
+        this.inited = false;
+        this.canvas = canvas;
+        this.options = Object.assign(Object.assign({}, DEFAULT_ENGINE_OPTIONS), options);
+        this.resize((_a = options.width) !== null && _a !== void 0 ? _a : window.innerWidth, (_b = options.height) !== null && _b !== void 0 ? _b : window.innerHeight, (_c = options.resolution) !== null && _c !== void 0 ? _c : window.devicePixelRatio);
+        WebGPUEngine.detect(canvas).then(({ context, adapter, device }) => {
+            this.context = context;
+            this.adapter = adapter;
+            this.device = device;
+            this.inited = true;
+            this.preferredFormat = context.getPreferredFormat(adapter);
+            this.setRenderPassDescripter();
+            this.fire(EngineEvents.INITED, {
+                eventKey: EngineEvents.INITED,
+                target: this
+            });
+            if (this.options.autoStart) {
+                this.start();
+            }
+        }).catch((error) => {
+            throw error;
+        });
+    }
+    static detect(canvas = document.createElement("canvas")) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const context = canvas.getContext("webgpu");
+            if (!context) {
+                throw new Error('WebGPU not supported: ');
+            }
+            const adapter = yield ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.gpu) === null || _a === void 0 ? void 0 : _a.requestAdapter());
+            if (!adapter) {
+                throw new Error('WebGPU not supported: ');
+            }
+            const device = yield adapter.requestDevice();
+            if (!device) {
+                throw new Error('WebGPU not supported: ');
+            }
+            return { context, adapter, device };
+        });
+    }
+    resize(width, height, resolution = this.options.resolution) {
+        this.options.width = width;
+        this.options.height = height;
+        this.options.resolution = resolution;
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
+        this.canvas.width = width * resolution;
+        this.canvas.height = height * resolution;
+        return this;
+    }
+    setClearColor(color) {
+        getColorGPU(color, this.clearColor);
+        return this;
+    }
+    update(time, delta) {
+        this.loopStart();
+        super.update(time, delta);
+        this.loopEnd();
+        return this;
+    }
+    loopStart() {
+        this.currentCommandEncoder = this.device.createCommandEncoder();
+        this.swapChainTexture = this.context.getCurrentTexture();
+        this.renderPassDescriptor.colorAttachments[0].view = this.context
+            .getCurrentTexture()
+            .createView();
+        this.renderPassEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
+    }
+    loopEnd() {
+        this.renderPassEncoder.end();
+        this.device.queue.submit([this.currentCommandEncoder.finish()]);
+    }
+    setRenderPassDescripter() {
+        let renderPassDescriptor = {
+            colorAttachments: [
+                {
+                    view: null,
+                    loadOp: "clear",
+                    clearValue: this.clearColor,
+                    storeOp: "store"
+                }
+            ]
+        };
+        if (!this.options.noDepthTexture) {
+            let depthTexture = this.device.createTexture({
+                size: { width: this.canvas.width, height: this.canvas.height, depthOrArrayLayers: 1 },
+                format: "depth24plus",
+                usage: GPUTextureUsage.RENDER_ATTACHMENT
+            });
+            renderPassDescriptor.depthStencilAttachment = {
+                view: depthTexture.createView(),
+                depthClearValue: 1.0,
+                depthLoadOp: "clear",
+                depthStoreOp: "store"
+            };
+        }
+        this.renderPassDescriptor = renderPassDescriptor;
+    }
+}
+WebGPUEngine.Events = EngineEvents;
+
+class WebGLEngine extends EventDispatcher {
+    constructor(canvas = document.createElement("canvas")) {
+        super();
+        this.inited = false;
+        this.canvas = canvas;
+        WebGLEngine.detect(canvas).then(({ context }) => {
+            this.context = context;
+            this.inited = true;
+            this.fire(EngineEvents.INITED, {
+                eventKey: EngineEvents.INITED,
+                target: this
+            });
+        }).catch((error) => {
+            throw error;
+        });
+    }
+    static detect(canvas = document.createElement("canvas")) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const context = canvas.getContext("webgl");
+            if (!context) {
+                throw new Error('WebGL not supported: ');
+            }
+            return { context };
+        });
+    }
+    createRenderer() {
+    }
+}
+
+const S4 = () => {
+    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+};
+/**
+ * @class
+ * @classdesc 数字id生成器，用于生成递增id
+ * @param {number} [initValue = 0] 从几开始生成递增id
+ * @implements IdGenerator.IIncreaser
+ */
+class IdGenerator {
+    initValue;
+    value;
+    /**
+     * @member IdGenerator.initValue
+     * @desc id从该值开始递增，在创建实例时进行设置。设置之后将无法修改。
+     * @readonly
+     * @public
+     */
+    constructor(initValue = 0) {
+        this.value = this.initValue = initValue;
+    }
+    /**
+     * @method IdGenerator.prototype.current
+     * @desc 返回当前的id
+     * @readonly
+     * @public
+     * @returns {number} id
+     */
+    current() {
+        return this.value;
+    }
+    /**
+     * @method IdGenerator.prototype.next
+     * @desc 生成新的id
+     * @public
+     * @returns {number} id
+     */
+    next() {
+        return ++this.value;
+    }
+    /**
+     * @method IdGenerator.prototype.skip
+     * @desc 跳过一段值生成新的id
+     * @public
+     * @param {number} [value = 1] 跳过的范围，必须大于等于1
+     * @returns {number} id
+     */
+    skip(value = 1) {
+        if (value < 1) {
+            value = 1;
+        }
+        this.value += value;
+        return ++this.value;
+    }
+    /**
+     * @method IdGenerator.prototype.skip
+     * @desc 生成新的32位uuid
+     * @public
+     * @returns {string} uuid
+     */
+    uuid() {
+        if (crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        else {
+            return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+        }
+    }
+    /**
+     * @method IdGenerator.prototype.skip
+     * @desc 生成新的32位BigInt
+     * @public
+     * @returns {BigInt} uuid
+     */
+    uuidBigInt() {
+        //return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
+        let arr = crypto.getRandomValues(new Uint16Array(8));
+        return BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
+            + BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
+            + BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n
+            + BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n
+            + BigInt(arr[4]) * 65536n * 65536n * 65536n
+            + BigInt(arr[5]) * 65536n * 65536n
+            + BigInt(arr[6]) * 65536n
+            + BigInt(arr[6]);
+    }
+}
+
+const IdGeneratorInstance$1 = new IdGenerator();
+
+class Component$1 {
+    constructor(name, data) {
+        this.isComponent = true;
+        this.id = IdGeneratorInstance$1.next();
+        this.disabled = false;
+        this.usedBy = [];
+        this.dirty = false;
+        this.name = name;
+        this.data = data;
+    }
+    static unserialize(json) {
+        const component = new Component$1(json.name, json.data);
+        component.disabled = json.disabled;
+        return component;
+    }
+    clone() {
+        return new Component$1(this.name, this.data);
+    }
+    serialize() {
+        return {
+            data: this.data,
+            disabled: this.disabled,
+            name: this.name,
+            type: "component"
+        };
+    }
+}
+
+const ANCHOR_3D = "anchor3";
+const GEOMETRY_3D = "geometry3";
+const MATERIAL = "material";
+const MODEL_3D = "model3";
+const PROJECTION_3D = "projection3";
+const ROTATION_3D = "rotation3";
+const SCALING_3D = "scale3";
+const TRANSLATION_3D = "position3";
+const WORLD_MATRIX = "world-matrix";
+const VIEWING_3D = "viewing3";
+
+var constants$1 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	ANCHOR_3D: ANCHOR_3D,
+	GEOMETRY_3D: GEOMETRY_3D,
+	MATERIAL: MATERIAL,
+	MODEL_3D: MODEL_3D,
+	PROJECTION_3D: PROJECTION_3D,
+	ROTATION_3D: ROTATION_3D,
+	SCALING_3D: SCALING_3D,
+	TRANSLATION_3D: TRANSLATION_3D,
+	WORLD_MATRIX: WORLD_MATRIX,
+	VIEWING_3D: VIEWING_3D
+});
+
+const POSITION = "position";
+const VERTICES = "vertices";
+const VERTICES_COLOR = "vertices_color";
+const NORMAL = "normal";
+const INDEX = "index";
+const UV = "uv";
+
+var constants = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	POSITION: POSITION,
+	VERTICES: VERTICES,
+	VERTICES_COLOR: VERTICES_COLOR,
+	NORMAL: NORMAL,
+	INDEX: INDEX,
+	UV: UV
+});
+
+class Geometry3 extends Component$1 {
+    constructor(count = 0, topology = "triangle-list", cullMode = "none", data = []) {
+        super(GEOMETRY_3D, data);
+        this.data = [];
+        this.count = count;
+        this.topology = topology;
+        this.cullMode = cullMode;
+    }
+    addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
+        stride = Math.floor(stride);
+        if (stride * this.count < arr.length) {
+            throw new Error('not fit the geometry');
+        }
+        if (!attributes.length) {
+            attributes.push({
+                name,
+                offset: 0,
+                length: stride
+            });
+        }
+        this.data.push({
+            name,
+            data: arr,
+            stride,
+            attributes
+        });
+        this.dirty = true;
+    }
+    transform(matrix) {
+        for (let data of this.data) {
+            for (let attr of data.attributes) {
+                if (attr.name === POSITION) {
+                    for (let i = 0; i < data.data.length; i += data.stride) {
+                        transformMatrix4(data.data, matrix, i + attr.offset);
+                    }
+                    this.dirty = true;
+                    return this;
+                }
+            }
+        }
+        return this;
+    }
+}
+const transformMatrix4 = (a, m, offset) => {
+    let ax = a[0 + offset];
+    let ay = a[1 + offset];
+    let az = a[2 + offset];
+    let ag = m[3 + offset] * ax + m[7] * ay + m[11] * az + m[15];
+    ag = ag || 1.0;
+    a[0 + offset] = (m[0] * ax + m[4] * ay + m[8] * az + m[12]) / ag;
+    a[1 + offset] = (m[1] * ax + m[5] * ay + m[9] * az + m[13]) / ag;
+    a[2 + offset] = (m[2] * ax + m[6] * ay + m[10] * az + m[14]) / ag;
+    return a;
+};
 
 const DEFAULT_OPTIONS = {
     hasNormal: true,
@@ -4829,7 +4916,7 @@ var createCircle3 = (options = {}) => {
     }
 };
 
-const DEFAULT_SPHERE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 32, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: constants.DEG_360_RAD, cullMode: "back" });
+const DEFAULT_SPHERE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, radiusTop: 1, radiusBottom: 1, height: 1, radialSegments: 32, heightSegments: 1, openEnded: false, thetaStart: 0, thetaLength: constants$2.DEG_360_RAD, cullMode: "back" });
 var createCylinder3 = (options = {}) => {
     let stride = 3;
     const indices = [];
@@ -6512,7 +6599,7 @@ class Anchor3 extends Matrix4Component {
         this.dirty = true;
     }
     get z() {
-        return this.vec3[1];
+        return this.vec3[2];
     }
     set z(value) {
         this.vec3[2] = value;
@@ -9347,7 +9434,7 @@ class System {
 }
 
 class RenderSystem extends System {
-    constructor(engine, clearer, viewport, scissor) {
+    constructor(engine, viewport, scissor) {
         super("Render System", (entity) => {
             var _a;
             return (_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data;
@@ -9359,13 +9446,12 @@ class RenderSystem extends System {
             x: 0, y: 0, width: 0, height: 0, minDepth: 0, maxDepth: 1
         };
         this.engine = engine;
-        this.clearer = clearer || new Clearer(engine);
         this.rendererMap = new Map();
         engine.context.configure({
             device: engine.device,
             format: engine.preferredFormat,
             size: [engine.canvas.width, engine.canvas.height],
-            compositingAlphaMode: "opaque"
+            compositingAlphaMode: "premultiplied"
         });
         this.setScissor(scissor).setViewport(viewport);
     }
@@ -9390,9 +9476,6 @@ class RenderSystem extends System {
         (_b = this.rendererMap.get((_a = entity.getComponent(Renderable.TAG_TEXT)) === null || _a === void 0 ? void 0 : _a.data)) === null || _b === void 0 ? void 0 : _b.render(entity, store.get("activeCamera"), store.get("passEncoder"));
         return this;
     }
-    setClearer(clearer) {
-        this.clearer = clearer;
-    }
     setViewport(viewport) {
         this.viewport = viewport || {
             x: 0,
@@ -9414,16 +9497,11 @@ class RenderSystem extends System {
         return this;
     }
     run(world) {
-        let device = this.engine.device;
-        let commandEncoder = device.createCommandEncoder();
-        let passEncoder = this.clearer.clear(commandEncoder);
+        let passEncoder = this.engine.renderPassEncoder;
         passEncoder.setViewport(this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height, this.viewport.minDepth, this.viewport.maxDepth);
         passEncoder.setScissorRect(this.scissor.x, this.scissor.y, this.scissor.width, this.scissor.height);
         world.store.set("passEncoder", passEncoder);
         super.run(world);
-        // finish
-        passEncoder.end();
-        device.queue.submit([commandEncoder.finish()]);
         return this;
     }
 }
@@ -10178,4 +10256,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor3, AtlasTexture, constants$2 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager$1 as ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager$1 as Manager, Material, Mathx_module as Mathx, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem, World };
+export { APosition3, AProjection3, ARotation3, AScale3, constants as ATTRIBUTE_NAME, Anchor3, AtlasTexture, constants$1 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager$1 as ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager$1 as Manager, Material, Mathx_module as Mathx, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem, World };

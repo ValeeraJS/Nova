@@ -4,7 +4,10 @@ import ISystemManager from "@valeera/x/src/interfaces/ISystemManager";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
 import IRenderSystem from "./IRenderSystem";
 
-export default abstract class ARenderSystem implements IRenderSystem {
+export default abstract class RenderSystem implements IRenderSystem {
+    destroy(): this {
+        throw new Error("Method not implemented.");
+    }
     addRenderer(renderer: any): this {
         throw new Error("Method not implemented.");
     }
@@ -12,6 +15,7 @@ export default abstract class ARenderSystem implements IRenderSystem {
         throw new Error("Method not implemented.");
     }
     id: number = 0;
+    cache: WeakMap<IEntity, any> = new WeakMap<IEntity, any>();
     disabled: boolean = false;
     entitySet: WeakMap<IEntityManager, Set<IEntity>> = new WeakMap<IEntityManager, Set<IEntity>>();
     loopTimes: number = 0;
@@ -32,5 +36,4 @@ export default abstract class ARenderSystem implements IRenderSystem {
     run(world: IWorld): this {
         throw new Error("Method not implemented.");
     }
-    
 }

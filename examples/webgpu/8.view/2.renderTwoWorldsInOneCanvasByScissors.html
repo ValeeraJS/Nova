@@ -10,24 +10,19 @@
 	<script type="text/javascript" src="./../../../build/Nova.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
-		const canvas2 = document.getElementById("gpucanvas2");
-		const engine1 = new Nova.WebGPUEngine(canvas, {
-			width: 800,
-			height: 450
-		});
-		const engine2 = new Nova.WebGPUEngine(canvas2, {
-			width: 800,
-			height: 450
-		});
+		const engine = new Nova.WebGPUEngine(canvas);
 
-		function createWorld(engine, clearColor) {
+		function createWorld(engine, clearColor, scissors, material) {
 			engine.setClearColor(clearColor);
 			const world = new Nova.World();
-			const geo = Nova.Geometry3Factory.createTriangle3();
+			const geo = Nova.Geometry3Factory.createBox3();
 			const mesh = Nova.EntityFactory.createMesh(geo, "triangle", world);
 			let position = mesh.getComponent("position3");
 			position.data[14] = -5;
 			position.dirty = true;
+			let rotation = new Nova.EulerRotation3();
+			mesh.addComponent(rotation);
+			mesh.addComponent(material);
 
 			const projection = new Nova.PerspectiveProjection(
 				Math.PI / 3,
@@ -38,23 +33,44 @@
 			const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
 
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			renderSystem.setScissor(scissors);
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
 
 			engine.addTask(() => {
 				world.run();
+				rotation.y += 0.01;
 			});
 
 			return renderSystem;
 		}
 
-		engine1.once(Nova.EngineEvents.INITED, (e) => {
-			createWorld(engine1, new Nova.Mathx.ColorGPU(1, 0, 0, 1));
-		});
-
-		engine2.once(Nova.EngineEvents.INITED, (e) => {
-			createWorld(engine2, new Nova.Mathx.ColorGPU(0, 0, 1, 1));
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			createWorld(
+				engine,
+				new Nova.Mathx.ColorGPU(1, 0, 0, 1),
+				{
+					x: 0,
+					y: 0,
+					width: engine.canvas.width / 2,
+					height: engine.canvas.height
+				},
+				new Nova.TextureMaterial(
+					new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+				)
+			);
+			createWorld(
+				engine,
+				new Nova.Mathx.ColorGPU(1, 0, 0, 1),
+				{
+					x: engine.canvas.width / 2,
+					y: 0,
+					width: engine.canvas.width / 2,
+					height: engine.canvas.height
+				},
+				new Nova.NormalMaterial()
+			);
 		});
 	</script>
 </body>

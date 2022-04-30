@@ -49,14 +49,10 @@
 			let renderer = new Nova.WebGPUMeshRenderer(engine);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem);
-		});
-
-		let timeline = new Nova.Timeline();
-		timeline.addTask(() => {
+		}).addTask(() => {
 			world.run();
 			rotationProxy.z += 0.005;
 		});
-		timeline.start();
 
         createGUI();
 		function createGUI() {

@@ -28,7 +28,6 @@
 						dy: json.frames[item].spriteSourceSize.y
 					});
 				}
-				console.log(json, spritesheetJson);
 
 				const canvas = document.getElementById("gpucanvas");
 				const engine = new Nova.WebGPUEngine(canvas);
@@ -55,23 +54,13 @@
 				positionProxy.z = 5;
 
 				engine.once(Nova.EngineEvents.INITED, (e) => {
-					let clearer = new Nova.WebGPUClearer(engine, {
-						r: 0,
-						g: 0,
-						b: 0,
-						a: 1
-					});
-					let renderSystem = new Nova.WebGPURenderSystem(engine, clearer);
+					let renderSystem = new Nova.WebGPURenderSystem(engine);
 					let renderer = new Nova.WebGPUMeshRenderer(engine);
 					renderSystem.addRenderer(renderer);
 					world.addSystem(renderSystem);
-				});
-
-				let timeline = new Nova.Timeline();
-				timeline.addTask(() => {
+				}).addTask(() => {
 					world.run();
 				});
-				timeline.start();
 
 				createGUI();
 
