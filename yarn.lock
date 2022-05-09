@@ -422,15 +422,15 @@
   resolved "https://registry.npmmirror.com/@valeera/eventdispatcher/-/eventdispatcher-2.2.4.tgz#8a1fb79de91eb60e8ca18e77f34149497e41571f"
   integrity sha512-rN3+cGRECUtvz4Mc95h579GPIhjbgbgP8TnGcrJOY/OMrYoM7pRix20nVwYVZqJBfIWcqLQUzYuokBWT8YJpDw==
 
-"@valeera/idgenerator@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmmirror.com/@valeera/idgenerator/-/idgenerator-1.1.0.tgz#8dafebdcbb3f3ac951f34bb1df28db8d60391316"
-  integrity sha512-R8xmtuUPdwLzewZLV6/C/AFXVlpbLl0N2htBqxWR4RsxP7EL3w71GxVdJbrAHpsRzZ90w6PmGSMkYOJSmIBC7g==
+"@valeera/idgenerator@1.1.1":
+  version "1.1.1"
+  resolved "https://registry.npmmirror.com/@valeera/idgenerator/-/idgenerator-1.1.1.tgz#e09e33dd11f3caa3a05a8bdf8bb089beb51cac7f"
+  integrity sha512-ATbUOvCkgrg+VA6qUoWxhQPYS5RkFw9/r2nfEYagLMlmwwFx1wPrLaknp96M/mkaVV4Y+Mt/u4eA1oRyahRG+A==
 
-"@valeera/mathx@0.1.31":
-  version "0.1.31"
-  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.31.tgz#9d2357fc5eee90b58fdfa9f96c61d7763cf3486d"
-  integrity sha512-nJUx5tbnuQN+ylj028jqg3heWLov2/n9dzte2EjkiMhvAyO/MrcyDKPcVqYN9AlZGZxHj5ORi6nb29xKQsYCYQ==
+"@valeera/mathx@0.1.32":
+  version "0.1.32"
+  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.32.tgz#40ebe77f33abdace369a5cee43f3322aabcfb41f"
+  integrity sha512-tsyJHtal1qfPQQwcbNQb2vIaWkrPUaBJY+guZXKRzfS64OdVscGE/LeqiE+SkY0wBGJGD/d+BJxZmU+9B4IdMw==
 
 "@valeera/timeline@0.1.2":
   version "0.1.2"
@@ -447,13 +447,13 @@
   resolved "https://registry.npmmirror.com/@valeera/webgpu-constant/-/webgpu-constant-0.1.1.tgz#dee1727f33e599c7520a593a711ec31d0ac0bd69"
   integrity sha512-74n1qjoMiAorlLdi9eRWFU7Rl9z1YBXD0kr1ixmV39sprbkGFXva4OPFib179FxXmvM0D9OFFSz5qyIxH5GwuA==
 
-"@valeera/x@0.1.17":
-  version "0.1.17"
-  resolved "https://registry.npmmirror.com/@valeera/x/-/x-0.1.17.tgz#5058d4c3f454d063f4d259ec1d59fc4d48dffadf"
-  integrity sha512-eAGK4xD8bjDJLLkj5nhfjfJ8Mi1c4GtWgevp59zu4PbSxSAid/1yVFGKi+kA2eQT8EWycCH0n0suPctlRsWERw==
+"@valeera/x@0.1.18-b":
+  version "0.1.18-b"
+  resolved "https://registry.npmmirror.com/@valeera/x/-/x-0.1.18-b.tgz#312f5f0c992cfbbb9c3e1737927c78b9111d08a6"
+  integrity sha512-/Ej0Myx+kb0Ov7oxeP3Mzz/6LnYycobK2R+Xta1ZyCg0yIe0Fti24J8UylnnMdl1oZUs/aCqhne4vYOkVHFlMA==
   dependencies:
     "@valeera/eventdispatcher" "2.2.4"
-    "@valeera/idgenerator" "1.1.0"
+    "@valeera/idgenerator" "1.1.1"
     "@valeera/tree" "0.1.5-b"
     clone-deep "^4.0.1"
 
@@ -1448,40 +1448,40 @@ globby@^11.0.4:
     merge2 "^1.4.1"
     slash "^3.0.0"
 
-google-closure-compiler-java@^20220405.0.0:
-  version "20220405.0.0"
-  resolved "https://registry.npmmirror.com/google-closure-compiler-java/-/google-closure-compiler-java-20220405.0.0.tgz#bc8f05d44e3479640cc46bc52fee46d083c1e596"
-  integrity sha512-PNNNGvYOGPVYwNl3/8Rpz9ulxHsOv96p5YmnAp1gSTakOQFGgHwsBY/whIYs4M8sFLN286NvklfB7IyJTvZPHA==
+google-closure-compiler-java@^20220502.0.0:
+  version "20220502.0.0"
+  resolved "https://registry.npmmirror.com/google-closure-compiler-java/-/google-closure-compiler-java-20220502.0.0.tgz#a92696bfc05489738dc06f797041985bbfb334be"
+  integrity sha512-XDXw1v+1zcNHuEUXQg24eD9MUF2XTHnEDKCwF0P0zQe+8TWQajKvjsekdJnO6JH/Lqcu8XKc7dxO5+SMijr0sw==
 
-google-closure-compiler-linux@^20220405.0.0:
-  version "20220405.0.0"
-  resolved "https://registry.npmmirror.com/google-closure-compiler-linux/-/google-closure-compiler-linux-20220405.0.0.tgz#80010da1b4fdce3740fbe37dd007a5fd07b428cf"
-  integrity sha512-Yu9WdWdEN89Tf0cz+OnbZdlaWrMfdlJRxW+SpRXt3Lh1rNtCJp7n0RgpOprhreuJxU2vM1AcmKSueCwiUEDVGw==
+google-closure-compiler-linux@^20220502.0.0:
+  version "20220502.0.0"
+  resolved "https://registry.npmmirror.com/google-closure-compiler-linux/-/google-closure-compiler-linux-20220502.0.0.tgz#64a3c1723f102e047433d85ec1dfd1d101a84b4f"
+  integrity sha512-T+2p/Qj02yGZHxymhj1oZsiHudNvI9sQKfCLoIH0wi0ikDiVIOh/dsH+57lsaGDJ+XTP/ur5Ozl8GIOjv1Efrw==
 
-google-closure-compiler-osx@^20220405.0.0:
-  version "20220405.0.0"
-  resolved "https://registry.npmmirror.com/google-closure-compiler-osx/-/google-closure-compiler-osx-20220405.0.0.tgz#1463757efbe12f4781b99728593cbbbdf07ab42a"
-  integrity sha512-E+W6o41Hyxi1BGBQ5y9zloW/0Y+B9dcurPY8I6XOMpuuV1VP2/2puoGT07hwjkjh2zRwHZJXdejlMygzHrz+Mw==
+google-closure-compiler-osx@^20220502.0.0:
+  version "20220502.0.0"
+  resolved "https://registry.npmmirror.com/google-closure-compiler-osx/-/google-closure-compiler-osx-20220502.0.0.tgz#b5e40b2adf737622d435d9bfc99d0912a75f967e"
+  integrity sha512-VwEncD4I1gfkF3zyHlRcUsx2o/poC0qzHjBv+g3Z09wHy9tuqjQ4EP8LmN/GMuV2Hai6gQvkKC0XjYnZTFx2mQ==
 
-google-closure-compiler-windows@^20220405.0.0:
-  version "20220405.0.0"
-  resolved "https://registry.npmmirror.com/google-closure-compiler-windows/-/google-closure-compiler-windows-20220405.0.0.tgz#acf3e9e6ad079afe6f190bba153a1c7a06eae239"
-  integrity sha512-abkEpLZdyAdIzJg0vNWnfbYJx0SAJlgWAdzi4OeOjTfzyXLS++p/Rw1/s0u94hvRRRclySzkrETSfoEm8VGJBw==
+google-closure-compiler-windows@^20220502.0.0:
+  version "20220502.0.0"
+  resolved "https://registry.npmmirror.com/google-closure-compiler-windows/-/google-closure-compiler-windows-20220502.0.0.tgz#6c07ebeddd70e138135ae9382b0ced50aea5add6"
+  integrity sha512-ssdAUS2VZxJAyciVrbhpnYymvm//V4CHyg8aLvMisUfWRDeUSsOCC5mNXy6D8f9i9bYHs3cFV3itIRUfnYCEWg==
 
-google-closure-compiler@^20220405.0.0:
-  version "20220405.0.0"
-  resolved "https://registry.npmmirror.com/google-closure-compiler/-/google-closure-compiler-20220405.0.0.tgz#64cd8b298ab8a997d50513fb40c595f017fd2636"
-  integrity sha512-qD4vf6pb7PMMrBhkqzkx3Cc1I7CRKyr+xFQFbtRvLHrMFB1J5iujcGOm/KZVZfgHrkUpX4k7UknEfOZiR7l2eQ==
+google-closure-compiler@^20220502.0.0:
+  version "20220502.0.0"
+  resolved "https://registry.npmmirror.com/google-closure-compiler/-/google-closure-compiler-20220502.0.0.tgz#94d793f60be006236b174f8e1bc3c1a493ed86f1"
+  integrity sha512-i9Qdve2v3jlerkHzlm00bpYds+kfAlIdeaOQ+acK/pHPHeLjhiXS+EyIpegVnH8+TY3I1QAMZFuVEXkMVJqpBQ==
   dependencies:
     chalk "2.x"
-    google-closure-compiler-java "^20220405.0.0"
+    google-closure-compiler-java "^20220502.0.0"
     minimist "1.x"
     vinyl "2.x"
     vinyl-sourcemaps-apply "^0.2.0"
   optionalDependencies:
-    google-closure-compiler-linux "^20220405.0.0"
-    google-closure-compiler-osx "^20220405.0.0"
-    google-closure-compiler-windows "^20220405.0.0"
+    google-closure-compiler-linux "^20220502.0.0"
+    google-closure-compiler-osx "^20220502.0.0"
+    google-closure-compiler-windows "^20220502.0.0"
 
 graceful-fs@^4.1.15:
   version "4.2.6"

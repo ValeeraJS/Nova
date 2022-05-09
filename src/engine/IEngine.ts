@@ -5,7 +5,9 @@ export default interface IEngine {
 }
 
 export enum EngineEvents {
-	INITED = "inited"
+	INITED = "inited",
+	LOOP_STARTED = "loop-started",
+	LOOP_ENDED = "loop-ended",
 }
 
 export interface EngineOptions {
@@ -16,6 +18,8 @@ export interface EngineOptions {
 	noDepthTexture?: boolean;
 	clearColor?: string | number | ColorGPU | Float32Array | number[] | IColorGPUJson;
 	autoStart?: boolean;
+	renderToSwapChain?: boolean;
+	renderToTarget?: boolean;
 }
 
 const DEFAULT_ENGINE_OPTIONS: Required<EngineOptions> = {
@@ -26,6 +30,8 @@ const DEFAULT_ENGINE_OPTIONS: Required<EngineOptions> = {
 	autoResize: false,
 	noDepthTexture: false,
 	clearColor: new ColorGPU(0, 0, 0, 1),
+	renderToSwapChain: true,
+	renderToTarget: false
 }
 
 export { DEFAULT_ENGINE_OPTIONS }

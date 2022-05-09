@@ -8,6 +8,8 @@ import createVerticesBuffer from "./createVerticesBuffer";
 import IRenderer from "./IWebGPURenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
+import EngineTexture from "../../components/texture/EngineTexture";
+import { Entity } from "@valeera/x";
 
 interface ICacheData {
 	mvp: Float32Array;
@@ -29,13 +31,13 @@ export default class MeshRenderer implements IRenderer {
 		this.engine = engine;
 	}
 
-	render(mesh: IEntity, camera: IEntity, passEncoder: GPURenderPassEncoder, _scissor?: any): this {
+	render(mesh: Entity, camera: Entity, passEncoder: GPURenderPassEncoder, _scissor?: any): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
-		let material = mesh.getComponent(MATERIAL) || DEFAULT_MATERIAL;
-		let geometry = mesh.getComponent(GEOMETRY_3D);
+		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D);
 
-		if (!cacheData || mesh.getComponent(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
+		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
 			cacheData = this.createCacheData(mesh);
 			this.entityCacheData.set(mesh, cacheData);
 		} else {
@@ -51,9 +53,9 @@ export default class MeshRenderer implements IRenderer {
 		}
 
 		const mvp = cacheData.mvp;
-		Matrix4.multiply(camera.getComponent(PROJECTION_3D)?.data,
+		Matrix4.multiply(camera.getFirstComponentByTagLabel(PROJECTION_3D)?.data,
 			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
-		Matrix4.multiply(mvp, mesh.getComponent(WORLD_MATRIX)?.data, mvp);
+		Matrix4.multiply(mvp, mesh.getFirstComponentByTagLabel(WORLD_MATRIX)?.data, mvp);
 
 		this.engine.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
@@ -81,19 +83,19 @@ export default class MeshRenderer implements IRenderer {
 							{ texture: key },
 							[uniform.value.data.width, uniform.value.data.height, 1]
 						);
-						uniform.dirty = false;
+						uniform.value.dirty = uniform.dirty = false;
 					}
 				}
 			}
 		});
 
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-		passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
+		passEncoder.draw((mesh.getFirstComponentByTagLabel(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
 
 		return this;
 	}
 
-	private createCacheData(mesh: IEntity): ICacheData {
+	private createCacheData(mesh: Entity): ICacheData {
 		updateModelMatrixComponent(mesh);
 		let device = this.engine.device;
 
@@ -102,8 +104,8 @@ export default class MeshRenderer implements IRenderer {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 		let buffers = [];
-		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
-		let material = mesh.getComponent(MATERIAL) as Material || DEFAULT_MATERIAL;
+		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D) as Geometry3;
+		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL;
 		let nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
 			buffers.push(createVerticesBuffer(device, nodes[i].data));
@@ -117,7 +119,7 @@ export default class MeshRenderer implements IRenderer {
 			},
 		}];
 
-		let uniforms: IUniformSlot[] = mesh.getComponent(MATERIAL)?.data?.uniforms;
+		let uniforms: IUniformSlot[] = mesh.getFirstComponentByTagLabel(MATERIAL)?.data?.uniforms;
 		let uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
@@ -142,7 +144,7 @@ export default class MeshRenderer implements IRenderer {
 						resource: sampler
 					});
 				} else if (uniform.type === TEXTURE_IMAGE) {
-					let texture: GPUTexture = device.createTexture({
+					let texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
 						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',
 						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
@@ -155,6 +157,8 @@ export default class MeshRenderer implements IRenderer {
 				}
 			}
 		}
+
+		console.log(groupEntries)
 
 		let uniformBindGroup = device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
@@ -290,6 +294,8 @@ export default class MeshRenderer implements IRenderer {
 				}
 			]
 		};
+		
+		material.dirty = false;
 		return {
 			vertex,
 			fragment

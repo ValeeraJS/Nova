@@ -24,6 +24,7 @@ export default class RenderSystem extends System {
 		this.rendererMap = new Map();
 		engine.context.configure({
 			device: engine.device,
+			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 			format: engine.preferredFormat,
 			size: [engine.canvas.width, engine.canvas.height],
 			compositingAlphaMode: "premultiplied"

@@ -5,6 +5,9 @@ import Matrix4Component from "./Matrix4Component";
 
 export default abstract class APosition3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super(TRANSLATION_3D, data);
+        super(TRANSLATION_3D, data, [{
+			label: TRANSLATION_3D,
+			unique: true
+		}]);
     }
 }

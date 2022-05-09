@@ -4,6 +4,9 @@ import Matrix4Component from "./Matrix4Component";
 
 export default abstract class AScale3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super(SCALING_3D, data);
+        super(SCALING_3D, data, [{
+			label: SCALING_3D,
+			unique: true
+		}]);
     }
 }

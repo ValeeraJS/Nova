@@ -2,8 +2,8 @@ import Component from "@valeera/x/src/Component";
 
 export default class Texture extends Component<ImageBitmap | undefined | null> {
 	dirty = false;
-	width = 0;
-	height = 0;
+	width: number;
+	height: number;
 
 	public constructor(width: number, height: number, img: ImageBitmap | undefined | null, name: string = "texture") {
 		super(name, img);

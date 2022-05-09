@@ -1,8 +1,13 @@
 import { Component } from "@valeera/x";
+import { MATERIAL } from "../constants";
 import { DEFAULT_BLEND_STATE } from "./Blend";
 import IMaterial, { IShaderCode, IUniformSlot } from "./IMatrial";
 
 export default class Material extends Component<IShaderCode> implements IMaterial {
+	tags = [{
+		label: MATERIAL,
+		unique: true
+	}];
 	constructor(vertex: string, fragment: string, uniforms: IUniformSlot[] = [], blend: GPUBlendState = DEFAULT_BLEND_STATE) {
 		super("material", { vertex, fragment, uniforms, blend });
 		this.dirty = true;

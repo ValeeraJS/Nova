@@ -8,11 +8,12 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 	public options: Required<EngineOptions>;
 	public clearColor: ColorGPU = new ColorGPU(0, 0, 0, 1);
 	public swapChainTexture: GPUTexture;
+	public targetTexture: GPUTexture;
 	public renderPassEncoder: GPURenderPassEncoder;
 	public static async detect(
 		canvas: HTMLCanvasElement = document.createElement("canvas"),
 	): Promise<{ context: GPUCanvasContext, adapter: GPUAdapter, device: GPUDevice }> {
-		const context = (canvas.getContext("webgpu") as any) as GPUCanvasContext;
+		const context = canvas.getContext("webgpu") as GPUCanvasContext;
 
 		if (!context) {
 			throw new Error('WebGPU not supported: ');
@@ -61,6 +62,11 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 			this.inited = true;
 			this.preferredFormat = context.getPreferredFormat(adapter);
 			this.setRenderPassDescripter();
+			this.targetTexture = this.device.createTexture({
+				size: [this.canvas.width, this.canvas.height],
+				format: this.preferredFormat,
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+			});
 			this.fire(EngineEvents.INITED, {
 				eventKey: EngineEvents.INITED,
 				target: this
@@ -99,14 +105,14 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 	private loopStart() {
 		this.currentCommandEncoder = this.device.createCommandEncoder();
 		this.swapChainTexture = this.context.getCurrentTexture();
-		this.renderPassDescriptor.colorAttachments[0].view = this.context
-			.getCurrentTexture()
-			.createView();
+		this.renderPassDescriptor.colorAttachments[0].view = this.options.renderToSwapChain ? this.swapChainTexture.createView() : this.targetTexture.createView();
 		this.renderPassEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
+		this.fire(EngineEvents.LOOP_STARTED, this);
 	}
 
 	private loopEnd() {
 		this.renderPassEncoder.end();
+		this.fire(EngineEvents.LOOP_ENDED, this);
 		this.device.queue.submit([this.currentCommandEncoder.finish()]);
 	}
 
@@ -137,6 +143,4 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 
 		this.renderPassDescriptor = renderPassDescriptor;
 	}
-
-
 }

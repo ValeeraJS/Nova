@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<canvas id="gpucanvas2"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const canvas2 = document.getElementById("gpucanvas2");
+		const engineInner = new Nova.WebGPUEngine(canvas2, {
+			// renderToSwapChain: false,
+			width: 512,
+			height: 512
+		});
+
+		function createWorldInner(engine, material) {
+			const world = new Nova.World();
+			const geo = Nova.Geometry3Factory.createBox3();
+			const mesh = Nova.EntityFactory.createMesh(geo, "triangle", world);
+			let position = mesh.getComponent("position3");
+			position.data[14] = -3;
+			position.dirty = true;
+			let rotation = new Nova.EulerRotation3();
+			mesh.addComponent(rotation);
+			mesh.addComponent(material);
+
+			const projection = new Nova.PerspectiveProjection(
+				Math.PI / 3,
+				canvas2.width / canvas2.height,
+				0.01,
+				10
+			);
+			const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+
+			engine.addTask(() => {
+				world.run();
+				rotation.y += 0.01;
+			});
+
+			return renderSystem;
+		}
+
+		let cubeTexture;
+
+		function createWorldMain(engine, material) {
+			const world = new Nova.World();
+			const geo = Nova.Geometry3Factory.createBox3();
+			const mesh = Nova.EntityFactory.createMesh(geo, "triangle", world);
+			let position = mesh.getComponent("position3");
+			position.data[14] = -3;
+			position.dirty = true;
+			let rotation = new Nova.EulerRotation3();
+			mesh.addComponent(rotation);
+			mesh.addComponent(material);
+
+			const projection = new Nova.PerspectiveProjection(
+				Math.PI / 3,
+				canvas.width / canvas.height,
+				0.01,
+				10
+			);
+			const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem);
+
+			engine.addTask(() => {
+				world.run();
+				rotation.y += 0.01;
+			});
+
+			return renderSystem;
+		}
+
+		engineInner.once(Nova.EngineEvents.INITED, (e) => {
+			createWorldInner(
+				engineInner,
+				new Nova.TextureMaterial(
+					new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+				)
+			);
+			cubeTexture = engineInner.device.createTexture({
+				size: [engineInner.options.width, engineInner.options.height],
+				format: engineInner.preferredFormat,
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+			});
+			engineInner.on(Nova.EngineEvents.LOOP_ENDED, () => {
+				engineInner.currentCommandEncoder.copyTextureToTexture(
+					{
+						texture: engineInner.swapChainTexture
+					},
+					{
+						texture: cubeTexture
+					},
+					[engineInner.options.width, engineInner.options.height]
+				);
+			});
+
+			const engineMain = new Nova.WebGPUEngine(canvas, {
+				width: 512,
+				height: 512
+			});
+
+			engineMain.once(Nova.EngineEvents.INITED, (e) => {
+				cubeTexture = engineMain.device.createTexture({
+					size: [engineMain.options.width, engineMain.options.height],
+					format: engineMain.preferredFormat,
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+				});
+				createWorldMain(engineMain, new Nova.TextureMaterial(cubeTexture));
+			});
+		});
+	</script>
+</body>

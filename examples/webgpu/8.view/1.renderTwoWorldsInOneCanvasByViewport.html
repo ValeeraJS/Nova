@@ -5,14 +5,13 @@
 </head>
 <body>
 	<canvas id="gpucanvas"></canvas>
-	<canvas id="gpucanvas2"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../../build/Nova.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Nova.WebGPUEngine(canvas);
 
-		function createWorld(engine, clearColor, viewport, type) {
+		function createWorld(engine, viewport, type) {
 			const world = new Nova.World();
 			const geo =
 				type === "triangle"

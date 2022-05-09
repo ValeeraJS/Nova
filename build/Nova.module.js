@@ -2489,6 +2489,84 @@ Matrix4$1.multiply = (a, b, out = new Matrix4$1()) => {
     out[15] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
     return out;
 };
+// 乘以缩放矩阵
+Matrix4$1.multiplyScaleMatrix = (a, b, out = new Matrix4$1()) => {
+    a00$3 = a[0];
+    a01$3 = a[1];
+    a02$2 = a[2];
+    a03$1 = a[3];
+    a10$3 = a[4];
+    a11$3 = a[5];
+    a12$2 = a[6];
+    a13$1 = a[7];
+    a20$2 = a[8];
+    a21$2 = a[9];
+    a22$2 = a[10];
+    a23$1 = a[11];
+    a30$1 = a[12];
+    a31$1 = a[13];
+    a32$1 = a[14];
+    a33$1 = a[15];
+    b00$3 = b[0];
+    out[0] = b00$3 * a00$3;
+    out[1] = b00$3 * a01$3;
+    out[2] = b00$3 * a02$2;
+    out[3] = b00$3 * a03$1;
+    b01$3 = b[5];
+    out[4] = b01$3 * a10$3;
+    out[5] = b01$3 * a11$3;
+    out[6] = b01$3 * a12$2;
+    out[7] = b01$3 * a13$1;
+    b02$2 = b[10];
+    out[8] = b02$2 * a20$2;
+    out[9] = b02$2 * a21$2;
+    out[10] = b02$2 * a22$2;
+    out[11] = b02$2 * a23$1;
+    out[12] = a30$1;
+    out[13] = a31$1;
+    out[14] = a32$1;
+    out[15] = a33$1;
+    return out;
+};
+// 乘以平移矩阵
+Matrix4$1.multiplyTranslateMatrix = (a, b, out = new Matrix4$1()) => {
+    a00$3 = a[0];
+    a01$3 = a[1];
+    a02$2 = a[2];
+    a03$1 = a[3];
+    a10$3 = a[4];
+    a11$3 = a[5];
+    a12$2 = a[6];
+    a13$1 = a[7];
+    a20$2 = a[8];
+    a21$2 = a[9];
+    a22$2 = a[10];
+    a23$1 = a[11];
+    a30$1 = a[12];
+    a31$1 = a[13];
+    a32$1 = a[14];
+    a33$1 = a[15];
+    out[0] = a00$3;
+    out[1] = a01$3;
+    out[2] = a02$2;
+    out[3] = a03$1;
+    out[4] = a10$3;
+    out[5] = a11$3;
+    out[6] = a12$2;
+    out[7] = a13$1;
+    out[8] = a20$2;
+    out[9] = a21$2;
+    out[10] = a22$2;
+    out[11] = a23$1;
+    b00$3 = b[12];
+    b01$3 = b[13];
+    b02$2 = b[14];
+    out[12] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + a30$1;
+    out[13] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + a31$1;
+    out[14] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + a32$1;
+    out[15] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + a33$1;
+    return out;
+};
 Matrix4$1.orthogonal = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
     c$2 = 1 / (left - right);
     b$1 = 1 / (bottom - top);
@@ -4307,6 +4385,8 @@ var getColorGPU = (color, result = new ColorGPU()) => {
 var EngineEvents;
 (function (EngineEvents) {
     EngineEvents["INITED"] = "inited";
+    EngineEvents["LOOP_STARTED"] = "loop-started";
+    EngineEvents["LOOP_ENDED"] = "loop-ended";
 })(EngineEvents || (EngineEvents = {}));
 const DEFAULT_ENGINE_OPTIONS = {
     autoStart: true,
@@ -4316,6 +4396,8 @@ const DEFAULT_ENGINE_OPTIONS = {
     autoResize: false,
     noDepthTexture: false,
     clearColor: new ColorGPU(0, 0, 0, 1),
+    renderToSwapChain: true,
+    renderToTarget: false
 };
 
 class WebGPUEngine extends EventDispatcher.mixin(Timeline) {
@@ -4334,6 +4416,11 @@ class WebGPUEngine extends EventDispatcher.mixin(Timeline) {
             this.inited = true;
             this.preferredFormat = context.getPreferredFormat(adapter);
             this.setRenderPassDescripter();
+            this.targetTexture = this.device.createTexture({
+                size: [this.canvas.width, this.canvas.height],
+                format: this.preferredFormat,
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+            });
             this.fire(EngineEvents.INITED, {
                 eventKey: EngineEvents.INITED,
                 target: this
@@ -4386,13 +4473,13 @@ class WebGPUEngine extends EventDispatcher.mixin(Timeline) {
     loopStart() {
         this.currentCommandEncoder = this.device.createCommandEncoder();
         this.swapChainTexture = this.context.getCurrentTexture();
-        this.renderPassDescriptor.colorAttachments[0].view = this.context
-            .getCurrentTexture()
-            .createView();
+        this.renderPassDescriptor.colorAttachments[0].view = this.options.renderToSwapChain ? this.swapChainTexture.createView() : this.targetTexture.createView();
         this.renderPassEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
+        this.fire(EngineEvents.LOOP_STARTED, this);
     }
     loopEnd() {
         this.renderPassEncoder.end();
+        this.fire(EngineEvents.LOOP_ENDED, this);
         this.device.queue.submit([this.currentCommandEncoder.finish()]);
     }
     setRenderPassDescripter() {
@@ -4484,6 +4571,13 @@ class IdGenerator {
     current() {
         return this.value;
     }
+    jumpTo(value) {
+        if (this.value < value) {
+            this.value = value;
+            return true;
+        }
+        return false;
+    }
     /**
      * @method IdGenerator.prototype.next
      * @desc 生成新的id
@@ -4518,7 +4612,7 @@ class IdGenerator {
             return crypto.randomUUID();
         }
         else {
-            return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+            return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
         }
     }
     /**
@@ -4528,23 +4622,23 @@ class IdGenerator {
      * @returns {BigInt} uuid
      */
     uuidBigInt() {
-        //return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
-        let arr = crypto.getRandomValues(new Uint16Array(8));
-        return BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n
-            + BigInt(arr[4]) * 65536n * 65536n * 65536n
-            + BigInt(arr[5]) * 65536n * 65536n
-            + BigInt(arr[6]) * 65536n
-            + BigInt(arr[6]);
+        // return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
+        const arr = crypto.getRandomValues(new Uint16Array(8));
+        return (BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n +
+            BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n +
+            BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n +
+            BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n +
+            BigInt(arr[4]) * 65536n * 65536n * 65536n +
+            BigInt(arr[5]) * 65536n * 65536n +
+            BigInt(arr[6]) * 65536n +
+            BigInt(arr[6]));
     }
 }
 
 const IdGeneratorInstance$1 = new IdGenerator();
 
 class Component$1 {
-    constructor(name, data) {
+    constructor(name, data, tags = []) {
         this.isComponent = true;
         this.id = IdGeneratorInstance$1.next();
         this.disabled = false;
@@ -4552,6 +4646,7 @@ class Component$1 {
         this.dirty = false;
         this.name = name;
         this.data = data;
+        this.tags = tags;
     }
     static unserialize(json) {
         const component = new Component$1(json.name, json.data);
@@ -4559,13 +4654,24 @@ class Component$1 {
         return component;
     }
     clone() {
-        return new Component$1(this.name, this.data);
+        return new Component$1(this.name, this.data, this.tags);
+    }
+    // 此处为只要tag标签相同就是同一类
+    hasTagLabel(label) {
+        for (let i = this.tags.length - 1; i > -1; i--) {
+            if (this.tags[i].label === label) {
+                return true;
+            }
+        }
+        return false;
     }
     serialize() {
         return {
             data: this.data,
             disabled: this.disabled,
+            id: this.id,
             name: this.name,
+            tags: this.tags,
             type: "component"
         };
     }
@@ -4627,6 +4733,10 @@ class Geometry3 extends Component$1 {
     constructor(count = 0, topology = "triangle-list", cullMode = "none", data = []) {
         super(GEOMETRY_3D, data);
         this.data = [];
+        this.tags = [{
+                label: GEOMETRY_3D,
+                unique: true
+            }];
         this.count = count;
         this.topology = topology;
         this.cullMode = cullMode;
@@ -5649,6 +5759,9 @@ class System$1 {
         return this.rule(entity);
     }
     run(world) {
+        if (this.disabled) {
+            return this;
+        }
         if (world.entityManager) {
             this.entitySet.get(world.entityManager)?.forEach((item) => {
                 if (!item.disabled) {
@@ -5658,9 +5771,12 @@ class System$1 {
         }
         return this;
     }
+    serialize() {
+        return {};
+    }
     destroy() {
         for (let i = this.usedBy.length - 1; i > -1; i--) {
-            this.usedBy[i].removeElement(this);
+            this.usedBy[i].remove(this);
         }
         return this;
     }
@@ -5691,18 +5807,31 @@ class Component {
     name;
     usedBy = [];
     dirty = false;
-    constructor(name, data) {
+    tags;
+    constructor(name, data, tags = []) {
         this.name = name;
         this.data = data;
+        this.tags = tags;
     }
     clone() {
-        return new Component(this.name, this.data);
+        return new Component(this.name, this.data, this.tags);
+    }
+    // 此处为只要tag标签相同就是同一类
+    hasTagLabel(label) {
+        for (let i = this.tags.length - 1; i > -1; i--) {
+            if (this.tags[i].label === label) {
+                return true;
+            }
+        }
+        return false;
     }
     serialize() {
         return {
             data: this.data,
             disabled: this.disabled,
+            id: this.id,
             name: this.name,
+            tags: this.tags,
             type: "component"
         };
     }
@@ -5710,74 +5839,82 @@ class Component {
 
 // 私有全局变量，外部无法访问
 let elementTmp$1;
-var EElementChangeEvent$1;
-(function (EElementChangeEvent) {
-    EElementChangeEvent["ADD"] = "add";
-    EElementChangeEvent["REMOVE"] = "remove";
-})(EElementChangeEvent$1 || (EElementChangeEvent$1 = {}));
+const ElementChangeEvent$1 = {
+    ADD: "add",
+    REMOVE: "remove"
+};
 class Manager$1 extends EventDispatcher {
-    static Events = EElementChangeEvent$1;
-    // private static eventObject: EventObject = {
-    // 	component: null as any,
-    // 	element: null as any,
-    // 	eventKey: null as any,
-    // 	manager: null as any
-    // };
+    static Events = ElementChangeEvent$1;
     elements = new Map();
     disabled = false;
     usedBy = [];
     isManager = true;
-    addElement(element) {
+    add(element) {
         if (this.has(element)) {
-            this.removeElementByInstance(element);
+            return this;
         }
-        return this.addElementDirect(element);
-    }
-    addElementDirect(element) {
-        this.elements.set(element.name, element);
-        element.usedBy.push(this);
-        this.elementChangeDispatch(Manager$1.Events.ADD, this);
-        return this;
+        return this.addElementDirectly(element);
     }
     clear() {
         this.elements.clear();
         return this;
     }
     get(name) {
-        elementTmp$1 = this.elements.get(name);
-        return elementTmp$1 ? elementTmp$1 : null;
+        if (typeof name === "number") {
+            return this.elements.get(name) || null;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for (const [_, item] of this.elements) {
+            if (item.name === name) {
+                return item;
+            }
+        }
+        return null;
     }
     has(element) {
-        if (typeof element === "string") {
+        if (typeof element === "number") {
             return this.elements.has(element);
         }
+        else if (typeof element === "string") {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for (const [_, item] of this.elements) {
+                if (item.name === element) {
+                    return true;
+                }
+            }
+            return false;
+        }
         else {
-            return this.elements.has(element.name);
+            return this.elements.has(element.id);
         }
     }
-    removeElement(element) {
-        return typeof element === "string"
-            ? this.removeElementByName(element)
-            : this.removeElementByInstance(element);
-    }
-    removeElementByName(name) {
-        elementTmp$1 = this.elements.get(name);
-        if (elementTmp$1) {
-            this.elements.delete(name);
-            elementTmp$1.usedBy.splice(elementTmp$1.usedBy.indexOf(this), 1);
-            this.elementChangeDispatch(Manager$1.Events.REMOVE, this);
+    remove(element) {
+        if (typeof element === "number" || typeof element === "string") {
+            elementTmp$1 = this.get(element);
+            if (elementTmp$1) {
+                this.removeInstanceDirectly(elementTmp$1);
+            }
+            return this;
         }
-        return this;
-    }
-    removeElementByInstance(element) {
-        if (this.elements.has(element.name)) {
-            this.elements.delete(element.name);
-            element.usedBy.splice(element.usedBy.indexOf(this), 1);
-            this.elementChangeDispatch(Manager$1.Events.REMOVE, this);
+        if (this.elements.has(element.id)) {
+            return this.removeInstanceDirectly(element);
         }
         return this;
     }
-    elementChangeDispatch(type, eventObject) {
+    addElementDirectly(element) {
+        this.elements.set(element.id, element);
+        element.usedBy.push(this);
+        this.elementChangedFireEvent(Manager$1.Events.ADD, this);
+        return this;
+    }
+    // 必定有element情况
+    removeInstanceDirectly(element) {
+        this.elements.delete(element.id);
+        element.usedBy.splice(element.usedBy.indexOf(this), 1);
+        this.elementChangedFireEvent(Manager$1.Events.REMOVE, this);
+        return this;
+    }
+    elementChangedFireEvent(type, eventObject) {
         for (const entity of this.usedBy) {
             entity.fire?.(type, eventObject);
             if (entity.usedBy) {
@@ -5789,7 +5926,6 @@ class Manager$1 extends EventDispatcher {
     }
 }
 
-// import { IdGeneratorInstance } from "./Global";
 // 私有全局变量，外部无法访问
 // let componentTmp: IComponent<any> | undefined;
 var EComponentEvent$1;
@@ -5799,7 +5935,49 @@ var EComponentEvent$1;
 })(EComponentEvent$1 || (EComponentEvent$1 = {}));
 class ComponentManager$1 extends Manager$1 {
     isComponentManager = true;
-    usedBy = [];
+    add(element) {
+        if (this.has(element)) {
+            return this;
+        }
+        const componentSet = this.checkedComponentsWithTargetTags(element);
+        for (const item of componentSet) {
+            this.removeInstanceDirectly(item);
+        }
+        return this.addElementDirectly(element);
+    }
+    getComponentsByTagLabel(label) {
+        const result = [];
+        for (const [_, component] of this.elements) {
+            if (component.hasTagLabel(label)) {
+                result.push(component);
+            }
+        }
+        return result;
+    }
+    getFirstComponentByTagLabel(label) {
+        for (const [_, component] of this.elements) {
+            if (component.hasTagLabel(label)) {
+                return component;
+            }
+        }
+        return null;
+    }
+    // 找到所有含目标组件唯一标签一致的组件。只要有任意1个标签符合就行。此处规定名称一致的tag，unique也必须是一致的。且不可修改
+    checkedComponentsWithTargetTags(component) {
+        const result = new Set();
+        let arr;
+        for (let i = component.tags.length - 1; i > -1; i--) {
+            if (component.tags[i].unique) {
+                arr = this.getComponentsByTagLabel(component.tags[i].label);
+                if (arr.length) {
+                    for (let j = arr.length - 1; j > -1; j--) {
+                        result.add(arr[j]);
+                    }
+                }
+            }
+        }
+        return result;
+    }
 }
 
 const TreeNodeWithEvent$1 = mixin$1(TreeNode);
@@ -5819,7 +5997,7 @@ class Entity$1 extends TreeNodeWithEvent$1 {
     }
     addComponent(component) {
         if (this.componentManager) {
-            this.componentManager.addElement(component);
+            this.componentManager.add(component);
         }
         else {
             throw new Error("Current entity hasn't registered a component manager yet.");
@@ -5830,26 +6008,38 @@ class Entity$1 extends TreeNodeWithEvent$1 {
         super.addChild(entity);
         if (this.usedBy) {
             for (const manager of this.usedBy) {
-                manager.addElement(entity);
+                manager.add(entity);
             }
         }
         return this;
     }
     addTo(manager) {
-        manager.addElement(this);
+        manager.add(this);
         return this;
     }
     addToWorld(world) {
         if (world.entityManager) {
-            world.entityManager.addElement(this);
+            world.entityManager.add(this);
         }
         return this;
     }
-    getComponent(name) {
-        return this.componentManager ? this.componentManager.get(name) : null;
+    destroy() {
+        for (const manager of this.usedBy) {
+            manager.remove(this);
+        }
+        this.unregisterComponentManager();
+    }
+    getComponent(nameOrId) {
+        return this.componentManager?.get(nameOrId) || null;
+    }
+    getComponentsByTagLabel(label) {
+        return this.componentManager?.getComponentsByTagLabel(label) || [];
+    }
+    getFirstComponentByTagLabel(label) {
+        return this.componentManager?.getFirstComponentByTagLabel(label) || null;
     }
     hasComponent(component) {
-        return this.componentManager ? this.componentManager.has(component) : false;
+        return this.componentManager?.has(component) || false;
     }
     registerComponentManager(manager = new ComponentManager$1()) {
         this.unregisterComponentManager();
@@ -5863,16 +6053,19 @@ class Entity$1 extends TreeNodeWithEvent$1 {
         super.removeChild(entity);
         if (this.usedBy) {
             for (const manager of this.usedBy) {
-                manager.removeElement(entity);
+                manager.remove(entity);
             }
         }
         return this;
     }
     removeComponent(component) {
         if (this.componentManager) {
-            this.componentManager.removeElement(component);
+            this.componentManager.remove(component);
         }
         return this;
+    }
+    serialize() {
+        return {};
     }
     unregisterComponentManager() {
         if (this.componentManager) {
@@ -5884,8 +6077,6 @@ class Entity$1 extends TreeNodeWithEvent$1 {
     }
 }
 
-// 私有全局变量，外部无法访问
-let entityTmp;
 class EntityManager extends Manager$1 {
     // public elements: Map<string, IEntity> = new Map();
     data = null;
@@ -5897,42 +6088,27 @@ class EntityManager extends Manager$1 {
             this.usedBy.push(world);
         }
     }
-    addElementDirect(entity) {
-        super.addElementDirect(entity);
+    createEntity(name) {
+        const entity = new Entity$1(name);
+        this.add(entity);
+        return entity;
+    }
+    addElementDirectly(entity) {
+        super.addElementDirectly(entity);
         this.updatedEntities.add(entity);
         for (const child of entity.children) {
             if (child) {
-                this.addElement(child);
+                this.add(child);
             }
         }
         return this;
     }
-    createEntity(name) {
-        const entity = new Entity$1(name);
-        this.addElement(entity);
-        return entity;
-    }
-    removeElementByName(name) {
-        entityTmp = this.elements.get(name);
-        if (entityTmp) {
-            super.removeElementByName(name);
-            this.deleteEntityFromSystemSet(entityTmp);
-            for (const child of entityTmp?.children) {
-                if (child) {
-                    this.removeElementByInstance(child);
-                }
-            }
-        }
-        return this;
-    }
-    removeElementByInstance(entity) {
-        if (this.elements.has(entity.name)) {
-            super.removeElementByInstance(entity);
-            this.deleteEntityFromSystemSet(entity);
-            for (const child of entity.children) {
-                if (child) {
-                    this.removeElementByInstance(child);
-                }
+    removeInstanceDirectly(entity) {
+        super.removeInstanceDirectly(entity);
+        this.deleteEntityFromSystemSet(entity);
+        for (const child of entity.children) {
+            if (child) {
+                this.remove(child);
             }
         }
         return this;
@@ -5952,19 +6128,14 @@ class EntityManager extends Manager$1 {
 }
 
 let systemTmp;
-var ESystemEvent;
-(function (ESystemEvent) {
-    ESystemEvent["BEFORE_RUN"] = "beforeRun";
-    ESystemEvent["AFTER_RUN"] = "afterRun";
-})(ESystemEvent || (ESystemEvent = {}));
+const SystemEvent = {
+    ADD: "add",
+    AFTER_RUN: "afterRun",
+    BEFORE_RUN: "beforeRun",
+    REMOVE: "remove"
+};
 class SystemManager extends Manager$1 {
-    static AFTER_RUN = ESystemEvent.AFTER_RUN;
-    static BEFORE_RUN = ESystemEvent.BEFORE_RUN;
-    static eventObject = {
-        eventKey: null,
-        manager: null,
-        target: null
-    };
+    static Events = SystemEvent;
     disabled = false;
     elements = new Map();
     loopTimes = 0;
@@ -5975,8 +6146,8 @@ class SystemManager extends Manager$1 {
             this.usedBy.push(world);
         }
     }
-    addElement(system) {
-        super.addElement(system);
+    add(system) {
+        super.add(system);
         this.updateSystemEntitySetByAddFromManager(system);
         return this;
     }
@@ -5984,27 +6155,25 @@ class SystemManager extends Manager$1 {
         this.elements.clear();
         return this;
     }
-    removeByName(name) {
-        systemTmp = this.elements.get(name);
-        if (systemTmp) {
-            this.elements.delete(name);
-            this.updateSystemEntitySetByRemovedFromManager(systemTmp);
-            systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
+    remove(element) {
+        if (typeof element === "number" || typeof element === "string") {
+            systemTmp = this.get(element);
+            if (systemTmp) {
+                this.removeInstanceDirectly(systemTmp);
+                this.updateSystemEntitySetByRemovedFromManager(systemTmp);
+                systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
+            }
+            return this;
         }
-        return this;
-    }
-    removeByInstance(system) {
-        if (this.elements.has(system.name)) {
-            this.elements.delete(system.name);
-            this.updateSystemEntitySetByRemovedFromManager(system);
-            system.usedBy.splice(system.usedBy.indexOf(this), 1);
+        if (this.elements.has(element.id)) {
+            this.removeInstanceDirectly(element);
+            this.updateSystemEntitySetByRemovedFromManager(element);
+            element.usedBy.splice(element.usedBy.indexOf(this), 1);
         }
         return this;
     }
     run(world) {
-        SystemManager.eventObject.eventKey = SystemManager.BEFORE_RUN;
-        SystemManager.eventObject.manager = this;
-        this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
+        this.fire(SystemManager.Events.BEFORE_RUN, this);
         this.elements.forEach((item) => {
             item.checkUpdatedEntities(world.entityManager);
             if (!item.disabled) {
@@ -6015,8 +6184,7 @@ class SystemManager extends Manager$1 {
             world.entityManager.updatedEntities.clear();
         }
         this.loopTimes++;
-        SystemManager.eventObject.eventKey = SystemManager.AFTER_RUN;
-        this.fire(SystemManager.BEFORE_RUN, SystemManager.eventObject);
+        this.fire(SystemManager.Events.BEFORE_RUN, this);
         return this;
     }
     updateSystemEntitySetByRemovedFromManager(system) {
@@ -6039,10 +6207,12 @@ class SystemManager extends Manager$1 {
 
 let arr$2;
 class World {
+    disabled = false;
     name;
     entityManager = null;
     systemManager = null;
     store = new Map();
+    usedBy = [];
     id = IdGeneratorInstance.next();
     isWorld = true;
     constructor(name = "", entityManager, systemManager) {
@@ -6060,7 +6230,7 @@ class World {
     }
     addEntity(entity) {
         if (this.entityManager) {
-            this.entityManager.addElement(entity);
+            this.entityManager.add(entity);
         }
         else {
             throw new Error("The world doesn't have an entityManager yet.");
@@ -6069,7 +6239,7 @@ class World {
     }
     addSystem(system) {
         if (this.systemManager) {
-            this.systemManager.addElement(system);
+            this.systemManager.add(system);
         }
         else {
             throw new Error("The world doesn't have a systemManager yet.");
@@ -6123,21 +6293,31 @@ class World {
     }
     removeEntity(entity) {
         if (this.entityManager) {
-            this.entityManager.removeElement(entity);
+            this.entityManager.remove(entity);
         }
         return this;
     }
     removeSystem(system) {
         if (this.systemManager) {
-            this.systemManager.removeElement(system);
+            this.systemManager.remove(system);
         }
         return this;
     }
     run() {
+        if (this.disabled) {
+            return this;
+        }
         if (this.systemManager) {
             this.systemManager.run(this);
         }
         return this;
+    }
+    serialize() {
+        return {
+            id: this.id,
+            name: this.name,
+            type: "world"
+        };
     }
     unregisterEntityManager() {
         if (this.entityManager) {
@@ -6173,6 +6353,10 @@ const DEFAULT_BLEND_STATE = {
 class Material extends Component {
     constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
         super("material", { vertex, fragment, uniforms, blend });
+        this.tags = [{
+                label: MATERIAL,
+                unique: true
+            }];
         this.dirty = true;
     }
     get blend() {
@@ -6530,8 +6714,8 @@ class TextureMaterial extends Material {
 }
 
 class Matrix4Component extends Component$1 {
-    constructor(name, data = Matrix4$1.create()) {
-        super(name, data);
+    constructor(name, data = Matrix4$1.create(), tags = []) {
+        super(name, data, tags);
         this.dirty = true;
     }
 }
@@ -6557,10 +6741,10 @@ const updateModelMatrixComponent = (mesh) => {
             Matrix4$1.multiply(m3.data, r3.data, m3.data);
         }
         if (s3) {
-            Matrix4$1.multiply(m3.data, s3.data, m3.data);
+            Matrix4$1.multiplyScaleMatrix(m3.data, s3.data, m3.data);
         }
         if (a3) {
-            Matrix4$1.multiply(m3.data, a3.data, m3.data);
+            Matrix4$1.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
         }
         if (p3) {
             p3.dirty = false;
@@ -6576,7 +6760,7 @@ const updateModelMatrixComponent = (mesh) => {
         }
     }
     if (mesh.parent) {
-        let parentWorldMatrix = ((_a = mesh.parent.getComponent(WORLD_MATRIX)) === null || _a === void 0 ? void 0 : _a.data) || Matrix4$1.UNIT_MATRIX4;
+        let parentWorldMatrix = ((_a = mesh.parent.getFirstComponentByTagLabel(WORLD_MATRIX)) === null || _a === void 0 ? void 0 : _a.data) || Matrix4$1.UNIT_MATRIX4;
         Matrix4$1.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
     }
     else {
@@ -6587,7 +6771,10 @@ const updateModelMatrixComponent = (mesh) => {
 
 class Anchor3 extends Matrix4Component {
     constructor(vec = Vector3$1.VECTOR3_ZERO) {
-        super(ANCHOR_3D, Matrix4$1.create());
+        super(ANCHOR_3D, Matrix4$1.create(), [{
+                label: ANCHOR_3D,
+                unique: true
+            }]);
         this.vec3 = new Vector3$1();
         Vector3$1.fromArray(vec, 0, this.vec3);
         this.update();
@@ -6643,25 +6830,37 @@ class Anchor3 extends Matrix4Component {
 
 class APosition3 extends Matrix4Component {
     constructor(data = Matrix4$1.create()) {
-        super(TRANSLATION_3D, data);
+        super(TRANSLATION_3D, data, [{
+                label: TRANSLATION_3D,
+                unique: true
+            }]);
     }
 }
 
 class AProjection3 extends Matrix4Component {
     constructor(data = Matrix4$1.create()) {
-        super(PROJECTION_3D, data);
+        super(PROJECTION_3D, data, [{
+                label: PROJECTION_3D,
+                unique: true
+            }]);
     }
 }
 
 class ARotation3 extends Matrix4Component {
     constructor(data = Matrix4$1.create()) {
-        super(ROTATION_3D, data);
+        super(ROTATION_3D, data, [{
+                label: ROTATION_3D,
+                unique: true
+            }]);
     }
 }
 
 class AScale3 extends Matrix4Component {
     constructor(data = Matrix4$1.create()) {
-        super(SCALING_3D, data);
+        super(SCALING_3D, data, [{
+                label: SCALING_3D,
+                unique: true
+            }]);
     }
 }
 
@@ -6957,6 +7156,10 @@ class Vector3Scale3 extends AScale3 {
 class Renderable extends Component$1 {
     constructor(renderType) {
         super(Renderable.TAG_TEXT, renderType);
+        this.tags = [{
+                label: "Renderable",
+                unique: true
+            }];
     }
 }
 Renderable.TAG_TEXT = "Renderable";
@@ -6986,8 +7189,6 @@ class Texture extends Component$1 {
     constructor(width, height, img, name = "texture") {
         super(name, img);
         this.dirty = false;
-        this.width = 0;
-        this.height = 0;
         this.width = width;
         this.height = height;
     }
@@ -7026,6 +7227,24 @@ class AtlasTexture extends Texture {
             this.loaded = true;
             return this;
         });
+    }
+}
+
+class EngineTexture extends Component$1 {
+    constructor(engine, name = "texture-gpu") {
+        super(name, engine.device.createTexture({
+            size: [engine.options.width, engine.options.height],
+            format: engine.preferredFormat,
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+        }));
+        this.width = engine.options.width;
+        this.height = engine.options.height;
+        this.dirty = true;
+    }
+    destroy() {
+        this.data = undefined;
+        this.width = 0;
+        this.height = 0;
     }
 }
 
@@ -8682,6 +8901,84 @@ Matrix4.multiply = (a, b, out = new Matrix4()) => {
     out[15] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33;
     return out;
 };
+// 乘以缩放矩阵
+Matrix4.multiplyScaleMatrix = (a, b, out = new Matrix4()) => {
+    a00 = a[0];
+    a01 = a[1];
+    a02 = a[2];
+    a03 = a[3];
+    a10 = a[4];
+    a11 = a[5];
+    a12 = a[6];
+    a13 = a[7];
+    a20 = a[8];
+    a21 = a[9];
+    a22 = a[10];
+    a23 = a[11];
+    a30 = a[12];
+    a31 = a[13];
+    a32 = a[14];
+    a33 = a[15];
+    b00 = b[0];
+    out[0] = b00 * a00;
+    out[1] = b00 * a01;
+    out[2] = b00 * a02;
+    out[3] = b00 * a03;
+    b01 = b[5];
+    out[4] = b01 * a10;
+    out[5] = b01 * a11;
+    out[6] = b01 * a12;
+    out[7] = b01 * a13;
+    b02 = b[10];
+    out[8] = b02 * a20;
+    out[9] = b02 * a21;
+    out[10] = b02 * a22;
+    out[11] = b02 * a23;
+    out[12] = a30;
+    out[13] = a31;
+    out[14] = a32;
+    out[15] = a33;
+    return out;
+};
+// 乘以平移矩阵
+Matrix4.multiplyTranslateMatrix = (a, b, out = new Matrix4()) => {
+    a00 = a[0];
+    a01 = a[1];
+    a02 = a[2];
+    a03 = a[3];
+    a10 = a[4];
+    a11 = a[5];
+    a12 = a[6];
+    a13 = a[7];
+    a20 = a[8];
+    a21 = a[9];
+    a22 = a[10];
+    a23 = a[11];
+    a30 = a[12];
+    a31 = a[13];
+    a32 = a[14];
+    a33 = a[15];
+    out[0] = a00;
+    out[1] = a01;
+    out[2] = a02;
+    out[3] = a03;
+    out[4] = a10;
+    out[5] = a11;
+    out[6] = a12;
+    out[7] = a13;
+    out[8] = a20;
+    out[9] = a21;
+    out[10] = a22;
+    out[11] = a23;
+    b00 = b[12];
+    b01 = b[13];
+    b02 = b[14];
+    out[12] = b00 * a00 + b01 * a10 + b02 * a20 + a30;
+    out[13] = b00 * a01 + b01 * a11 + b02 * a21 + a31;
+    out[14] = b00 * a02 + b01 * a12 + b02 * a22 + a32;
+    out[15] = b00 * a03 + b01 * a13 + b02 * a23 + a33;
+    return out;
+};
 Matrix4.orthogonal = (left, right, bottom, top, near, far, out = new Matrix4()) => {
     c$1 = 1 / (left - right);
     b = 1 / (bottom - top);
@@ -9096,9 +9393,9 @@ class MeshRenderer {
         var _a, _b, _c;
         let cacheData = this.entityCacheData.get(mesh);
         // 假设更换了几何体和材质则重新生成缓存
-        let material = mesh.getComponent(MATERIAL) || DEFAULT_MATERIAL;
-        let geometry = mesh.getComponent(GEOMETRY_3D);
-        if (!cacheData || ((_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D);
+        if (!cacheData || ((_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
             cacheData = this.createCacheData(mesh);
             this.entityCacheData.set(mesh, cacheData);
         }
@@ -9113,8 +9410,8 @@ class MeshRenderer {
             passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
         }
         const mvp = cacheData.mvp;
-        Matrix4.multiply((_b = camera.getComponent(PROJECTION_3D)) === null || _b === void 0 ? void 0 : _b.data, Matrix4.invert(updateModelMatrixComponent(camera).data), mvp);
-        Matrix4.multiply(mvp, (_c = mesh.getComponent(WORLD_MATRIX)) === null || _c === void 0 ? void 0 : _c.data, mvp);
+        Matrix4.multiply((_b = camera.getFirstComponentByTagLabel(PROJECTION_3D)) === null || _b === void 0 ? void 0 : _b.data, Matrix4.invert(updateModelMatrixComponent(camera).data), mvp);
+        Matrix4.multiply(mvp, (_c = mesh.getFirstComponentByTagLabel(WORLD_MATRIX)) === null || _c === void 0 ? void 0 : _c.data, mvp);
         this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
         cacheData.uniformMap.forEach((uniform, key) => {
             if (uniform.type === BUFFER && uniform.dirty) {
@@ -9125,13 +9422,13 @@ class MeshRenderer {
                 if (uniform.value.loaded) {
                     if (uniform.value.data) {
                         this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
-                        uniform.dirty = false;
+                        uniform.value.dirty = uniform.dirty = false;
                     }
                 }
             }
         });
         passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-        passEncoder.draw(mesh.getComponent(GEOMETRY_3D).count, 1, 0, 0);
+        passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY_3D).count, 1, 0, 0);
         return this;
     }
     createCacheData(mesh) {
@@ -9143,8 +9440,8 @@ class MeshRenderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         let buffers = [];
-        let geometry = mesh.getComponent(GEOMETRY_3D);
-        let material = mesh.getComponent(MATERIAL) || DEFAULT_MATERIAL;
+        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D);
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
         let nodes = geometry.data;
         for (let i = 0; i < nodes.length; i++) {
             buffers.push(createVerticesBuffer(device, nodes[i].data));
@@ -9156,7 +9453,7 @@ class MeshRenderer {
                     buffer: uniformBuffer,
                 },
             }];
-        let uniforms = (_b = (_a = mesh.getComponent(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
+        let uniforms = (_b = (_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
         let uniformMap = new Map();
         if (uniforms) {
             for (let i = 0; i < uniforms.length; i++) {
@@ -9183,7 +9480,7 @@ class MeshRenderer {
                     });
                 }
                 else if (uniform.type === TEXTURE_IMAGE) {
-                    let texture = device.createTexture({
+                    let texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
                         size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
                         format: 'rgba8unorm',
                         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
@@ -9196,6 +9493,7 @@ class MeshRenderer {
                 }
             }
         }
+        console.log(groupEntries);
         let uniformBindGroup = device.createBindGroup({
             layout: pipeline.getBindGroupLayout(0),
             entries: groupEntries,
@@ -9319,6 +9617,7 @@ class MeshRenderer {
                 }
             ]
         };
+        material.dirty = false;
         return {
             vertex,
             fragment
@@ -9426,6 +9725,9 @@ class System {
     }
     run(world) {
         var _a;
+        if (this.disabled) {
+            return this;
+        }
         if (world.entityManager) {
             (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
                 if (!item.disabled) {
@@ -9435,9 +9737,12 @@ class System {
         }
         return this;
     }
+    serialize() {
+        return {};
+    }
     destroy() {
         for (let i = this.usedBy.length - 1; i > -1; i--) {
-            this.usedBy[i].removeElement(this);
+            this.usedBy[i].remove(this);
         }
         return this;
     }
@@ -9459,6 +9764,7 @@ class RenderSystem extends System {
         this.rendererMap = new Map();
         engine.context.configure({
             device: engine.device,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
             format: engine.preferredFormat,
             size: [engine.canvas.width, engine.canvas.height],
             compositingAlphaMode: "premultiplied"
@@ -10050,76 +10356,84 @@ class TweenSystem extends System {
 
 // 私有全局变量，外部无法访问
 let elementTmp;
-var EElementChangeEvent;
-(function (EElementChangeEvent) {
-    EElementChangeEvent["ADD"] = "add";
-    EElementChangeEvent["REMOVE"] = "remove";
-})(EElementChangeEvent || (EElementChangeEvent = {}));
+const ElementChangeEvent = {
+    ADD: "add",
+    REMOVE: "remove"
+};
 class Manager extends EventDispatcher {
     constructor() {
         super(...arguments);
-        // private static eventObject: EventObject = {
-        // 	component: null as any,
-        // 	element: null as any,
-        // 	eventKey: null as any,
-        // 	manager: null as any
-        // };
         this.elements = new Map();
         this.disabled = false;
         this.usedBy = [];
         this.isManager = true;
     }
-    addElement(element) {
+    add(element) {
         if (this.has(element)) {
-            this.removeElementByInstance(element);
+            return this;
         }
-        return this.addElementDirect(element);
-    }
-    addElementDirect(element) {
-        this.elements.set(element.name, element);
-        element.usedBy.push(this);
-        this.elementChangeDispatch(Manager.Events.ADD, this);
-        return this;
+        return this.addElementDirectly(element);
     }
     clear() {
         this.elements.clear();
         return this;
     }
     get(name) {
-        elementTmp = this.elements.get(name);
-        return elementTmp ? elementTmp : null;
+        if (typeof name === "number") {
+            return this.elements.get(name) || null;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for (const [_, item] of this.elements) {
+            if (item.name === name) {
+                return item;
+            }
+        }
+        return null;
     }
     has(element) {
-        if (typeof element === "string") {
+        if (typeof element === "number") {
             return this.elements.has(element);
         }
+        else if (typeof element === "string") {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for (const [_, item] of this.elements) {
+                if (item.name === element) {
+                    return true;
+                }
+            }
+            return false;
+        }
         else {
-            return this.elements.has(element.name);
+            return this.elements.has(element.id);
         }
     }
-    removeElement(element) {
-        return typeof element === "string"
-            ? this.removeElementByName(element)
-            : this.removeElementByInstance(element);
-    }
-    removeElementByName(name) {
-        elementTmp = this.elements.get(name);
-        if (elementTmp) {
-            this.elements.delete(name);
-            elementTmp.usedBy.splice(elementTmp.usedBy.indexOf(this), 1);
-            this.elementChangeDispatch(Manager.Events.REMOVE, this);
+    remove(element) {
+        if (typeof element === "number" || typeof element === "string") {
+            elementTmp = this.get(element);
+            if (elementTmp) {
+                this.removeInstanceDirectly(elementTmp);
+            }
+            return this;
         }
-        return this;
-    }
-    removeElementByInstance(element) {
-        if (this.elements.has(element.name)) {
-            this.elements.delete(element.name);
-            element.usedBy.splice(element.usedBy.indexOf(this), 1);
-            this.elementChangeDispatch(Manager.Events.REMOVE, this);
+        if (this.elements.has(element.id)) {
+            return this.removeInstanceDirectly(element);
         }
         return this;
     }
-    elementChangeDispatch(type, eventObject) {
+    addElementDirectly(element) {
+        this.elements.set(element.id, element);
+        element.usedBy.push(this);
+        this.elementChangedFireEvent(Manager.Events.ADD, this);
+        return this;
+    }
+    // 必定有element情况
+    removeInstanceDirectly(element) {
+        this.elements.delete(element.id);
+        element.usedBy.splice(element.usedBy.indexOf(this), 1);
+        this.elementChangedFireEvent(Manager.Events.REMOVE, this);
+        return this;
+    }
+    elementChangedFireEvent(type, eventObject) {
         var _a, _b;
         for (const entity of this.usedBy) {
             (_b = (_a = entity).fire) === null || _b === void 0 ? void 0 : _b.call(_a, type, eventObject);
@@ -10131,9 +10445,8 @@ class Manager extends EventDispatcher {
         }
     }
 }
-Manager.Events = EElementChangeEvent;
+Manager.Events = ElementChangeEvent;
 
-// import { IdGeneratorInstance } from "./Global";
 // 私有全局变量，外部无法访问
 // let componentTmp: IComponent<any> | undefined;
 var EComponentEvent;
@@ -10145,7 +10458,49 @@ class ComponentManager extends Manager {
     constructor() {
         super(...arguments);
         this.isComponentManager = true;
-        this.usedBy = [];
+    }
+    add(element) {
+        if (this.has(element)) {
+            return this;
+        }
+        const componentSet = this.checkedComponentsWithTargetTags(element);
+        for (const item of componentSet) {
+            this.removeInstanceDirectly(item);
+        }
+        return this.addElementDirectly(element);
+    }
+    getComponentsByTagLabel(label) {
+        const result = [];
+        for (const [_, component] of this.elements) {
+            if (component.hasTagLabel(label)) {
+                result.push(component);
+            }
+        }
+        return result;
+    }
+    getFirstComponentByTagLabel(label) {
+        for (const [_, component] of this.elements) {
+            if (component.hasTagLabel(label)) {
+                return component;
+            }
+        }
+        return null;
+    }
+    // 找到所有含目标组件唯一标签一致的组件。只要有任意1个标签符合就行。此处规定名称一致的tag，unique也必须是一致的。且不可修改
+    checkedComponentsWithTargetTags(component) {
+        const result = new Set();
+        let arr;
+        for (let i = component.tags.length - 1; i > -1; i--) {
+            if (component.tags[i].unique) {
+                arr = this.getComponentsByTagLabel(component.tags[i].label);
+                if (arr.length) {
+                    for (let j = arr.length - 1; j > -1; j--) {
+                        result.add(arr[j]);
+                    }
+                }
+            }
+        }
+        return result;
     }
 }
 
@@ -10166,7 +10521,7 @@ class Entity extends TreeNodeWithEvent {
     }
     addComponent(component) {
         if (this.componentManager) {
-            this.componentManager.addElement(component);
+            this.componentManager.add(component);
         }
         else {
             throw new Error("Current entity hasn't registered a component manager yet.");
@@ -10177,26 +10532,42 @@ class Entity extends TreeNodeWithEvent {
         super.addChild(entity);
         if (this.usedBy) {
             for (const manager of this.usedBy) {
-                manager.addElement(entity);
+                manager.add(entity);
             }
         }
         return this;
     }
     addTo(manager) {
-        manager.addElement(this);
+        manager.add(this);
         return this;
     }
     addToWorld(world) {
         if (world.entityManager) {
-            world.entityManager.addElement(this);
+            world.entityManager.add(this);
         }
         return this;
     }
-    getComponent(name) {
-        return this.componentManager ? this.componentManager.get(name) : null;
+    destroy() {
+        for (const manager of this.usedBy) {
+            manager.remove(this);
+        }
+        this.unregisterComponentManager();
+    }
+    getComponent(nameOrId) {
+        var _a;
+        return ((_a = this.componentManager) === null || _a === void 0 ? void 0 : _a.get(nameOrId)) || null;
+    }
+    getComponentsByTagLabel(label) {
+        var _a;
+        return ((_a = this.componentManager) === null || _a === void 0 ? void 0 : _a.getComponentsByTagLabel(label)) || [];
+    }
+    getFirstComponentByTagLabel(label) {
+        var _a;
+        return ((_a = this.componentManager) === null || _a === void 0 ? void 0 : _a.getFirstComponentByTagLabel(label)) || null;
     }
     hasComponent(component) {
-        return this.componentManager ? this.componentManager.has(component) : false;
+        var _a;
+        return ((_a = this.componentManager) === null || _a === void 0 ? void 0 : _a.has(component)) || false;
     }
     registerComponentManager(manager = new ComponentManager()) {
         this.unregisterComponentManager();
@@ -10210,16 +10581,19 @@ class Entity extends TreeNodeWithEvent {
         super.removeChild(entity);
         if (this.usedBy) {
             for (const manager of this.usedBy) {
-                manager.removeElement(entity);
+                manager.remove(entity);
             }
         }
         return this;
     }
     removeComponent(component) {
         if (this.componentManager) {
-            this.componentManager.removeElement(component);
+            this.componentManager.remove(component);
         }
         return this;
+    }
+    serialize() {
+        return {};
     }
     unregisterComponentManager() {
         if (this.componentManager) {
@@ -10234,10 +10608,13 @@ class Entity extends TreeNodeWithEvent {
 var createCamera = (projection, name = "camera", world) => {
     const entity = new Entity(name);
     entity.addComponent(projection)
-        .addComponent(new Matrix4Component(TRANSLATION_3D))
-        .addComponent(new Matrix4Component(ROTATION_3D))
-        .addComponent(new Matrix4Component(SCALING_3D))
-        .addComponent(new Matrix4Component(MODEL_3D));
+        .addComponent(new EuclidPosition3())
+        .addComponent(new EulerRotation3())
+        .addComponent(new Vector3Scale3())
+        .addComponent(new Matrix4Component(MODEL_3D, Matrix4$1.create(), [{
+            label: MODEL_3D,
+            unique: true
+        }]));
     if (world) {
         world.addEntity(entity);
         world.store.set("activeCamera", entity);
@@ -10248,11 +10625,17 @@ var createCamera = (projection, name = "camera", world) => {
 var createMesh = (geometry, name = "mesh", world) => {
     const entity = new Entity(name);
     entity.addComponent(geometry)
-        .addComponent(new Matrix4Component(TRANSLATION_3D))
-        .addComponent(new Matrix4Component(ROTATION_3D))
-        .addComponent(new Matrix4Component(SCALING_3D))
-        .addComponent(new Matrix4Component(MODEL_3D))
-        .addComponent(new Matrix4Component(WORLD_MATRIX))
+        .addComponent(new EuclidPosition3())
+        .addComponent(new EulerRotation3())
+        .addComponent(new Vector3Scale3())
+        .addComponent(new Matrix4Component(MODEL_3D, Matrix4$1.create(), [{
+            label: MODEL_3D,
+            unique: true
+        }]))
+        .addComponent(new Matrix4Component(WORLD_MATRIX, Matrix4$1.create(), [{
+            label: WORLD_MATRIX,
+            unique: true
+        }]))
         .addComponent(new Renderable("mesh"));
     if (world) {
         world.addEntity(entity);
@@ -10266,4 +10649,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh: createMesh
 });
 
-export { APosition3, AProjection3, ARotation3, AScale3, constants as ATTRIBUTE_NAME, Anchor3, AtlasTexture, constants$1 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager$1 as ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager$1 as Manager, Material, Mathx_module as Mathx, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem, World };
+export { APosition3, AProjection3, ARotation3, AScale3, constants as ATTRIBUTE_NAME, Anchor3, AtlasTexture, constants$1 as COMPONENT_NAME, ColorMaterial, Component, ComponentManager$1 as ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, EngineTexture, Entity$1 as Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry3, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager$1 as Manager, Material, Mathx_module as Mathx, Matrix4Component, NormalMaterial, Object3, PerspectiveProjection$1 as OrthogonalProjection, PerspectiveProjection, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector3Scale3, WebGLEngine, Clearer as WebGPUClearer, WebGPUEngine, MeshRenderer as WebGPUMeshRenderer, RenderSystem as WebGPURenderSystem, World };
