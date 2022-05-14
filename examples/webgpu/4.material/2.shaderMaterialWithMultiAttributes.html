@@ -57,9 +57,7 @@
 				}
 			]
 		);
-		const mesh = Nova.EntityFactory.createMesh(geometry, "test-triangle", world);
-		mesh.addComponent(new Nova.ShaderMaterial(vertexShader, fragmentShader));
-		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
+		const mesh = Nova.EntityFactory.createMesh3(geometry, new Nova.ShaderMaterial(vertexShader, fragmentShader));
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
@@ -67,18 +65,17 @@
 			0.01,
 			10
 		);
-		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
-		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
-		positionProxy.z = 5;
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 5;
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh);
 		}).addTask(() => {
 			world.run();
-			rotationProxy.y -= 0.01;
+			mesh.rotation.y -= 0.01;
 		});
 	</script>
 </body>

@@ -6286,7 +6286,7 @@ struct VertexOutput {
 // }
 @stage(fragment) fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
 	var fragCoordZ: f32 = depth.z / depth.w;
-	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 50.)), 1.0);
+	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
 }`;
 	class DepthMaterial extends Material {
 	    constructor() {
@@ -9411,6 +9411,7 @@ struct VertexOutput {
 	    }
 	    createCacheData(mesh) {
 	        var _a, _b;
+	        console.log(mesh);
 	        updateModelMatrixComponent(mesh);
 	        let device = this.engine.device;
 	        let uniformBuffer = device.createBuffer({
