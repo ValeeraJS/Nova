@@ -7,6 +7,7 @@ import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
 import IWebGLRenderer from "./IWebGLRenderer";
 import IViewport from "../IViewport";
 import IScissor from "./../IScissor";
+import { RENDERABLE } from "../../components/constants";
 
 export default class RenderSystem extends ASystem {
 	engine: WebGLEngine;
@@ -20,7 +21,7 @@ export default class RenderSystem extends ASystem {
 	};
 	constructor(engine: WebGLEngine, clearer?: Clearer, viewport?: IViewport, scissor?: IViewport) {
 		super("Render System", (entity) => {
-			return entity.getComponent(Renderable.TAG_TEXT)?.data;
+			return entity.getComponent(RENDERABLE)?.data;
 		});
 		this.engine = engine;
 		this.clearer = clearer || new Clearer(engine);
@@ -46,7 +47,7 @@ export default class RenderSystem extends ASystem {
 
 	handle(entity: IEntity, store: TWorldInjection): this {
 		// 根据不同类别进行渲染
-		this.rendererMap.get(entity.getComponent(Renderable.TAG_TEXT)?.data)?.render(entity, store.get("activeCamera"), store.get("passEncoder"));
+		this.rendererMap.get(entity.getComponent(RENDERABLE)?.data)?.render(entity, store.get("passEncoder"));
 		return this;
 	}
 

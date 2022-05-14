@@ -4,6 +4,7 @@ import IEntity from "@valeera/x/src/interfaces/IEntity";
 import { ANCHOR_3D, MODEL_3D, ROTATION_3D, SCALING_3D, TRANSLATION_3D, WORLD_MATRIX } from "../constants";
 import { ComponentTag } from "@valeera/x/src/interfaces/IComponent";
 import { Entity } from "@valeera/x";
+import { IObject3 } from "../../entities/Object3";
 
 export default class Matrix4Component extends Component<Float32Array> {
     data!: Float32Array;
@@ -13,21 +14,14 @@ export default class Matrix4Component extends Component<Float32Array> {
     }
 }
 
-export const updateModelMatrixComponent = (mesh: IEntity) => {
-    let p3 = mesh.getComponent(TRANSLATION_3D) as Matrix4Component;
-    let r3 = mesh.getComponent(ROTATION_3D) as Matrix4Component;
-    let s3 = mesh.getComponent(SCALING_3D) as Matrix4Component;
-    let a3 = mesh.getComponent(ANCHOR_3D) as Matrix4Component;
-    let m3 = mesh.getComponent(MODEL_3D) as Matrix4Component;
-    let worldMatrix = mesh.getComponent(WORLD_MATRIX) as Matrix4Component;
-    if (!worldMatrix) {
-        worldMatrix = new Matrix4Component(WORLD_MATRIX);
-        mesh.addComponent(worldMatrix);
-    }
-    if (!m3) {
-        m3 = new Matrix4Component(MODEL_3D);
-        mesh.addComponent(m3);
-    }
+export const updateModelMatrixComponent = (mesh: IObject3) => {
+    let p3 = mesh.position;
+    let r3 = mesh.rotation;
+    let s3 = mesh.scaling;
+    let a3 = mesh.anchor;
+    let m3 = mesh.modelMatrix;
+    let worldMatrix = mesh.worldMatrix;
+
     if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
         Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
         if (r3) {
@@ -55,7 +49,7 @@ export const updateModelMatrixComponent = (mesh: IEntity) => {
     }
 
     if (mesh.parent) {
-        let parentWorldMatrix = (mesh.parent as Entity).getFirstComponentByTagLabel(WORLD_MATRIX)?.data || Matrix4.UNIT_MATRIX4;
+        let parentWorldMatrix = (mesh.parent as IObject3).worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
         Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
     } else {
         Matrix4.fromArray(m3.data, worldMatrix.data);

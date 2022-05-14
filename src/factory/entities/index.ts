@@ -1,2 +1,2 @@
-export {default as createCamera} from './createCamera';
-export {default as createMesh} from './createMesh';
+export {default as createCamera3} from './createCamera3';
+export {default as createMesh3} from './createMesh3';

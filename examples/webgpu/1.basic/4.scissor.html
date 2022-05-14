@@ -13,10 +13,8 @@
 		const world = new Nova.World();
 
 		const geo = Nova.Geometry3Factory.createTriangle3();
-		const mesh = Nova.EntityFactory.createMesh(geo, "", world);
-		let position = mesh.getComponent("position3");
-		position.data[14] = -5;
-		position.dirty = true;
+		const mesh = Nova.EntityFactory.createMesh3(geo);
+		mesh.position.z = -5;
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
@@ -24,13 +22,13 @@
 			0.01,
 			10
 		);
-		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+		const camera = new Nova.Camera3("", projection);
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh);
 			createGUI(renderSystem);
 
 			engine.addTask(() => {

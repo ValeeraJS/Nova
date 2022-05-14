@@ -36,4 +36,11 @@ export default abstract class RenderSystem implements IRenderSystem {
     run(world: IWorld): this {
         throw new Error("Method not implemented.");
     }
+    serialize(): any {
+        return {
+            id: this.id,
+            name: this.name,
+            type: "system"
+        };
+    }
 }

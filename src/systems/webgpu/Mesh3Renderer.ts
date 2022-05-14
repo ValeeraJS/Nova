@@ -1,15 +1,16 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
-import { BUFFER, GEOMETRY_3D, MATERIAL, PROJECTION_3D, SAMPLER, TEXTURE_IMAGE, WORLD_MATRIX } from "../../components/constants";
+import { BUFFER, DEFAULT_MATERIAL, GEOMETRY_3D, MATERIAL, SAMPLER, TEXTURE_IMAGE, WORLD_MATRIX } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
 import IRenderer from "./IWebGPURenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
-import EngineTexture from "../../components/texture/EngineTexture";
 import { Entity } from "@valeera/x";
+import { ICamera3 } from "../../entities/Camera3";
+import Object3 from "../../entities/Object3";
 
 interface ICacheData {
 	mvp: Float32Array;
@@ -22,16 +23,18 @@ interface ICacheData {
 	material: Material;
 }
 
-export default class MeshRenderer implements IRenderer {
+export default class Mesh3Renderer implements IRenderer {
 	public static readonly renderTypes = "mesh";
 	public readonly renderTypes = "mesh";
+	public camera: ICamera3;
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
 	engine: WebGPUEngine;
-	public constructor(engine: WebGPUEngine) {
+	public constructor(engine: WebGPUEngine, camera: ICamera3) {
 		this.engine = engine;
+		this.camera = camera;
 	}
 
-	render(mesh: Entity, camera: Entity, passEncoder: GPURenderPassEncoder, _scissor?: any): this {
+	render(mesh: Object3, passEncoder: GPURenderPassEncoder, _scissor?: any): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
@@ -53,9 +56,9 @@ export default class MeshRenderer implements IRenderer {
 		}
 
 		const mvp = cacheData.mvp;
-		Matrix4.multiply(camera.getFirstComponentByTagLabel(PROJECTION_3D)?.data,
-			(Matrix4.invert(updateModelMatrixComponent(camera).data) as Float32Array), mvp);
-		Matrix4.multiply(mvp, mesh.getFirstComponentByTagLabel(WORLD_MATRIX)?.data, mvp);
+		Matrix4.multiply(this.camera.projection.data,
+			(Matrix4.invert(updateModelMatrixComponent(this.camera).data) as Float32Array), mvp);
+		Matrix4.multiply(mvp, mesh.worldMatrix.data, mvp);
 
 		this.engine.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
@@ -95,7 +98,7 @@ export default class MeshRenderer implements IRenderer {
 		return this;
 	}
 
-	private createCacheData(mesh: Entity): ICacheData {
+	private createCacheData(mesh: Object3): ICacheData {
 		updateModelMatrixComponent(mesh);
 		let device = this.engine.device;
 
@@ -157,8 +160,6 @@ export default class MeshRenderer implements IRenderer {
 				}
 			}
 		}
-
-		console.log(groupEntries)
 
 		let uniformBindGroup = device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
@@ -302,38 +303,3 @@ export default class MeshRenderer implements IRenderer {
 		};
 	}
 }
-
-const DEFAULT_MATERIAL = new Material(`
-struct Uniforms {
-	modelViewProjectionMatrix : mat4x4<f32>
-  };
-  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-struct VertexOutput {
-	@builtin(position) Position : vec4<f32>
-};
-
-fn mapRange(
-	value: f32,
-	range1: vec2<f32>,
-	range2: vec2<f32>,
-) -> f32 {
-	var d1: f32 = range1.y - range1.x;
-	var d2: f32 = range2.y - range2.x;
-
-	return (value - d1 * 0.5) / d2 / d1;
-};
-
-@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-	var output : VertexOutput;
-	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	if (output.Position.w == 1.0) {
-		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
-	}
-	return output;
-}
-`,`
-@stage(fragment) fn main() -> @location(0) vec4<f32> {
-	return vec4<f32>(1., 1., 1., 1.0);
-}
-`);
