@@ -31,11 +31,9 @@
 			radius: 0.25
 		});
 
-		const cylinder = Nova.EntityFactory.createMesh(geometry, "cylinder", world);
+		const cylinder = Nova.EntityFactory.createMesh3(geometry);
 		const matrixRotation = cylinder.getComponent("rotation3");
-		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(cylinder);
-		positionProxy.z = -5;
-		positionProxy.y = -2;
+		cylinder.position.setXYZ(0, -2, -5);
 		const material = new Nova.NormalMaterial();
 		cylinder.addComponent(material);
 		const projection = new Nova.PerspectiveProjection(
@@ -44,17 +42,16 @@
 			0.01,
 			100
 		);
-		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
-		const ball = Nova.EntityFactory.createMesh(geometry2, "ball", world);
+		const camera = new Nova.Camera3("", projection);
+		const ball = Nova.EntityFactory.createMesh3(geometry2);
 		ball.addComponent(material);
-		const positionProxy2 = Nova.ComponentProxy.getEuclidPosition3Proxy(ball);
-		positionProxy2.z = -5;
+		ball.position.z = -5;
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(ball).add(cylinder);
 		});
 
 		let pos = [0, 0, 0];
@@ -64,17 +61,17 @@
 			pos[0] = Math.sin(time / 1000);
 			pos[1] = Math.cos(time / 700);
 			pos[2] = Math.sin(time / 1300) - 5;
-			positionProxy2.x = pos[0];
-			positionProxy2.y = pos[1];
-			positionProxy2.z = pos[2];
+			ball.position.x = pos[0];
+			ball.position.y = pos[1];
+			ball.position.z = pos[2];
 
 			Nova.Mathx.Matrix4.targetTo(
 				eye,
 				pos,
 				Nova.Mathx.Vector3.VECTOR3_TOP,
-				matrixRotation.data
+				cylinder.rotation.data
 			);
-			matrixRotation.dirty = true;
+			cylinder.rotation.dirty = true;
 		});
 	</script>
 </body>
