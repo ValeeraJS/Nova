@@ -13,9 +13,8 @@
 		const world = new Nova.World();
 
 		const geo = Nova.Geometry3Factory.createTriangle3();
-		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
-		mesh.addComponent(new Nova.EuclidPosition3([0, 0, -5]));
-		mesh.addComponent(new Nova.EulerRotation3());
+		const mesh = Nova.EntityFactory.createMesh3(geo);
+		mesh.position.z = -5;
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
@@ -23,16 +22,16 @@
 			0.01,
 			10
 		);
-		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
+		const camera = new Nova.Camera3("test-camera", projection);
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh);
 		}).addTask(() => {
 			world.run();
-			mesh.getComponent("rotation3").y -= 0.01;
+			mesh.rotation.y -= 0.01;
 		});
 
         createGUI();
@@ -47,13 +46,10 @@
                     } else {
                         world.add(mesh);
                     }
-                },
-				toggleEntityDisabled: () => {
-					mesh.disabled = !mesh.disabled;
-				}
+                }
             }
 			f.add(entity, "toggleAddOrRemoveEntity");
-			f.add(entity, "toggleEntityDisabled");
+			f.add(mesh, "disabled");
 		}
 	</script>
 </body>
