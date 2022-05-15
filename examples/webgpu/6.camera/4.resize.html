@@ -19,28 +19,22 @@
 			width: 3,
 			height: 3
 		});
-		const mesh = Nova.EntityFactory.createMesh(geometry, "plane", world);
-		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(mesh);
-		positionProxy.z = -5;
-		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
+		const mesh = Nova.EntityFactory.createMesh3(geometry);
+		mesh.position.z = -5;
 
 		const perspectiveProjection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
 		
-		const camera = Nova.EntityFactory.createCamera(
-			perspectiveProjection,
-			"test-camera",
-			world
-		);
+		const camera = new Nova.Camera3("test-camera", perspectiveProjection);
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh);
 			createGUI();
 		}).addTask(()=>{
 			world.run();
-			rotationProxy.y -= 0.01;
+			mesh.rotation.y -= 0.01;
 		});
 
 		function createGUI() {

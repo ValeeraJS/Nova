@@ -18,28 +18,22 @@
 			height: 3
 		});
 
-		const mesh = Nova.EntityFactory.createMesh(geometry, "test-triangle", world);
-		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(mesh);
-		positionProxy.z = -5;
-		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
+		const mesh = Nova.EntityFactory.createMesh3(geometry);
+		mesh.position.z = -5;
 
-		const orthogonalProjection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
+		const projection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
 		
-		const camera = Nova.EntityFactory.createCamera(
-			orthogonalProjection,
-			"test-camera",
-			world
-		);
+		const camera = new Nova.Camera3("test-camera", projection);
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh);
 			createGUI();
 		}).addTask(() => {
 			world.run();
-			rotationProxy.y -= 0.01;
+			mesh.rotation.y -= 0.01;
 		});
 
 		function createGUI() {
@@ -61,7 +55,7 @@
 			f.add(options, "far", 3, 10).step(0.1).onChange(onChange);
 
 			function onChange(val) {
-				orthogonalProjection.set(options.left, options.right, options.bottom, options.top, options.near, options.far);
+				camera.projection.set(options.left, options.right, options.bottom, options.top, options.near, options.far);
 			}
 		}
 	</script>

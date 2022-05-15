@@ -16,11 +16,9 @@
 			width: 3,
 			height: 3
 		});
-		const mesh = Nova.EntityFactory.createMesh(geo, "test-triangle", world);
 		const texture = new Nova.ImageBitmapTexture("./../../textures/test.png");
 		const material = new Nova.TextureMaterial(texture);
-		mesh.addComponent(material);
-		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh);
+		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
@@ -28,18 +26,17 @@
 			0.01,
 			10
 		);
-		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
-		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
-		positionProxy.z = 5;
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 5;
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh);
 		}).addTask(() => {
 			world.run();
-			rotationProxy.y -= 0.01;
+			mesh.rotation.y -= 0.01;
 		});
 
 		createGUI();

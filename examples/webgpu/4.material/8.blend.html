@@ -16,23 +16,20 @@
 			width: 3,
 			height: 3
 		});
-		const mesh = Nova.EntityFactory.createMesh(geo, "background", world);
 		const material = new Nova.TextureMaterial(
 			new Nova.ImageBitmapTexture("./../../textures/back.png", 512, 512)
 		);
-		mesh.addComponent(material);
-		mesh.getComponent("position3").data[14] = -1
+		const mesh = Nova.EntityFactory.createMesh3(geo, material);
+		mesh.position.z = -1
 
 		const geo2 = Nova.Geometry3Factory.createPlane3({
 			width: 2,
 			height: 2
 		});
-		const mesh2 = Nova.EntityFactory.createMesh(geo2, "plane", world);
 		const material2 = new Nova.TextureMaterial(
 			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
 		);
-		mesh2.addComponent(material2);
-		const rotationProxy = Nova.ComponentProxy.getEulerRotation3Proxy(mesh2);
+		const mesh2 = Nova.EntityFactory.createMesh3(geo2, material2);
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
@@ -40,18 +37,17 @@
 			0.01,
 			10
 		);
-		const camera = Nova.EntityFactory.createCamera(projection, "test-camera", world);
-		const positionProxy = Nova.ComponentProxy.getEuclidPosition3Proxy(camera);
-		positionProxy.z = 5;
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 5;
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
 			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMeshRenderer(engine);
+			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem);
+			world.addSystem(renderSystem).add(mesh).add(mesh2);
 		}).addTask(() => {
 			world.run();
-			rotationProxy.z += 0.005;
+			mesh2.rotation.z += 0.005;
 		});
 
         createGUI();
@@ -99,7 +95,6 @@
 
 			function onChange(val) {
 				material2.dirty = true;
-                console.log(material2);
 			}
 		}
 	</script>
