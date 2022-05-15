@@ -1,6 +1,6 @@
 import { Vector3 } from "@valeera/mathx";
 import { POSITION, VERTICES } from "../constants";
-import Geometry3, { AttributePicker } from "../Geometry3";
+import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
 export type ISphereGeometryOptions = {
@@ -30,7 +30,7 @@ export const DEFAULT_SPHERE_OPTIONS: ISphereGeometryOptions = {
 };
 
 
-export default (options: ISphereGeometryOptionsInput = {}): Geometry3 => {
+export default (options: ISphereGeometryOptionsInput = {}): Geometry => {
     let stride = 3;
 
     const {radius, phiStart, phiLength, thetaStart, thetaLength, widthSegments, heightSegments, topology, cullMode, hasUV, hasNormal, combine } = {
@@ -119,7 +119,7 @@ export default (options: ISphereGeometryOptionsInput = {}): Geometry3 => {
     }
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;;
-    let geo = new Geometry3(len, topology, cullMode);
+    let geo = new Geometry(3, len, topology, cullMode);
 
     // TODO indices 现在都是非索引版本
     if (combine) {

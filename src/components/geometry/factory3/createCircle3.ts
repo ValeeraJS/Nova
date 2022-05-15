@@ -1,5 +1,5 @@
 import { NORMAL, POSITION, UV, VERTICES } from "../constants";
-import Geometry3, { AttributePicker } from "../Geometry3";
+import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
 export type ICircleGeometryOptions = {
@@ -22,7 +22,7 @@ export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
 };
 
 
-export default (options: ICircleGeometryOptionsInput = {}): Geometry3 => {
+export default (options: ICircleGeometryOptionsInput = {}): Geometry => {
     let stride = 3;
 
     const indices: number[] = [];
@@ -56,7 +56,7 @@ export default (options: ICircleGeometryOptionsInput = {}): Geometry3 => {
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, topology, cullMode);
+    let geo = new Geometry(3, len, topology, cullMode);
 
     // TODO indices 现在都是非索引版本
     if (combine) {

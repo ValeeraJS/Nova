@@ -1154,7 +1154,7 @@
 
 	// component type
 	const ANCHOR_3D = "anchor3";
-	const GEOMETRY_3D = "geometry3";
+	const GEOMETRY = "geometry";
 	const MATERIAL = "material";
 	const MODEL_3D = "model3";
 	const PROJECTION_3D = "projection3";
@@ -1207,7 +1207,7 @@ fn mapRange(
 	var constants$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		ANCHOR_3D: ANCHOR_3D,
-		GEOMETRY_3D: GEOMETRY_3D,
+		GEOMETRY: GEOMETRY,
 		MATERIAL: MATERIAL,
 		MODEL_3D: MODEL_3D,
 		PROJECTION_3D: PROJECTION_3D,
@@ -1241,17 +1241,19 @@ fn mapRange(
 		UV: UV
 	});
 
-	class Geometry3 extends Component$1 {
-	    constructor(count = 0, topology = "triangle-list", cullMode = "none", data = []) {
-	        super(GEOMETRY_3D, data);
+	// 既可以是2d几何体也可以是3D几何体
+	class Geometry extends Component$1 {
+	    constructor(dimension, count = 0, topology = "triangle-list", cullMode = "none", data = []) {
+	        super(GEOMETRY, data);
 	        this.data = [];
 	        this.tags = [{
-	                label: GEOMETRY_3D,
+	                label: GEOMETRY,
 	                unique: true
 	            }];
 	        this.count = count;
-	        this.topology = topology;
 	        this.cullMode = cullMode;
+	        this.dimension = dimension;
+	        this.topology = topology;
 	    }
 	    addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
 	        stride = Math.floor(stride);
@@ -1277,8 +1279,15 @@ fn mapRange(
 	        for (let data of this.data) {
 	            for (let attr of data.attributes) {
 	                if (attr.name === POSITION) {
-	                    for (let i = 0; i < data.data.length; i += data.stride) {
-	                        transformMatrix4(data.data, matrix, i + attr.offset);
+	                    if (this.dimension === 3) {
+	                        for (let i = 0; i < data.data.length; i += data.stride) {
+	                            transformMatrix4(data.data, matrix, i + attr.offset);
+	                        }
+	                    }
+	                    else {
+	                        for (let i = 0; i < data.data.length; i += data.stride) {
+	                            transformMatrix3(data.data, matrix, i + attr.offset);
+	                        }
 	                    }
 	                    this.dirty = true;
 	                    return this;
@@ -1288,6 +1297,14 @@ fn mapRange(
 	        return this;
 	    }
 	}
+	let x$6, y$6;
+	const transformMatrix3 = (a, m, offset) => {
+	    x$6 = a[offset];
+	    y$6 = a[1 + offset];
+	    a[offset] = m[0] * x$6 + m[3] * y$6 + m[6];
+	    a[offset + 1] = m[1] * x$6 + m[4] * y$6 + m[7];
+	    return a;
+	};
 	const transformMatrix4 = (a, m, offset) => {
 	    let ax = a[0 + offset];
 	    let ay = a[1 + offset];
@@ -5492,7 +5509,7 @@ fn mapRange(
 	    }
 	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	    // let count = len / 3;
-	    let geo = new Geometry3(len, topology, cullMode);
+	    let geo = new Geometry(3, len, topology, cullMode);
 	    if (combine) {
 	        let pickers = [{
 	                name: POSITION,
@@ -5578,7 +5595,7 @@ fn mapRange(
 	    }
 	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	    // let count = len / 3;
-	    let geo = new Geometry3(len, topology, cullMode);
+	    let geo = new Geometry(3, len, topology, cullMode);
 	    // TODO indices 现在都是非索引版本
 	    if (combine) {
 	        let pickers = [{
@@ -5791,7 +5808,7 @@ fn mapRange(
 	        }
 	    }
 	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    let geo = new Geometry3(len, topology, cullMode);
+	    let geo = new Geometry(3, len, topology, cullMode);
 	    if (combine) {
 	        let pickers = [{
 	                name: POSITION,
@@ -5893,7 +5910,7 @@ fn mapRange(
 	    }
 	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	    // let count = len / 3;
-	    let geo = new Geometry3(len, topology, cullMode);
+	    let geo = new Geometry(3, len, topology, cullMode);
 	    // TODO indices 现在都是非索引版本
 	    if (combine) {
 	        let pickers = [{
@@ -6006,7 +6023,7 @@ fn mapRange(
 	};
 
 	var createTriangle3 = (t = Triangle3.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
-	    let geo = new Geometry3(3, topology, cullMode);
+	    let geo = new Geometry(3, 3, topology, cullMode);
 	    let stride = 3;
 	    if (options.combine) {
 	        let pickers = [{
@@ -6131,7 +6148,7 @@ fn mapRange(
 	        }
 	    }
 	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    let geo = new Geometry3(len, topology, cullMode);
+	    let geo = new Geometry(3, len, topology, cullMode);
 	    // TODO indices 现在都是非索引版本
 	    if (combine) {
 	        let pickers = [{
@@ -9372,7 +9389,7 @@ struct VertexOutput {
 	        let cacheData = this.entityCacheData.get(mesh);
 	        // 假设更换了几何体和材质则重新生成缓存
 	        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
-	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D);
+	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 	        if (!cacheData || ((_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
 	            cacheData = this.createCacheData(mesh);
 	            this.entityCacheData.set(mesh, cacheData);
@@ -9406,12 +9423,11 @@ struct VertexOutput {
 	            }
 	        });
 	        passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-	        passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY_3D).count, 1, 0, 0);
+	        passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY).count, 1, 0, 0);
 	        return this;
 	    }
 	    createCacheData(mesh) {
 	        var _a, _b;
-	        console.log(mesh);
 	        updateModelMatrixComponent(mesh);
 	        let device = this.engine.device;
 	        let uniformBuffer = device.createBuffer({
@@ -9419,7 +9435,7 @@ struct VertexOutput {
 	            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	        });
 	        let buffers = [];
-	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D);
+	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 	        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
 	        let nodes = geometry.data;
 	        for (let i = 0; i < nodes.length; i++) {
@@ -10344,7 +10360,7 @@ struct VertexOutput {
 	exports.EuclidPosition3 = EuclidPosition3;
 	exports.EulerRotation3 = EulerRotation3;
 	exports.EventFire = EventDispatcher;
-	exports.Geometry3 = Geometry3;
+	exports.Geometry = Geometry;
 	exports.Geometry3Factory = index$2;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;

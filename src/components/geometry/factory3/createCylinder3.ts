@@ -1,6 +1,6 @@
 import { Constants, Vector3 } from "@valeera/mathx";
 import { POSITION, VERTICES } from "../constants";
-import Geometry3, { AttributePicker } from "../Geometry3";
+import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
 export type ICylinderGeometryOptions = {
@@ -32,7 +32,7 @@ export const DEFAULT_SPHERE_OPTIONS: ICylinderGeometryOptions = {
 };
 
 
-export default (options: ICylinderGeometryOptionsInput = {}): Geometry3 => {
+export default (options: ICylinderGeometryOptionsInput = {}): Geometry => {
     let stride = 3;
 
     const indices: number[] = [];
@@ -239,7 +239,7 @@ export default (options: ICylinderGeometryOptionsInput = {}): Geometry3 => {
     }
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;;
-    let geo = new Geometry3(len, topology, cullMode);
+    let geo = new Geometry(3, len, topology, cullMode);
     if (combine) {
         let pickers: AttributePicker[] = [{
             name: POSITION,

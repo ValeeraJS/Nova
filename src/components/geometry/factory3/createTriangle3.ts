@@ -1,10 +1,10 @@
 import { Triangle3, ITriangle3 } from "@valeera/mathx";
 import { NORMAL, POSITION, UV, VERTICES } from "../constants";
-import Geometry3, { AttributePicker } from "../Geometry3";
+import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
-export default (t: ITriangle3 = Triangle3.create(), options: IGeometryOptions = DEFAULT_OPTIONS, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none"): Geometry3 => {
-    let geo = new Geometry3(3, topology, cullMode);
+export default (t: ITriangle3 = Triangle3.create(), options: IGeometryOptions = DEFAULT_OPTIONS, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none"): Geometry => {
+    let geo = new Geometry(3, 3, topology, cullMode);
     let stride = 3;
     if (options.combine) {
         let pickers: AttributePicker[] = [{

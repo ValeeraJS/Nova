@@ -1,6 +1,6 @@
 import { Vector3 } from "@valeera/mathx";
 import { NORMAL, POSITION, UV, VERTICES } from "../constants";
-import Geometry3, { AttributePicker } from "../Geometry3";
+import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
 export type IBoxGeometryOptions = {
@@ -27,7 +27,7 @@ export const DEFAULT_BOX_OPTIONS: IBoxGeometryOptions = {
 
 export type IBoxGeometryOptionsInput = Partial<IBoxGeometryOptions>;
 
-export default (options: IBoxGeometryOptionsInput = {}): Geometry3 => {
+export default (options: IBoxGeometryOptionsInput = {}): Geometry => {
 	let stride = 3;
 	const indices: number[] = [];
 	const vertices: number[] = [];
@@ -135,7 +135,7 @@ export default (options: IBoxGeometryOptionsInput = {}): Geometry3 => {
 
 	let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
 	// let count = len / 3;
-	let geo = new Geometry3(len, topology, cullMode);
+	let geo = new Geometry(3, len, topology, cullMode);
 
 	if (combine) {
 		let pickers: AttributePicker[] = [{

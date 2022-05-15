@@ -1,7 +1,7 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
-import { GEOMETRY_3D, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components/constants";
+import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
+import { GEOMETRY, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import IWebGLRenderer from "./IWebGLRenderer";
@@ -83,7 +83,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 		// passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
 		// passEncoder.draw((mesh.getComponent(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
 
-		gl.drawArrays(gl.TRIANGLES, 0, (mesh.getComponent(GEOMETRY_3D) as Geometry3).count);
+		gl.drawArrays(gl.TRIANGLES, 0, (mesh.getComponent(GEOMETRY) as Geometry).count);
 
 		return this;
 	}
@@ -94,7 +94,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 
 		let uniformBuffer = gl.createBuffer() as WebGLBuffer;
 		let buffers = [];
-		let nodes = mesh.getComponent(GEOMETRY_3D)?.data as AttributesNodeData[];
+		let nodes = mesh.getComponent(GEOMETRY)?.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
 			buffers.push(createVerticesBuffer(gl, nodes[i].data));
 		}
@@ -173,7 +173,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 		gl.attachShader(program, fShader);
 		gl.linkProgram(program);
 
-		let geometry = mesh.getComponent(GEOMETRY_3D) as Geometry3;
+		let geometry = mesh.getComponent(GEOMETRY) as Geometry;
 
 		let vertexBuffers: Array<GPUVertexBufferLayout> = [];
 		let location = 0;

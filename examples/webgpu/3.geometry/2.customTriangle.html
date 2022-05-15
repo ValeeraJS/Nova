@@ -13,7 +13,7 @@
 		const world = new Nova.World();
 
 		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
-		const geometry = new Nova.Geometry3(3, "triangle-list", "none");
+		const geometry = new Nova.Geometry(3, 3, "triangle-list", "none");
 		geometry.addAttribute("vertices", new Float32Array([
 			0, 0, 0,
 			0, 1, 1,

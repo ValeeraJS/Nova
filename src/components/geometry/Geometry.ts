@@ -1,5 +1,5 @@
 import Component from "@valeera/x/src/Component";
-import { GEOMETRY_3D } from "../constants";
+import { GEOMETRY } from "../constants";
 import { POSITION } from "./constants";
 
 // 顶点多种数据（位置，uv，法线等）合并为一个类型数组，每个顶点各个数据如何取数据的方式
@@ -20,7 +20,8 @@ export type AttributesNodeData = {
     attributes: AttributePicker[]
 }
 
-export default class Geometry3 extends Component<AttributesNodeData[]> {
+// 既可以是2d几何体也可以是3D几何体
+export default class Geometry extends Component<AttributesNodeData[]> {
     /**
      * 顶点数量
      */
@@ -28,6 +29,7 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
     /**
      * 拓扑类型
      */
+    dimension: number;
     topology: GPUPrimitiveTopology;
     /**
      * 剔除方式
@@ -35,15 +37,16 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
     cullMode: GPUCullMode;
     data: AttributesNodeData[] = [];
     tags = [{
-        label: GEOMETRY_3D,
+        label: GEOMETRY,
         unique: true
     }];
 
-    constructor(count: number = 0, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none", data: AttributesNodeData[] = []) {
-        super(GEOMETRY_3D, data);
+    constructor(dimension: number, count: number = 0, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none", data: AttributesNodeData[] = []) {
+        super(GEOMETRY, data);
         this.count = count;
-        this.topology = topology;
         this.cullMode = cullMode;
+        this.dimension = dimension;
+        this.topology = topology;
     }
 
     addAttribute(name: string, arr: Float32Array, stride: number = arr.length / this.count, attributes: AttributePicker[] = []) {
@@ -71,8 +74,14 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
         for (let data of this.data) {
             for (let attr of data.attributes) {
                 if (attr.name === POSITION) {
-                    for (let i = 0; i < data.data.length; i += data.stride) {
-                        transformMatrix4(data.data, matrix, i + attr.offset);
+                    if (this.dimension === 3) {
+                        for (let i = 0; i < data.data.length; i += data.stride) {
+                            transformMatrix4(data.data, matrix, i + attr.offset);
+                        }
+                    } else {
+                        for (let i = 0; i < data.data.length; i += data.stride) {
+                            transformMatrix3(data.data, matrix, i + attr.offset);
+                        }
                     }
                     this.dirty = true;
                     return this;
@@ -82,6 +91,21 @@ export default class Geometry3 extends Component<AttributesNodeData[]> {
         return this;
     }
 }
+
+let x: number, y: number;
+
+export const transformMatrix3 = (
+    a: Float32Array,
+    m: Float32Array,
+    offset: number,
+): Float32Array => {
+    x = a[offset];
+    y = a[1 + offset];
+    a[offset] = m[0] * x + m[3] * y + m[6];
+    a[offset + 1] = m[1] * x + m[4] * y + m[7];
+
+    return a;
+};
 
 export const transformMatrix4 = (
     a: Float32Array,

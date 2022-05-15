@@ -1,14 +1,13 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import Geometry3, { AttributesNodeData } from "../../components/geometry/Geometry3";
-import { BUFFER, DEFAULT_MATERIAL, GEOMETRY_3D, MATERIAL, SAMPLER, TEXTURE_IMAGE, WORLD_MATRIX } from "../../components/constants";
+import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
+import { BUFFER, DEFAULT_MATERIAL, GEOMETRY, MATERIAL, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
 import IRenderer from "./IWebGPURenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
-import { Entity } from "@valeera/x";
 import { ICamera3 } from "../../entities/Camera3";
 import Object3 from "../../entities/Object3";
 
@@ -19,7 +18,7 @@ interface ICacheData {
 	attributesBuffers: GPUBuffer[];
 	uniformBindGroup: GPUBindGroup;
 	uniformMap: Map<any, IUniformSlot>;
-	geometry: Geometry3;
+	geometry: Geometry;
 	material: Material;
 }
 
@@ -38,7 +37,7 @@ export default class Mesh3Renderer implements IRenderer {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
-		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D);
+		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 
 		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
 			cacheData = this.createCacheData(mesh);
@@ -93,7 +92,7 @@ export default class Mesh3Renderer implements IRenderer {
 		});
 
 		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-		passEncoder.draw((mesh.getFirstComponentByTagLabel(GEOMETRY_3D) as Geometry3).count, 1, 0, 0);
+		passEncoder.draw((mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry).count, 1, 0, 0);
 
 		return this;
 	}
@@ -107,7 +106,7 @@ export default class Mesh3Renderer implements IRenderer {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 		let buffers = [];
-		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY_3D) as Geometry3;
+		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry;
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL;
 		let nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
@@ -178,7 +177,7 @@ export default class Mesh3Renderer implements IRenderer {
 		}
 	}
 
-	private createPipeline(geometry: Geometry3, material: Material) {
+	private createPipeline(geometry: Geometry, material: Material) {
 		const pipelineLayout = this.engine.device.createPipelineLayout({
 			bindGroupLayouts: [this.createBindGroupLayout(material)],
 		});
@@ -204,7 +203,7 @@ export default class Mesh3Renderer implements IRenderer {
 		return pipeline;
 	}
 
-	private parseGeometryBufferLayout(geometry: Geometry3) {
+	private parseGeometryBufferLayout(geometry: Geometry) {
 		let vertexBuffers: Array<GPUVertexBufferLayout> = [];
 		let location = 0;
 		for (let i = 0; i < geometry.data.length; i++) {

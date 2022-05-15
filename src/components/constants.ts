@@ -2,7 +2,7 @@ import Material from "./material/Material";
 
 // component type
 export const ANCHOR_3D = "anchor3";
-export const GEOMETRY_3D = "geometry3";
+export const GEOMETRY = "geometry";
 export const MATERIAL = "material";
 export const MODEL_3D = "model3";
 export const PROJECTION_3D = "projection3";

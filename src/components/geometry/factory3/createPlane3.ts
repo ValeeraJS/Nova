@@ -1,5 +1,5 @@
 import { POSITION, VERTICES } from "../constants";
-import Geometry3, { AttributePicker } from "../Geometry3";
+import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
 
 export type IPlaneGeometryOptions = {
@@ -22,7 +22,7 @@ export const DEFAULT_PLANE_OPTIONS: IPlaneGeometryOptions = {
 };
 
 
-export default (options: IPlaneGeometryOptionsInput = {}): Geometry3 => {
+export default (options: IPlaneGeometryOptionsInput = {}): Geometry => {
 
     const {width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine} = {
         ...DEFAULT_PLANE_OPTIONS,
@@ -72,7 +72,7 @@ export default (options: IPlaneGeometryOptionsInput = {}): Geometry3 => {
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
     // let count = len / 3;
-    let geo = new Geometry3(len, topology, cullMode);
+    let geo = new Geometry(3, len, topology, cullMode);
 
     // TODO indices 现在都是非索引版本
     if (combine) {
