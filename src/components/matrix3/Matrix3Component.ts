@@ -1,11 +1,11 @@
 import Component from "@valeera/x/src/Component";
-import { Matrix4 } from "@valeera/mathx";
+import { Matrix3 } from "@valeera/mathx";
 import { ComponentTag } from "@valeera/x/src/interfaces/IComponent";
 import { IObject3 } from "../../entities/Object3";
 
-export default class Matrix4Component extends Component<Float32Array> {
+export default class Matrix3Component extends Component<Float32Array> {
     data!: Float32Array;
-    constructor(name: string, data = Matrix4.create(), tags: ComponentTag[] = []) {
+    constructor(name: string, data = Matrix3.create(), tags: ComponentTag[] = []) {
         super(name, data, tags);
         this.dirty = true;
     }
@@ -20,15 +20,15 @@ export const updateModelMatrixComponent = (mesh: IObject3) => {
     let worldMatrix = mesh.worldMatrix;
 
     if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
-        Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
+        Matrix3.fromArray(p3?.data || Matrix3.UNIT_MATRIX3, m3.data);
         if (r3) {
-            Matrix4.multiply(m3.data, r3.data, m3.data);
+            Matrix3.multiply(m3.data, r3.data, m3.data);
         }
         if (s3) {
-            Matrix4.multiplyScaleMatrix(m3.data, s3.data, m3.data);
+            Matrix3.multiplyScaleMatrix(m3.data, s3.data, m3.data);
         }
         if (a3) {
-            Matrix4.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
+            Matrix3.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
         }
 
         if (p3) {
@@ -46,10 +46,10 @@ export const updateModelMatrixComponent = (mesh: IObject3) => {
     }
 
     if (mesh.parent) {
-        let parentWorldMatrix = (mesh.parent as IObject3).worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
-        Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+        let parentWorldMatrix = (mesh.parent as IObject3).worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
+        Matrix3.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
     } else {
-        Matrix4.fromArray(m3.data, worldMatrix.data);
+        Matrix3.fromArray(m3.data, worldMatrix.data);
     }
 
     return m3;

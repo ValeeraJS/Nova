@@ -73,7 +73,7 @@
 	},
 	"dependencies": {
 		"@valeera/eventdispatcher": "2.2.4",
-		"@valeera/mathx": "0.1.32",
+		"@valeera/mathx": "0.1.33",
 		"@valeera/timeline": "0.1.2",
 		"@valeera/webgpu-constant": "0.1.1",
 		"@valeera/x": "0.1.18-b"
