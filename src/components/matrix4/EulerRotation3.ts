@@ -3,7 +3,6 @@ import ARotation3 from "./ARotation3";
 
 export default class EulerRotation3 extends ARotation3 {
     euler: IEulerAngle;
-    data = Matrix4.identity();
 
     constructor(euler: IEulerAngle = {
         x: 0,

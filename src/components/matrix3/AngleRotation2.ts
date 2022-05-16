@@ -1,10 +1,9 @@
-import { Matrix4 } from "@valeera/mathx";
-import { Matrix3 } from "@valeera/mathx/build/Mathx";
+import { Matrix3 } from "@valeera/mathx";
 import ARotation2 from "./ARotation2";
 
 export default class AngleRotation2 extends ARotation2 {
     _angle: number;
-    data = Matrix4.identity();
+    data = Matrix3.identity();
 
     constructor(angle: number = 0) {
         super();

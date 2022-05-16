@@ -1,7 +1,6 @@
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import System from "@valeera/x/src/System";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import Renderable from "../../components/tag/Renderable";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
 import IWebGPURenderer from "./IWebGPURenderer";
 import IViewport from "../IViewport";

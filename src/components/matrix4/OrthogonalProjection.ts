@@ -1,8 +1,7 @@
 import { Matrix4 } from "@valeera/mathx";
 import AProjection3 from "./AProjection3";
 
-export default class PerspectiveProjection extends AProjection3 {
-    data = new Float32Array(16);
+export default class OrthogonalProjection extends AProjection3 {
     options: { left: number; right: number; bottom: number; top: number; near: number; far: number; };
 
     constructor(left: number, right: number, bottom: number, top: number, near: number, far: number) {

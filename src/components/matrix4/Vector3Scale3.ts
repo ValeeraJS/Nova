@@ -5,7 +5,6 @@ const DEFAULT_SCALE = [1, 1, 1];
 
 export default class Vector3Scale3 extends AScale3 {
     vec3: Float32Array;
-    data = Matrix4.identity();
 
     constructor(vec3: Float32Array = new Float32Array(DEFAULT_SCALE)) {
         super();

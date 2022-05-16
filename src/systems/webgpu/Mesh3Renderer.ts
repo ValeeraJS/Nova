@@ -1,7 +1,7 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
-import { BUFFER, DEFAULT_MATERIAL, GEOMETRY, MATERIAL, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
+import { BUFFER, GEOMETRY, MATERIAL, MESH3, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
@@ -10,6 +10,7 @@ import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
 import { ICamera3 } from "../../entities/Camera3";
 import Object3 from "../../entities/Object3";
+import { DEFAULT_MATERIAL } from "../../components/material/defaultMaterial";
 
 interface ICacheData {
 	mvp: Float32Array;
@@ -23,8 +24,8 @@ interface ICacheData {
 }
 
 export default class Mesh3Renderer implements IRenderer {
-	public static readonly renderTypes = "mesh";
-	public readonly renderTypes = "mesh";
+	public static readonly renderTypes = MESH3;
+	public readonly renderTypes = MESH3;
 	public camera: ICamera3;
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
 	engine: WebGPUEngine;

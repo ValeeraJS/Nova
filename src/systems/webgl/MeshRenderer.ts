@@ -1,7 +1,7 @@
 import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
-import { GEOMETRY, MATERIAL, MODEL_3D, PROJECTION_3D } from "../../components/constants";
+import { GEOMETRY, MATERIAL, MESH3, MODEL_3D, PROJECTION_3D } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import IWebGLRenderer from "./IWebGLRenderer";
@@ -18,8 +18,8 @@ interface ICacheData {
 }
 
 export default class MeshRenderer implements IWebGLRenderer {
-	public static readonly renderTypes = "mesh";
-	public readonly renderTypes = "mesh";
+	public static readonly renderTypes = MESH3;
+	public readonly renderTypes = MESH3;
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
 	engine: WebGLEngine;
 	public constructor(engine: WebGLEngine) {

@@ -3,7 +3,6 @@ import APosition3 from "./APosition3";
 
 export default class EuclidPosition3 extends APosition3 {
 	vec3: Vector3 = new Vector3();
-	data = Matrix4.identity();
 
 	constructor(vec3: Float32Array | number[] = new Float32Array(3)) {
 		super();

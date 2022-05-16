@@ -2,7 +2,6 @@ import WebGLEngine from "../../engine/WebGLEngine";
 import ASystem from "@valeera/x/src/ASystem"
 import Clearer from "./Clearer";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import Renderable from "../../components/tag/Renderable";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
 import IWebGLRenderer from "./IWebGLRenderer";
 import IViewport from "../IViewport";
