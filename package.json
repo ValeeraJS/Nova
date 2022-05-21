@@ -22,8 +22,8 @@
 	"scripts": {
 		"build": "rollup -c scripts/rollup.config.js",
 		"build-legacy": "rollup -c scripts/rollup.config.legacy.js",
-		"build-closure": "google-closure-compiler --compilation_level=ADVANCED_OPTIMIZATIONS --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT_NEXT --language_out=ECMASCRIPT_NEXT --js build/Nova.js --js_output_file build/Nova.min.js",
-		"build-closure-legacy": "google-closure-compiler --compilation_level=ADVANCED_OPTIMIZATIONS --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT5 --language_out=ECMASCRIPT5 --js build/Nova.legacy.js --js_output_file build/Nova.legacy.min.js",
+		"build-closure": "google-closure-compiler --compilation_level=WHITESPACE_ONLY  --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT_NEXT --language_out=ECMASCRIPT_NEXT --js build/Nova.js --js_output_file build/Nova.min.js",
+		"build-closure-legacy": "google-closure-compiler --compilation_level=WHITESPACE_ONLY  --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT5 --language_out=ECMASCRIPT5 --js build/Nova.legacy.js --js_output_file build/Nova.legacy.min.js",
 		"build-all": "npm run build && npm run build-legacy && npm run build-closure && npm run build-closure-legacy",
 		"start": "npm run dev",
 		"lint": "eslint src --ext js --ext ts",
@@ -73,7 +73,7 @@
 	},
 	"dependencies": {
 		"@valeera/eventdispatcher": "2.2.4",
-		"@valeera/mathx": "0.1.33",
+		"@valeera/mathx": "0.1.36",
 		"@valeera/timeline": "0.1.2",
 		"@valeera/webgpu-constant": "0.1.1",
 		"@valeera/x": "0.1.18-b"

@@ -1,7 +1,6 @@
 import { Matrix4 } from "@valeera/mathx";
-import { Entity, IEntity, IWorld } from "@valeera/x";
-import Component from "@valeera/x/src/Component";
-import { MODEL_3D, WORLD_MATRIX } from "../components/constants";
+import { Entity, IEntity } from "@valeera/x";
+import { MODEL_3D, WORLD_MATRIX4 } from "../components/constants";
 import EuclidPosition3 from "../components/matrix4/EuclidPosition3";
 import EulerRotation3 from "../components/matrix4/EulerRotation3";
 import Matrix4Component from "../components/matrix4/Matrix4Component";
@@ -33,8 +32,8 @@ export default class Object3 extends Entity implements IObject3 {
             label: MODEL_3D,
             unique: true 
         }]);
-        this.worldMatrix = new Matrix4Component(WORLD_MATRIX, Matrix4.create(), [{
-            label: WORLD_MATRIX,
+        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
+            label: WORLD_MATRIX4,
             unique: true 
         }]);
     }

@@ -427,10 +427,10 @@
   resolved "https://registry.npmmirror.com/@valeera/idgenerator/-/idgenerator-1.1.1.tgz#e09e33dd11f3caa3a05a8bdf8bb089beb51cac7f"
   integrity sha512-ATbUOvCkgrg+VA6qUoWxhQPYS5RkFw9/r2nfEYagLMlmwwFx1wPrLaknp96M/mkaVV4Y+Mt/u4eA1oRyahRG+A==
 
-"@valeera/mathx@0.1.33":
-  version "0.1.33"
-  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.33.tgz#b0ed16fe0c27f7279d9f3a2eb478e223461146b2"
-  integrity sha512-CtvpA8aCJ+l83M71BudMe3gpdUAmyF/xN/qaPq90GIq+WfPJMpyENI3p0aRsPukq/N5I4KQyDbolsdyncJxtNQ==
+"@valeera/mathx@0.1.36":
+  version "0.1.36"
+  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.36.tgz#0efe6331e2bfb9c4dab545c1de478d0147c8a795"
+  integrity sha512-bDkltbvuEt9nhVAYatXSSymfespfdHX4SQYWdkdw5RSry796Q+sIhoTCh/QFsZmwRDtcy+uTAdgYORYGUc7iYw==
 
 "@valeera/timeline@0.1.2":
   version "0.1.2"

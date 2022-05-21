@@ -1,7 +1,7 @@
 import { Vector3 } from "@valeera/mathx";
 import { POSITION, VERTICES } from "../constants";
 import Geometry, { AttributePicker } from "../Geometry";
-import { DEFAULT_OPTIONS, IGeometryOptions } from "./geometryOptions";
+import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
 export type ISphereGeometryOptions = {
     radius: number,

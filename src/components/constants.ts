@@ -16,7 +16,8 @@ export const SCALING_2D = "scale2";
 export const SCALING_3D = "scale3";
 export const TRANSLATION_2D = "position2";
 export const TRANSLATION_3D = "position3";
-export const WORLD_MATRIX = "world-matrix";
+export const WORLD_MATRIX3 = "world-matrix3";
+export const WORLD_MATRIX4 = "world-matrix4";
 export const VIEWING_3D = "viewing3";
 
 // uniform type

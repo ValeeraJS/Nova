@@ -65,7 +65,7 @@ export default class Projection2D extends AProjection2 {
     }
 
     update() {
-        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top);
+        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.data);
         this.dirty = true;
 
         return this;
@@ -90,6 +90,8 @@ const orthogonal = (
     out[4] = -2 * b;
     out[5] = 0;
 
+    // out[6] = 0;
+    // out[7] = 0;
     out[6] = (left + right) * c;
     out[7] = (top + bottom) * b;
     out[8] = 1;

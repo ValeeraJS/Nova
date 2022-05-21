@@ -362,7 +362,8 @@ const SCALING_2D = "scale2";
 const SCALING_3D = "scale3";
 const TRANSLATION_2D = "position2";
 const TRANSLATION_3D = "position3";
-const WORLD_MATRIX = "world-matrix";
+const WORLD_MATRIX3 = "world-matrix3";
+const WORLD_MATRIX4 = "world-matrix4";
 const VIEWING_3D = "viewing3";
 // uniform type
 const SAMPLER = "sampler";
@@ -389,7 +390,8 @@ var constants$2 = /*#__PURE__*/Object.freeze({
 	SCALING_3D: SCALING_3D,
 	TRANSLATION_2D: TRANSLATION_2D,
 	TRANSLATION_3D: TRANSLATION_3D,
-	WORLD_MATRIX: WORLD_MATRIX,
+	WORLD_MATRIX3: WORLD_MATRIX3,
+	WORLD_MATRIX4: WORLD_MATRIX4,
 	VIEWING_3D: VIEWING_3D,
 	SAMPLER: SAMPLER,
 	BUFFER: BUFFER,
@@ -1318,7 +1320,7 @@ var SinusoidalOut = (p) => {
     return Math.sin((p * Math.PI) / 2);
 };
 
-var index$3 = /*#__PURE__*/Object.freeze({
+var index$4 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	BackIn: BackIn,
 	BackOut: BackOut,
@@ -1703,6 +1705,18 @@ Matrix3$1.fromArray = (source, out = new Matrix3$1()) => {
     out.set(source);
     return out;
 };
+Matrix3$1.fromMatrix2 = (mat4, out = new Matrix3$1()) => {
+    out[0] = mat4[0];
+    out[1] = mat4[1];
+    out[2] = 0;
+    out[3] = mat4[2];
+    out[4] = mat4[3];
+    out[5] = 0;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 1;
+    return out;
+};
 Matrix3$1.fromMatrix4 = (mat4, out = new Matrix3$1()) => {
     out[0] = mat4[0];
     out[1] = mat4[1];
@@ -1887,9 +1901,9 @@ Matrix3$1.multiplyTranslateMatrix = (a, b, out = new Matrix3$1()) => {
     out[0] = a00$1$1;
     out[1] = a01$1$1;
     out[2] = a02$1$1;
-    out[3] = b10$1$1;
-    out[4] = b10$1$1;
-    out[5] = b10$1$1;
+    out[3] = a10$1$1;
+    out[4] = a10$1$1;
+    out[5] = a10$1$1;
     out[6] = b20$1$1 * a00$1$1 + b21$1$1 * a10$1$1 + a20$1$1;
     out[7] = b20$1$1 * a01$1$1 + b21$1$1 * a11$1$1 + a21$1$1;
     out[8] = b20$1$1 * a02$1$1 + b21$1$1 * a12$1$1 + a22$1$1;
@@ -2455,6 +2469,25 @@ Matrix4$1.fromEuler = (euler, out = new Matrix4$1()) => {
     out[7] = 0;
     out[11] = 0;
     // last column
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+Matrix4$1.fromMatrix3 = (data, out = new Matrix4$1()) => {
+    out[0] = data[0];
+    out[1] = data[1];
+    out[2] = data[2];
+    out[3] = 0;
+    out[4] = data[3];
+    out[5] = data[4];
+    out[6] = data[5];
+    out[7] = 0;
+    out[8] = data[6];
+    out[9] = data[7];
+    out[10] = data[8];
+    out[11] = 0;
     out[12] = 0;
     out[13] = 0;
     out[14] = 0;
@@ -4644,7 +4677,7 @@ var Mathx_module = /*#__PURE__*/Object.freeze({
 	ColorRGBA: ColorRGBA,
 	Constants: constants,
 	Cube: Cube,
-	Easing: index$3,
+	Easing: index$4,
 	EulerAngle: EulerAngle,
 	get EulerRotationOrders () { return EulerRotationOrders$1; },
 	Matrix2: Matrix2$1,
@@ -4819,14 +4852,14 @@ var createBox3 = (options = {}) => {
     }
 };
 
-const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
+const DEFAULT_CIRCLE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
 var createCircle3 = (options = {}) => {
     let stride = 3;
     const indices = [];
     const positions = [0, 0, 0];
     const normals = [0, 0, 1];
     const uvs = [0.5, 0.5];
-    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_CIRCLE_OPTIONS), options);
+    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_CIRCLE_OPTIONS$1), options);
     for (let s = 0, i = 3; s <= segments; s++, i += 3) {
         const segment = angleStart + s / segments * angle;
         positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
@@ -5457,7 +5490,7 @@ var createSphere3 = (options = {}) => {
     return geo;
 };
 
-var index$2 = /*#__PURE__*/Object.freeze({
+var index$3 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	createBox3: createBox3,
 	createCircle3: createCircle3,
@@ -5465,6 +5498,85 @@ var index$2 = /*#__PURE__*/Object.freeze({
 	createPlane3: createPlane3,
 	createTriangle3: createTriangle3,
 	createSphere3: createSphere3
+});
+
+const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
+var createCircle2 = (options = {}) => {
+    let stride = 3;
+    const indices = [];
+    const positions = [0, 0];
+    const uvs = [0.5, 0.5];
+    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, combine } = Object.assign(Object.assign({}, DEFAULT_CIRCLE_OPTIONS), options);
+    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
+        const segment = angleStart + s / segments * angle;
+        positions.push(radius * Math.cos(segment), radius * Math.sin(segment));
+        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
+    }
+    // indices
+    for (let i = 1; i <= segments; i++) {
+        indices.push(i, i + 1, 0);
+    }
+    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+    // let count = len / 3;
+    let geo = new Geometry(2, len, topology, cullMode);
+    // TODO indices 现在都是非索引版本
+    if (combine) {
+        let pickers = [{
+                name: POSITION,
+                offset: 0,
+                length: 2,
+            }];
+        if (hasUV) {
+            stride = 4;
+            pickers.push({
+                name: UV,
+                offset: 2,
+                length: 2,
+            });
+        }
+        let result = new Float32Array(stride * len);
+        for (let i = 0; i < len; i++) {
+            i2 = indices[i] << 1;
+            i3 = indices[i] * 2;
+            strideI = i * stride;
+            result[0 + strideI] = positions[i3];
+            result[1 + strideI] = positions[i3 + 1];
+            if (hasUV) {
+                result[2 + strideI] = uvs[i2];
+                result[3 + strideI] = uvs[i2 + 1];
+            }
+        }
+        geo.addAttribute(VERTICES, result, stride, pickers);
+        return geo;
+    }
+    else {
+        // let result = new Float32Array(9);
+        // result.set(t.a);
+        // result.set(t.b, 3);
+        // result.set(t.c, 6);
+        // geo.addAttribute(POSITION, result, 3);
+        // if (options.hasNormal) {
+        //     result = new Float32Array(9);
+        //     let normal = Triangle3.normal(t);
+        //     result.set(normal, 0);
+        //     result.set(normal, 3);
+        //     result.set(normal, 6);
+        //     geo.addAttribute(NORMAL, result, 3);
+        // }
+        // if (options.hasUV) {
+        //     result = new Float32Array(6);
+        //     result.set([0, 0], 0);
+        //     result.set([1, 0], 2);
+        //     result.set([0.5, 1], 4);
+        //     geo.addAttribute(UV, result, 2);
+        // }
+        return geo;
+    }
+};
+
+var index$2 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	createCircle2: createCircle2
 });
 
 const FIND_LEAVES_VISITOR = {
@@ -6609,6 +6721,47 @@ class Matrix3Component extends Component$1 {
         this.dirty = true;
     }
 }
+const updateModelMatrixComponent$1 = (mesh) => {
+    var _a, _b;
+    let p3 = mesh.position;
+    let r3 = mesh.rotation;
+    let s3 = mesh.scaling;
+    let a3 = mesh.anchor;
+    let m3 = mesh.modelMatrix;
+    let worldMatrix = mesh.worldMatrix;
+    if ((p3 === null || p3 === void 0 ? void 0 : p3.dirty) || (r3 === null || r3 === void 0 ? void 0 : r3.dirty) || (s3 === null || s3 === void 0 ? void 0 : s3.dirty) || (a3 === null || a3 === void 0 ? void 0 : a3.dirty)) {
+        Matrix3$1.fromArray((p3 === null || p3 === void 0 ? void 0 : p3.data) || Matrix3$1.UNIT_MATRIX3, m3.data);
+        if (r3) {
+            Matrix3$1.multiplyRotationMatrix(m3.data, r3.data, m3.data);
+        }
+        if (s3) {
+            Matrix3$1.multiplyScaleMatrix(m3.data, s3.data, m3.data);
+        }
+        if (a3) {
+            Matrix3$1.multiply(m3.data, a3.data, m3.data);
+        }
+        if (p3) {
+            p3.dirty = false;
+        }
+        if (r3) {
+            r3.dirty = false;
+        }
+        if (s3) {
+            s3.dirty = false;
+        }
+        if (a3) {
+            a3.dirty = false;
+        }
+    }
+    if (mesh.parent) {
+        let parentWorldMatrix = (_b = (_a = mesh.parent.worldMatrix) === null || _a === void 0 ? void 0 : _a.data) !== null && _b !== void 0 ? _b : Matrix3$1.UNIT_MATRIX3;
+        Matrix3$1.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+    }
+    else {
+        Matrix3$1.fromArray(m3.data, worldMatrix.data);
+    }
+    return m3;
+};
 
 class Anchor2 extends Matrix3Component {
     constructor(vec = Vector2$1.VECTOR2_ZERO) {
@@ -6807,7 +6960,7 @@ class Projection2D extends AProjection2 {
         return this.update();
     }
     update() {
-        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top);
+        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.data);
         this.dirty = true;
         return this;
     }
@@ -6821,6 +6974,8 @@ const orthogonal = (left, right, bottom, top, out = new Matrix3$1()) => {
     out[3] = 0;
     out[4] = -2 * b;
     out[5] = 0;
+    // out[6] = 0;
+    // out[7] = 0;
     out[6] = (left + right) * c;
     out[7] = (top + bottom) * b;
     out[8] = 1;
@@ -6863,7 +7018,7 @@ class Vector2Scale2 extends AScale2 {
         return this;
     }
     update() {
-        Matrix4$1.fromScaling(this.vec2, this.data);
+        Matrix3$1.fromScaling(this.vec2, this.data);
         return this;
     }
 }
@@ -7820,6 +7975,31 @@ class WebGLEngine extends EventDispatcher {
     }
 }
 
+class Object3$1 extends Entity {
+    constructor(name = "Object3") {
+        super(name);
+        this.scaling = new Vector2Scale2();
+        this.position = new EuclidPosition2();
+        this.rotation = new AngleRotation2();
+        this.anchor = new EuclidPosition2();
+        this.modelMatrix = new Matrix3Component(MODEL_2D, Matrix3$1.create(), [{
+                label: MODEL_3D,
+                unique: true
+            }]);
+        this.worldMatrix = new Matrix3Component(WORLD_MATRIX3, Matrix3$1.create(), [{
+                label: WORLD_MATRIX3,
+                unique: true
+            }]);
+    }
+}
+
+class Camera3$1 extends Object3$1 {
+    constructor(name = "Camera2", projection) {
+        super(name);
+        this.projection = projection;
+    }
+}
+
 class Object3 extends Entity {
     constructor(name = "Object3") {
         super(name);
@@ -7831,8 +8011,8 @@ class Object3 extends Entity {
                 label: MODEL_3D,
                 unique: true
             }]);
-        this.worldMatrix = new Matrix4Component(WORLD_MATRIX, Matrix4$1.create(), [{
-                label: WORLD_MATRIX,
+        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4$1.create(), [{
+                label: WORLD_MATRIX4,
                 unique: true
             }]);
     }
@@ -7844,6 +8024,300 @@ class Camera3 extends Object3 {
         this.projection = projection;
     }
 }
+
+let descriptor = {
+    size: 0,
+    usage: GPUBufferUsage.VERTEX,
+    mappedAtCreation: true
+};
+var createVerticesBuffer = (device, data) => {
+    descriptor.size = data.byteLength;
+    let buffer = device.createBuffer(descriptor);
+    new Float32Array(buffer.getMappedRange()).set(data);
+    buffer.unmap();
+    return buffer;
+};
+
+const DEFAULT_MATERIAL = new Material(`
+struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>
+  };
+  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	@builtin(position) Position : vec4<f32>
+};
+
+fn mapRange(
+	value: f32,
+	range1: vec2<f32>,
+	range2: vec2<f32>,
+) -> f32 {
+	var d1: f32 = range1.y - range1.x;
+	var d2: f32 = range2.y - range2.x;
+
+	return (value - d1 * 0.5) / d2 / d1;
+};
+
+@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+	var output : VertexOutput;
+	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	if (output.Position.w == 1.0) {
+		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
+	}
+	return output;
+}
+`, `
+@stage(fragment) fn main() -> @location(0) vec4<f32> {
+	return vec4<f32>(1., 1., 1., 1.0);
+}
+`);
+
+class Mesh2Renderer {
+    constructor(engine, camera) {
+        this.renderTypes = MESH2;
+        this.entityCacheData = new WeakMap();
+        this.engine = engine;
+        this.camera = camera;
+    }
+    render(mesh, passEncoder) {
+        var _a;
+        let cacheData = this.entityCacheData.get(mesh);
+        // 假设更换了几何体和材质则重新生成缓存
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
+        if (!cacheData || ((_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
+            cacheData = this.createCacheData(mesh);
+            this.entityCacheData.set(mesh, cacheData);
+        }
+        else {
+            // TODO update cache
+            updateModelMatrixComponent$1(mesh);
+        }
+        passEncoder.setPipeline(cacheData.pipeline);
+        // passEncoder.setScissorRect(0, 0, 400, 225);
+        // TODO 有多个attribute buffer
+        for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
+            passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+        }
+        const mvp = cacheData.mvp;
+        const mvpExt = cacheData.mvpExt;
+        Matrix3$1.multiply(this.camera.projection.data, Matrix3$1.invert(updateModelMatrixComponent$1(this.camera).data), mvp);
+        Matrix3$1.multiply(mvp, mesh.worldMatrix.data, mvp);
+        Matrix4$1.fromMatrix3(mvp, mvpExt);
+        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvpExt.buffer, mvpExt.byteOffset, mvpExt.byteLength);
+        cacheData.uniformMap.forEach((uniform, key) => {
+            if (uniform.type === BUFFER && uniform.dirty) {
+                this.engine.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
+                uniform.dirty = false;
+            }
+            else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
+                if (uniform.value.loaded) {
+                    if (uniform.value.data) {
+                        this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
+                        uniform.value.dirty = uniform.dirty = false;
+                    }
+                }
+            }
+        });
+        passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+        passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY).count, 1, 0, 0);
+        return this;
+    }
+    createCacheData(mesh) {
+        var _a, _b;
+        updateModelMatrixComponent$1(mesh);
+        let device = this.engine.device;
+        let uniformBuffer = device.createBuffer({
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+        let buffers = [];
+        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let nodes = geometry.data;
+        for (let i = 0; i < nodes.length; i++) {
+            buffers.push(createVerticesBuffer(device, nodes[i].data));
+        }
+        let pipeline = this.createPipeline(geometry, material);
+        let groupEntries = [{
+                binding: 0,
+                resource: {
+                    buffer: uniformBuffer,
+                },
+            }];
+        let uniforms = (_b = (_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.uniforms;
+        let uniformMap = new Map();
+        if (uniforms) {
+            for (let i = 0; i < uniforms.length; i++) {
+                let uniform = uniforms[i];
+                if (uniform.type === BUFFER) {
+                    let buffer = device.createBuffer({
+                        size: uniform.value.length * 4,
+                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+                    });
+                    uniformMap.set(buffer, uniform);
+                    groupEntries.push({
+                        binding: uniform.binding,
+                        resource: {
+                            buffer
+                        }
+                    });
+                }
+                else if (uniform.type === SAMPLER) {
+                    let sampler = device.createSampler(uniform.value.data);
+                    uniformMap.set(sampler, uniform);
+                    groupEntries.push({
+                        binding: uniform.binding,
+                        resource: sampler
+                    });
+                }
+                else if (uniform.type === TEXTURE_IMAGE) {
+                    let texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
+                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
+                        format: 'rgba8unorm',
+                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+                    });
+                    uniformMap.set(texture, uniform);
+                    groupEntries.push({
+                        binding: uniform.binding,
+                        resource: texture.createView()
+                    });
+                }
+            }
+        }
+        let uniformBindGroup = device.createBindGroup({
+            layout: pipeline.getBindGroupLayout(0),
+            entries: groupEntries,
+        });
+        return {
+            mvpExt: new Matrix4$1(),
+            mvp: new Matrix3$1(),
+            attributesBuffers: buffers,
+            uniformBuffer,
+            uniformBindGroup,
+            pipeline,
+            uniformMap,
+            material,
+            geometry
+        };
+    }
+    createPipeline(geometry, material) {
+        const pipelineLayout = this.engine.device.createPipelineLayout({
+            bindGroupLayouts: [this.createBindGroupLayout(material)],
+        });
+        let vertexBuffers = this.parseGeometryBufferLayout(geometry);
+        let stages = this.createStages(material, vertexBuffers);
+        let pipeline = this.engine.device.createRenderPipeline({
+            layout: pipelineLayout,
+            vertex: stages.vertex,
+            fragment: stages.fragment,
+            primitive: {
+                topology: geometry.topology,
+                cullMode: geometry.cullMode,
+            },
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
+            },
+        });
+        return pipeline;
+    }
+    parseGeometryBufferLayout(geometry) {
+        let vertexBuffers = [];
+        let location = 0;
+        for (let i = 0; i < geometry.data.length; i++) {
+            let data = geometry.data[i];
+            let attributeDescripters = [];
+            for (let j = 0; j < data.attributes.length; j++) {
+                attributeDescripters.push({
+                    shaderLocation: location++,
+                    offset: data.attributes[j].offset * data.data.BYTES_PER_ELEMENT,
+                    format: "float32x" + data.attributes[j].length,
+                });
+            }
+            vertexBuffers.push({
+                arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
+                attributes: attributeDescripters
+            });
+        }
+        return vertexBuffers;
+    }
+    createBindGroupLayout(material) {
+        let uniforms = material.data.uniforms;
+        let entries = [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: 'uniform',
+                }
+            }
+        ];
+        if (uniforms) {
+            for (let i = 0; i < uniforms.length; i++) {
+                if (uniforms[i].type === SAMPLER) {
+                    entries.push({
+                        visibility: GPUShaderStage.FRAGMENT,
+                        binding: uniforms[i].binding,
+                        sampler: {
+                            type: 'filtering'
+                        },
+                    });
+                }
+                else if (uniforms[i].type === TEXTURE_IMAGE) {
+                    entries.push({
+                        visibility: GPUShaderStage.FRAGMENT,
+                        binding: uniforms[i].binding,
+                        texture: {
+                            sampleType: 'float',
+                        },
+                    });
+                }
+                else {
+                    entries.push({
+                        visibility: GPUShaderStage.FRAGMENT,
+                        binding: uniforms[i].binding,
+                        buffer: {
+                            type: 'uniform',
+                        }
+                    });
+                }
+            }
+        }
+        return this.engine.device.createBindGroupLayout({
+            entries,
+        });
+    }
+    createStages(material, vertexBuffers) {
+        let vertex = {
+            module: this.engine.device.createShaderModule({
+                code: material.data.vertex,
+            }),
+            entryPoint: "main",
+            buffers: vertexBuffers
+        };
+        let fragment = {
+            module: this.engine.device.createShaderModule({
+                code: material.data.fragment,
+            }),
+            entryPoint: "main",
+            targets: [
+                {
+                    format: this.engine.preferredFormat,
+                    blend: material === null || material === void 0 ? void 0 : material.data.blend
+                }
+            ]
+        };
+        material.dirty = false;
+        return {
+            vertex,
+            fragment
+        };
+    }
+}
+Mesh2Renderer.renderTypes = MESH2;
 
 const DEG_360_RAD = Math.PI * 2;
 const EPSILON = Math.pow(2, -52);
@@ -8093,6 +8567,18 @@ Matrix3.fromArray = (source, out = new Matrix3()) => {
     out.set(source);
     return out;
 };
+Matrix3.fromMatrix2 = (mat4, out = new Matrix3()) => {
+    out[0] = mat4[0];
+    out[1] = mat4[1];
+    out[2] = 0;
+    out[3] = mat4[2];
+    out[4] = mat4[3];
+    out[5] = 0;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 1;
+    return out;
+};
 Matrix3.fromMatrix4 = (mat4, out = new Matrix3()) => {
     out[0] = mat4[0];
     out[1] = mat4[1];
@@ -8277,9 +8763,9 @@ Matrix3.multiplyTranslateMatrix = (a, b, out = new Matrix3()) => {
     out[0] = a00$1;
     out[1] = a01$1;
     out[2] = a02$1;
-    out[3] = b10$1;
-    out[4] = b10$1;
-    out[5] = b10$1;
+    out[3] = a10$1;
+    out[4] = a10$1;
+    out[5] = a10$1;
     out[6] = b20$1 * a00$1 + b21$1 * a10$1 + a20$1;
     out[7] = b20$1 * a01$1 + b21$1 * a11$1 + a21$1;
     out[8] = b20$1 * a02$1 + b21$1 * a12$1 + a22$1;
@@ -8909,6 +9395,25 @@ Matrix4.fromEuler = (euler, out = new Matrix4()) => {
     out[7] = 0;
     out[11] = 0;
     // last column
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
+Matrix4.fromMatrix3 = (data, out = new Matrix4()) => {
+    out[0] = data[0];
+    out[1] = data[1];
+    out[2] = data[2];
+    out[3] = 0;
+    out[4] = data[3];
+    out[5] = data[4];
+    out[6] = data[5];
+    out[7] = 0;
+    out[8] = data[6];
+    out[9] = data[7];
+    out[10] = data[8];
+    out[11] = 0;
     out[12] = 0;
     out[13] = 0;
     out[14] = 0;
@@ -9741,54 +10246,6 @@ Matrix4.transpose = (a, out = new Matrix4()) => {
     return out;
 };
 
-let descriptor = {
-    size: 0,
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true
-};
-var createVerticesBuffer = (device, data) => {
-    descriptor.size = data.byteLength;
-    let buffer = device.createBuffer(descriptor);
-    new Float32Array(buffer.getMappedRange()).set(data);
-    buffer.unmap();
-    return buffer;
-};
-
-const DEFAULT_MATERIAL = new Material(`
-struct Uniforms {
-	modelViewProjectionMatrix : mat4x4<f32>
-  };
-  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-struct VertexOutput {
-	@builtin(position) Position : vec4<f32>
-};
-
-fn mapRange(
-	value: f32,
-	range1: vec2<f32>,
-	range2: vec2<f32>,
-) -> f32 {
-	var d1: f32 = range1.y - range1.x;
-	var d2: f32 = range2.y - range2.x;
-
-	return (value - d1 * 0.5) / d2 / d1;
-};
-
-@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-	var output : VertexOutput;
-	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	if (output.Position.w == 1.0) {
-		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
-	}
-	return output;
-}
-`, `
-@stage(fragment) fn main() -> @location(0) vec4<f32> {
-	return vec4<f32>(1., 1., 1., 1.0);
-}
-`);
-
 class Mesh3Renderer {
     constructor(engine, camera) {
         this.renderTypes = MESH3;
@@ -9796,7 +10253,7 @@ class Mesh3Renderer {
         this.engine = engine;
         this.camera = camera;
     }
-    render(mesh, passEncoder, _scissor) {
+    render(mesh, passEncoder) {
         var _a;
         let cacheData = this.entityCacheData.get(mesh);
         // 假设更换了几何体和材质则重新生成缓存
@@ -10726,8 +11183,27 @@ class TweenSystem extends System {
     }
 }
 
+var createCamera2 = (projection, name = "camera", world) => {
+    const entity = new Camera3$1(name, projection);
+    if (world) {
+        world.addEntity(entity);
+    }
+    return entity;
+};
+
 var createCamera3 = (projection, name = "camera", world) => {
     const entity = new Camera3(name, projection);
+    if (world) {
+        world.addEntity(entity);
+    }
+    return entity;
+};
+
+var createMesh2 = (geometry, material = DEFAULT_MATERIAL, name = MESH2, world) => {
+    const entity = new Object3$1(name);
+    entity.addComponent(geometry)
+        .addComponent(material)
+        .addComponent(new Renderable(MESH2));
     if (world) {
         world.addEntity(entity);
     }
@@ -10747,8 +11223,10 @@ var createMesh3 = (geometry, material = DEFAULT_MATERIAL, name = MESH3, world) =
 
 var index = /*#__PURE__*/Object.freeze({
 	__proto__: null,
+	createCamera2: createCamera2,
 	createCamera3: createCamera3,
+	createMesh2: createMesh2,
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, AtlasTexture, constants$2 as COMPONENT_NAME, Camera3, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, EngineTexture, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry, index$2 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager, Material, Mathx_module as Mathx, Matrix3Component, Matrix4Component, NormalMaterial, Object3, OrthogonalProjection, PerspectiveProjection, Projection2D, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector2Scale2, Vector3Scale3, WebGLEngine, WebGPUEngine, Mesh3Renderer as WebGPUMesh3Renderer, RenderSystem as WebGPURenderSystem, World };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, AtlasTexture, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, EngineTexture, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, IdGeneratorInstance, ImageBitmapTexture, Manager, Material, Mathx_module as Mathx, Matrix3Component, Matrix4Component, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, Projection2D, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector2Scale2, Vector3Scale3, WebGLEngine, WebGPUEngine, Mesh2Renderer as WebGPUMesh2Renderer, Mesh3Renderer as WebGPUMesh3Renderer, RenderSystem as WebGPURenderSystem, World };

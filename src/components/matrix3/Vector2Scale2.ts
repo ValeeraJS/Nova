@@ -1,4 +1,4 @@
-import { Matrix4 } from "@valeera/mathx";
+import { Matrix3 } from "@valeera/mathx";
 import AScale2 from "./AScale2";
 
 const DEFAULT_SCALE = [1, 1];
@@ -50,7 +50,7 @@ export default class Vector2Scale2 extends AScale2 {
     }
 
     update() {
-        Matrix4.fromScaling(this.vec2, this.data);
+        Matrix3.fromScaling(this.vec2, this.data);
 
         return this;
     }

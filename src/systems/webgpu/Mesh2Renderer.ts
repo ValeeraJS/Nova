@@ -1,18 +1,19 @@
-import { Matrix4 } from "@valeera/mathx/src/matrix";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
-import { BUFFER, GEOMETRY, MATERIAL, MESH3, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
-import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
+import { BUFFER, GEOMETRY, MATERIAL, MESH2, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
+import { updateModelMatrixComponent } from "../../components/matrix3/Matrix3Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
 import IRenderer from "./IWebGPURenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
-import { ICamera3 } from "../../entities/Camera3";
-import Object3 from "../../entities/Object3";
+import { ICamera2 } from "../../entities/Camera2";
+import Object2 from "../../entities/Object2";
 import { DEFAULT_MATERIAL } from "../../components/material/defaultMaterial";
+import { Matrix3, Matrix4 } from "@valeera/mathx";
 
 interface ICacheData {
+	mvpExt: Float32Array;
 	mvp: Float32Array;
 	pipeline: GPURenderPipeline;
 	uniformBuffer: GPUBuffer;
@@ -23,18 +24,18 @@ interface ICacheData {
 	material: Material;
 }
 
-export default class Mesh3Renderer implements IRenderer {
-	public static readonly renderTypes = MESH3;
-	public readonly renderTypes = MESH3;
-	public camera: ICamera3;
+export default class Mesh2Renderer implements IRenderer {
+	public static readonly renderTypes = MESH2;
+	public readonly renderTypes = MESH2;
+	public camera: ICamera2;
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
 	engine: WebGPUEngine;
-	public constructor(engine: WebGPUEngine, camera: ICamera3) {
+	public constructor(engine: WebGPUEngine, camera: ICamera2) {
 		this.engine = engine;
 		this.camera = camera;
 	}
 
-	render(mesh: Object3, passEncoder: GPURenderPassEncoder): this {
+	render(mesh: Object2, passEncoder: GPURenderPassEncoder): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
@@ -56,16 +57,18 @@ export default class Mesh3Renderer implements IRenderer {
 		}
 
 		const mvp = cacheData.mvp;
-		Matrix4.multiply(this.camera.projection.data,
-			(Matrix4.invert(updateModelMatrixComponent(this.camera).data) as Float32Array), mvp);
-		Matrix4.multiply(mvp, mesh.worldMatrix.data, mvp);
+		const mvpExt = cacheData.mvpExt;
+		Matrix3.multiply(this.camera.projection.data,
+			(Matrix3.invert(updateModelMatrixComponent(this.camera).data) as Float32Array), mvp);
+		Matrix3.multiply(mvp, mesh.worldMatrix.data, mvp);
+		Matrix4.fromMatrix3(mvp, mvpExt);
 
 		this.engine.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
 			0,
-			mvp.buffer,
-			mvp.byteOffset,
-			mvp.byteLength
+			mvpExt.buffer,
+			mvpExt.byteOffset,
+			mvpExt.byteLength
 		);
 
 		cacheData.uniformMap.forEach((uniform, key) => {
@@ -98,7 +101,7 @@ export default class Mesh3Renderer implements IRenderer {
 		return this;
 	}
 
-	private createCacheData(mesh: Object3): ICacheData {
+	private createCacheData(mesh: Object2): ICacheData {
 		updateModelMatrixComponent(mesh);
 		let device = this.engine.device;
 
@@ -167,7 +170,8 @@ export default class Mesh3Renderer implements IRenderer {
 		});
 
 		return {
-			mvp: new Float32Array(16),
+			mvpExt: new Matrix4(),
+			mvp: new Matrix3(),
 			attributesBuffers: buffers,
 			uniformBuffer,
 			uniformBindGroup,
@@ -175,7 +179,7 @@ export default class Mesh3Renderer implements IRenderer {
 			uniformMap,
 			material,
 			geometry
-		}
+		};
 	}
 
 	private createPipeline(geometry: Geometry, material: Material) {
