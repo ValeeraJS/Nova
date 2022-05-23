@@ -188,7 +188,7 @@ export default class MeshRenderer implements IWebGLRenderer {
 				});
 			}
 			vertexBuffers.push({
-				arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT as any,
+				arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
 				attributes: attributeDescripters
 			});
 		}

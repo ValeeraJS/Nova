@@ -26,7 +26,6 @@ export default class RenderSystem extends System {
 			device: engine.device,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 			format: engine.preferredFormat,
-			size: [engine.canvas.width, engine.canvas.height],
 			compositingAlphaMode: "premultiplied"
 		});
 		this.setScissor(scissor).setViewport(viewport);
@@ -50,6 +49,9 @@ export default class RenderSystem extends System {
 	}
 
 	handle(entity: IEntity, store: TWorldInjection): this {
+		if (entity.disabled) {
+			return this;
+		}
 		// 根据不同类别进行渲染
 		this.rendererMap.get(entity.getComponent(RENDERABLE)?.data)?.render(entity, store.get("passEncoder"));
 		return this;

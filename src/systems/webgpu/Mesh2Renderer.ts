@@ -222,7 +222,7 @@ export default class Mesh2Renderer implements IRenderer {
 				});
 			}
 			vertexBuffers.push({
-				arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT as any,
+				arrayStride: geometry.data[i].stride * geometry.data[i].data.BYTES_PER_ELEMENT,
 				attributes: attributeDescripters
 			});
 		}

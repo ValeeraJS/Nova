@@ -39,7 +39,7 @@
 		"@rollup/plugin-node-resolve": "^13.1.3",
 		"@typescript-eslint/eslint-plugin": "^5.11.0",
 		"@typescript-eslint/parser": "^5.11.0",
-		"@webgpu/types": "^0.1.15",
+		"@webgpu/types": "^0.1.17",
 		"chai": "^4.3.6",
 		"concurrently": "^7.0.0",
 		"eslint": "^8.9.0",
@@ -75,8 +75,9 @@
 		"@valeera/eventdispatcher": "2.2.4",
 		"@valeera/mathx": "0.1.36",
 		"@valeera/timeline": "0.1.2",
+		"@valeera/tree": "0.1.5-b",
 		"@valeera/webgpu-constant": "0.1.1",
-		"@valeera/x": "0.1.18-b"
+		"@valeera/x": "0.1.19"
 	},
 	"publishConfig": {
 		"access": "public"

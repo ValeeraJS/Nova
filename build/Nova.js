@@ -1908,8 +1908,8 @@
 	    out[1] = a01$1$1;
 	    out[2] = a02$1$1;
 	    out[3] = a10$1$1;
-	    out[4] = a10$1$1;
-	    out[5] = a10$1$1;
+	    out[4] = a11$1$1;
+	    out[5] = a12$1$1;
 	    out[6] = b20$1$1 * a00$1$1 + b21$1$1 * a10$1$1 + a20$1$1;
 	    out[7] = b20$1$1 * a01$1$1 + b21$1$1 * a11$1$1 + a21$1$1;
 	    out[8] = b20$1$1 * a02$1$1 + b21$1$1 * a12$1$1 + a22$1$1;
@@ -5155,9 +5155,9 @@
 	    return geo;
 	};
 
-	const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, segmentX: 1, segmentY: 1 });
+	const DEFAULT_PLANE_OPTIONS$1 = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, segmentX: 1, segmentY: 1 });
 	var createPlane3 = (options = {}) => {
-	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_PLANE_OPTIONS), options);
+	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine } = Object.assign(Object.assign({}, DEFAULT_PLANE_OPTIONS$1), options);
 	    let stride = 3;
 	    const halfX = width * 0.5;
 	    const halfY = height * 0.5;
@@ -5506,7 +5506,7 @@
 		createSphere3: createSphere3
 	});
 
-	const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1 });
+	const DEFAULT_CIRCLE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, segments: 32, angleStart: 0, angle: Math.PI * 2, radius: 1, cullMode: "back" });
 	var createCircle2 = (options = {}) => {
 	    let stride = 3;
 	    const indices = [];
@@ -5580,9 +5580,101 @@
 	    }
 	};
 
+	const DEFAULT_PLANE_OPTIONS = Object.assign(Object.assign({}, DEFAULT_OPTIONS), { hasIndices: true, combine: true, width: 1, height: 1, segmentX: 1, segmentY: 1, cullMode: "back" });
+	var createPlane2 = (options = {}) => {
+	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, combine } = Object.assign(Object.assign({}, DEFAULT_PLANE_OPTIONS), options);
+	    let stride = 3;
+	    const halfX = width * 0.5;
+	    const halfY = height * 0.5;
+	    const gridX = Math.max(1, Math.round(segmentX));
+	    const gridY = Math.max(1, Math.round(segmentY));
+	    const gridX1 = gridX + 1;
+	    const gridY1 = gridY + 1;
+	    const segmentWidth = width / gridX;
+	    const segmentHeight = height / gridY;
+	    const indices = [];
+	    const positions = [];
+	    const uvs = [];
+	    for (let iy = 0; iy < gridY1; iy++) {
+	        const y = iy * segmentHeight - halfY;
+	        for (let ix = 0; ix < gridX1; ix++) {
+	            const x = ix * segmentWidth - halfX;
+	            positions.push(x, -y);
+	            uvs.push(ix / gridX);
+	            uvs.push(iy / gridY);
+	        }
+	    }
+	    for (let iy = 0; iy < gridY; iy++) {
+	        for (let ix = 0; ix < gridX; ix++) {
+	            const a = ix + gridX1 * iy;
+	            const b = ix + gridX1 * (iy + 1);
+	            const c = (ix + 1) + gridX1 * (iy + 1);
+	            const d = (ix + 1) + gridX1 * iy;
+	            indices.push(a, b, d);
+	            indices.push(b, c, d);
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let geo = new Geometry(2, len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 2,
+	            }];
+	        if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 2,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 2;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
 	var index$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
-		createCircle2: createCircle2
+		createCircle2: createCircle2,
+		createPlane2: createPlane2
 	});
 
 	const FIND_LEAVES_VISITOR = {
@@ -5772,9 +5864,8 @@
 	        }
 	        if (world.entityManager) {
 	            this.entitySet.get(world.entityManager)?.forEach((item) => {
-	                if (!item.disabled) {
-	                    this.handle(item, world.store);
-	                }
+	                // 此处不应该校验disabled。这个交给各自系统自行判断
+	                this.handle(item, world.store);
 	            });
 	        }
 	        return this;
@@ -6744,7 +6835,7 @@ struct VertexOutput {
 	            Matrix3$1.multiplyScaleMatrix(m3.data, s3.data, m3.data);
 	        }
 	        if (a3) {
-	            Matrix3$1.multiply(m3.data, a3.data, m3.data);
+	            Matrix3$1.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
 	        }
 	        if (p3) {
 	            p3.dirty = false;
@@ -7855,7 +7946,7 @@ struct VertexOutput {
 	            this.adapter = adapter;
 	            this.device = device;
 	            this.inited = true;
-	            this.preferredFormat = context.getPreferredFormat(adapter);
+	            this.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
 	            this.setRenderPassDescripter();
 	            this.targetTexture = this.device.createTexture({
 	                size: [this.canvas.width, this.canvas.height],
@@ -8028,6 +8119,179 @@ struct VertexOutput {
 	    constructor(name = "Camera3", projection) {
 	        super(name);
 	        this.projection = projection;
+	    }
+	}
+
+	let weakMapTmp;
+	class System {
+	    constructor(name = "", fitRule) {
+	        this.id = IdGeneratorInstance$1.next();
+	        this.isSystem = true;
+	        this.name = "";
+	        this.loopTimes = 0;
+	        this.entitySet = new WeakMap();
+	        this.usedBy = [];
+	        this.cache = new WeakMap();
+	        this._disabled = false;
+	        this.name = name;
+	        this.disabled = false;
+	        this.rule = fitRule;
+	    }
+	    get disabled() {
+	        return this._disabled;
+	    }
+	    set disabled(value) {
+	        this._disabled = value;
+	    }
+	    checkUpdatedEntities(manager) {
+	        if (manager) {
+	            weakMapTmp = this.entitySet.get(manager);
+	            if (!weakMapTmp) {
+	                weakMapTmp = new Set();
+	                this.entitySet.set(manager, weakMapTmp);
+	            }
+	            manager.updatedEntities.forEach((item) => {
+	                if (this.query(item)) {
+	                    weakMapTmp.add(item);
+	                }
+	                else {
+	                    weakMapTmp.delete(item);
+	                }
+	            });
+	        }
+	        return this;
+	    }
+	    checkEntityManager(manager) {
+	        if (manager) {
+	            weakMapTmp = this.entitySet.get(manager);
+	            if (!weakMapTmp) {
+	                weakMapTmp = new Set();
+	                this.entitySet.set(manager, weakMapTmp);
+	            }
+	            else {
+	                weakMapTmp.clear();
+	            }
+	            manager.elements.forEach((item) => {
+	                if (this.query(item)) {
+	                    weakMapTmp.add(item);
+	                }
+	                else {
+	                    weakMapTmp.delete(item);
+	                }
+	            });
+	        }
+	        return this;
+	    }
+	    query(entity) {
+	        return this.rule(entity);
+	    }
+	    run(world) {
+	        var _a;
+	        if (this.disabled) {
+	            return this;
+	        }
+	        if (world.entityManager) {
+	            (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
+	                // 此处不应该校验disabled。这个交给各自系统自行判断
+	                this.handle(item, world.store);
+	            });
+	        }
+	        return this;
+	    }
+	    serialize() {
+	        return {};
+	    }
+	    destroy() {
+	        for (let i = this.usedBy.length - 1; i > -1; i--) {
+	            this.usedBy[i].remove(this);
+	        }
+	        return this;
+	    }
+	}
+
+	class HashRouteSystem extends System {
+	    constructor() {
+	        super("HashRouteSystem", (entity) => {
+	            return entity.getFirstComponentByTagLabel("HashRoute");
+	        });
+	        this.currentPath = "";
+	        HashRouteSystem.count++;
+	        if (!HashRouteSystem.listeningHashChange) {
+	            HashRouteSystem.listeningHashChange = true;
+	            window.addEventListener("load", HashRouteSystem.listener, false);
+	            window.addEventListener("hashchange", HashRouteSystem.listener, false);
+	        }
+	    }
+	    destroy() {
+	        HashRouteSystem.count--;
+	        if (HashRouteSystem.count < 1) {
+	            window.removeEventListener("load", HashRouteSystem.listener, false);
+	            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
+	        }
+	        return this;
+	    }
+	    handle(entity) {
+	        let routeComponent = entity.getComponentsByTagLabel("HashRoute");
+	        for (let i = routeComponent.length - 1; i > -1; i--) {
+	            routeComponent[i].route(this.currentPath, entity);
+	        }
+	        return this;
+	    }
+	    run(world) {
+	        if (HashRouteSystem.currentPath === this.currentPath) {
+	            return this;
+	        }
+	        console.log(HashRouteSystem.currentPath);
+	        this.currentPath = HashRouteSystem.currentPath;
+	        super.run(world);
+	        return this;
+	    }
+	}
+	HashRouteSystem.listeningHashChange = false;
+	HashRouteSystem.count = 0; // 计数
+	HashRouteSystem.listener = () => {
+	    HashRouteSystem.currentPath = location.hash.slice(1) || "/";
+	};
+	HashRouteSystem.currentPath = location.hash.slice(1) || "/";
+
+	class HashRouteComponent extends TreeNode.mixin(Component) {
+	    constructor(name, data) {
+	        if (!data.path.startsWith("/")) {
+	            data.path = "/" + data.path;
+	        }
+	        super(name, data, [{
+	                label: "HashRoute",
+	                unique: false
+	            }]);
+	    }
+	    route(path, entity) {
+	        let p = this.data.path;
+	        if (path === p) {
+	            this.data.action(entity, true);
+	            for (let i = this.children.length - 1; i > -1; i--) {
+	                this.children[i].route("", entity);
+	            }
+	        }
+	        else if (path.startsWith(p)) {
+	            let str = path.substring(p.length);
+	            if (str.startsWith("/")) {
+	                this.data.action(entity, true);
+	                for (let i = this.children.length - 1; i > -1; i--) {
+	                    this.children[i].route(str, entity);
+	                }
+	            }
+	            this.data.action(entity, false);
+	            for (let i = this.children.length - 1; i > -1; i--) {
+	                this.children[i].route("", entity);
+	            }
+	        }
+	        else {
+	            this.data.action(entity, false);
+	            for (let i = this.children.length - 1; i > -1; i--) {
+	                this.children[i].route("", entity);
+	            }
+	        }
+	        return this;
 	    }
 	}
 
@@ -8770,8 +9034,8 @@ fn mapRange(
 	    out[1] = a01$1;
 	    out[2] = a02$1;
 	    out[3] = a10$1;
-	    out[4] = a10$1;
-	    out[5] = a10$1;
+	    out[4] = a11$1;
+	    out[5] = a12$1;
 	    out[6] = b20$1 * a00$1 + b21$1 * a10$1 + a20$1;
 	    out[7] = b20$1 * a01$1 + b21$1 * a11$1 + a21$1;
 	    out[8] = b20$1 * a02$1 + b21$1 * a12$1 + a22$1;
@@ -10495,94 +10759,6 @@ fn mapRange(
 	}
 	Mesh3Renderer.renderTypes = MESH3;
 
-	let weakMapTmp;
-	class System {
-	    constructor(name = "", fitRule) {
-	        this.id = IdGeneratorInstance$1.next();
-	        this.isSystem = true;
-	        this.name = "";
-	        this.loopTimes = 0;
-	        this.entitySet = new WeakMap();
-	        this.usedBy = [];
-	        this.cache = new WeakMap();
-	        this._disabled = false;
-	        this.name = name;
-	        this.disabled = false;
-	        this.rule = fitRule;
-	    }
-	    get disabled() {
-	        return this._disabled;
-	    }
-	    set disabled(value) {
-	        this._disabled = value;
-	    }
-	    checkUpdatedEntities(manager) {
-	        if (manager) {
-	            weakMapTmp = this.entitySet.get(manager);
-	            if (!weakMapTmp) {
-	                weakMapTmp = new Set();
-	                this.entitySet.set(manager, weakMapTmp);
-	            }
-	            manager.updatedEntities.forEach((item) => {
-	                if (this.query(item)) {
-	                    weakMapTmp.add(item);
-	                }
-	                else {
-	                    weakMapTmp.delete(item);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    checkEntityManager(manager) {
-	        if (manager) {
-	            weakMapTmp = this.entitySet.get(manager);
-	            if (!weakMapTmp) {
-	                weakMapTmp = new Set();
-	                this.entitySet.set(manager, weakMapTmp);
-	            }
-	            else {
-	                weakMapTmp.clear();
-	            }
-	            manager.elements.forEach((item) => {
-	                if (this.query(item)) {
-	                    weakMapTmp.add(item);
-	                }
-	                else {
-	                    weakMapTmp.delete(item);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    query(entity) {
-	        return this.rule(entity);
-	    }
-	    run(world) {
-	        var _a;
-	        if (this.disabled) {
-	            return this;
-	        }
-	        if (world.entityManager) {
-	            (_a = this.entitySet.get(world.entityManager)) === null || _a === void 0 ? void 0 : _a.forEach((item) => {
-	                if (!item.disabled) {
-	                    this.handle(item, world.store);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    serialize() {
-	        return {};
-	    }
-	    destroy() {
-	        for (let i = this.usedBy.length - 1; i > -1; i--) {
-	            this.usedBy[i].remove(this);
-	        }
-	        return this;
-	    }
-	}
-
 	class RenderSystem extends System {
 	    constructor(engine, viewport, scissor) {
 	        super("Render System", (entity) => {
@@ -10601,7 +10777,6 @@ fn mapRange(
 	            device: engine.device,
 	            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 	            format: engine.preferredFormat,
-	            size: [engine.canvas.width, engine.canvas.height],
 	            compositingAlphaMode: "premultiplied"
 	        });
 	        this.setScissor(scissor).setViewport(viewport);
@@ -10623,6 +10798,9 @@ fn mapRange(
 	    }
 	    handle(entity, store) {
 	        var _a, _b;
+	        if (entity.disabled) {
+	            return this;
+	        }
 	        // 根据不同类别进行渲染
 	        (_b = this.rendererMap.get((_a = entity.getComponent(RENDERABLE)) === null || _a === void 0 ? void 0 : _a.data)) === null || _b === void 0 ? void 0 : _b.render(entity, store.get("passEncoder"));
 	        return this;
@@ -11267,6 +11445,8 @@ fn mapRange(
 	exports.Geometry = Geometry;
 	exports.Geometry2Factory = index$2;
 	exports.Geometry3Factory = index$3;
+	exports.HashRouteComponent = HashRouteComponent;
+	exports.HashRouteSystem = HashRouteSystem;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;
 	exports.Manager = Manager;

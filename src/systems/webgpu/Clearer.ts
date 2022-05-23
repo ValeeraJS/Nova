@@ -18,7 +18,7 @@ export default class Clearer {
 		this.renderPassDescriptor = {
 			colorAttachments: [
 				{
-					view: null as any,
+					view: null,
 					clearOp: "clear",
 					clearValue: this.color,
 					storeOp: "store"
@@ -71,9 +71,9 @@ export default class Clearer {
 	}
 
 	public clear(commandEncoder: GPUCommandEncoder): GPURenderPassEncoder {
-		(this.renderPassDescriptor.colorAttachments as any)[0].loadOp = "clear";
-		(this.renderPassDescriptor.colorAttachments as any)[0].clearValue = this.color;
-		(this.renderPassDescriptor.colorAttachments as any)[0].view = this.engine.context
+		(this.renderPassDescriptor.colorAttachments)[0].loadOp = "clear";
+		(this.renderPassDescriptor.colorAttachments)[0].clearValue = this.color;
+		(this.renderPassDescriptor.colorAttachments)[0].view = this.engine.context
 			.getCurrentTexture()
 			.createView();
 		return commandEncoder.beginRenderPass(this.renderPassDescriptor);

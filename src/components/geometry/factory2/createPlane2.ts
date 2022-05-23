@@ -1,59 +1,75 @@
-import { POSITION, UV, VERTICES } from "../constants";
+import { POSITION, VERTICES } from "../constants";
 import Geometry, { AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
-export type ICircleGeometryOptions = {
-    segments: number,
-    angleStart: number,
-    angle: number,
-    radius: number,
+export type IPlaneGeometryOptions = {
+    width: number,
+    height: number,
+    segmentX: number,
+    segmentY: number,
 } & IGeometryOptions;
 
-export type ICircleGeometryOptionsInput = Partial<ICircleGeometryOptions>;
+export type IPlaneGeometryOptionsInput = Partial<IPlaneGeometryOptions>;
 
-export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
+export const DEFAULT_PLANE_OPTIONS: IPlaneGeometryOptions = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
     combine: true,
-    segments: 32,
-    angleStart: 0,
-    angle: Math.PI * 2,
-    radius: 1,
+    width: 1,
+    height: 1,
+    segmentX: 1,
+    segmentY: 1,
     cullMode: "back"
 };
 
 
-export default (options: ICircleGeometryOptionsInput = {}): Geometry => {
-    let stride = 3;
+export default (options: IPlaneGeometryOptionsInput = {}): Geometry => {
 
-    const indices: number[] = [];
-    const positions = [0, 0];
-    const uvs = [0.5, 0.5];
-    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, combine } = {
-        ...DEFAULT_CIRCLE_OPTIONS,
+    const {width, height, segmentX, segmentY, topology, cullMode, hasUV, combine} = {
+        ...DEFAULT_PLANE_OPTIONS,
         ...options
-    };
-
-    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
-
-        const segment = angleStart + s / segments * angle;
-
-        positions.push(radius * Math.cos(segment), radius * Math.sin(segment));
-
-        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
-
     }
 
-    // indices
+    let stride = 3;
+    const halfX = width * 0.5;
+    const halfY = height * 0.5;
+    const gridX = Math.max(1, Math.round(segmentX));
+    const gridY = Math.max(1, Math.round(segmentY));
 
-    for (let i = 1; i <= segments; i++) {
+    const gridX1 = gridX + 1;
+    const gridY1 = gridY + 1;
+    const segmentWidth = width / gridX;
+    const segmentHeight = height / gridY;
 
-        indices.push(i, i + 1, 0);
+    const indices = [];
+    const positions = [];
+    const uvs = [];
 
+    for (let iy = 0; iy < gridY1; iy++) {
+        const y = iy * segmentHeight - halfY;
+        for (let ix = 0; ix < gridX1; ix++) {
+            const x = ix * segmentWidth - halfX;
+
+            positions.push(x, - y);
+
+            uvs.push(ix / gridX);
+            uvs.push(iy / gridY);
+        }
+    }
+
+    for (let iy = 0; iy < gridY; iy++) {
+        for (let ix = 0; ix < gridX; ix++) {
+            const a = ix + gridX1 * iy;
+            const b = ix + gridX1 * (iy + 1);
+            const c = (ix + 1) + gridX1 * (iy + 1);
+            const d = (ix + 1) + gridX1 * iy;
+
+            indices.push(a, b, d);
+            indices.push(b, c, d);
+        }
     }
 
     let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-    // let count = len / 3;
     let geo = new Geometry(2, len, topology, cullMode);
 
     // TODO indices 现在都是非索引版本
@@ -64,9 +80,9 @@ export default (options: ICircleGeometryOptionsInput = {}): Geometry => {
             length: 2,
         }];
         if (hasUV) {
-            stride = 4;
+            stride = 5;
             pickers.push({
-                name: UV,
+                name: 'uv',
                 offset: 2,
                 length: 2,
             });
@@ -81,12 +97,12 @@ export default (options: ICircleGeometryOptionsInput = {}): Geometry => {
             result[1 + strideI] = positions[i3 + 1];
 
             if (hasUV) {
-                result[2 + strideI] = uvs[i2];
-                result[3 + strideI] = uvs[i2 + 1];
+                result[3 + strideI] = uvs[i2];
+                result[4 + strideI] = uvs[i2 + 1];
             }
         }
-
         geo.addAttribute(VERTICES, result, stride, pickers);
+
         return geo;
     } else {
         // let result = new Float32Array(9);

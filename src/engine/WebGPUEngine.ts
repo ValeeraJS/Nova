@@ -60,7 +60,7 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 			this.adapter = adapter;
 			this.device = device;
 			this.inited = true;
-			this.preferredFormat = context.getPreferredFormat(adapter);
+			this.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
 			this.setRenderPassDescripter();
 			this.targetTexture = this.device.createTexture({
 				size: [this.canvas.width, this.canvas.height],

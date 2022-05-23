@@ -4,6 +4,7 @@ import EventFire from "@valeera/eventdispatcher";
 export * from "./components";
 export * from "./engine";
 export * from "./entities";
+export * from "./router";
 export * from "./systems/webgpu";
 export * from "./systems/tween";
 // export * from "./systems/webgl";

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geometry = Nova.Geometry2Factory.createPlane2({
+			width: 200,
+			height: 100
+		});
+		const material = new Nova.TextureMaterial(
+			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+		);
+		const mesh = Nova.EntityFactory.createMesh2(geometry, material);
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			const projection = new Nova.Projection2D(-canvas.width / 2, canvas.width / 2, -canvas.height / 2, canvas.height / 2);
+			const camera = new Nova.Camera2("", projection);
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMesh2Renderer(engine, camera);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem).add(mesh);
+		});
+
+		engine.addTask(() => {
+			world.run();
+			mesh.rotation.angle -= 0.01;
+		});
+	</script>
+</body>
