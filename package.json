@@ -25,7 +25,7 @@
 		"build-closure": "google-closure-compiler --compilation_level=WHITESPACE_ONLY  --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT_NEXT --language_out=ECMASCRIPT_NEXT --js build/Nova.js --js_output_file build/Nova.min.js",
 		"build-closure-legacy": "google-closure-compiler --compilation_level=WHITESPACE_ONLY  --warning_level=VERBOSE --jscomp_off=globalThis --jscomp_off=checkTypes --externs scripts/externs.js --language_in=ECMASCRIPT5 --language_out=ECMASCRIPT5 --js build/Nova.legacy.js --js_output_file build/Nova.legacy.min.js",
 		"build-all": "npm run build && npm run build-legacy && npm run build-closure && npm run build-closure-legacy",
-		"start": "npm run dev",
+		"serve": "http-server",
 		"lint": "eslint src --ext js --ext ts",
 		"test": "nyc --reporter=html --reporter=text mocha --require esm",
 		"travis": "npm run lint && npm test"
