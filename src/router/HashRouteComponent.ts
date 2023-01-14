@@ -33,10 +33,11 @@ export default class HashRouteComponent extends TreeNode.mixin(Component)<RouteC
                 for (let i = this.children.length - 1; i > -1; i--) {
                     this.children[i].route(str, entity);
                 }
-            }
-            this.data.action(entity, false);
-            for (let i = this.children.length - 1; i > -1; i--) {
-                this.children[i].route("", entity);
+            } else {
+                this.data.action(entity, false);
+                for (let i = this.children.length - 1; i > -1; i--) {
+                    this.children[i].route("", entity);
+                }
             }
         } else {
             this.data.action(entity, false);

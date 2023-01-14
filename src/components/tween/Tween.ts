@@ -10,8 +10,8 @@ export enum TWEEN_STATE {
 
 export type InterpolationType = {
 	type: 'number' | 'vector2' | 'vector3' | 'vector4';
-	origin: number | Float32Array; // 原始值
-	delta: number | Float32Array; // to和from值的差
+	origin: number | Float32Array | number[] | ArrayLike<number>; // 原始值
+	delta: number | Float32Array | number[] | ArrayLike<number>; // to和from值的差
 }
 
 export default class Tween extends Component<Map<string, InterpolationType>> {

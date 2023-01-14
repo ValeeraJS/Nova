@@ -21,7 +21,7 @@ fn mapRange(
 	return (value - d1 * 0.5) / d2 / d1;
 };
 
-@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var output : VertexOutput;
 	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	if (output.Position.w == 1.0) {
@@ -30,7 +30,7 @@ fn mapRange(
 	return output;
 }
 `,`
-@stage(fragment) fn main() -> @location(0) vec4<f32> {
+@fragment fn main() -> @location(0) vec4<f32> {
 	return vec4<f32>(1., 1., 1., 1.0);
 }
 `);

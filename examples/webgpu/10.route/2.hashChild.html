@@ -5,9 +5,10 @@
 </head>
 <body>
 	<canvas id="gpucanvas"></canvas>
-	<div style="position: fixed; top: 0; color: white !important;">
-		<a href="#/plane" rel="external nofollow">/plane</a>
-		<a href="#/box" rel="external nofollow">/box</a>
+	<div style="position: fixed; top: 0; color: white !important">
+		<a href="#/aaa" rel="external nofollow">/aaa</a> <br />
+		<a href="#/bbb" rel="external nofollow">/bbb</a> <br />
+		<a href="#/aaa/bbb" rel="external nofollow">/aaa/bbb</a>
 	</div>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../../build/Nova.js"></script>
@@ -23,25 +24,42 @@
 		const material = new Nova.TextureMaterial(
 			new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
 		);
-		const mesh = Nova.EntityFactory.createMesh3(geo, material);
-		mesh.addComponent(new Nova.HashRouteComponent("plane", {
-			path: "/plane",
-			action: (entity, match)=>{
+		const mesh = Nova.EntityFactory.createMesh3(geo, material, "aaa");
+		const aaa = new Nova.HashRouteComponent("aaa", {
+			path: "/aaa",
+			action: (entity, match) => {
 				entity.disabled = !match;
 			}
-		}));
+		});
+		mesh.addComponent(aaa);
 
 		const geo2 = Nova.Geometry3Factory.createBox3();
-		const material2 = new Nova.TextureMaterial(
-			new Nova.ImageBitmapTexture("./../../textures/back.png", 512, 512)
-		);
-		const mesh2 = Nova.EntityFactory.createMesh3(geo2, material2);
-		mesh2.addComponent(new Nova.HashRouteComponent("box", {
-			path: "/box",
-			action: (entity, match)=>{
+		const mesh2 = Nova.EntityFactory.createMesh3(geo2);
+		mesh2.name = "bbb";
+		const bbb = new Nova.HashRouteComponent("bbb", {
+			path: "/bbb",
+			action: (entity, match) => {
 				entity.disabled = !match;
 			}
-		}));
+		});
+		mesh2.addComponent(bbb);
+
+		const aaabbb = new Nova.HashRouteComponent("aaabbb", {
+			path: "/aaa",
+			action: (entity, match) => {
+				entity.disabled = !match;
+			}
+		});
+		aaabbb.addChild(bbb);
+
+		const mesh3 = Nova.EntityFactory.createMesh3(
+			geo2,
+			new Nova.TextureMaterial(
+				new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
+			),
+			"aaabbb"
+		);
+		mesh3.addComponent(aaabbb);
 
 		const projection = new Nova.PerspectiveProjection(
 			Math.PI / 3,
@@ -58,12 +76,13 @@
 				let routeSystem = new Nova.HashRouteSystem();
 				let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
 				renderSystem.addRenderer(renderer);
-				world.add(renderSystem).add(routeSystem).add(mesh).add(mesh2);
+				world.add(renderSystem).add(routeSystem).add(mesh).add(mesh2).add(mesh3);
 			})
 			.addTask(() => {
 				world.run();
 				mesh.rotation.y -= 0.01;
 				mesh2.rotation.y += 0.01;
+				mesh3.rotation.x += 0.01;
 			});
 	</script>
 </body>

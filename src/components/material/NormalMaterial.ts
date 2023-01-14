@@ -11,7 +11,7 @@ struct VertexOutput {
 	@location(0) normal : vec4<f32>
 };
 
-@stage(vertex) fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
+@vertex fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	out.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));
@@ -19,7 +19,7 @@ struct VertexOutput {
 }`;
 
 const fragmentShader = `
-@stage(fragment) fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
+@fragment fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
 

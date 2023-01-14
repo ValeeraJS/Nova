@@ -39,9 +39,9 @@ export default class HashRouteSystem extends System {
 	}
 
 	handle(entity: Entity): this {
-		let routeComponent = entity.getComponentsByTagLabel("HashRoute") as HashRouteComponent[];
-		for (let i = routeComponent.length - 1; i > -1; i--) {
-			routeComponent[i].route(this.currentPath, entity);
+		let routeComponents = entity.getComponentsByTagLabel("HashRoute") as HashRouteComponent[];
+		for (let i = routeComponents.length - 1; i > -1; i--) {
+			routeComponents[i].route(this.currentPath, entity);
 		}
 		return this;
 	}
@@ -50,7 +50,6 @@ export default class HashRouteSystem extends System {
 		if (HashRouteSystem.currentPath === this.currentPath) {
 			return this;
 		}
-		console.log(HashRouteSystem.currentPath)
 		this.currentPath = HashRouteSystem.currentPath;
 		super.run(world);
 		return this;

@@ -26,7 +26,7 @@ export default class RenderSystem extends System {
 			device: engine.device,
 			usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 			format: engine.preferredFormat,
-			compositingAlphaMode: "premultiplied"
+			alphaMode: "premultiplied"
 		});
 		this.setScissor(scissor).setViewport(viewport);
 	}

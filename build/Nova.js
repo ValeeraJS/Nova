@@ -102,9 +102,9 @@
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$1 = (Base = Object, eventKeyList = []) => {
+	const mixin$2 = (Base = Object, eventKeyList = []) => {
 	    return class EventFirer extends Base {
-	        static mixin = mixin$1;
+	        static mixin = mixin$2;
 	        eventKeyList = eventKeyList;
 	        /**
 	         * store all the filters
@@ -211,7 +211,7 @@
 	        }
 	    };
 	};
-	var EventDispatcher = mixin$1(Object);
+	var EventDispatcher = mixin$2(Object);
 
 	const S4 = () => {
 	    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -500,21 +500,21 @@
 
 	const DEG_TO_RAD = Math.PI / 180;
 	const DEG_360_RAD$1 = Math.PI * 2;
-	const DEG_90_RAD = Math.PI / 2;
+	const DEG_90_RAD = Math.PI * 0.5;
 	const DEG_60_RAD = Math.PI / 3;
-	const DEG_45_RAD = Math.PI / 4;
+	const DEG_45_RAD = Math.PI * 0.25;
 	const DEG_30_RAD = Math.PI / 6;
 	const EPSILON$1 = Math.pow(2, -52);
 	const RAD_TO_DEG = 180 / Math.PI;
 
 	var constants = /*#__PURE__*/Object.freeze({
 		__proto__: null,
-		DEG_TO_RAD: DEG_TO_RAD,
-		DEG_360_RAD: DEG_360_RAD$1,
-		DEG_90_RAD: DEG_90_RAD,
-		DEG_60_RAD: DEG_60_RAD,
-		DEG_45_RAD: DEG_45_RAD,
 		DEG_30_RAD: DEG_30_RAD,
+		DEG_360_RAD: DEG_360_RAD$1,
+		DEG_45_RAD: DEG_45_RAD,
+		DEG_60_RAD: DEG_60_RAD,
+		DEG_90_RAD: DEG_90_RAD,
+		DEG_TO_RAD: DEG_TO_RAD,
 		EPSILON: EPSILON$1,
 		RAD_TO_DEG: RAD_TO_DEG
 	});
@@ -670,7 +670,93 @@
 	    yellowgreen: 0x9acd32
 	};
 
+	const ArraybufferDataType$1 = {
+	    COLOR_GPU: "col",
+	    COLOR_RGB: "col_rgb",
+	    COLOR_RGBA: "col_rgba",
+	    EULER: "euler",
+	    MATRIX2: "mat2",
+	    MATRIX3: "mat3",
+	    MATRIX4: "mat4",
+	    POLAR: "polar",
+	    QUATERNION: "qua",
+	    VECTOR2: "vec2",
+	    VECTOR3: "vec3",
+	    VECTOR4: "vec4"
+	};
+
 	class ColorRGBA extends Uint8Array {
+	    static average = (color) => {
+	        return (color[0] + color[1] + color[2]) / 3;
+	    };
+	    static averageWeighted = (color, wr = 0.299, wg = 0.587, wb = 0.114) => {
+	        return color[0] * wr + color[1] * wg + color[2] * wb;
+	    };
+	    static clone = (color) => {
+	        return new ColorRGBA(color[0], color[1], color[2], color[3]);
+	    };
+	    static create = (r = 0, g = 0, b = 0, a = 1) => {
+	        return new ColorRGBA(r, g, b, a);
+	    };
+	    static equals = (a, b) => {
+	        return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
+	            (a.g ?? a[1]) === (b.g ?? b[1]) &&
+	            (a.b ?? a[2]) === (b.b ?? b[2]) &&
+	            (a.a ?? a[3]) === (b.a ?? b[3]));
+	    };
+	    static fromArray = (arr, out = new ColorRGBA()) => {
+	        out[0] = arr[0];
+	        out[1] = arr[1];
+	        out[2] = arr[2];
+	        out[3] = arr[3];
+	        return out;
+	    };
+	    static fromHex = (hex, alpha = 255, out = new ColorRGBA()) => {
+	        out[0] = hex >> 16;
+	        out[1] = (hex >> 8) & 255;
+	        out[2] = hex & 255;
+	        out[3] = alpha;
+	        return out;
+	    };
+	    static fromJson = (json, out = new ColorRGBA()) => {
+	        out[0] = json.r;
+	        out[1] = json.g;
+	        out[2] = json.b;
+	        out[3] = json.a;
+	        return out;
+	    };
+	    static fromScalar = (scalar, alpha = 255, out = new ColorRGBA()) => {
+	        out[0] = scalar;
+	        out[1] = scalar;
+	        out[2] = scalar;
+	        out[3] = alpha;
+	        return out;
+	    };
+	    static fromString = (str, out = new ColorRGBA()) => {
+	        if (str in COLOR_HEX_MAP) {
+	            return ColorRGBA.fromHex(COLOR_HEX_MAP[str], 255, out);
+	        }
+	        else if (str.startsWith("#")) {
+	            str = str.substr(1);
+	            return ColorRGBA.fromScalar(parseInt(str, 16), 255, out);
+	        }
+	        else if (str.startsWith("rgba(")) {
+	            str = str.substring(4, str.length - 1);
+	            const arr = str.split(",");
+	            out[0] = parseInt(arr[0], 10);
+	            out[1] = parseInt(arr[1], 10);
+	            out[2] = parseInt(arr[2], 10);
+	            out[3] = parseInt(arr[3], 10);
+	        }
+	        return out;
+	    };
+	    static grayscale = (color, wr = 0.299, wg = 0.587, wb = 0.114, out = new ColorRGBA()) => {
+	        const gray = ColorRGBA.averageWeighted(color, wr, wg, wb);
+	        ColorRGBA.fromScalar(gray, color[3], out);
+	        return out;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.COLOR_RGBA;
 	    constructor(r = 0, g = 0, b = 0, a = 1) {
 	        super(4);
 	        this[0] = r;
@@ -703,77 +789,73 @@
 	        this[4] = val;
 	    }
 	}
-	ColorRGBA.average = (color) => {
-	    return (color[0] + color[1] + color[2]) / 3;
-	};
-	ColorRGBA.averageWeighted = (color, wr = 0.299, wg = 0.587, wb = 0.114) => {
-	    return color[0] * wr + color[1] * wg + color[2] * wb;
-	};
-	ColorRGBA.clone = (color) => {
-	    return new ColorRGBA(color[0], color[1], color[2], color[3]);
-	};
-	ColorRGBA.create = (r = 0, g = 0, b = 0, a = 1) => {
-	    return new ColorRGBA(r, g, b, a);
-	};
-	ColorRGBA.equals = (a, b) => {
-	    return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
-	        (a.g ?? a[1]) === (b.g ?? b[1]) &&
-	        (a.b ?? a[2]) === (b.b ?? b[2]) &&
-	        (a.a ?? a[3]) === (b.a ?? b[3]));
-	};
-	ColorRGBA.fromArray = (arr, out = new ColorRGBA()) => {
-	    out[0] = arr[0];
-	    out[1] = arr[1];
-	    out[2] = arr[2];
-	    out[3] = arr[3];
-	    return out;
-	};
-	ColorRGBA.fromHex = (hex, alpha = 255, out = new ColorRGBA()) => {
-	    out[0] = hex >> 16;
-	    out[1] = (hex >> 8) & 255;
-	    out[2] = hex & 255;
-	    out[3] = alpha;
-	    return out;
-	};
-	ColorRGBA.fromJson = (json, out = new ColorRGBA()) => {
-	    out[0] = json.r;
-	    out[1] = json.g;
-	    out[2] = json.b;
-	    out[3] = json.a;
-	    return out;
-	};
-	ColorRGBA.fromScalar = (scalar, alpha = 255, out = new ColorRGBA()) => {
-	    out[0] = scalar;
-	    out[1] = scalar;
-	    out[2] = scalar;
-	    out[3] = alpha;
-	    return out;
-	};
-	ColorRGBA.fromString = (str, out = new ColorRGBA()) => {
-	    if (str in COLOR_HEX_MAP) {
-	        return ColorRGBA.fromHex(COLOR_HEX_MAP[str], 255, out);
-	    }
-	    else if (str.startsWith("#")) {
-	        str = str.substr(1);
-	        return ColorRGBA.fromScalar(parseInt(str, 16), 255, out);
-	    }
-	    else if (str.startsWith("rgba(")) {
-	        str = str.substring(4, str.length - 1);
-	        const arr = str.split(",");
-	        out[0] = parseInt(arr[0], 10);
-	        out[1] = parseInt(arr[1], 10);
-	        out[2] = parseInt(arr[2], 10);
-	        out[3] = parseInt(arr[3], 10);
-	    }
-	    return out;
-	};
-	ColorRGBA.grayscale = (color, wr = 0.299, wg = 0.587, wb = 0.114, out = new ColorRGBA()) => {
-	    const gray = ColorRGBA.averageWeighted(color, wr, wg, wb);
-	    ColorRGBA.fromScalar(gray, color[3], out);
-	    return out;
-	};
 
 	class ColorRGB extends Uint8Array {
+	    static average = (color) => {
+	        return (color[0] + color[1] + color[2]) / 3;
+	    };
+	    static averageWeighted = (color, wr = 0.299, wg = 0.587, wb = 0.114) => {
+	        return color[0] * wr + color[1] * wg + color[2] * wb;
+	    };
+	    static clone = (color) => {
+	        return new ColorRGB(color[0], color[1], color[2]);
+	    };
+	    static create = (r = 0, g = 0, b = 0) => {
+	        return new ColorRGB(r, g, b);
+	    };
+	    static equals = (a, b) => {
+	        return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
+	            (a.g ?? a[1]) === (b.g ?? b[1]) &&
+	            (a.b ?? a[2]) === (b.b ?? b[2]));
+	    };
+	    static fromArray = (arr, out = new ColorRGB()) => {
+	        out[0] = arr[0];
+	        out[1] = arr[1];
+	        out[2] = arr[2];
+	        return out;
+	    };
+	    static fromHex = (hex, out = new ColorRGB()) => {
+	        out[0] = hex >> 16;
+	        out[1] = (hex >> 8) & 255;
+	        out[2] = hex & 255;
+	        return out;
+	    };
+	    static fromJson = (json, out = new ColorRGB()) => {
+	        out[0] = json.r;
+	        out[1] = json.g;
+	        out[2] = json.b;
+	        return out;
+	    };
+	    static fromScalar = (scalar, out = new ColorRGB()) => {
+	        out[0] = scalar;
+	        out[1] = scalar;
+	        out[2] = scalar;
+	        return out;
+	    };
+	    static fromString = (str, out = new ColorRGB()) => {
+	        if (str in COLOR_HEX_MAP) {
+	            return ColorRGB.fromHex(COLOR_HEX_MAP[str], out);
+	        }
+	        else if (str.startsWith("#")) {
+	            str = str.substr(1);
+	            return ColorRGB.fromScalar(parseInt(str, 16), out);
+	        }
+	        else if (str.startsWith("rgb(")) {
+	            str = str.substring(4, str.length - 1);
+	            const arr = str.split(",");
+	            out[0] = parseInt(arr[0], 10);
+	            out[1] = parseInt(arr[1], 10);
+	            out[2] = parseInt(arr[2], 10);
+	        }
+	        return out;
+	    };
+	    static grayscale = (color, wr = 0.299, wg = 0.587, wb = 0.114, out = new ColorRGB()) => {
+	        const gray = ColorRGB.averageWeighted(color, wr, wg, wb);
+	        ColorRGB.fromScalar(gray, out);
+	        return out;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.COLOR_RGB;
 	    constructor(r = 0, g = 0, b = 0) {
 	        super(3);
 	        this[0] = r;
@@ -799,78 +881,33 @@
 	        this[2] = val;
 	    }
 	}
-	ColorRGB.average = (color) => {
-	    return (color[0] + color[1] + color[2]) / 3;
-	};
-	ColorRGB.averageWeighted = (color, wr = 0.299, wg = 0.587, wb = 0.114) => {
-	    return color[0] * wr + color[1] * wg + color[2] * wb;
-	};
-	ColorRGB.clone = (color) => {
-	    return new ColorRGB(color[0], color[1], color[2]);
-	};
-	ColorRGB.create = (r = 0, g = 0, b = 0) => {
-	    return new ColorRGB(r, g, b);
-	};
-	ColorRGB.equals = (a, b) => {
-	    return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
-	        (a.g ?? a[1]) === (b.g ?? b[1]) &&
-	        (a.b ?? a[2]) === (b.b ?? b[2]));
-	};
-	ColorRGB.fromArray = (arr, out = new ColorRGB()) => {
-	    out[0] = arr[0];
-	    out[1] = arr[1];
-	    out[2] = arr[2];
-	    return out;
-	};
-	ColorRGB.fromHex = (hex, out = new ColorRGB()) => {
-	    out[0] = hex >> 16;
-	    out[1] = (hex >> 8) & 255;
-	    out[2] = hex & 255;
-	    return out;
-	};
-	ColorRGB.fromJson = (json, out = new ColorRGB()) => {
-	    out[0] = json.r;
-	    out[1] = json.g;
-	    out[2] = json.b;
-	    return out;
-	};
-	ColorRGB.fromScalar = (scalar, out = new ColorRGB()) => {
-	    out[0] = scalar;
-	    out[1] = scalar;
-	    out[2] = scalar;
-	    return out;
-	};
-	ColorRGB.fromString = (str, out = new ColorRGB()) => {
-	    if (str in COLOR_HEX_MAP) {
-	        return ColorRGB.fromHex(COLOR_HEX_MAP[str], out);
-	    }
-	    else if (str.startsWith("#")) {
-	        str = str.substr(1);
-	        return ColorRGB.fromScalar(parseInt(str, 16), out);
-	    }
-	    else if (str.startsWith("rgb(")) {
-	        str = str.substring(4, str.length - 1);
-	        const arr = str.split(",");
-	        out[0] = parseInt(arr[0], 10);
-	        out[1] = parseInt(arr[1], 10);
-	        out[2] = parseInt(arr[2], 10);
-	    }
-	    return out;
-	};
-	ColorRGB.grayscale = (color, wr = 0.299, wg = 0.587, wb = 0.114, out = new ColorRGB()) => {
-	    const gray = ColorRGB.averageWeighted(color, wr, wg, wb);
-	    ColorRGB.fromScalar(gray, out);
-	    return out;
-	};
 
 	class ColorGPU extends Float32Array {
-	    constructor(r = 0, g = 0, b = 0, a = 0) {
-	        super(4);
-	        this[0] = r;
-	        this[1] = g;
-	        this[2] = b;
-	        this[3] = a;
-	    }
+	    static average = (color) => {
+	        return (color[0] + color[1] + color[2]) / 3;
+	    };
+	    static averageWeighted = (color, wr = 0.299, wg = 0.587, wb = 0.114) => {
+	        return color[0] * wr + color[1] * wg + color[2] * wb;
+	    };
+	    static clone = (color) => {
+	        return new ColorGPU(color[0], color[1], color[2], color[3]);
+	    };
+	    static create = (r = 0, g = 0, b = 0, a = 0) => {
+	        return new ColorGPU(r, g, b, a);
+	    };
+	    static equals = (a, b) => {
+	        return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
+	            (a.g ?? a[1]) === (b.g ?? b[1]) &&
+	            (a.b ?? a[2]) === (b.b ?? b[2]) &&
+	            (a.a ?? a[3]) === (b.a ?? b[3]));
+	    };
+	    static fromArray = (arr, out = new ColorGPU()) => {
+	        out[0] = arr[0];
+	        out[1] = arr[1];
+	        out[2] = arr[2];
+	        out[3] = arr[3];
+	        return out;
+	    };
 	    static fromColorRGB(color, out = new ColorGPU()) {
 	        out[0] = color[0] / 255;
 	        out[1] = color[1] / 255;
@@ -884,6 +921,57 @@
 	        out[2] = color[2] / 255;
 	        out[3] = color[3] / 255;
 	        return out;
+	    }
+	    static fromHex = (hex, alpha = 1, out = new ColorGPU()) => {
+	        out[0] = (hex >> 16) / 255;
+	        out[1] = ((hex >> 8) & 255) / 255;
+	        out[2] = (hex & 255) / 255;
+	        out[3] = alpha;
+	        return out;
+	    };
+	    static fromJson = (json, out = new ColorGPU()) => {
+	        out[0] = json.r;
+	        out[1] = json.g;
+	        out[2] = json.b;
+	        out[3] = json.a;
+	        return out;
+	    };
+	    static fromScalar = (scalar, out = new ColorGPU()) => {
+	        out[0] = scalar;
+	        out[1] = scalar;
+	        out[2] = scalar;
+	        return out;
+	    };
+	    static fromString = (str, out = new ColorGPU()) => {
+	        if (str in COLOR_HEX_MAP) {
+	            return ColorGPU.fromHex(COLOR_HEX_MAP[str], 1, out);
+	        }
+	        else if (str.startsWith("#")) {
+	            str = str.substr(1);
+	            return ColorGPU.fromHex(parseInt(str, 16), 1, out);
+	        }
+	        else if (str.startsWith("rgb(")) {
+	            str = str.substring(4, str.length - 1);
+	            const arr = str.split(",");
+	            out[0] = parseInt(arr[0], 10) / 255;
+	            out[1] = parseInt(arr[1], 10) / 255;
+	            out[2] = parseInt(arr[2], 10) / 255;
+	        }
+	        return out;
+	    };
+	    static grayscale = (color, wr = 0.299, wg = 0.587, wb = 0.114, out = new ColorGPU()) => {
+	        const gray = ColorGPU.averageWeighted(color, wr, wg, wb);
+	        ColorGPU.fromScalar(gray, out);
+	        return out;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.COLOR_GPU;
+	    constructor(r = 0, g = 0, b = 0, a = 0) {
+	        super(4);
+	        this[0] = r;
+	        this[1] = g;
+	        this[2] = b;
+	        this[3] = a;
 	    }
 	    get r() {
 	        return this[0];
@@ -910,73 +998,6 @@
 	        this[3] = val;
 	    }
 	}
-	ColorGPU.average = (color) => {
-	    return (color[0] + color[1] + color[2]) / 3;
-	};
-	ColorGPU.averageWeighted = (color, wr = 0.299, wg = 0.587, wb = 0.114) => {
-	    return color[0] * wr + color[1] * wg + color[2] * wb;
-	};
-	ColorGPU.clone = (color) => {
-	    return new ColorGPU(color[0], color[1], color[2], color[3]);
-	};
-	ColorGPU.create = (r = 0, g = 0, b = 0, a = 0) => {
-	    return new ColorGPU(r, g, b, a);
-	};
-	ColorGPU.equals = (a, b) => {
-	    return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
-	        (a.g ?? a[1]) === (b.g ?? b[1]) &&
-	        (a.b ?? a[2]) === (b.b ?? b[2]) &&
-	        (a.a ?? a[3]) === (b.a ?? b[3]));
-	};
-	ColorGPU.fromArray = (arr, out = new ColorGPU()) => {
-	    out[0] = arr[0];
-	    out[1] = arr[1];
-	    out[2] = arr[2];
-	    out[3] = arr[3];
-	    return out;
-	};
-	ColorGPU.fromHex = (hex, alpha = 1, out = new ColorGPU()) => {
-	    out[0] = (hex >> 16) / 255;
-	    out[1] = ((hex >> 8) & 255) / 255;
-	    out[2] = (hex & 255) / 255;
-	    out[3] = alpha;
-	    return out;
-	};
-	ColorGPU.fromJson = (json, out = new ColorGPU()) => {
-	    out[0] = json.r;
-	    out[1] = json.g;
-	    out[2] = json.b;
-	    out[3] = json.a;
-	    return out;
-	};
-	ColorGPU.fromScalar = (scalar, out = new ColorGPU()) => {
-	    out[0] = scalar;
-	    out[1] = scalar;
-	    out[2] = scalar;
-	    return out;
-	};
-	ColorGPU.fromString = (str, out = new ColorGPU()) => {
-	    if (str in COLOR_HEX_MAP) {
-	        return ColorGPU.fromHex(COLOR_HEX_MAP[str], 1, out);
-	    }
-	    else if (str.startsWith("#")) {
-	        str = str.substr(1);
-	        return ColorGPU.fromHex(parseInt(str, 16), 1, out);
-	    }
-	    else if (str.startsWith("rgb(")) {
-	        str = str.substring(4, str.length - 1);
-	        const arr = str.split(",");
-	        out[0] = parseInt(arr[0], 10) / 255;
-	        out[1] = parseInt(arr[1], 10) / 255;
-	        out[2] = parseInt(arr[2], 10) / 255;
-	    }
-	    return out;
-	};
-	ColorGPU.grayscale = (color, wr = 0.299, wg = 0.587, wb = 0.114, out = new ColorGPU()) => {
-	    const gray = ColorGPU.averageWeighted(color, wr, wg, wb);
-	    ColorGPU.fromScalar(gray, out);
-	    return out;
-	};
 
 	var ceilPowerOfTwo = (value) => {
 	    return Math.pow(2, Math.ceil(Math.log(value) / Math.LN2));
@@ -1329,8 +1350,8 @@
 	var index$4 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		BackIn: BackIn,
-		BackOut: BackOut,
 		BackInOut: BackInOut,
+		BackOut: BackOut,
 		BounceIn: BounceIn,
 		BounceInOut: BounceInOut,
 		BounceOut: BounceOut,
@@ -1372,13 +1393,7 @@
 	})(EulerRotationOrders$1 || (EulerRotationOrders$1 = {}));
 
 	class EulerAngle extends Float32Array {
-	    constructor(x = 0, y = 0, z = 0, order = EulerRotationOrders$1.XYZ) {
-	        super(3);
-	        this[0] = x;
-	        this[1] = y;
-	        this[2] = z;
-	        this.order = order;
-	    }
+	    static ORDERS = EulerRotationOrders$1;
 	    static clone(euler) {
 	        return new EulerAngle(euler.x, euler.y, euler.z, euler.order);
 	    }
@@ -1459,6 +1474,15 @@
 	        }
 	        return out;
 	    }
+	    order;
+	    dataType = ArraybufferDataType$1.EULER;
+	    constructor(x = 0, y = 0, z = 0, order = EulerRotationOrders$1.XYZ) {
+	        super(3);
+	        this[0] = x;
+	        this[1] = y;
+	        this[2] = z;
+	        this.order = order;
+	    }
 	    get x() {
 	        return this[0];
 	    }
@@ -1478,532 +1502,841 @@
 	        this[2] = value;
 	    }
 	}
-	EulerAngle.ORDERS = EulerRotationOrders$1;
 
 	let a00$2$1 = 0, a01$2$1 = 0, a10$2$1 = 0, a11$2$1 = 0;
 	let b00$2$1 = 0, b01$2$1 = 0, b10$2$1 = 0, b11$2$1 = 0, det$1$1 = 0;
 	let x$4 = 0, y$4 = 0;
 	const UNIT_MATRIX2_DATA$1 = [1, 0, 0, 1];
 	class Matrix2$1 extends Float32Array {
+	    static UNIT_MATRIX2 = new Matrix2$1(UNIT_MATRIX2_DATA$1);
+	    static add = (a, b, out) => {
+	        out[0] = a[0] + b[0];
+	        out[1] = a[1] + b[1];
+	        out[2] = a[2] + b[2];
+	        out[3] = a[3] + b[3];
+	        return out;
+	    };
+	    static adjoint = (a, out) => {
+	        a00$2$1 = a[0];
+	        out[0] = a[3];
+	        out[1] = -a[1];
+	        out[2] = -a[2];
+	        out[3] = a00$2$1;
+	        return out;
+	    };
+	    static clone = (source) => {
+	        return new Matrix2$1(source);
+	    };
+	    static closeTo = (a, b) => {
+	        a00$2$1 = a[0];
+	        a10$2$1 = a[1];
+	        a01$2$1 = a[2];
+	        a11$2$1 = a[3];
+	        b00$2$1 = b[0];
+	        b10$2$1 = b[1];
+	        b01$2$1 = b[2];
+	        b11$2$1 = b[3];
+	        return (closeToCommon$1(a00$2$1, b00$2$1) &&
+	            closeToCommon$1(a01$2$1, b01$2$1) &&
+	            closeToCommon$1(a10$2$1, b10$2$1) &&
+	            closeToCommon$1(a11$2$1, b11$2$1));
+	    };
+	    static create = (a = UNIT_MATRIX2_DATA$1) => {
+	        return new Matrix2$1(a);
+	    };
+	    static determinant = (a) => {
+	        return a[0] * a[3] - a[1] * a[2];
+	    };
+	    static equals = (a, b) => {
+	        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+	    };
+	    static frobNorm = (a) => {
+	        return Math.hypot(a[0], a[1], a[2], a[3]);
+	    };
+	    static fromArray = (source, out = new Matrix2$1()) => {
+	        out.set(source);
+	        return out;
+	    };
+	    static fromRotation = (rad, out = new Matrix2$1()) => {
+	        y$4 = Math.sin(rad);
+	        x$4 = Math.cos(rad);
+	        out[0] = x$4;
+	        out[1] = y$4;
+	        out[2] = -y$4;
+	        out[3] = x$4;
+	        return out;
+	    };
+	    static fromScaling = (v, out = new Matrix2$1()) => {
+	        out[0] = v[0];
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = v[1];
+	        return out;
+	    };
+	    static identity = (out = new Matrix2$1()) => {
+	        out[0] = 1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 1;
+	        return out;
+	    };
+	    static invert = (a, out = new Matrix2$1()) => {
+	        a00$2$1 = a[0];
+	        a10$2$1 = a[1];
+	        a01$2$1 = a[2];
+	        a11$2$1 = a[3];
+	        det$1$1 = Matrix2$1.determinant(a);
+	        if (!det$1$1) {
+	            return null;
+	        }
+	        det$1$1 = 1.0 / det$1$1;
+	        out[0] = a11$2$1 * det$1$1;
+	        out[1] = -a10$2$1 * det$1$1;
+	        out[2] = -a01$2$1 * det$1$1;
+	        out[3] = a00$2$1 * det$1$1;
+	        return out;
+	    };
+	    static minus = (a, b, out = new Matrix2$1()) => {
+	        out[0] = a[0] - b[0];
+	        out[1] = a[1] - b[1];
+	        out[2] = a[2] - b[2];
+	        out[3] = a[3] - b[3];
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Matrix2$1()) => {
+	        a00$2$1 = a[0];
+	        a10$2$1 = a[1];
+	        a01$2$1 = a[2];
+	        a11$2$1 = a[3];
+	        b00$2$1 = b[0];
+	        b10$2$1 = b[1];
+	        b01$2$1 = b[2];
+	        b11$2$1 = b[3];
+	        out[0] = a00$2$1 * b00$2$1 + a01$2$1 * b10$2$1;
+	        out[1] = a10$2$1 * b00$2$1 + a11$2$1 * b10$2$1;
+	        out[2] = a00$2$1 * b01$2$1 + a01$2$1 * b11$2$1;
+	        out[3] = a10$2$1 * b01$2$1 + a11$2$1 * b11$2$1;
+	        return out;
+	    };
+	    static multiplyScalar = (a, b, out = new Matrix2$1()) => {
+	        out[0] = a[0] * b;
+	        out[1] = a[1] * b;
+	        out[2] = a[2] * b;
+	        out[3] = a[3] * b;
+	        return out;
+	    };
+	    static rotate = (a, rad, out = new Matrix2$1()) => {
+	        a00$2$1 = a[0];
+	        a10$2$1 = a[1];
+	        a01$2$1 = a[2];
+	        a11$2$1 = a[3];
+	        y$4 = Math.sin(rad);
+	        x$4 = Math.cos(rad);
+	        out[0] = a00$2$1 * x$4 + a01$2$1 * y$4;
+	        out[1] = a10$2$1 * x$4 + a11$2$1 * y$4;
+	        out[2] = a00$2$1 * -y$4 + a01$2$1 * x$4;
+	        out[3] = a10$2$1 * -y$4 + a11$2$1 * x$4;
+	        return out;
+	    };
+	    static scale = (a, v, out = new Matrix2$1()) => {
+	        a00$2$1 = a[0];
+	        a10$2$1 = a[1];
+	        a01$2$1 = a[2];
+	        a11$2$1 = a[3];
+	        x$4 = v[0];
+	        y$4 = v[1];
+	        out[0] = a00$2$1 * x$4;
+	        out[1] = a10$2$1 * x$4;
+	        out[2] = a01$2$1 * y$4;
+	        out[3] = a11$2$1 * y$4;
+	        return out;
+	    };
+	    static toString = (a) => {
+	        return `mat2(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
+	    };
+	    static transpose = (a, out = new Matrix2$1()) => {
+	        if (out === a) {
+	            a01$2$1 = a[1];
+	            out[1] = a[2];
+	            out[2] = a01$2$1;
+	        }
+	        else {
+	            out[0] = a[0];
+	            out[1] = a[2];
+	            out[2] = a[1];
+	            out[3] = a[3];
+	        }
+	        return out;
+	    };
 	    constructor(data = UNIT_MATRIX2_DATA$1) {
 	        super(data);
 	    }
 	}
-	Matrix2$1.UNIT_MATRIX2 = new Matrix2$1(UNIT_MATRIX2_DATA$1);
-	Matrix2$1.add = (a, b, out) => {
-	    out[0] = a[0] + b[0];
-	    out[1] = a[1] + b[1];
-	    out[2] = a[2] + b[2];
-	    out[3] = a[3] + b[3];
-	    return out;
-	};
-	Matrix2$1.adjoint = (a, out) => {
-	    a00$2$1 = a[0];
-	    out[0] = a[3];
-	    out[1] = -a[1];
-	    out[2] = -a[2];
-	    out[3] = a00$2$1;
-	    return out;
-	};
-	Matrix2$1.clone = (source) => {
-	    return new Matrix2$1(source);
-	};
-	Matrix2$1.closeTo = (a, b) => {
-	    a00$2$1 = a[0];
-	    a10$2$1 = a[1];
-	    a01$2$1 = a[2];
-	    a11$2$1 = a[3];
-	    b00$2$1 = b[0];
-	    b10$2$1 = b[1];
-	    b01$2$1 = b[2];
-	    b11$2$1 = b[3];
-	    return (closeToCommon$1(a00$2$1, b00$2$1) &&
-	        closeToCommon$1(a01$2$1, b01$2$1) &&
-	        closeToCommon$1(a10$2$1, b10$2$1) &&
-	        closeToCommon$1(a11$2$1, b11$2$1));
-	};
-	Matrix2$1.create = (a = UNIT_MATRIX2_DATA$1) => {
-	    return new Matrix2$1(a);
-	};
-	Matrix2$1.determinant = (a) => {
-	    return a[0] * a[3] - a[1] * a[2];
-	};
-	Matrix2$1.equals = (a, b) => {
-	    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
-	};
-	Matrix2$1.frobNorm = (a) => {
-	    return Math.hypot(a[0], a[1], a[2], a[3]);
-	};
-	Matrix2$1.fromArray = (source, out = new Matrix2$1()) => {
-	    out.set(source);
-	    return out;
-	};
-	Matrix2$1.fromRotation = (rad, out = new Matrix2$1()) => {
-	    y$4 = Math.sin(rad);
-	    x$4 = Math.cos(rad);
-	    out[0] = x$4;
-	    out[1] = y$4;
-	    out[2] = -y$4;
-	    out[3] = x$4;
-	    return out;
-	};
-	Matrix2$1.fromScaling = (v, out = new Matrix2$1()) => {
-	    out[0] = v[0];
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = v[1];
-	    return out;
-	};
-	Matrix2$1.identity = (out = new Matrix2$1()) => {
-	    out[0] = 1;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 1;
-	    return out;
-	};
-	Matrix2$1.invert = (a, out = new Matrix2$1()) => {
-	    a00$2$1 = a[0];
-	    a10$2$1 = a[1];
-	    a01$2$1 = a[2];
-	    a11$2$1 = a[3];
-	    det$1$1 = Matrix2$1.determinant(a);
-	    if (!det$1$1) {
-	        return null;
-	    }
-	    det$1$1 = 1.0 / det$1$1;
-	    out[0] = a11$2$1 * det$1$1;
-	    out[1] = -a10$2$1 * det$1$1;
-	    out[2] = -a01$2$1 * det$1$1;
-	    out[3] = a00$2$1 * det$1$1;
-	    return out;
-	};
-	Matrix2$1.minus = (a, b, out = new Matrix2$1()) => {
-	    out[0] = a[0] - b[0];
-	    out[1] = a[1] - b[1];
-	    out[2] = a[2] - b[2];
-	    out[3] = a[3] - b[3];
-	    return out;
-	};
-	Matrix2$1.multiply = (a, b, out = new Matrix2$1()) => {
-	    a00$2$1 = a[0];
-	    a10$2$1 = a[1];
-	    a01$2$1 = a[2];
-	    a11$2$1 = a[3];
-	    b00$2$1 = b[0];
-	    b10$2$1 = b[1];
-	    b01$2$1 = b[2];
-	    b11$2$1 = b[3];
-	    out[0] = a00$2$1 * b00$2$1 + a01$2$1 * b10$2$1;
-	    out[1] = a10$2$1 * b00$2$1 + a11$2$1 * b10$2$1;
-	    out[2] = a00$2$1 * b01$2$1 + a01$2$1 * b11$2$1;
-	    out[3] = a10$2$1 * b01$2$1 + a11$2$1 * b11$2$1;
-	    return out;
-	};
-	Matrix2$1.multiplyScalar = (a, b, out = new Matrix2$1()) => {
-	    out[0] = a[0] * b;
-	    out[1] = a[1] * b;
-	    out[2] = a[2] * b;
-	    out[3] = a[3] * b;
-	    return out;
-	};
-	Matrix2$1.rotate = (a, rad, out = new Matrix2$1()) => {
-	    a00$2$1 = a[0];
-	    a10$2$1 = a[1];
-	    a01$2$1 = a[2];
-	    a11$2$1 = a[3];
-	    y$4 = Math.sin(rad);
-	    x$4 = Math.cos(rad);
-	    out[0] = a00$2$1 * x$4 + a01$2$1 * y$4;
-	    out[1] = a10$2$1 * x$4 + a11$2$1 * y$4;
-	    out[2] = a00$2$1 * -y$4 + a01$2$1 * x$4;
-	    out[3] = a10$2$1 * -y$4 + a11$2$1 * x$4;
-	    return out;
-	};
-	Matrix2$1.scale = (a, v, out = new Matrix2$1()) => {
-	    a00$2$1 = a[0];
-	    a10$2$1 = a[1];
-	    a01$2$1 = a[2];
-	    a11$2$1 = a[3];
-	    x$4 = v[0];
-	    y$4 = v[1];
-	    out[0] = a00$2$1 * x$4;
-	    out[1] = a10$2$1 * x$4;
-	    out[2] = a01$2$1 * y$4;
-	    out[3] = a11$2$1 * y$4;
-	    return out;
-	};
-	Matrix2$1.toString = (a) => {
-	    return `mat2(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
-	};
-	Matrix2$1.transpose = (a, out = new Matrix2$1()) => {
-	    if (out === a) {
-	        a01$2$1 = a[1];
-	        out[1] = a[2];
-	        out[2] = a01$2$1;
-	    }
-	    else {
-	        out[0] = a[0];
-	        out[1] = a[2];
-	        out[2] = a[1];
-	        out[3] = a[3];
-	    }
-	    return out;
-	};
 
 	let a00$1$1 = 0, a01$1$1 = 0, a02$1$1 = 0, a11$1$1 = 0, a10$1$1 = 0, a12$1$1 = 0, a20$1$1 = 0, a21$1$1 = 0, a22$1$1 = 0;
 	let b00$1$1 = 0, b01$1$1 = 0, b02$1$1 = 0, b11$1$1 = 0, b10$1$1 = 0, b12$1$1 = 0, b20$1$1 = 0, b21$1$1 = 0, b22$1$1 = 0;
 	let x$3$1 = 0, y$3$1 = 0;
 	const UNIT_MATRIX3_DATA$1 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 	class Matrix3$1 extends Float32Array {
+	    static UNIT_MATRIX3 = new Matrix3$1(UNIT_MATRIX3_DATA$1);
+	    static clone = (source) => {
+	        return new Matrix3$1(source);
+	    };
+	    static cofactor00 = (a) => {
+	        return a[4] * a[8] - a[5] * a[7];
+	    };
+	    static cofactor01 = (a) => {
+	        return a[1] * a[8] - a[7] * a[2];
+	    };
+	    static cofactor02 = (a) => {
+	        return a[1] * a[5] - a[4] * a[2];
+	    };
+	    static cofactor10 = (a) => {
+	        return a[3] * a[8] - a[6] * a[5];
+	    };
+	    static cofactor11 = (a) => {
+	        return a[0] * a[8] - a[6] * a[2];
+	    };
+	    static cofactor12 = (a) => {
+	        return a[0] * a[5] - a[3] * a[2];
+	    };
+	    static cofactor20 = (a) => {
+	        return a[3] * a[7] - a[6] * a[4];
+	    };
+	    static cofactor21 = (a) => {
+	        return a[0] * a[7] - a[6] * a[1];
+	    };
+	    static cofactor22 = (a) => {
+	        return a[0] * a[4] - a[3] * a[1];
+	    };
+	    static create = () => {
+	        return new Matrix3$1(UNIT_MATRIX3_DATA$1);
+	    };
+	    static determinant = (a) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        return (a00$1$1 * (a22$1$1 * a11$1$1 - a12$1$1 * a21$1$1) +
+	            a01$1$1 * (-a22$1$1 * a10$1$1 + a12$1$1 * a20$1$1) +
+	            a02$1$1 * (a21$1$1 * a10$1$1 - a11$1$1 * a20$1$1));
+	    };
+	    static fromArray = (source, out = new Matrix3$1()) => {
+	        out.set(source);
+	        return out;
+	    };
+	    static fromMatrix2 = (mat4, out = new Matrix3$1()) => {
+	        out[0] = mat4[0];
+	        out[1] = mat4[1];
+	        out[2] = 0;
+	        out[3] = mat4[2];
+	        out[4] = mat4[3];
+	        out[5] = 0;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 1;
+	        return out;
+	    };
+	    static fromMatrix4 = (mat4, out = new Matrix3$1()) => {
+	        out[0] = mat4[0];
+	        out[1] = mat4[1];
+	        out[2] = mat4[2];
+	        out[3] = mat4[4];
+	        out[4] = mat4[5];
+	        out[5] = mat4[6];
+	        out[6] = mat4[8];
+	        out[7] = mat4[9];
+	        out[8] = mat4[10];
+	        return out;
+	    };
+	    static fromRotation = (rad, out = new Matrix3$1()) => {
+	        y$3$1 = Math.sin(rad);
+	        x$3$1 = Math.cos(rad);
+	        out[0] = x$3$1;
+	        out[1] = y$3$1;
+	        out[2] = 0;
+	        out[3] = -y$3$1;
+	        out[4] = x$3$1;
+	        out[5] = 0;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 1;
+	        return out;
+	    };
+	    static fromScaling = (v, out = new Matrix3$1()) => {
+	        out[0] = v[0];
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = v[1];
+	        out[5] = 0;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 1;
+	        return out;
+	    };
+	    static fromTranslation = (v, out = new Matrix3$1()) => {
+	        out[0] = 1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 1;
+	        out[5] = 0;
+	        out[6] = v[0];
+	        out[7] = v[1];
+	        out[8] = 1;
+	        return out;
+	    };
+	    static identity = (out = new Matrix3$1()) => {
+	        out[0] = 1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 1;
+	        out[5] = 0;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 1;
+	        return out;
+	    };
+	    static invert = (a, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        b01$1$1 = a22$1$1 * a11$1$1 - a12$1$1 * a21$1$1;
+	        b11$1$1 = -a22$1$1 * a10$1$1 + a12$1$1 * a20$1$1;
+	        b21$1$1 = a21$1$1 * a10$1$1 - a11$1$1 * a20$1$1;
+	        let det = a00$1$1 * b01$1$1 + a01$1$1 * b11$1$1 + a02$1$1 * b21$1$1;
+	        if (!det) {
+	            return null;
+	        }
+	        det = 1.0 / det;
+	        out[0] = b01$1$1 * det;
+	        out[1] = (-a22$1$1 * a01$1$1 + a02$1$1 * a21$1$1) * det;
+	        out[2] = (a12$1$1 * a01$1$1 - a02$1$1 * a11$1$1) * det;
+	        out[3] = b11$1$1 * det;
+	        out[4] = (a22$1$1 * a00$1$1 - a02$1$1 * a20$1$1) * det;
+	        out[5] = (-a12$1$1 * a00$1$1 + a02$1$1 * a10$1$1) * det;
+	        out[6] = b21$1$1 * det;
+	        out[7] = (-a21$1$1 * a00$1$1 + a01$1$1 * a20$1$1) * det;
+	        out[8] = (a11$1$1 * a00$1$1 - a01$1$1 * a10$1$1) * det;
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        b00$1$1 = b[0];
+	        b01$1$1 = b[1];
+	        b02$1$1 = b[2];
+	        b10$1$1 = b[3];
+	        b11$1$1 = b[4];
+	        b12$1$1 = b[5];
+	        b20$1$1 = b[6];
+	        b21$1$1 = b[7];
+	        b22$1$1 = b[8];
+	        out[0] = b00$1$1 * a00$1$1 + b01$1$1 * a10$1$1 + b02$1$1 * a20$1$1;
+	        out[1] = b00$1$1 * a01$1$1 + b01$1$1 * a11$1$1 + b02$1$1 * a21$1$1;
+	        out[2] = b00$1$1 * a02$1$1 + b01$1$1 * a12$1$1 + b02$1$1 * a22$1$1;
+	        out[3] = b10$1$1 * a00$1$1 + b11$1$1 * a10$1$1 + b12$1$1 * a20$1$1;
+	        out[4] = b10$1$1 * a01$1$1 + b11$1$1 * a11$1$1 + b12$1$1 * a21$1$1;
+	        out[5] = b10$1$1 * a02$1$1 + b11$1$1 * a12$1$1 + b12$1$1 * a22$1$1;
+	        out[6] = b20$1$1 * a00$1$1 + b21$1$1 * a10$1$1 + b22$1$1 * a20$1$1;
+	        out[7] = b20$1$1 * a01$1$1 + b21$1$1 * a11$1$1 + b22$1$1 * a21$1$1;
+	        out[8] = b20$1$1 * a02$1$1 + b21$1$1 * a12$1$1 + b22$1$1 * a22$1$1;
+	        return out;
+	    };
+	    static multiplyRotationMatrix = (a, b, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        b00$1$1 = b[0];
+	        b01$1$1 = b[1];
+	        b10$1$1 = b[3];
+	        b11$1$1 = b[4];
+	        out[0] = b00$1$1 * a00$1$1 + b01$1$1 * a10$1$1;
+	        out[1] = b00$1$1 * a01$1$1 + b01$1$1 * a11$1$1;
+	        out[2] = b00$1$1 * a02$1$1 + b01$1$1 * a12$1$1;
+	        out[3] = b10$1$1 * a00$1$1 + b11$1$1 * a10$1$1;
+	        out[4] = b10$1$1 * a01$1$1 + b11$1$1 * a11$1$1;
+	        out[5] = b10$1$1 * a02$1$1 + b11$1$1 * a12$1$1;
+	        out[6] = a20$1$1;
+	        out[7] = a21$1$1;
+	        out[8] = a22$1$1;
+	        return out;
+	    };
+	    static multiplyScaleMatrix = (a, b, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        b00$1$1 = b[0];
+	        b11$1$1 = b[4];
+	        out[0] = b00$1$1 * a00$1$1;
+	        out[1] = b00$1$1 * a01$1$1;
+	        out[2] = b00$1$1 * a02$1$1;
+	        out[3] = b11$1$1 * a10$1$1;
+	        out[4] = b11$1$1 * a11$1$1;
+	        out[5] = b11$1$1 * a12$1$1;
+	        out[6] = a20$1$1;
+	        out[7] = a21$1$1;
+	        out[8] = a22$1$1;
+	        return out;
+	    };
+	    static multiplyTranslateMatrix = (a, b, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        b20$1$1 = b[6];
+	        b21$1$1 = b[7];
+	        out[0] = a00$1$1;
+	        out[1] = a01$1$1;
+	        out[2] = a02$1$1;
+	        out[3] = a10$1$1;
+	        out[4] = a11$1$1;
+	        out[5] = a12$1$1;
+	        out[6] = b20$1$1 * a00$1$1 + b21$1$1 * a10$1$1 + a20$1$1;
+	        out[7] = b20$1$1 * a01$1$1 + b21$1$1 * a11$1$1 + a21$1$1;
+	        out[8] = b20$1$1 * a02$1$1 + b21$1$1 * a12$1$1 + a22$1$1;
+	        return out;
+	    };
+	    static rotate = (a, rad, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        y$3$1 = Math.sin(rad);
+	        x$3$1 = Math.cos(rad);
+	        out[0] = x$3$1 * a00$1$1 + y$3$1 * a10$1$1;
+	        out[1] = x$3$1 * a01$1$1 + y$3$1 * a11$1$1;
+	        out[2] = x$3$1 * a02$1$1 + y$3$1 * a12$1$1;
+	        out[3] = y$3$1 * a10$1$1 - x$3$1 * a00$1$1;
+	        out[4] = y$3$1 * a11$1$1 - x$3$1 * a01$1$1;
+	        out[5] = y$3$1 * a12$1$1 - x$3$1 * a02$1$1;
+	        out[6] = a20$1$1;
+	        out[7] = a21$1$1;
+	        out[8] = a22$1$1;
+	        return out;
+	    };
+	    static scale = (a, v, out = new Matrix3$1()) => {
+	        x$3$1 = v[0];
+	        y$3$1 = v[1];
+	        out[0] = x$3$1 * a[0];
+	        out[1] = x$3$1 * a[1];
+	        out[2] = x$3$1 * a[2];
+	        out[3] = y$3$1 * a[3];
+	        out[4] = y$3$1 * a[4];
+	        out[5] = y$3$1 * a[5];
+	        out[6] = a[6];
+	        out[7] = a[7];
+	        out[8] = a[8];
+	        return out;
+	    };
+	    static translate = (a, v, out = new Matrix3$1()) => {
+	        a00$1$1 = a[0];
+	        a01$1$1 = a[1];
+	        a02$1$1 = a[2];
+	        a10$1$1 = a[3];
+	        a11$1$1 = a[4];
+	        a12$1$1 = a[5];
+	        a20$1$1 = a[6];
+	        a21$1$1 = a[7];
+	        a22$1$1 = a[8];
+	        x$3$1 = v[0];
+	        y$3$1 = v[1];
+	        out[0] = a00$1$1;
+	        out[1] = a01$1$1;
+	        out[2] = a02$1$1;
+	        out[3] = a10$1$1;
+	        out[4] = a11$1$1;
+	        out[5] = a12$1$1;
+	        out[6] = x$3$1 * a00$1$1 + y$3$1 * a10$1$1 + a20$1$1;
+	        out[7] = x$3$1 * a01$1$1 + y$3$1 * a11$1$1 + a21$1$1;
+	        out[8] = x$3$1 * a02$1$1 + y$3$1 * a12$1$1 + a22$1$1;
+	        return out;
+	    };
+	    static transpose = (a, out = new Matrix3$1()) => {
+	        if (out === a) {
+	            a01$1$1 = a[1];
+	            a02$1$1 = a[2];
+	            a12$1$1 = a[5];
+	            out[1] = a[3];
+	            out[2] = a[6];
+	            out[3] = a01$1$1;
+	            out[5] = a[7];
+	            out[6] = a02$1$1;
+	            out[7] = a12$1$1;
+	        }
+	        else {
+	            out[0] = a[0];
+	            out[1] = a[3];
+	            out[2] = a[6];
+	            out[3] = a[1];
+	            out[4] = a[4];
+	            out[5] = a[7];
+	            out[6] = a[2];
+	            out[7] = a[5];
+	            out[8] = a[8];
+	        }
+	        return out;
+	    };
 	    constructor(data = UNIT_MATRIX3_DATA$1) {
 	        super(data);
 	    }
 	}
-	Matrix3$1.UNIT_MATRIX3 = new Matrix3$1(UNIT_MATRIX3_DATA$1);
-	Matrix3$1.clone = (source) => {
-	    return new Matrix3$1(source);
-	};
-	Matrix3$1.cofactor00 = (a) => {
-	    return a[4] * a[8] - a[5] * a[7];
-	};
-	Matrix3$1.cofactor01 = (a) => {
-	    return a[1] * a[8] - a[7] * a[2];
-	};
-	Matrix3$1.cofactor02 = (a) => {
-	    return a[1] * a[5] - a[4] * a[2];
-	};
-	Matrix3$1.cofactor10 = (a) => {
-	    return a[3] * a[8] - a[6] * a[5];
-	};
-	Matrix3$1.cofactor11 = (a) => {
-	    return a[0] * a[8] - a[6] * a[2];
-	};
-	Matrix3$1.cofactor12 = (a) => {
-	    return a[0] * a[5] - a[3] * a[2];
-	};
-	Matrix3$1.cofactor20 = (a) => {
-	    return a[3] * a[7] - a[6] * a[4];
-	};
-	Matrix3$1.cofactor21 = (a) => {
-	    return a[0] * a[7] - a[6] * a[1];
-	};
-	Matrix3$1.cofactor22 = (a) => {
-	    return a[0] * a[4] - a[3] * a[1];
-	};
-	Matrix3$1.create = () => {
-	    return new Matrix3$1(UNIT_MATRIX3_DATA$1);
-	};
-	Matrix3$1.determinant = (a) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    return (a00$1$1 * (a22$1$1 * a11$1$1 - a12$1$1 * a21$1$1) +
-	        a01$1$1 * (-a22$1$1 * a10$1$1 + a12$1$1 * a20$1$1) +
-	        a02$1$1 * (a21$1$1 * a10$1$1 - a11$1$1 * a20$1$1));
-	};
-	Matrix3$1.fromArray = (source, out = new Matrix3$1()) => {
-	    out.set(source);
-	    return out;
-	};
-	Matrix3$1.fromMatrix2 = (mat4, out = new Matrix3$1()) => {
-	    out[0] = mat4[0];
-	    out[1] = mat4[1];
-	    out[2] = 0;
-	    out[3] = mat4[2];
-	    out[4] = mat4[3];
-	    out[5] = 0;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 1;
-	    return out;
-	};
-	Matrix3$1.fromMatrix4 = (mat4, out = new Matrix3$1()) => {
-	    out[0] = mat4[0];
-	    out[1] = mat4[1];
-	    out[2] = mat4[2];
-	    out[3] = mat4[4];
-	    out[4] = mat4[5];
-	    out[5] = mat4[6];
-	    out[6] = mat4[8];
-	    out[7] = mat4[9];
-	    out[8] = mat4[10];
-	    return out;
-	};
-	Matrix3$1.fromRotation = (rad, out = new Matrix3$1()) => {
-	    y$3$1 = Math.sin(rad);
-	    x$3$1 = Math.cos(rad);
-	    out[0] = x$3$1;
-	    out[1] = y$3$1;
-	    out[2] = 0;
-	    out[3] = -y$3$1;
-	    out[4] = x$3$1;
-	    out[5] = 0;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 1;
-	    return out;
-	};
-	Matrix3$1.fromScaling = (v, out = new Matrix3$1()) => {
-	    out[0] = v[0];
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = v[1];
-	    out[5] = 0;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 1;
-	    return out;
-	};
-	Matrix3$1.fromTranslation = (v, out = new Matrix3$1()) => {
-	    out[0] = 1;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 1;
-	    out[5] = 0;
-	    out[6] = v[0];
-	    out[7] = v[1];
-	    out[8] = 1;
-	    return out;
-	};
-	Matrix3$1.identity = (out = new Matrix3$1()) => {
-	    out[0] = 1;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 1;
-	    out[5] = 0;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 1;
-	    return out;
-	};
-	Matrix3$1.invert = (a, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    b01$1$1 = a22$1$1 * a11$1$1 - a12$1$1 * a21$1$1;
-	    b11$1$1 = -a22$1$1 * a10$1$1 + a12$1$1 * a20$1$1;
-	    b21$1$1 = a21$1$1 * a10$1$1 - a11$1$1 * a20$1$1;
-	    let det = a00$1$1 * b01$1$1 + a01$1$1 * b11$1$1 + a02$1$1 * b21$1$1;
-	    if (!det) {
-	        return null;
-	    }
-	    det = 1.0 / det;
-	    out[0] = b01$1$1 * det;
-	    out[1] = (-a22$1$1 * a01$1$1 + a02$1$1 * a21$1$1) * det;
-	    out[2] = (a12$1$1 * a01$1$1 - a02$1$1 * a11$1$1) * det;
-	    out[3] = b11$1$1 * det;
-	    out[4] = (a22$1$1 * a00$1$1 - a02$1$1 * a20$1$1) * det;
-	    out[5] = (-a12$1$1 * a00$1$1 + a02$1$1 * a10$1$1) * det;
-	    out[6] = b21$1$1 * det;
-	    out[7] = (-a21$1$1 * a00$1$1 + a01$1$1 * a20$1$1) * det;
-	    out[8] = (a11$1$1 * a00$1$1 - a01$1$1 * a10$1$1) * det;
-	    return out;
-	};
-	Matrix3$1.multiply = (a, b, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    b00$1$1 = b[0];
-	    b01$1$1 = b[1];
-	    b02$1$1 = b[2];
-	    b10$1$1 = b[3];
-	    b11$1$1 = b[4];
-	    b12$1$1 = b[5];
-	    b20$1$1 = b[6];
-	    b21$1$1 = b[7];
-	    b22$1$1 = b[8];
-	    out[0] = b00$1$1 * a00$1$1 + b01$1$1 * a10$1$1 + b02$1$1 * a20$1$1;
-	    out[1] = b00$1$1 * a01$1$1 + b01$1$1 * a11$1$1 + b02$1$1 * a21$1$1;
-	    out[2] = b00$1$1 * a02$1$1 + b01$1$1 * a12$1$1 + b02$1$1 * a22$1$1;
-	    out[3] = b10$1$1 * a00$1$1 + b11$1$1 * a10$1$1 + b12$1$1 * a20$1$1;
-	    out[4] = b10$1$1 * a01$1$1 + b11$1$1 * a11$1$1 + b12$1$1 * a21$1$1;
-	    out[5] = b10$1$1 * a02$1$1 + b11$1$1 * a12$1$1 + b12$1$1 * a22$1$1;
-	    out[6] = b20$1$1 * a00$1$1 + b21$1$1 * a10$1$1 + b22$1$1 * a20$1$1;
-	    out[7] = b20$1$1 * a01$1$1 + b21$1$1 * a11$1$1 + b22$1$1 * a21$1$1;
-	    out[8] = b20$1$1 * a02$1$1 + b21$1$1 * a12$1$1 + b22$1$1 * a22$1$1;
-	    return out;
-	};
-	Matrix3$1.multiplyRotationMatrix = (a, b, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    b00$1$1 = b[0];
-	    b01$1$1 = b[1];
-	    b10$1$1 = b[3];
-	    b11$1$1 = b[4];
-	    out[0] = b00$1$1 * a00$1$1 + b01$1$1 * a10$1$1;
-	    out[1] = b00$1$1 * a01$1$1 + b01$1$1 * a11$1$1;
-	    out[2] = b00$1$1 * a02$1$1 + b01$1$1 * a12$1$1;
-	    out[3] = b10$1$1 * a00$1$1 + b11$1$1 * a10$1$1;
-	    out[4] = b10$1$1 * a01$1$1 + b11$1$1 * a11$1$1;
-	    out[5] = b10$1$1 * a02$1$1 + b11$1$1 * a12$1$1;
-	    out[6] = a20$1$1;
-	    out[7] = a21$1$1;
-	    out[8] = a22$1$1;
-	    return out;
-	};
-	Matrix3$1.multiplyScaleMatrix = (a, b, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    b00$1$1 = b[0];
-	    b11$1$1 = b[4];
-	    out[0] = b00$1$1 * a00$1$1;
-	    out[1] = b00$1$1 * a01$1$1;
-	    out[2] = b00$1$1 * a02$1$1;
-	    out[3] = b11$1$1 * a10$1$1;
-	    out[4] = b11$1$1 * a11$1$1;
-	    out[5] = b11$1$1 * a12$1$1;
-	    out[6] = a20$1$1;
-	    out[7] = a21$1$1;
-	    out[8] = a22$1$1;
-	    return out;
-	};
-	Matrix3$1.multiplyTranslateMatrix = (a, b, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    b20$1$1 = b[6];
-	    b21$1$1 = b[7];
-	    out[0] = a00$1$1;
-	    out[1] = a01$1$1;
-	    out[2] = a02$1$1;
-	    out[3] = a10$1$1;
-	    out[4] = a11$1$1;
-	    out[5] = a12$1$1;
-	    out[6] = b20$1$1 * a00$1$1 + b21$1$1 * a10$1$1 + a20$1$1;
-	    out[7] = b20$1$1 * a01$1$1 + b21$1$1 * a11$1$1 + a21$1$1;
-	    out[8] = b20$1$1 * a02$1$1 + b21$1$1 * a12$1$1 + a22$1$1;
-	    return out;
-	};
-	Matrix3$1.rotate = (a, rad, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    y$3$1 = Math.sin(rad);
-	    x$3$1 = Math.cos(rad);
-	    out[0] = x$3$1 * a00$1$1 + y$3$1 * a10$1$1;
-	    out[1] = x$3$1 * a01$1$1 + y$3$1 * a11$1$1;
-	    out[2] = x$3$1 * a02$1$1 + y$3$1 * a12$1$1;
-	    out[3] = y$3$1 * a10$1$1 - x$3$1 * a00$1$1;
-	    out[4] = y$3$1 * a11$1$1 - x$3$1 * a01$1$1;
-	    out[5] = y$3$1 * a12$1$1 - x$3$1 * a02$1$1;
-	    out[6] = a20$1$1;
-	    out[7] = a21$1$1;
-	    out[8] = a22$1$1;
-	    return out;
-	};
-	Matrix3$1.scale = (a, v, out = new Matrix3$1()) => {
-	    x$3$1 = v[0];
-	    y$3$1 = v[1];
-	    out[0] = x$3$1 * a[0];
-	    out[1] = x$3$1 * a[1];
-	    out[2] = x$3$1 * a[2];
-	    out[3] = y$3$1 * a[3];
-	    out[4] = y$3$1 * a[4];
-	    out[5] = y$3$1 * a[5];
-	    out[6] = a[6];
-	    out[7] = a[7];
-	    out[8] = a[8];
-	    return out;
-	};
-	Matrix3$1.translate = (a, v, out = new Matrix3$1()) => {
-	    a00$1$1 = a[0];
-	    a01$1$1 = a[1];
-	    a02$1$1 = a[2];
-	    a10$1$1 = a[3];
-	    a11$1$1 = a[4];
-	    a12$1$1 = a[5];
-	    a20$1$1 = a[6];
-	    a21$1$1 = a[7];
-	    a22$1$1 = a[8];
-	    x$3$1 = v[0];
-	    y$3$1 = v[1];
-	    out[0] = a00$1$1;
-	    out[1] = a01$1$1;
-	    out[2] = a02$1$1;
-	    out[3] = a10$1$1;
-	    out[4] = a11$1$1;
-	    out[5] = a12$1$1;
-	    out[6] = x$3$1 * a00$1$1 + y$3$1 * a10$1$1 + a20$1$1;
-	    out[7] = x$3$1 * a01$1$1 + y$3$1 * a11$1$1 + a21$1$1;
-	    out[8] = x$3$1 * a02$1$1 + y$3$1 * a12$1$1 + a22$1$1;
-	    return out;
-	};
-	Matrix3$1.transpose = (a, out = new Matrix3$1()) => {
-	    if (out === a) {
-	        a01$1$1 = a[1];
-	        a02$1$1 = a[2];
-	        a12$1$1 = a[5];
-	        out[1] = a[3];
-	        out[2] = a[6];
-	        out[3] = a01$1$1;
-	        out[5] = a[7];
-	        out[6] = a02$1$1;
-	        out[7] = a12$1$1;
-	    }
-	    else {
-	        out[0] = a[0];
-	        out[1] = a[3];
-	        out[2] = a[6];
-	        out[3] = a[1];
-	        out[4] = a[4];
-	        out[5] = a[7];
-	        out[6] = a[2];
-	        out[7] = a[5];
-	        out[8] = a[8];
-	    }
-	    return out;
-	};
 
 	let ax$2, ay$2, az$2, bx$2, by$2, bz$2;
 	let ag$1, s$3;
 	class Vector3$1 extends Float32Array {
+	    static VECTOR3_ZERO = new Vector3$1(0, 0, 0);
+	    static VECTOR3_ONE = new Vector3$1(1, 1, 1);
+	    static VECTOR3_TOP = new Vector3$1(0, 1, 0);
+	    static VECTOR3_BOTTOM = new Vector3$1(0, -1, 0);
+	    static VECTOR3_LEFT = new Vector3$1(-1, 0, 0);
+	    static VECTOR3_RIGHT = new Vector3$1(1, 0, 0);
+	    static VECTOR3_FRONT = new Vector3$1(0, 0, -1);
+	    static VECTOR3_BACK = new Vector3$1(0, 0, 1);
+	    static add = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] + b[0];
+	        out[1] = a[1] + b[1];
+	        out[2] = a[2] + b[2];
+	        return out;
+	    };
+	    static addScalar = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] + b;
+	        out[1] = a[1] + b;
+	        out[2] = a[2] + b;
+	        return out;
+	    };
+	    static angle = (a, b) => {
+	        ax$2 = a[0];
+	        ay$2 = a[1];
+	        az$2 = a[2];
+	        bx$2 = b[0];
+	        by$2 = b[1];
+	        bz$2 = b[2];
+	        const mag1 = Math.sqrt(ax$2 * ax$2 + ay$2 * ay$2 + az$2 * az$2), mag2 = Math.sqrt(bx$2 * bx$2 + by$2 * by$2 + bz$2 * bz$2), mag = mag1 * mag2, cosine = mag && Vector3$1.dot(a, b) / mag;
+	        return Math.acos(clampCommon$1(cosine, -1, 1));
+	    };
+	    static clamp = (a, min, max, out = new Vector3$1()) => {
+	        out[0] = clampCommon$1(a[0], min[0], max[0]);
+	        out[1] = clampCommon$1(a[1], min[1], max[1]);
+	        out[2] = clampCommon$1(a[2], min[2], max[2]);
+	        return out;
+	    };
+	    static clampSafe = (a, min, max, out = new Vector3$1()) => {
+	        out[0] = clampSafeCommon$1(a[0], min[0], max[0]);
+	        out[1] = clampSafeCommon$1(a[1], min[1], max[1]);
+	        out[1] = clampSafeCommon$1(a[2], min[2], max[2]);
+	        return out;
+	    };
+	    static clampScalar = (a, min, max, out = new Vector3$1()) => {
+	        out[0] = clampCommon$1(a[0], min, max);
+	        out[1] = clampCommon$1(a[1], min, max);
+	        out[2] = clampCommon$1(a[2], min, max);
+	        return out;
+	    };
+	    static clone = (a, out = new Vector3$1()) => {
+	        out[0] = a[0];
+	        out[1] = a[1];
+	        out[2] = a[2];
+	        return out;
+	    };
+	    static closeTo = (a, b) => {
+	        return closeToCommon$1(a[0], b[0]) && closeToCommon$1(a[1], b[1]) && closeToCommon$1(a[2], b[2]);
+	    };
+	    static create = (x = 0, y = 0, z = 0, out = new Vector3$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        return out;
+	    };
+	    static cross = (a, b, out = new Vector3$1()) => {
+	        ax$2 = a[0];
+	        ay$2 = a[1];
+	        az$2 = a[2];
+	        bx$2 = b[0];
+	        by$2 = b[1];
+	        bz$2 = b[2];
+	        out[0] = ay$2 * bz$2 - az$2 * by$2;
+	        out[1] = az$2 * bx$2 - ax$2 * bz$2;
+	        out[2] = ax$2 * by$2 - ay$2 * bx$2;
+	        return out;
+	    };
+	    static distanceTo = (a, b) => {
+	        ax$2 = b[0] - a[0];
+	        ay$2 = b[1] - a[1];
+	        az$2 = b[2] - a[2];
+	        return Math.hypot(ax$2, ay$2, az$2);
+	    };
+	    static distanceToManhattan = (a, b) => {
+	        return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+	    };
+	    static distanceToSquared = (a, b) => {
+	        ax$2 = a[0] - b[0];
+	        ay$2 = a[1] - b[1];
+	        az$2 = a[2] - b[2];
+	        return ax$2 * ax$2 + ay$2 * ay$2 + az$2 * az$2;
+	    };
+	    static divide = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] / b[0];
+	        out[1] = a[1] / b[1];
+	        out[2] = a[2] / b[2];
+	        return out;
+	    };
+	    static divideScalar = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] / b;
+	        out[1] = a[1] / b;
+	        out[2] = a[2] / b;
+	        return out;
+	    };
+	    static dot = (a, b) => {
+	        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	    };
+	    static equals = (a, b) => {
+	        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+	    };
+	    static fromArray = (a, offset = 0, out = new Vector3$1()) => {
+	        out[0] = a[offset];
+	        out[1] = a[offset + 1];
+	        out[2] = a[offset + 2];
+	        return out;
+	    };
+	    static fromScalar = (num, out = new Vector3$1(3)) => {
+	        out[0] = out[1] = out[2] = num;
+	        return out;
+	    };
+	    static fromValues = (x, y, z, out = new Vector3$1(3)) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        return out;
+	    };
+	    static hermite = (a, b, c, d, t, out = new Vector3$1()) => {
+	        ag$1 = t * t;
+	        const factor1 = ag$1 * (2 * t - 3) + 1;
+	        const factor2 = ag$1 * (t - 2) + t;
+	        const factor3 = ag$1 * (t - 1);
+	        const factor4 = ag$1 * (3 - 2 * t);
+	        out[0] = a[0] * factor1 + b[0] * factor2 + c[0] * factor3 + d[0] * factor4;
+	        out[1] = a[1] * factor1 + b[1] * factor2 + c[1] * factor3 + d[1] * factor4;
+	        out[2] = a[2] * factor1 + b[2] * factor2 + c[2] * factor3 + d[2] * factor4;
+	        return out;
+	    };
+	    static inverse = (a, out = new Vector3$1()) => {
+	        out[0] = 1.0 / a[0];
+	        out[1] = 1.0 / a[1];
+	        out[2] = 1.0 / a[2];
+	        return out;
+	    };
+	    static norm = (a) => {
+	        return Math.sqrt(Vector3$1.lengthSquared(a));
+	    };
+	    static lengthManhattan = (a) => {
+	        return Math.abs(a[0]) + Math.abs(a[1]) + Math.abs(a[2]);
+	    };
+	    static lengthSquared = (a) => {
+	        return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+	    };
+	    static lerp = (a, b, alpha, out = new Vector3$1()) => {
+	        out[0] += (b[0] - a[0]) * alpha;
+	        out[1] += (b[1] - a[1]) * alpha;
+	        out[2] += (b[2] - a[2]) * alpha;
+	        return out;
+	    };
+	    static max = (a, b, out = new Vector3$1()) => {
+	        out[0] = Math.max(a[0], b[0]);
+	        out[1] = Math.max(a[1], b[1]);
+	        out[2] = Math.max(a[2], b[2]);
+	        return out;
+	    };
+	    static min = (a, b, out = new Vector3$1()) => {
+	        out[0] = Math.min(a[0], b[0]);
+	        out[1] = Math.min(a[1], b[1]);
+	        out[2] = Math.min(a[2], b[2]);
+	        return out;
+	    };
+	    static minus = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] - b[0];
+	        out[1] = a[1] - b[1];
+	        out[2] = a[2] - b[2];
+	        return out;
+	    };
+	    static minusScalar = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] - b;
+	        out[1] = a[1] - b;
+	        out[2] = a[2] - b;
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Vector3$1()) => {
+	        out[0] = a[0] * b[0];
+	        out[1] = a[1] * b[1];
+	        out[2] = a[2] * b[2];
+	        return out;
+	    };
+	    static multiplyScalar = (a, scalar, out = new Vector3$1()) => {
+	        out[0] = a[0] * scalar;
+	        out[1] = a[1] * scalar;
+	        out[2] = a[2] * scalar;
+	        return out;
+	    };
+	    static negate = (a, out = new Vector3$1()) => {
+	        out[0] = -a[0];
+	        out[1] = -a[1];
+	        out[2] = -a[2];
+	        return out;
+	    };
+	    static normalize = (a, out = new Vector3$1()) => {
+	        return Vector3$1.divideScalar(a, Vector3$1.norm(a) || 1, out);
+	    };
+	    static rotateX = (a, b, rad, out = new Vector3$1()) => {
+	        ax$2 = a[0] - b[0];
+	        ay$2 = a[1] - b[1];
+	        az$2 = a[2] - b[2];
+	        bx$2 = ax$2;
+	        by$2 = ay$2 * Math.cos(rad) - az$2 * Math.sin(rad);
+	        bz$2 = ay$2 * Math.sin(rad) + az$2 * Math.cos(rad);
+	        out[0] = bx$2 + b[0];
+	        out[1] = by$2 + b[1];
+	        out[2] = bz$2 + b[2];
+	        return out;
+	    };
+	    static rotateY = (a, b, rad, out = new Vector3$1()) => {
+	        ax$2 = a[0] - b[0];
+	        ay$2 = a[1] - b[1];
+	        az$2 = a[2] - b[2];
+	        bx$2 = az$2 * Math.sin(rad) + ax$2 * Math.cos(rad);
+	        by$2 = ay$2;
+	        bz$2 = az$2 * Math.cos(rad) - ax$2 * Math.sin(rad);
+	        out[0] = bx$2 + b[0];
+	        out[1] = by$2 + b[1];
+	        out[2] = bz$2 + b[2];
+	        return out;
+	    };
+	    static rotateZ = (a, b, rad, out = new Vector3$1()) => {
+	        ax$2 = a[0] - b[0];
+	        ay$2 = a[1] - b[1];
+	        az$2 = a[2] - b[2];
+	        bx$2 = ax$2 * Math.cos(rad) - ay$2 * Math.sin(rad);
+	        by$2 = ax$2 * Math.sin(rad) + ay$2 * Math.cos(rad);
+	        bz$2 = az$2;
+	        out[0] = bx$2 + b[0];
+	        out[1] = by$2 + b[1];
+	        out[2] = bz$2 + b[2];
+	        return out;
+	    };
+	    static round = (a, out = new Vector3$1()) => {
+	        out[0] = Math.round(a[0]);
+	        out[1] = Math.round(a[1]);
+	        out[2] = Math.round(a[2]);
+	        return out;
+	    };
+	    static set = (x = 0, y = 0, z = 0, out = new Vector3$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        return out;
+	    };
+	    static setNorm = (a, len, out = new Vector3$1()) => {
+	        return Vector3$1.multiplyScalar(Vector3$1.normalize(a, out), len, out);
+	    };
+	    static slerp = (a, b, t, out = new Vector3$1()) => {
+	        ag$1 = Math.acos(Math.min(Math.max(Vector3$1.dot(a, b), -1), 1));
+	        s$3 = Math.sin(ag$1);
+	        ax$2 = Math.sin((1 - t) * ag$1) / s$3;
+	        bx$2 = Math.sin(t * ag$1) / s$3;
+	        out[0] = ax$2 * a[0] + bx$2 * b[0];
+	        out[1] = ax$2 * a[1] + bx$2 * b[1];
+	        out[2] = ax$2 * a[2] + bx$2 * b[2];
+	        return out;
+	    };
+	    static toString = (a) => {
+	        return `(${a[0]}, ${a[1]}, ${a[2]})`;
+	    };
+	    static transformMatrix3 = (a, m, out = new Vector3$1()) => {
+	        ax$2 = a[0];
+	        ay$2 = a[1];
+	        az$2 = a[2];
+	        out[0] = ax$2 * m[0] + ay$2 * m[3] + az$2 * m[6];
+	        out[1] = ax$2 * m[1] + ay$2 * m[4] + az$2 * m[7];
+	        out[2] = ax$2 * m[2] + ay$2 * m[5] + az$2 * m[8];
+	        return out;
+	    };
+	    static transformMatrix4 = (a, m, out = new Vector3$1()) => {
+	        ax$2 = a[0];
+	        ay$2 = a[1];
+	        az$2 = a[2];
+	        ag$1 = m[3] * ax$2 + m[7] * ay$2 + m[11] * az$2 + m[15];
+	        ag$1 = ag$1 || 1.0;
+	        out[0] = (m[0] * ax$2 + m[4] * ay$2 + m[8] * az$2 + m[12]) / ag$1;
+	        out[1] = (m[1] * ax$2 + m[5] * ay$2 + m[9] * az$2 + m[13]) / ag$1;
+	        out[2] = (m[2] * ax$2 + m[6] * ay$2 + m[10] * az$2 + m[14]) / ag$1;
+	        return out;
+	    };
+	    static transformQuat = (a, q, out = new Vector3$1()) => {
+	        const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
+	        const x = a[0], y = a[1], z = a[2];
+	        // var qvec = [qx, qy, qz];
+	        // var uv = vec3.cross([], qvec, a);
+	        let uvx = qy * z - qz * y, uvy = qz * x - qx * z, uvz = qx * y - qy * x;
+	        // var uuv = vec3.cross([], qvec, uv);
+	        let uuvx = qy * uvz - qz * uvy, uuvy = qz * uvx - qx * uvz, uuvz = qx * uvy - qy * uvx;
+	        // vec3.scale(uv, uv, 2 * w);
+	        const w2 = qw * 2;
+	        uvx *= w2;
+	        uvy *= w2;
+	        uvz *= w2;
+	        // vec3.scale(uuv, uuv, 2);
+	        uuvx *= 2;
+	        uuvy *= 2;
+	        uuvz *= 2;
+	        // return vec3.add(out, a, vec3.add(out, uv, uuv));
+	        out[0] = x + uvx + uuvx;
+	        out[1] = y + uvy + uuvy;
+	        out[2] = z + uvz + uuvz;
+	        return out;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.VECTOR3;
 	    constructor(x = 0, y = 0, z = 0) {
 	        super(3);
 	        this[0] = x;
@@ -2029,314 +2362,6 @@
 	        this[2] = value;
 	    }
 	}
-	Vector3$1.VECTOR3_ZERO = new Float32Array([0, 0, 0]);
-	Vector3$1.VECTOR3_ONE = new Float32Array([1, 1, 1]);
-	Vector3$1.VECTOR3_TOP = new Float32Array([0, 1, 0]);
-	Vector3$1.VECTOR3_BOTTOM = new Float32Array([0, -1, 0]);
-	Vector3$1.VECTOR3_LEFT = new Float32Array([-1, 0, 0]);
-	Vector3$1.VECTOR3_RIGHT = new Float32Array([1, 0, 0]);
-	Vector3$1.VECTOR3_FRONT = new Float32Array([0, 0, -1]);
-	Vector3$1.VECTOR3_BACK = new Float32Array([0, 0, 1]);
-	Vector3$1.add = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] + b[0];
-	    out[1] = a[1] + b[1];
-	    out[2] = a[2] + b[2];
-	    return out;
-	};
-	Vector3$1.addScalar = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] + b;
-	    out[1] = a[1] + b;
-	    out[2] = a[2] + b;
-	    return out;
-	};
-	Vector3$1.angle = (a, b) => {
-	    ax$2 = a[0];
-	    ay$2 = a[1];
-	    az$2 = a[2];
-	    bx$2 = b[0];
-	    by$2 = b[1];
-	    bz$2 = b[2];
-	    const mag1 = Math.sqrt(ax$2 * ax$2 + ay$2 * ay$2 + az$2 * az$2), mag2 = Math.sqrt(bx$2 * bx$2 + by$2 * by$2 + bz$2 * bz$2), mag = mag1 * mag2, cosine = mag && Vector3$1.dot(a, b) / mag;
-	    return Math.acos(clampCommon$1(cosine, -1, 1));
-	};
-	Vector3$1.clamp = (a, min, max, out = new Vector3$1()) => {
-	    out[0] = clampCommon$1(a[0], min[0], max[0]);
-	    out[1] = clampCommon$1(a[1], min[1], max[1]);
-	    out[2] = clampCommon$1(a[2], min[2], max[2]);
-	    return out;
-	};
-	Vector3$1.clampSafe = (a, min, max, out = new Vector3$1()) => {
-	    out[0] = clampSafeCommon$1(a[0], min[0], max[0]);
-	    out[1] = clampSafeCommon$1(a[1], min[1], max[1]);
-	    out[1] = clampSafeCommon$1(a[2], min[2], max[2]);
-	    return out;
-	};
-	Vector3$1.clampScalar = (a, min, max, out = new Vector3$1()) => {
-	    out[0] = clampCommon$1(a[0], min, max);
-	    out[1] = clampCommon$1(a[1], min, max);
-	    out[2] = clampCommon$1(a[2], min, max);
-	    return out;
-	};
-	Vector3$1.clone = (a, out = new Vector3$1()) => {
-	    out[0] = a[0];
-	    out[1] = a[1];
-	    out[2] = a[2];
-	    return out;
-	};
-	Vector3$1.closeTo = (a, b) => {
-	    return closeToCommon$1(a[0], b[0]) && closeToCommon$1(a[1], b[1]) && closeToCommon$1(a[2], b[2]);
-	};
-	Vector3$1.create = (x = 0, y = 0, z = 0, out = new Vector3$1()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    return out;
-	};
-	Vector3$1.cross = (a, b, out = new Vector3$1()) => {
-	    ax$2 = a[0];
-	    ay$2 = a[1];
-	    az$2 = a[2];
-	    bx$2 = b[0];
-	    by$2 = b[1];
-	    bz$2 = b[2];
-	    out[0] = ay$2 * bz$2 - az$2 * by$2;
-	    out[1] = az$2 * bx$2 - ax$2 * bz$2;
-	    out[2] = ax$2 * by$2 - ay$2 * bx$2;
-	    return out;
-	};
-	Vector3$1.distanceTo = (a, b) => {
-	    ax$2 = b[0] - a[0];
-	    ay$2 = b[1] - a[1];
-	    az$2 = b[2] - a[2];
-	    return Math.hypot(ax$2, ay$2, az$2);
-	};
-	Vector3$1.distanceToManhattan = (a, b) => {
-	    return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
-	};
-	Vector3$1.distanceToSquared = (a, b) => {
-	    ax$2 = a[0] - b[0];
-	    ay$2 = a[1] - b[1];
-	    az$2 = a[2] - b[2];
-	    return ax$2 * ax$2 + ay$2 * ay$2 + az$2 * az$2;
-	};
-	Vector3$1.divide = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] / b[0];
-	    out[1] = a[1] / b[1];
-	    out[2] = a[2] / b[2];
-	    return out;
-	};
-	Vector3$1.divideScalar = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] / b;
-	    out[1] = a[1] / b;
-	    out[2] = a[2] / b;
-	    return out;
-	};
-	Vector3$1.dot = (a, b) => {
-	    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-	};
-	Vector3$1.equals = (a, b) => {
-	    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
-	};
-	Vector3$1.fromArray = (a, offset = 0, out = new Vector3$1()) => {
-	    out[0] = a[offset];
-	    out[1] = a[offset + 1];
-	    out[2] = a[offset + 2];
-	    return out;
-	};
-	Vector3$1.fromScalar = (num, out = new Vector3$1(3)) => {
-	    out[0] = out[1] = out[2] = num;
-	    return out;
-	};
-	Vector3$1.fromValues = (x, y, z, out = new Vector3$1(3)) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    return out;
-	};
-	Vector3$1.hermite = (a, b, c, d, t, out = new Vector3$1()) => {
-	    ag$1 = t * t;
-	    const factor1 = ag$1 * (2 * t - 3) + 1;
-	    const factor2 = ag$1 * (t - 2) + t;
-	    const factor3 = ag$1 * (t - 1);
-	    const factor4 = ag$1 * (3 - 2 * t);
-	    out[0] = a[0] * factor1 + b[0] * factor2 + c[0] * factor3 + d[0] * factor4;
-	    out[1] = a[1] * factor1 + b[1] * factor2 + c[1] * factor3 + d[1] * factor4;
-	    out[2] = a[2] * factor1 + b[2] * factor2 + c[2] * factor3 + d[2] * factor4;
-	    return out;
-	};
-	Vector3$1.inverse = (a, out = new Vector3$1()) => {
-	    out[0] = 1.0 / a[0];
-	    out[1] = 1.0 / a[1];
-	    out[2] = 1.0 / a[2];
-	    return out;
-	};
-	Vector3$1.norm = (a) => {
-	    return Math.sqrt(Vector3$1.lengthSquared(a));
-	};
-	Vector3$1.lengthManhattan = (a) => {
-	    return Math.abs(a[0]) + Math.abs(a[1]) + Math.abs(a[2]);
-	};
-	Vector3$1.lengthSquared = (a) => {
-	    return a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
-	};
-	Vector3$1.lerp = (a, b, alpha, out = new Vector3$1()) => {
-	    out[0] += (b[0] - a[0]) * alpha;
-	    out[1] += (b[1] - a[1]) * alpha;
-	    out[2] += (b[2] - a[2]) * alpha;
-	    return out;
-	};
-	Vector3$1.max = (a, b, out = new Vector3$1()) => {
-	    out[0] = Math.max(a[0], b[0]);
-	    out[1] = Math.max(a[1], b[1]);
-	    out[2] = Math.max(a[2], b[2]);
-	    return out;
-	};
-	Vector3$1.min = (a, b, out = new Vector3$1()) => {
-	    out[0] = Math.min(a[0], b[0]);
-	    out[1] = Math.min(a[1], b[1]);
-	    out[2] = Math.min(a[2], b[2]);
-	    return out;
-	};
-	Vector3$1.minus = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] - b[0];
-	    out[1] = a[1] - b[1];
-	    out[2] = a[2] - b[2];
-	    return out;
-	};
-	Vector3$1.minusScalar = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] - b;
-	    out[1] = a[1] - b;
-	    out[2] = a[2] - b;
-	    return out;
-	};
-	Vector3$1.multiply = (a, b, out = new Vector3$1()) => {
-	    out[0] = a[0] * b[0];
-	    out[1] = a[1] * b[1];
-	    out[2] = a[2] * b[2];
-	    return out;
-	};
-	Vector3$1.multiplyScalar = (a, scalar, out = new Vector3$1()) => {
-	    out[0] = a[0] * scalar;
-	    out[1] = a[1] * scalar;
-	    out[2] = a[2] * scalar;
-	    return out;
-	};
-	Vector3$1.negate = (a, out = new Vector3$1()) => {
-	    out[0] = -a[0];
-	    out[1] = -a[1];
-	    out[2] = -a[2];
-	    return out;
-	};
-	Vector3$1.normalize = (a, out = new Vector3$1()) => {
-	    return Vector3$1.divideScalar(a, Vector3$1.norm(a) || 1, out);
-	};
-	Vector3$1.rotateX = (a, b, rad, out = new Vector3$1()) => {
-	    ax$2 = a[0] - b[0];
-	    ay$2 = a[1] - b[1];
-	    az$2 = a[2] - b[2];
-	    bx$2 = ax$2;
-	    by$2 = ay$2 * Math.cos(rad) - az$2 * Math.sin(rad);
-	    bz$2 = ay$2 * Math.sin(rad) + az$2 * Math.cos(rad);
-	    out[0] = bx$2 + b[0];
-	    out[1] = by$2 + b[1];
-	    out[2] = bz$2 + b[2];
-	    return out;
-	};
-	Vector3$1.rotateY = (a, b, rad, out = new Vector3$1()) => {
-	    ax$2 = a[0] - b[0];
-	    ay$2 = a[1] - b[1];
-	    az$2 = a[2] - b[2];
-	    bx$2 = az$2 * Math.sin(rad) + ax$2 * Math.cos(rad);
-	    by$2 = ay$2;
-	    bz$2 = az$2 * Math.cos(rad) - ax$2 * Math.sin(rad);
-	    out[0] = bx$2 + b[0];
-	    out[1] = by$2 + b[1];
-	    out[2] = bz$2 + b[2];
-	    return out;
-	};
-	Vector3$1.rotateZ = (a, b, rad, out = new Vector3$1()) => {
-	    ax$2 = a[0] - b[0];
-	    ay$2 = a[1] - b[1];
-	    az$2 = a[2] - b[2];
-	    bx$2 = ax$2 * Math.cos(rad) - ay$2 * Math.sin(rad);
-	    by$2 = ax$2 * Math.sin(rad) + ay$2 * Math.cos(rad);
-	    bz$2 = az$2;
-	    out[0] = bx$2 + b[0];
-	    out[1] = by$2 + b[1];
-	    out[2] = bz$2 + b[2];
-	    return out;
-	};
-	Vector3$1.round = (a, out = new Vector3$1()) => {
-	    out[0] = Math.round(a[0]);
-	    out[1] = Math.round(a[1]);
-	    out[2] = Math.round(a[2]);
-	    return out;
-	};
-	Vector3$1.set = (x = 0, y = 0, z = 0, out = new Vector3$1()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    return out;
-	};
-	Vector3$1.setNorm = (a, len, out = new Vector3$1()) => {
-	    return Vector3$1.multiplyScalar(Vector3$1.normalize(a, out), len, out);
-	};
-	Vector3$1.slerp = (a, b, t, out = new Vector3$1()) => {
-	    ag$1 = Math.acos(Math.min(Math.max(Vector3$1.dot(a, b), -1), 1));
-	    s$3 = Math.sin(ag$1);
-	    ax$2 = Math.sin((1 - t) * ag$1) / s$3;
-	    bx$2 = Math.sin(t * ag$1) / s$3;
-	    out[0] = ax$2 * a[0] + bx$2 * b[0];
-	    out[1] = ax$2 * a[1] + bx$2 * b[1];
-	    out[2] = ax$2 * a[2] + bx$2 * b[2];
-	    return out;
-	};
-	Vector3$1.toString = (a) => {
-	    return `(${a[0]}, ${a[1]}, ${a[2]})`;
-	};
-	Vector3$1.transformMatrix3 = (a, m, out = new Vector3$1()) => {
-	    ax$2 = a[0];
-	    ay$2 = a[1];
-	    az$2 = a[2];
-	    out[0] = ax$2 * m[0] + ay$2 * m[3] + az$2 * m[6];
-	    out[1] = ax$2 * m[1] + ay$2 * m[4] + az$2 * m[7];
-	    out[2] = ax$2 * m[2] + ay$2 * m[5] + az$2 * m[8];
-	    return out;
-	};
-	Vector3$1.transformMatrix4 = (a, m, out = new Vector3$1()) => {
-	    ax$2 = a[0];
-	    ay$2 = a[1];
-	    az$2 = a[2];
-	    ag$1 = m[3] * ax$2 + m[7] * ay$2 + m[11] * az$2 + m[15];
-	    ag$1 = ag$1 || 1.0;
-	    out[0] = (m[0] * ax$2 + m[4] * ay$2 + m[8] * az$2 + m[12]) / ag$1;
-	    out[1] = (m[1] * ax$2 + m[5] * ay$2 + m[9] * az$2 + m[13]) / ag$1;
-	    out[2] = (m[2] * ax$2 + m[6] * ay$2 + m[10] * az$2 + m[14]) / ag$1;
-	    return out;
-	};
-	Vector3$1.transformQuat = (a, q, out = new Vector3$1()) => {
-	    const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
-	    const x = a[0], y = a[1], z = a[2];
-	    // var qvec = [qx, qy, qz];
-	    // var uv = vec3.cross([], qvec, a);
-	    let uvx = qy * z - qz * y, uvy = qz * x - qx * z, uvz = qx * y - qy * x;
-	    // var uuv = vec3.cross([], qvec, uv);
-	    let uuvx = qy * uvz - qz * uvy, uuvy = qz * uvx - qx * uvz, uuvz = qx * uvy - qy * uvx;
-	    // vec3.scale(uv, uv, 2 * w);
-	    const w2 = qw * 2;
-	    uvx *= w2;
-	    uvy *= w2;
-	    uvz *= w2;
-	    // vec3.scale(uuv, uuv, 2);
-	    uuvx *= 2;
-	    uuvy *= 2;
-	    uuvz *= 2;
-	    // return vec3.add(out, a, vec3.add(out, uv, uuv));
-	    out[0] = x + uvx + uuvx;
-	    out[1] = y + uvy + uuvy;
-	    out[2] = z + uvz + uuvz;
-	    return out;
-	};
 
 	/* eslint-disable max-lines */
 	let a00$3 = 0, a01$3 = 0, a02$2 = 0, a03$1 = 0, a11$3 = 0, a10$3 = 0, a12$2 = 0, a13$1 = 0, a20$2 = 0, a21$2 = 0, a22$2 = 0, a23$1 = 0, a31$1 = 0, a30$1 = 0, a32$1 = 0, a33$1 = 0;
@@ -2344,915 +2369,14 @@
 	let x$2$1 = 0, y$2$1 = 0, z$1 = 0, det$2 = 0, len$2 = 0, s$2$1 = 0, t$1 = 0, a$1 = 0, b$1 = 0, c$2 = 0, d$1 = 0, e$1 = 0, f$1 = 0;
 	const UNIT_MATRIX4_DATA$1 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 	class Matrix4$1 extends Float32Array {
-	    constructor(data = UNIT_MATRIX4_DATA$1) {
-	        super(data);
-	    }
-	}
-	Matrix4$1.UNIT_MATRIX4 = new Matrix4$1(UNIT_MATRIX4_DATA$1);
-	Matrix4$1.clone = (source) => {
-	    return new Matrix4$1(source);
-	};
-	Matrix4$1.create = () => {
-	    return new Matrix4$1(UNIT_MATRIX4_DATA$1);
-	};
-	Matrix4$1.determinant = (a) => {
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    a30$1 = a[12];
-	    a31$1 = a[13];
-	    a32$1 = a[14];
-	    a33$1 = a[15];
-	    b00$3 = a00$3 * a11$3 - a01$3 * a10$3;
-	    b01$3 = a00$3 * a12$2 - a02$2 * a10$3;
-	    b02$2 = a01$3 * a12$2 - a02$2 * a11$3;
-	    b03$1 = a20$2 * a31$1 - a21$2 * a30$1;
-	    b10$3 = a20$2 * a32$1 - a22$2 * a30$1;
-	    b11$3 = a21$2 * a32$1 - a22$2 * a31$1;
-	    b12$2 = a00$3 * b11$3 - a01$3 * b10$3 + a02$2 * b03$1;
-	    b13$1 = a10$3 * b11$3 - a11$3 * b10$3 + a12$2 * b03$1;
-	    b20$2 = a20$2 * b02$2 - a21$2 * b01$3 + a22$2 * b00$3;
-	    b21$2 = a30$1 * b02$2 - a31$1 * b01$3 + a32$1 * b00$3;
-	    return a13$1 * b12$2 - a03$1 * b13$1 + a33$1 * b20$2 - a23$1 * b21$2;
-	};
-	Matrix4$1.fromArray = (source, out = new Matrix4$1()) => {
-	    out.set(source);
-	    return out;
-	};
-	Matrix4$1.fromEuler = (euler, out = new Matrix4$1()) => {
-	    x$2$1 = euler.x;
-	    y$2$1 = euler.y;
-	    z$1 = euler.z;
-	    a$1 = Math.cos(x$2$1);
-	    b$1 = Math.sin(x$2$1);
-	    c$2 = Math.cos(y$2$1);
-	    d$1 = Math.sin(y$2$1);
-	    e$1 = Math.cos(z$1);
-	    f$1 = Math.sin(z$1);
-	    if (euler.order === EulerRotationOrders$1.XYZ) {
-	        const ae = a$1 * e$1, af = a$1 * f$1, be = b$1 * e$1, bf = b$1 * f$1;
-	        out[0] = c$2 * e$1;
-	        out[4] = -c$2 * f$1;
-	        out[8] = d$1;
-	        out[1] = af + be * d$1;
-	        out[5] = ae - bf * d$1;
-	        out[9] = -b$1 * c$2;
-	        out[2] = bf - ae * d$1;
-	        out[6] = be + af * d$1;
-	        out[10] = a$1 * c$2;
-	    }
-	    else if (euler.order === EulerRotationOrders$1.YXZ) {
-	        const ce = c$2 * e$1, cf = c$2 * f$1, de = d$1 * e$1, df = d$1 * f$1;
-	        out[0] = ce + df * b$1;
-	        out[4] = de * b$1 - cf;
-	        out[8] = a$1 * d$1;
-	        out[1] = a$1 * f$1;
-	        out[5] = a$1 * e$1;
-	        out[9] = -b$1;
-	        out[2] = cf * b$1 - de;
-	        out[6] = df + ce * b$1;
-	        out[10] = a$1 * c$2;
-	    }
-	    else if (euler.order === EulerRotationOrders$1.ZXY) {
-	        const ce = c$2 * e$1, cf = c$2 * f$1, de = d$1 * e$1, df = d$1 * f$1;
-	        out[0] = ce - df * b$1;
-	        out[4] = -a$1 * f$1;
-	        out[8] = de + cf * b$1;
-	        out[1] = cf + de * b$1;
-	        out[5] = a$1 * e$1;
-	        out[9] = df - ce * b$1;
-	        out[2] = -a$1 * d$1;
-	        out[6] = b$1;
-	        out[10] = a$1 * c$2;
-	    }
-	    else if (euler.order === EulerRotationOrders$1.ZYX) {
-	        const ae = a$1 * e$1, af = a$1 * f$1, be = b$1 * e$1, bf = b$1 * f$1;
-	        out[0] = c$2 * e$1;
-	        out[4] = be * d$1 - af;
-	        out[8] = ae * d$1 + bf;
-	        out[1] = c$2 * f$1;
-	        out[5] = bf * d$1 + ae;
-	        out[9] = af * d$1 - be;
-	        out[2] = -d$1;
-	        out[6] = b$1 * c$2;
-	        out[10] = a$1 * c$2;
-	    }
-	    else if (euler.order === EulerRotationOrders$1.YZX) {
-	        const ac = a$1 * c$2, ad = a$1 * d$1, bc = b$1 * c$2, bd = b$1 * d$1;
-	        out[0] = c$2 * e$1;
-	        out[4] = bd - ac * f$1;
-	        out[8] = bc * f$1 + ad;
-	        out[1] = f$1;
-	        out[5] = a$1 * e$1;
-	        out[9] = -b$1 * e$1;
-	        out[2] = -d$1 * e$1;
-	        out[6] = ad * f$1 + bc;
-	        out[10] = ac - bd * f$1;
-	    }
-	    else if (euler.order === EulerRotationOrders$1.XZY) {
-	        const ac = a$1 * c$2, ad = a$1 * d$1, bc = b$1 * c$2, bd = b$1 * d$1;
-	        out[0] = c$2 * e$1;
-	        out[4] = -f$1;
-	        out[8] = d$1 * e$1;
-	        out[1] = ac * f$1 + bd;
-	        out[5] = a$1 * e$1;
-	        out[9] = ad * f$1 - bc;
-	        out[2] = bc * f$1 - ad;
-	        out[6] = b$1 * e$1;
-	        out[10] = bd * f$1 + ac;
-	    }
-	    // bottom row
-	    out[3] = 0;
-	    out[7] = 0;
-	    out[11] = 0;
-	    // last column
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromMatrix3 = (data, out = new Matrix4$1()) => {
-	    out[0] = data[0];
-	    out[1] = data[1];
-	    out[2] = data[2];
-	    out[3] = 0;
-	    out[4] = data[3];
-	    out[5] = data[4];
-	    out[6] = data[5];
-	    out[7] = 0;
-	    out[8] = data[6];
-	    out[9] = data[7];
-	    out[10] = data[8];
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromQuaternion = (q, out = new Matrix4$1()) => {
-	    const x = q[0], y = q[1], z = q[2], w = q[3];
-	    const x2 = x + x;
-	    const y2 = y + y;
-	    const z2 = z + z;
-	    const xx = x * x2;
-	    const yx = y * x2;
-	    const yy = y * y2;
-	    const zx = z * x2;
-	    const zy = z * y2;
-	    const zz = z * z2;
-	    const wx = w * x2;
-	    const wy = w * y2;
-	    const wz = w * z2;
-	    out[0] = 1 - yy - zz;
-	    out[1] = yx + wz;
-	    out[2] = zx - wy;
-	    out[3] = 0;
-	    out[4] = yx - wz;
-	    out[5] = 1 - xx - zz;
-	    out[6] = zy + wx;
-	    out[7] = 0;
-	    out[8] = zx + wy;
-	    out[9] = zy - wx;
-	    out[10] = 1 - xx - yy;
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromRotation = (rad, axis, out = new Matrix4$1()) => {
-	    x$2$1 = axis[0];
-	    y$2$1 = axis[1];
-	    z$1 = axis[2];
-	    len$2 = Math.hypot(x$2$1, y$2$1, z$1);
-	    if (len$2 < EPSILON$1) {
-	        return null;
-	    }
-	    len$2 = 1 / len$2;
-	    x$2$1 *= len$2;
-	    y$2$1 *= len$2;
-	    z$1 *= len$2;
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    t$1 = 1 - c$2;
-	    out[0] = x$2$1 * x$2$1 * t$1 + c$2;
-	    out[1] = y$2$1 * x$2$1 * t$1 + z$1 * s$2$1;
-	    out[2] = z$1 * x$2$1 * t$1 - y$2$1 * s$2$1;
-	    out[3] = 0;
-	    out[4] = x$2$1 * y$2$1 * t$1 - z$1 * s$2$1;
-	    out[5] = y$2$1 * y$2$1 * t$1 + c$2;
-	    out[6] = z$1 * y$2$1 * t$1 + x$2$1 * s$2$1;
-	    out[7] = 0;
-	    out[8] = x$2$1 * z$1 * t$1 + y$2$1 * s$2$1;
-	    out[9] = y$2$1 * z$1 * t$1 - x$2$1 * s$2$1;
-	    out[10] = z$1 * z$1 * t$1 + c$2;
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromRotationX = (rad, out = new Matrix4$1()) => {
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    out[0] = 1;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = c$2;
-	    out[6] = s$2$1;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = -s$2$1;
-	    out[10] = c$2;
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromRotationY = (rad, out = new Matrix4$1()) => {
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    out[0] = c$2;
-	    out[1] = 0;
-	    out[2] = -s$2$1;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = 1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = s$2$1;
-	    out[9] = 0;
-	    out[10] = c$2;
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromRotationZ = (rad, out = new Matrix4$1()) => {
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    out[0] = c$2;
-	    out[1] = s$2$1;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = -s$2$1;
-	    out[5] = c$2;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[10] = 1;
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromScaling = (v, out = new Matrix4$1()) => {
-	    out[0] = v[0];
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = v[1];
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[10] = v[2];
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.fromTranslation = (v, out = new Matrix4$1()) => {
-	    out[0] = 1;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = 1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[10] = 1;
-	    out[11] = 0;
-	    out[12] = v[0];
-	    out[13] = v[1];
-	    out[14] = v[2];
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.identity = (out = new Matrix4$1()) => {
-	    out[0] = 1;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = 1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[10] = 1;
-	    out[11] = 0;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[14] = 0;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.invert = (a, out = new Matrix4$1()) => {
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    a30$1 = a[12];
-	    a31$1 = a[13];
-	    a32$1 = a[14];
-	    a33$1 = a[15];
-	    b00$3 = a00$3 * a11$3 - a01$3 * a10$3;
-	    b01$3 = a00$3 * a12$2 - a02$2 * a10$3;
-	    b02$2 = a00$3 * a13$1 - a03$1 * a10$3;
-	    b03$1 = a01$3 * a12$2 - a02$2 * a11$3;
-	    b20$2 = a01$3 * a13$1 - a03$1 * a11$3;
-	    b21$2 = a02$2 * a13$1 - a03$1 * a12$2;
-	    b22$2 = a20$2 * a31$1 - a21$2 * a30$1;
-	    b23$1 = a20$2 * a32$1 - a22$2 * a30$1;
-	    b30$1 = a20$2 * a33$1 - a23$1 * a30$1;
-	    b31$1 = a21$2 * a32$1 - a22$2 * a31$1;
-	    b32$1 = a21$2 * a33$1 - a23$1 * a31$1;
-	    b33$1 = a22$2 * a33$1 - a23$1 * a32$1;
-	    det$2 = b00$3 * b33$1 - b01$3 * b32$1 + b02$2 * b31$1 + b03$1 * b30$1 - b20$2 * b23$1 + b21$2 * b22$2;
-	    if (!det$2) {
-	        return null;
-	    }
-	    det$2 = 1.0 / det$2;
-	    out[0] = (a11$3 * b33$1 - a12$2 * b32$1 + a13$1 * b31$1) * det$2;
-	    out[1] = (a02$2 * b32$1 - a01$3 * b33$1 - a03$1 * b31$1) * det$2;
-	    out[2] = (a31$1 * b21$2 - a32$1 * b20$2 + a33$1 * b03$1) * det$2;
-	    out[3] = (a22$2 * b20$2 - a21$2 * b21$2 - a23$1 * b03$1) * det$2;
-	    out[4] = (a12$2 * b30$1 - a10$3 * b33$1 - a13$1 * b23$1) * det$2;
-	    out[5] = (a00$3 * b33$1 - a02$2 * b30$1 + a03$1 * b23$1) * det$2;
-	    out[6] = (a32$1 * b02$2 - a30$1 * b21$2 - a33$1 * b01$3) * det$2;
-	    out[7] = (a20$2 * b21$2 - a22$2 * b02$2 + a23$1 * b01$3) * det$2;
-	    out[8] = (a10$3 * b32$1 - a11$3 * b30$1 + a13$1 * b22$2) * det$2;
-	    out[9] = (a01$3 * b30$1 - a00$3 * b32$1 - a03$1 * b22$2) * det$2;
-	    out[10] = (a30$1 * b20$2 - a31$1 * b02$2 + a33$1 * b00$3) * det$2;
-	    out[11] = (a21$2 * b02$2 - a20$2 * b20$2 - a23$1 * b00$3) * det$2;
-	    out[12] = (a11$3 * b23$1 - a10$3 * b31$1 - a12$2 * b22$2) * det$2;
-	    out[13] = (a00$3 * b31$1 - a01$3 * b23$1 + a02$2 * b22$2) * det$2;
-	    out[14] = (a31$1 * b01$3 - a30$1 * b03$1 - a32$1 * b00$3) * det$2;
-	    out[15] = (a20$2 * b03$1 - a21$2 * b01$3 + a22$2 * b00$3) * det$2;
-	    return out;
-	};
-	Matrix4$1.lookAt = (eye, center, up = Vector3$1.VECTOR3_TOP, out = new Matrix4$1()) => {
-	    let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
-	    const eyex = eye[0];
-	    const eyey = eye[1];
-	    const eyez = eye[2];
-	    const upx = up[0];
-	    const upy = up[1];
-	    const upz = up[2];
-	    const centerx = center[0];
-	    const centery = center[1];
-	    const centerz = center[2];
-	    if (closeToCommon$1(eyex, centerx) && closeToCommon$1(eyey, centery) && closeToCommon$1(eyez, centerz)) {
-	        return Matrix4$1.identity(out);
-	    }
-	    z0 = eyex - centerx;
-	    z1 = eyey - centery;
-	    z2 = eyez - centerz;
-	    len = 1 / Math.hypot(z0, z1, z2);
-	    z0 *= len;
-	    z1 *= len;
-	    z2 *= len;
-	    x0 = upy * z2 - upz * z1;
-	    x1 = upz * z0 - upx * z2;
-	    x2 = upx * z1 - upy * z0;
-	    len = Math.hypot(x0, x1, x2);
-	    if (!len) {
-	        x0 = 0;
-	        x1 = 0;
-	        x2 = 0;
-	    }
-	    else {
-	        len = 1 / len;
-	        x0 *= len;
-	        x1 *= len;
-	        x2 *= len;
-	    }
-	    y0 = z1 * x2 - z2 * x1;
-	    y1 = z2 * x0 - z0 * x2;
-	    y2 = z0 * x1 - z1 * x0;
-	    len = Math.hypot(y0, y1, y2);
-	    if (!len) {
-	        y0 = 0;
-	        y1 = 0;
-	        y2 = 0;
-	    }
-	    else {
-	        len = 1 / len;
-	        y0 *= len;
-	        y1 *= len;
-	        y2 *= len;
-	    }
-	    out[0] = x0;
-	    out[1] = y0;
-	    out[2] = z0;
-	    out[3] = 0;
-	    out[4] = x1;
-	    out[5] = y1;
-	    out[6] = z1;
-	    out[7] = 0;
-	    out[8] = x2;
-	    out[9] = y2;
-	    out[10] = z2;
-	    out[11] = 0;
-	    out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
-	    out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
-	    out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.multiply = (a, b, out = new Matrix4$1()) => {
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    a30$1 = a[12];
-	    a31$1 = a[13];
-	    a32$1 = a[14];
-	    a33$1 = a[15];
-	    b00$3 = b[0];
-	    b01$3 = b[1];
-	    b02$2 = b[2];
-	    b03$1 = b[3];
-	    out[0] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
-	    out[1] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
-	    out[2] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
-	    out[3] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
-	    b00$3 = b[4];
-	    b01$3 = b[5];
-	    b02$2 = b[6];
-	    b03$1 = b[7];
-	    out[4] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
-	    out[5] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
-	    out[6] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
-	    out[7] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
-	    b00$3 = b[8];
-	    b01$3 = b[9];
-	    b02$2 = b[10];
-	    b03$1 = b[11];
-	    out[8] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
-	    out[9] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
-	    out[10] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
-	    out[11] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
-	    b00$3 = b[12];
-	    b01$3 = b[13];
-	    b02$2 = b[14];
-	    b03$1 = b[15];
-	    out[12] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
-	    out[13] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
-	    out[14] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
-	    out[15] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
-	    return out;
-	};
-	// 乘以缩放矩阵
-	Matrix4$1.multiplyScaleMatrix = (a, b, out = new Matrix4$1()) => {
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    a30$1 = a[12];
-	    a31$1 = a[13];
-	    a32$1 = a[14];
-	    a33$1 = a[15];
-	    b00$3 = b[0];
-	    out[0] = b00$3 * a00$3;
-	    out[1] = b00$3 * a01$3;
-	    out[2] = b00$3 * a02$2;
-	    out[3] = b00$3 * a03$1;
-	    b01$3 = b[5];
-	    out[4] = b01$3 * a10$3;
-	    out[5] = b01$3 * a11$3;
-	    out[6] = b01$3 * a12$2;
-	    out[7] = b01$3 * a13$1;
-	    b02$2 = b[10];
-	    out[8] = b02$2 * a20$2;
-	    out[9] = b02$2 * a21$2;
-	    out[10] = b02$2 * a22$2;
-	    out[11] = b02$2 * a23$1;
-	    out[12] = a30$1;
-	    out[13] = a31$1;
-	    out[14] = a32$1;
-	    out[15] = a33$1;
-	    return out;
-	};
-	// 乘以平移矩阵
-	Matrix4$1.multiplyTranslateMatrix = (a, b, out = new Matrix4$1()) => {
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    a30$1 = a[12];
-	    a31$1 = a[13];
-	    a32$1 = a[14];
-	    a33$1 = a[15];
-	    out[0] = a00$3;
-	    out[1] = a01$3;
-	    out[2] = a02$2;
-	    out[3] = a03$1;
-	    out[4] = a10$3;
-	    out[5] = a11$3;
-	    out[6] = a12$2;
-	    out[7] = a13$1;
-	    out[8] = a20$2;
-	    out[9] = a21$2;
-	    out[10] = a22$2;
-	    out[11] = a23$1;
-	    b00$3 = b[12];
-	    b01$3 = b[13];
-	    b02$2 = b[14];
-	    out[12] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + a30$1;
-	    out[13] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + a31$1;
-	    out[14] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + a32$1;
-	    out[15] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + a33$1;
-	    return out;
-	};
-	Matrix4$1.orthogonal = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
-	    c$2 = 1 / (left - right);
-	    b$1 = 1 / (bottom - top);
-	    a$1 = 1 / (near - far);
-	    out[0] = -2 * c$2;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = -2 * b$1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[10] = 2 * a$1;
-	    out[11] = 0;
-	    out[12] = (left + right) * c$2;
-	    out[13] = (top + bottom) * b$1;
-	    out[14] = (far + near) * a$1;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.orthogonalZ0 = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
-	    c$2 = 1 / (left - right);
-	    b$1 = 1 / (bottom - top);
-	    a$1 = 1 / (near - far);
-	    out[0] = -2 * c$2;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = -2 * b$1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[10] = a$1;
-	    out[11] = 0;
-	    out[12] = (left + right) * c$2;
-	    out[13] = (top + bottom) * b$1;
-	    out[14] = near * a$1;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.perspective = (fovy, aspect, near, far, out = new Matrix4$1()) => {
-	    f$1 = 1.0 / Math.tan(fovy / 2);
-	    out[0] = f$1 / aspect;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = f$1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[11] = -1;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[15] = 0;
-	    if (far !== null && far !== Infinity) {
-	        a$1 = 1 / (near - far);
-	        out[10] = (far + near) * a$1;
-	        out[14] = 2 * far * near * a$1;
-	    }
-	    else {
-	        out[10] = -1;
-	        out[14] = -2 * near;
-	    }
-	    return out;
-	};
-	Matrix4$1.perspectiveZ0 = (fovy, aspect, near, far, out = new Matrix4$1()) => {
-	    f$1 = 1.0 / Math.tan(fovy / 2);
-	    out[0] = f$1 / aspect;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = 0;
-	    out[5] = f$1;
-	    out[6] = 0;
-	    out[7] = 0;
-	    out[8] = 0;
-	    out[9] = 0;
-	    out[11] = -1;
-	    out[12] = 0;
-	    out[13] = 0;
-	    out[15] = 0;
-	    if (far !== null && far !== Infinity) {
-	        a$1 = 1 / (near - far);
-	        out[10] = far * a$1;
-	        out[14] = far * near * a$1;
-	    }
-	    else {
-	        out[10] = -1;
-	        out[14] = -near;
-	    }
-	    return out;
-	};
-	Matrix4$1.rotate = (a, rad, axis, out = new Matrix4$1()) => {
-	    x$2$1 = axis[0];
-	    y$2$1 = axis[1];
-	    z$1 = axis[2];
-	    len$2 = Math.hypot(x$2$1, y$2$1, z$1);
-	    if (len$2 < EPSILON$1) {
-	        return null;
-	    }
-	    len$2 = 1 / len$2;
-	    x$2$1 *= len$2;
-	    y$2$1 *= len$2;
-	    z$1 *= len$2;
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    t$1 = 1 - c$2;
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    b00$3 = x$2$1 * x$2$1 * t$1 + c$2;
-	    b01$3 = y$2$1 * x$2$1 * t$1 + z$1 * s$2$1;
-	    b02$2 = z$1 * x$2$1 * t$1 - y$2$1 * s$2$1;
-	    b10$3 = x$2$1 * y$2$1 * t$1 - z$1 * s$2$1;
-	    b11$3 = y$2$1 * y$2$1 * t$1 + c$2;
-	    b12$2 = z$1 * y$2$1 * t$1 + x$2$1 * s$2$1;
-	    b20$2 = x$2$1 * z$1 * t$1 + y$2$1 * s$2$1;
-	    b21$2 = y$2$1 * z$1 * t$1 - x$2$1 * s$2$1;
-	    b22$2 = z$1 * z$1 * t$1 + c$2;
-	    out[0] = a00$3 * b00$3 + a10$3 * b01$3 + a20$2 * b02$2;
-	    out[1] = a01$3 * b00$3 + a11$3 * b01$3 + a21$2 * b02$2;
-	    out[2] = a02$2 * b00$3 + a12$2 * b01$3 + a22$2 * b02$2;
-	    out[3] = a03$1 * b00$3 + a13$1 * b01$3 + a23$1 * b02$2;
-	    out[4] = a00$3 * b10$3 + a10$3 * b11$3 + a20$2 * b12$2;
-	    out[5] = a01$3 * b10$3 + a11$3 * b11$3 + a21$2 * b12$2;
-	    out[6] = a02$2 * b10$3 + a12$2 * b11$3 + a22$2 * b12$2;
-	    out[7] = a03$1 * b10$3 + a13$1 * b11$3 + a23$1 * b12$2;
-	    out[8] = a00$3 * b20$2 + a10$3 * b21$2 + a20$2 * b22$2;
-	    out[9] = a01$3 * b20$2 + a11$3 * b21$2 + a21$2 * b22$2;
-	    out[10] = a02$2 * b20$2 + a12$2 * b21$2 + a22$2 * b22$2;
-	    out[11] = a03$1 * b20$2 + a13$1 * b21$2 + a23$1 * b22$2;
-	    if (a !== out) {
-	        out[12] = a[12];
-	        out[13] = a[13];
-	        out[14] = a[14];
-	        out[15] = a[15];
-	    }
-	    return out;
-	};
-	Matrix4$1.rotateX = (a, rad, out = new Matrix4$1()) => {
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    if (a !== out) {
-	        out[0] = a[0];
-	        out[1] = a[1];
-	        out[2] = a[2];
-	        out[3] = a[3];
-	        out[12] = a[12];
-	        out[13] = a[13];
-	        out[14] = a[14];
-	        out[15] = a[15];
-	    }
-	    out[4] = a10$3 * c$2 + a20$2 * s$2$1;
-	    out[5] = a11$3 * c$2 + a21$2 * s$2$1;
-	    out[6] = a12$2 * c$2 + a22$2 * s$2$1;
-	    out[7] = a13$1 * c$2 + a23$1 * s$2$1;
-	    out[8] = a20$2 * c$2 - a10$3 * s$2$1;
-	    out[9] = a21$2 * c$2 - a11$3 * s$2$1;
-	    out[10] = a22$2 * c$2 - a12$2 * s$2$1;
-	    out[11] = a23$1 * c$2 - a13$1 * s$2$1;
-	    return out;
-	};
-	Matrix4$1.rotateY = (a, rad, out = new Matrix4$1()) => {
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a20$2 = a[8];
-	    a21$2 = a[9];
-	    a22$2 = a[10];
-	    a23$1 = a[11];
-	    if (a !== out) {
-	        out[4] = a[4];
-	        out[5] = a[5];
-	        out[6] = a[6];
-	        out[7] = a[7];
-	        out[12] = a[12];
-	        out[13] = a[13];
-	        out[14] = a[14];
-	        out[15] = a[15];
-	    }
-	    out[0] = a00$3 * c$2 - a20$2 * s$2$1;
-	    out[1] = a01$3 * c$2 - a21$2 * s$2$1;
-	    out[2] = a02$2 * c$2 - a22$2 * s$2$1;
-	    out[3] = a03$1 * c$2 - a23$1 * s$2$1;
-	    out[8] = a00$3 * s$2$1 + a20$2 * c$2;
-	    out[9] = a01$3 * s$2$1 + a21$2 * c$2;
-	    out[10] = a02$2 * s$2$1 + a22$2 * c$2;
-	    out[11] = a03$1 * s$2$1 + a23$1 * c$2;
-	    return out;
-	};
-	Matrix4$1.rotateZ = (a, rad, out = new Matrix4$1()) => {
-	    s$2$1 = Math.sin(rad);
-	    c$2 = Math.cos(rad);
-	    a00$3 = a[0];
-	    a01$3 = a[1];
-	    a02$2 = a[2];
-	    a03$1 = a[3];
-	    a10$3 = a[4];
-	    a11$3 = a[5];
-	    a12$2 = a[6];
-	    a13$1 = a[7];
-	    if (a !== out) {
-	        out[8] = a[8];
-	        out[9] = a[9];
-	        out[10] = a[10];
-	        out[11] = a[11];
-	        out[12] = a[12];
-	        out[13] = a[13];
-	        out[14] = a[14];
-	        out[15] = a[15];
-	    }
-	    out[0] = a00$3 * c$2 + a10$3 * s$2$1;
-	    out[1] = a01$3 * c$2 + a11$3 * s$2$1;
-	    out[2] = a02$2 * c$2 + a12$2 * s$2$1;
-	    out[3] = a03$1 * c$2 + a13$1 * s$2$1;
-	    out[4] = a10$3 * c$2 - a00$3 * s$2$1;
-	    out[5] = a11$3 * c$2 - a01$3 * s$2$1;
-	    out[6] = a12$2 * c$2 - a02$2 * s$2$1;
-	    out[7] = a13$1 * c$2 - a03$1 * s$2$1;
-	    return out;
-	};
-	Matrix4$1.scale = (a, v, out = new Matrix4$1()) => {
-	    x$2$1 = v[0];
-	    y$2$1 = v[1];
-	    z$1 = v[2];
-	    out[0] = a[0] * x$2$1;
-	    out[1] = a[1] * x$2$1;
-	    out[2] = a[2] * x$2$1;
-	    out[3] = a[3] * x$2$1;
-	    out[4] = a[4] * y$2$1;
-	    out[5] = a[5] * y$2$1;
-	    out[6] = a[6] * y$2$1;
-	    out[7] = a[7] * y$2$1;
-	    out[8] = a[8] * z$1;
-	    out[9] = a[9] * z$1;
-	    out[10] = a[10] * z$1;
-	    out[11] = a[11] * z$1;
-	    if (out !== a) {
-	        out[12] = a[12];
-	        out[13] = a[13];
-	        out[14] = a[14];
-	        out[15] = a[15];
-	    }
-	    return out;
-	};
-	Matrix4$1.targetTo = (eye, target, up = Vector3$1.VECTOR3_TOP, out = new Matrix4$1()) => {
-	    const eyex = eye[0], eyey = eye[1], eyez = eye[2], upx = up[0], upy = up[1], upz = up[2];
-	    let z0 = eyex - target[0], z1 = eyey - target[1], z2 = eyez - target[2];
-	    let len = z0 * z0 + z1 * z1 + z2 * z2;
-	    if (len > 0) {
-	        len = 1 / Math.sqrt(len);
-	        z0 *= len;
-	        z1 *= len;
-	        z2 *= len;
-	    }
-	    let x0 = upy * z2 - upz * z1, x1 = upz * z0 - upx * z2, x2 = upx * z1 - upy * z0;
-	    len = x0 * x0 + x1 * x1 + x2 * x2;
-	    if (len > 0) {
-	        len = 1 / Math.sqrt(len);
-	        x0 *= len;
-	        x1 *= len;
-	        x2 *= len;
-	    }
-	    out[0] = x0;
-	    out[1] = x1;
-	    out[2] = x2;
-	    out[3] = 0;
-	    out[4] = z1 * x2 - z2 * x1;
-	    out[5] = z2 * x0 - z0 * x2;
-	    out[6] = z0 * x1 - z1 * x0;
-	    out[7] = 0;
-	    out[8] = z0;
-	    out[9] = z1;
-	    out[10] = z2;
-	    out[11] = 0;
-	    out[12] = eyex;
-	    out[13] = eyey;
-	    out[14] = eyez;
-	    out[15] = 1;
-	    return out;
-	};
-	Matrix4$1.translate = (a, v, out = new Matrix4$1()) => {
-	    x$2$1 = v[0];
-	    y$2$1 = v[1];
-	    z$1 = v[2];
-	    if (a === out) {
-	        out[12] = a[0] * x$2$1 + a[4] * y$2$1 + a[8] * z$1 + a[12];
-	        out[13] = a[1] * x$2$1 + a[5] * y$2$1 + a[9] * z$1 + a[13];
-	        out[14] = a[2] * x$2$1 + a[6] * y$2$1 + a[10] * z$1 + a[14];
-	        out[15] = a[3] * x$2$1 + a[7] * y$2$1 + a[11] * z$1 + a[15];
-	    }
-	    else {
+	    static UNIT_MATRIX4 = new Matrix4$1(UNIT_MATRIX4_DATA$1);
+	    static clone = (source) => {
+	        return new Matrix4$1(source);
+	    };
+	    static create = () => {
+	        return new Matrix4$1(UNIT_MATRIX4_DATA$1);
+	    };
+	    static determinant = (a) => {
 	        a00$3 = a[0];
 	        a01$3 = a[1];
 	        a02$2 = a[2];
@@ -3265,6 +2389,552 @@
 	        a21$2 = a[9];
 	        a22$2 = a[10];
 	        a23$1 = a[11];
+	        a30$1 = a[12];
+	        a31$1 = a[13];
+	        a32$1 = a[14];
+	        a33$1 = a[15];
+	        b00$3 = a00$3 * a11$3 - a01$3 * a10$3;
+	        b01$3 = a00$3 * a12$2 - a02$2 * a10$3;
+	        b02$2 = a01$3 * a12$2 - a02$2 * a11$3;
+	        b03$1 = a20$2 * a31$1 - a21$2 * a30$1;
+	        b10$3 = a20$2 * a32$1 - a22$2 * a30$1;
+	        b11$3 = a21$2 * a32$1 - a22$2 * a31$1;
+	        b12$2 = a00$3 * b11$3 - a01$3 * b10$3 + a02$2 * b03$1;
+	        b13$1 = a10$3 * b11$3 - a11$3 * b10$3 + a12$2 * b03$1;
+	        b20$2 = a20$2 * b02$2 - a21$2 * b01$3 + a22$2 * b00$3;
+	        b21$2 = a30$1 * b02$2 - a31$1 * b01$3 + a32$1 * b00$3;
+	        return a13$1 * b12$2 - a03$1 * b13$1 + a33$1 * b20$2 - a23$1 * b21$2;
+	    };
+	    static fromArray = (source, out = new Matrix4$1()) => {
+	        out.set(source);
+	        return out;
+	    };
+	    static fromEuler = (euler, out = new Matrix4$1()) => {
+	        x$2$1 = euler.x;
+	        y$2$1 = euler.y;
+	        z$1 = euler.z;
+	        a$1 = Math.cos(x$2$1);
+	        b$1 = Math.sin(x$2$1);
+	        c$2 = Math.cos(y$2$1);
+	        d$1 = Math.sin(y$2$1);
+	        e$1 = Math.cos(z$1);
+	        f$1 = Math.sin(z$1);
+	        if (euler.order === EulerRotationOrders$1.XYZ) {
+	            const ae = a$1 * e$1, af = a$1 * f$1, be = b$1 * e$1, bf = b$1 * f$1;
+	            out[0] = c$2 * e$1;
+	            out[4] = -c$2 * f$1;
+	            out[8] = d$1;
+	            out[1] = af + be * d$1;
+	            out[5] = ae - bf * d$1;
+	            out[9] = -b$1 * c$2;
+	            out[2] = bf - ae * d$1;
+	            out[6] = be + af * d$1;
+	            out[10] = a$1 * c$2;
+	        }
+	        else if (euler.order === EulerRotationOrders$1.YXZ) {
+	            const ce = c$2 * e$1, cf = c$2 * f$1, de = d$1 * e$1, df = d$1 * f$1;
+	            out[0] = ce + df * b$1;
+	            out[4] = de * b$1 - cf;
+	            out[8] = a$1 * d$1;
+	            out[1] = a$1 * f$1;
+	            out[5] = a$1 * e$1;
+	            out[9] = -b$1;
+	            out[2] = cf * b$1 - de;
+	            out[6] = df + ce * b$1;
+	            out[10] = a$1 * c$2;
+	        }
+	        else if (euler.order === EulerRotationOrders$1.ZXY) {
+	            const ce = c$2 * e$1, cf = c$2 * f$1, de = d$1 * e$1, df = d$1 * f$1;
+	            out[0] = ce - df * b$1;
+	            out[4] = -a$1 * f$1;
+	            out[8] = de + cf * b$1;
+	            out[1] = cf + de * b$1;
+	            out[5] = a$1 * e$1;
+	            out[9] = df - ce * b$1;
+	            out[2] = -a$1 * d$1;
+	            out[6] = b$1;
+	            out[10] = a$1 * c$2;
+	        }
+	        else if (euler.order === EulerRotationOrders$1.ZYX) {
+	            const ae = a$1 * e$1, af = a$1 * f$1, be = b$1 * e$1, bf = b$1 * f$1;
+	            out[0] = c$2 * e$1;
+	            out[4] = be * d$1 - af;
+	            out[8] = ae * d$1 + bf;
+	            out[1] = c$2 * f$1;
+	            out[5] = bf * d$1 + ae;
+	            out[9] = af * d$1 - be;
+	            out[2] = -d$1;
+	            out[6] = b$1 * c$2;
+	            out[10] = a$1 * c$2;
+	        }
+	        else if (euler.order === EulerRotationOrders$1.YZX) {
+	            const ac = a$1 * c$2, ad = a$1 * d$1, bc = b$1 * c$2, bd = b$1 * d$1;
+	            out[0] = c$2 * e$1;
+	            out[4] = bd - ac * f$1;
+	            out[8] = bc * f$1 + ad;
+	            out[1] = f$1;
+	            out[5] = a$1 * e$1;
+	            out[9] = -b$1 * e$1;
+	            out[2] = -d$1 * e$1;
+	            out[6] = ad * f$1 + bc;
+	            out[10] = ac - bd * f$1;
+	        }
+	        else if (euler.order === EulerRotationOrders$1.XZY) {
+	            const ac = a$1 * c$2, ad = a$1 * d$1, bc = b$1 * c$2, bd = b$1 * d$1;
+	            out[0] = c$2 * e$1;
+	            out[4] = -f$1;
+	            out[8] = d$1 * e$1;
+	            out[1] = ac * f$1 + bd;
+	            out[5] = a$1 * e$1;
+	            out[9] = ad * f$1 - bc;
+	            out[2] = bc * f$1 - ad;
+	            out[6] = b$1 * e$1;
+	            out[10] = bd * f$1 + ac;
+	        }
+	        // bottom row
+	        out[3] = 0;
+	        out[7] = 0;
+	        out[11] = 0;
+	        // last column
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromMatrix3 = (data, out = new Matrix4$1()) => {
+	        out[0] = data[0];
+	        out[1] = data[1];
+	        out[2] = data[2];
+	        out[3] = 0;
+	        out[4] = data[3];
+	        out[5] = data[4];
+	        out[6] = data[5];
+	        out[7] = 0;
+	        out[8] = data[6];
+	        out[9] = data[7];
+	        out[10] = data[8];
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromQuaternion = (q, out = new Matrix4$1()) => {
+	        const x = q[0], y = q[1], z = q[2], w = q[3];
+	        const x2 = x + x;
+	        const y2 = y + y;
+	        const z2 = z + z;
+	        const xx = x * x2;
+	        const yx = y * x2;
+	        const yy = y * y2;
+	        const zx = z * x2;
+	        const zy = z * y2;
+	        const zz = z * z2;
+	        const wx = w * x2;
+	        const wy = w * y2;
+	        const wz = w * z2;
+	        out[0] = 1 - yy - zz;
+	        out[1] = yx + wz;
+	        out[2] = zx - wy;
+	        out[3] = 0;
+	        out[4] = yx - wz;
+	        out[5] = 1 - xx - zz;
+	        out[6] = zy + wx;
+	        out[7] = 0;
+	        out[8] = zx + wy;
+	        out[9] = zy - wx;
+	        out[10] = 1 - xx - yy;
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromRotation = (rad, axis, out = new Matrix4$1()) => {
+	        x$2$1 = axis[0];
+	        y$2$1 = axis[1];
+	        z$1 = axis[2];
+	        len$2 = Math.hypot(x$2$1, y$2$1, z$1);
+	        if (len$2 < EPSILON$1) {
+	            return null;
+	        }
+	        len$2 = 1 / len$2;
+	        x$2$1 *= len$2;
+	        y$2$1 *= len$2;
+	        z$1 *= len$2;
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        t$1 = 1 - c$2;
+	        out[0] = x$2$1 * x$2$1 * t$1 + c$2;
+	        out[1] = y$2$1 * x$2$1 * t$1 + z$1 * s$2$1;
+	        out[2] = z$1 * x$2$1 * t$1 - y$2$1 * s$2$1;
+	        out[3] = 0;
+	        out[4] = x$2$1 * y$2$1 * t$1 - z$1 * s$2$1;
+	        out[5] = y$2$1 * y$2$1 * t$1 + c$2;
+	        out[6] = z$1 * y$2$1 * t$1 + x$2$1 * s$2$1;
+	        out[7] = 0;
+	        out[8] = x$2$1 * z$1 * t$1 + y$2$1 * s$2$1;
+	        out[9] = y$2$1 * z$1 * t$1 - x$2$1 * s$2$1;
+	        out[10] = z$1 * z$1 * t$1 + c$2;
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromRotationX = (rad, out = new Matrix4$1()) => {
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        out[0] = 1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = c$2;
+	        out[6] = s$2$1;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = -s$2$1;
+	        out[10] = c$2;
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromRotationY = (rad, out = new Matrix4$1()) => {
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        out[0] = c$2;
+	        out[1] = 0;
+	        out[2] = -s$2$1;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = 1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = s$2$1;
+	        out[9] = 0;
+	        out[10] = c$2;
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromRotationZ = (rad, out = new Matrix4$1()) => {
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        out[0] = c$2;
+	        out[1] = s$2$1;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = -s$2$1;
+	        out[5] = c$2;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = 1;
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromScaling = (v, out = new Matrix4$1()) => {
+	        out[0] = v[0];
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = v[1];
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = v[2];
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static fromTranslation = (v, out = new Matrix4$1()) => {
+	        out[0] = 1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = 1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = 1;
+	        out[11] = 0;
+	        out[12] = v[0];
+	        out[13] = v[1];
+	        out[14] = v[2];
+	        out[15] = 1;
+	        return out;
+	    };
+	    static identity = (out = new Matrix4$1()) => {
+	        out[0] = 1;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = 1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = 1;
+	        out[11] = 0;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[14] = 0;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static invert = (a, out = new Matrix4$1()) => {
+	        a00$3 = a[0];
+	        a01$3 = a[1];
+	        a02$2 = a[2];
+	        a03$1 = a[3];
+	        a10$3 = a[4];
+	        a11$3 = a[5];
+	        a12$2 = a[6];
+	        a13$1 = a[7];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
+	        a23$1 = a[11];
+	        a30$1 = a[12];
+	        a31$1 = a[13];
+	        a32$1 = a[14];
+	        a33$1 = a[15];
+	        b00$3 = a00$3 * a11$3 - a01$3 * a10$3;
+	        b01$3 = a00$3 * a12$2 - a02$2 * a10$3;
+	        b02$2 = a00$3 * a13$1 - a03$1 * a10$3;
+	        b03$1 = a01$3 * a12$2 - a02$2 * a11$3;
+	        b20$2 = a01$3 * a13$1 - a03$1 * a11$3;
+	        b21$2 = a02$2 * a13$1 - a03$1 * a12$2;
+	        b22$2 = a20$2 * a31$1 - a21$2 * a30$1;
+	        b23$1 = a20$2 * a32$1 - a22$2 * a30$1;
+	        b30$1 = a20$2 * a33$1 - a23$1 * a30$1;
+	        b31$1 = a21$2 * a32$1 - a22$2 * a31$1;
+	        b32$1 = a21$2 * a33$1 - a23$1 * a31$1;
+	        b33$1 = a22$2 * a33$1 - a23$1 * a32$1;
+	        det$2 = b00$3 * b33$1 - b01$3 * b32$1 + b02$2 * b31$1 + b03$1 * b30$1 - b20$2 * b23$1 + b21$2 * b22$2;
+	        if (!det$2) {
+	            return null;
+	        }
+	        det$2 = 1.0 / det$2;
+	        out[0] = (a11$3 * b33$1 - a12$2 * b32$1 + a13$1 * b31$1) * det$2;
+	        out[1] = (a02$2 * b32$1 - a01$3 * b33$1 - a03$1 * b31$1) * det$2;
+	        out[2] = (a31$1 * b21$2 - a32$1 * b20$2 + a33$1 * b03$1) * det$2;
+	        out[3] = (a22$2 * b20$2 - a21$2 * b21$2 - a23$1 * b03$1) * det$2;
+	        out[4] = (a12$2 * b30$1 - a10$3 * b33$1 - a13$1 * b23$1) * det$2;
+	        out[5] = (a00$3 * b33$1 - a02$2 * b30$1 + a03$1 * b23$1) * det$2;
+	        out[6] = (a32$1 * b02$2 - a30$1 * b21$2 - a33$1 * b01$3) * det$2;
+	        out[7] = (a20$2 * b21$2 - a22$2 * b02$2 + a23$1 * b01$3) * det$2;
+	        out[8] = (a10$3 * b32$1 - a11$3 * b30$1 + a13$1 * b22$2) * det$2;
+	        out[9] = (a01$3 * b30$1 - a00$3 * b32$1 - a03$1 * b22$2) * det$2;
+	        out[10] = (a30$1 * b20$2 - a31$1 * b02$2 + a33$1 * b00$3) * det$2;
+	        out[11] = (a21$2 * b02$2 - a20$2 * b20$2 - a23$1 * b00$3) * det$2;
+	        out[12] = (a11$3 * b23$1 - a10$3 * b31$1 - a12$2 * b22$2) * det$2;
+	        out[13] = (a00$3 * b31$1 - a01$3 * b23$1 + a02$2 * b22$2) * det$2;
+	        out[14] = (a31$1 * b01$3 - a30$1 * b03$1 - a32$1 * b00$3) * det$2;
+	        out[15] = (a20$2 * b03$1 - a21$2 * b01$3 + a22$2 * b00$3) * det$2;
+	        return out;
+	    };
+	    static lookAt = (eye, center, up = Vector3$1.VECTOR3_TOP, out = new Matrix4$1()) => {
+	        let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
+	        const eyex = eye[0];
+	        const eyey = eye[1];
+	        const eyez = eye[2];
+	        const upx = up[0];
+	        const upy = up[1];
+	        const upz = up[2];
+	        const centerx = center[0];
+	        const centery = center[1];
+	        const centerz = center[2];
+	        if (closeToCommon$1(eyex, centerx) && closeToCommon$1(eyey, centery) && closeToCommon$1(eyez, centerz)) {
+	            return Matrix4$1.identity(out);
+	        }
+	        z0 = eyex - centerx;
+	        z1 = eyey - centery;
+	        z2 = eyez - centerz;
+	        len = 1 / Math.hypot(z0, z1, z2);
+	        z0 *= len;
+	        z1 *= len;
+	        z2 *= len;
+	        x0 = upy * z2 - upz * z1;
+	        x1 = upz * z0 - upx * z2;
+	        x2 = upx * z1 - upy * z0;
+	        len = Math.hypot(x0, x1, x2);
+	        if (!len) {
+	            x0 = 0;
+	            x1 = 0;
+	            x2 = 0;
+	        }
+	        else {
+	            len = 1 / len;
+	            x0 *= len;
+	            x1 *= len;
+	            x2 *= len;
+	        }
+	        y0 = z1 * x2 - z2 * x1;
+	        y1 = z2 * x0 - z0 * x2;
+	        y2 = z0 * x1 - z1 * x0;
+	        len = Math.hypot(y0, y1, y2);
+	        if (!len) {
+	            y0 = 0;
+	            y1 = 0;
+	            y2 = 0;
+	        }
+	        else {
+	            len = 1 / len;
+	            y0 *= len;
+	            y1 *= len;
+	            y2 *= len;
+	        }
+	        out[0] = x0;
+	        out[1] = y0;
+	        out[2] = z0;
+	        out[3] = 0;
+	        out[4] = x1;
+	        out[5] = y1;
+	        out[6] = z1;
+	        out[7] = 0;
+	        out[8] = x2;
+	        out[9] = y2;
+	        out[10] = z2;
+	        out[11] = 0;
+	        out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+	        out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+	        out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+	        out[15] = 1;
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Matrix4$1()) => {
+	        a00$3 = a[0];
+	        a01$3 = a[1];
+	        a02$2 = a[2];
+	        a03$1 = a[3];
+	        a10$3 = a[4];
+	        a11$3 = a[5];
+	        a12$2 = a[6];
+	        a13$1 = a[7];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
+	        a23$1 = a[11];
+	        a30$1 = a[12];
+	        a31$1 = a[13];
+	        a32$1 = a[14];
+	        a33$1 = a[15];
+	        b00$3 = b[0];
+	        b01$3 = b[1];
+	        b02$2 = b[2];
+	        b03$1 = b[3];
+	        out[0] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
+	        out[1] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
+	        out[2] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
+	        out[3] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
+	        b00$3 = b[4];
+	        b01$3 = b[5];
+	        b02$2 = b[6];
+	        b03$1 = b[7];
+	        out[4] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
+	        out[5] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
+	        out[6] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
+	        out[7] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
+	        b00$3 = b[8];
+	        b01$3 = b[9];
+	        b02$2 = b[10];
+	        b03$1 = b[11];
+	        out[8] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
+	        out[9] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
+	        out[10] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
+	        out[11] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
+	        b00$3 = b[12];
+	        b01$3 = b[13];
+	        b02$2 = b[14];
+	        b03$1 = b[15];
+	        out[12] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + b03$1 * a30$1;
+	        out[13] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + b03$1 * a31$1;
+	        out[14] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + b03$1 * a32$1;
+	        out[15] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + b03$1 * a33$1;
+	        return out;
+	    };
+	    // 乘以缩放矩阵
+	    static multiplyScaleMatrix = (a, b, out = new Matrix4$1()) => {
+	        a00$3 = a[0];
+	        a01$3 = a[1];
+	        a02$2 = a[2];
+	        a03$1 = a[3];
+	        a10$3 = a[4];
+	        a11$3 = a[5];
+	        a12$2 = a[6];
+	        a13$1 = a[7];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
+	        a23$1 = a[11];
+	        a30$1 = a[12];
+	        a31$1 = a[13];
+	        a32$1 = a[14];
+	        a33$1 = a[15];
+	        b00$3 = b[0];
+	        out[0] = b00$3 * a00$3;
+	        out[1] = b00$3 * a01$3;
+	        out[2] = b00$3 * a02$2;
+	        out[3] = b00$3 * a03$1;
+	        b01$3 = b[5];
+	        out[4] = b01$3 * a10$3;
+	        out[5] = b01$3 * a11$3;
+	        out[6] = b01$3 * a12$2;
+	        out[7] = b01$3 * a13$1;
+	        b02$2 = b[10];
+	        out[8] = b02$2 * a20$2;
+	        out[9] = b02$2 * a21$2;
+	        out[10] = b02$2 * a22$2;
+	        out[11] = b02$2 * a23$1;
+	        out[12] = a30$1;
+	        out[13] = a31$1;
+	        out[14] = a32$1;
+	        out[15] = a33$1;
+	        return out;
+	    };
+	    // 乘以平移矩阵
+	    static multiplyTranslateMatrix = (a, b, out = new Matrix4$1()) => {
+	        a00$3 = a[0];
+	        a01$3 = a[1];
+	        a02$2 = a[2];
+	        a03$1 = a[3];
+	        a10$3 = a[4];
+	        a11$3 = a[5];
+	        a12$2 = a[6];
+	        a13$1 = a[7];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
+	        a23$1 = a[11];
+	        a30$1 = a[12];
+	        a31$1 = a[13];
+	        a32$1 = a[14];
+	        a33$1 = a[15];
 	        out[0] = a00$3;
 	        out[1] = a01$3;
 	        out[2] = a02$2;
@@ -3277,54 +2947,409 @@
 	        out[9] = a21$2;
 	        out[10] = a22$2;
 	        out[11] = a23$1;
-	        out[12] = a00$3 * x$2$1 + a10$3 * y$2$1 + a20$2 * z$1 + a[12];
-	        out[13] = a01$3 * x$2$1 + a11$3 * y$2$1 + a21$2 * z$1 + a[13];
-	        out[14] = a02$2 * x$2$1 + a12$2 * y$2$1 + a22$2 * z$1 + a[14];
-	        out[15] = a03$1 * x$2$1 + a13$1 * y$2$1 + a23$1 * z$1 + a[15];
-	    }
-	    return out;
-	};
-	Matrix4$1.transpose = (a, out = new Matrix4$1()) => {
-	    if (out === a) {
+	        b00$3 = b[12];
+	        b01$3 = b[13];
+	        b02$2 = b[14];
+	        out[12] = b00$3 * a00$3 + b01$3 * a10$3 + b02$2 * a20$2 + a30$1;
+	        out[13] = b00$3 * a01$3 + b01$3 * a11$3 + b02$2 * a21$2 + a31$1;
+	        out[14] = b00$3 * a02$2 + b01$3 * a12$2 + b02$2 * a22$2 + a32$1;
+	        out[15] = b00$3 * a03$1 + b01$3 * a13$1 + b02$2 * a23$1 + a33$1;
+	        return out;
+	    };
+	    static orthogonal = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
+	        c$2 = 1 / (left - right);
+	        b$1 = 1 / (bottom - top);
+	        a$1 = 1 / (near - far);
+	        out[0] = -2 * c$2;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = -2 * b$1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = 2 * a$1;
+	        out[11] = 0;
+	        out[12] = (left + right) * c$2;
+	        out[13] = (top + bottom) * b$1;
+	        out[14] = (far + near) * a$1;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static orthogonalZ0 = (left, right, bottom, top, near, far, out = new Matrix4$1()) => {
+	        c$2 = 1 / (left - right);
+	        b$1 = 1 / (bottom - top);
+	        a$1 = 1 / (near - far);
+	        out[0] = -2 * c$2;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = -2 * b$1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[10] = a$1;
+	        out[11] = 0;
+	        out[12] = (left + right) * c$2;
+	        out[13] = (top + bottom) * b$1;
+	        out[14] = near * a$1;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static perspective = (fovy, aspect, near, far, out = new Matrix4$1()) => {
+	        f$1 = 1.0 / Math.tan(fovy / 2);
+	        out[0] = f$1 / aspect;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = f$1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[11] = -1;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[15] = 0;
+	        if (far !== null && far !== Infinity) {
+	            a$1 = 1 / (near - far);
+	            out[10] = (far + near) * a$1;
+	            out[14] = 2 * far * near * a$1;
+	        }
+	        else {
+	            out[10] = -1;
+	            out[14] = -2 * near;
+	        }
+	        return out;
+	    };
+	    static perspectiveZ0 = (fovy, aspect, near, far, out = new Matrix4$1()) => {
+	        f$1 = 1.0 / Math.tan(fovy / 2);
+	        out[0] = f$1 / aspect;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 0;
+	        out[4] = 0;
+	        out[5] = f$1;
+	        out[6] = 0;
+	        out[7] = 0;
+	        out[8] = 0;
+	        out[9] = 0;
+	        out[11] = -1;
+	        out[12] = 0;
+	        out[13] = 0;
+	        out[15] = 0;
+	        if (far !== null && far !== Infinity) {
+	            a$1 = 1 / (near - far);
+	            out[10] = far * a$1;
+	            out[14] = far * near * a$1;
+	        }
+	        else {
+	            out[10] = -1;
+	            out[14] = -near;
+	        }
+	        return out;
+	    };
+	    static rotate = (a, rad, axis, out = new Matrix4$1()) => {
+	        x$2$1 = axis[0];
+	        y$2$1 = axis[1];
+	        z$1 = axis[2];
+	        len$2 = Math.hypot(x$2$1, y$2$1, z$1);
+	        if (len$2 < EPSILON$1) {
+	            return null;
+	        }
+	        len$2 = 1 / len$2;
+	        x$2$1 *= len$2;
+	        y$2$1 *= len$2;
+	        z$1 *= len$2;
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        t$1 = 1 - c$2;
+	        a00$3 = a[0];
 	        a01$3 = a[1];
 	        a02$2 = a[2];
 	        a03$1 = a[3];
+	        a10$3 = a[4];
+	        a11$3 = a[5];
 	        a12$2 = a[6];
 	        a13$1 = a[7];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
 	        a23$1 = a[11];
-	        out[1] = a[4];
-	        out[2] = a[8];
-	        out[3] = a[12];
-	        out[4] = a01$3;
-	        out[6] = a[9];
-	        out[7] = a[13];
-	        out[8] = a02$2;
-	        out[9] = a12$2;
-	        out[11] = a[14];
-	        out[12] = a03$1;
-	        out[13] = a13$1;
-	        out[14] = a23$1;
+	        b00$3 = x$2$1 * x$2$1 * t$1 + c$2;
+	        b01$3 = y$2$1 * x$2$1 * t$1 + z$1 * s$2$1;
+	        b02$2 = z$1 * x$2$1 * t$1 - y$2$1 * s$2$1;
+	        b10$3 = x$2$1 * y$2$1 * t$1 - z$1 * s$2$1;
+	        b11$3 = y$2$1 * y$2$1 * t$1 + c$2;
+	        b12$2 = z$1 * y$2$1 * t$1 + x$2$1 * s$2$1;
+	        b20$2 = x$2$1 * z$1 * t$1 + y$2$1 * s$2$1;
+	        b21$2 = y$2$1 * z$1 * t$1 - x$2$1 * s$2$1;
+	        b22$2 = z$1 * z$1 * t$1 + c$2;
+	        out[0] = a00$3 * b00$3 + a10$3 * b01$3 + a20$2 * b02$2;
+	        out[1] = a01$3 * b00$3 + a11$3 * b01$3 + a21$2 * b02$2;
+	        out[2] = a02$2 * b00$3 + a12$2 * b01$3 + a22$2 * b02$2;
+	        out[3] = a03$1 * b00$3 + a13$1 * b01$3 + a23$1 * b02$2;
+	        out[4] = a00$3 * b10$3 + a10$3 * b11$3 + a20$2 * b12$2;
+	        out[5] = a01$3 * b10$3 + a11$3 * b11$3 + a21$2 * b12$2;
+	        out[6] = a02$2 * b10$3 + a12$2 * b11$3 + a22$2 * b12$2;
+	        out[7] = a03$1 * b10$3 + a13$1 * b11$3 + a23$1 * b12$2;
+	        out[8] = a00$3 * b20$2 + a10$3 * b21$2 + a20$2 * b22$2;
+	        out[9] = a01$3 * b20$2 + a11$3 * b21$2 + a21$2 * b22$2;
+	        out[10] = a02$2 * b20$2 + a12$2 * b21$2 + a22$2 * b22$2;
+	        out[11] = a03$1 * b20$2 + a13$1 * b21$2 + a23$1 * b22$2;
+	        if (a !== out) {
+	            out[12] = a[12];
+	            out[13] = a[13];
+	            out[14] = a[14];
+	            out[15] = a[15];
+	        }
+	        return out;
+	    };
+	    static rotateX = (a, rad, out = new Matrix4$1()) => {
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        a10$3 = a[4];
+	        a11$3 = a[5];
+	        a12$2 = a[6];
+	        a13$1 = a[7];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
+	        a23$1 = a[11];
+	        if (a !== out) {
+	            out[0] = a[0];
+	            out[1] = a[1];
+	            out[2] = a[2];
+	            out[3] = a[3];
+	            out[12] = a[12];
+	            out[13] = a[13];
+	            out[14] = a[14];
+	            out[15] = a[15];
+	        }
+	        out[4] = a10$3 * c$2 + a20$2 * s$2$1;
+	        out[5] = a11$3 * c$2 + a21$2 * s$2$1;
+	        out[6] = a12$2 * c$2 + a22$2 * s$2$1;
+	        out[7] = a13$1 * c$2 + a23$1 * s$2$1;
+	        out[8] = a20$2 * c$2 - a10$3 * s$2$1;
+	        out[9] = a21$2 * c$2 - a11$3 * s$2$1;
+	        out[10] = a22$2 * c$2 - a12$2 * s$2$1;
+	        out[11] = a23$1 * c$2 - a13$1 * s$2$1;
+	        return out;
+	    };
+	    static rotateY = (a, rad, out = new Matrix4$1()) => {
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        a00$3 = a[0];
+	        a01$3 = a[1];
+	        a02$2 = a[2];
+	        a03$1 = a[3];
+	        a20$2 = a[8];
+	        a21$2 = a[9];
+	        a22$2 = a[10];
+	        a23$1 = a[11];
+	        if (a !== out) {
+	            out[4] = a[4];
+	            out[5] = a[5];
+	            out[6] = a[6];
+	            out[7] = a[7];
+	            out[12] = a[12];
+	            out[13] = a[13];
+	            out[14] = a[14];
+	            out[15] = a[15];
+	        }
+	        out[0] = a00$3 * c$2 - a20$2 * s$2$1;
+	        out[1] = a01$3 * c$2 - a21$2 * s$2$1;
+	        out[2] = a02$2 * c$2 - a22$2 * s$2$1;
+	        out[3] = a03$1 * c$2 - a23$1 * s$2$1;
+	        out[8] = a00$3 * s$2$1 + a20$2 * c$2;
+	        out[9] = a01$3 * s$2$1 + a21$2 * c$2;
+	        out[10] = a02$2 * s$2$1 + a22$2 * c$2;
+	        out[11] = a03$1 * s$2$1 + a23$1 * c$2;
+	        return out;
+	    };
+	    static rotateZ = (a, rad, out = new Matrix4$1()) => {
+	        s$2$1 = Math.sin(rad);
+	        c$2 = Math.cos(rad);
+	        a00$3 = a[0];
+	        a01$3 = a[1];
+	        a02$2 = a[2];
+	        a03$1 = a[3];
+	        a10$3 = a[4];
+	        a11$3 = a[5];
+	        a12$2 = a[6];
+	        a13$1 = a[7];
+	        if (a !== out) {
+	            out[8] = a[8];
+	            out[9] = a[9];
+	            out[10] = a[10];
+	            out[11] = a[11];
+	            out[12] = a[12];
+	            out[13] = a[13];
+	            out[14] = a[14];
+	            out[15] = a[15];
+	        }
+	        out[0] = a00$3 * c$2 + a10$3 * s$2$1;
+	        out[1] = a01$3 * c$2 + a11$3 * s$2$1;
+	        out[2] = a02$2 * c$2 + a12$2 * s$2$1;
+	        out[3] = a03$1 * c$2 + a13$1 * s$2$1;
+	        out[4] = a10$3 * c$2 - a00$3 * s$2$1;
+	        out[5] = a11$3 * c$2 - a01$3 * s$2$1;
+	        out[6] = a12$2 * c$2 - a02$2 * s$2$1;
+	        out[7] = a13$1 * c$2 - a03$1 * s$2$1;
+	        return out;
+	    };
+	    static scale = (a, v, out = new Matrix4$1()) => {
+	        x$2$1 = v[0];
+	        y$2$1 = v[1];
+	        z$1 = v[2];
+	        out[0] = a[0] * x$2$1;
+	        out[1] = a[1] * x$2$1;
+	        out[2] = a[2] * x$2$1;
+	        out[3] = a[3] * x$2$1;
+	        out[4] = a[4] * y$2$1;
+	        out[5] = a[5] * y$2$1;
+	        out[6] = a[6] * y$2$1;
+	        out[7] = a[7] * y$2$1;
+	        out[8] = a[8] * z$1;
+	        out[9] = a[9] * z$1;
+	        out[10] = a[10] * z$1;
+	        out[11] = a[11] * z$1;
+	        if (out !== a) {
+	            out[12] = a[12];
+	            out[13] = a[13];
+	            out[14] = a[14];
+	            out[15] = a[15];
+	        }
+	        return out;
+	    };
+	    static targetTo = (eye, target, up = Vector3$1.VECTOR3_TOP, out = new Matrix4$1()) => {
+	        const eyex = eye[0], eyey = eye[1], eyez = eye[2], upx = up[0], upy = up[1], upz = up[2];
+	        let z0 = eyex - target[0], z1 = eyey - target[1], z2 = eyez - target[2];
+	        let len = z0 * z0 + z1 * z1 + z2 * z2;
+	        if (len > 0) {
+	            len = 1 / Math.sqrt(len);
+	            z0 *= len;
+	            z1 *= len;
+	            z2 *= len;
+	        }
+	        let x0 = upy * z2 - upz * z1, x1 = upz * z0 - upx * z2, x2 = upx * z1 - upy * z0;
+	        len = x0 * x0 + x1 * x1 + x2 * x2;
+	        if (len > 0) {
+	            len = 1 / Math.sqrt(len);
+	            x0 *= len;
+	            x1 *= len;
+	            x2 *= len;
+	        }
+	        out[0] = x0;
+	        out[1] = x1;
+	        out[2] = x2;
+	        out[3] = 0;
+	        out[4] = z1 * x2 - z2 * x1;
+	        out[5] = z2 * x0 - z0 * x2;
+	        out[6] = z0 * x1 - z1 * x0;
+	        out[7] = 0;
+	        out[8] = z0;
+	        out[9] = z1;
+	        out[10] = z2;
+	        out[11] = 0;
+	        out[12] = eyex;
+	        out[13] = eyey;
+	        out[14] = eyez;
+	        out[15] = 1;
+	        return out;
+	    };
+	    static translate = (a, v, out = new Matrix4$1()) => {
+	        x$2$1 = v[0];
+	        y$2$1 = v[1];
+	        z$1 = v[2];
+	        if (a === out) {
+	            out[12] = a[0] * x$2$1 + a[4] * y$2$1 + a[8] * z$1 + a[12];
+	            out[13] = a[1] * x$2$1 + a[5] * y$2$1 + a[9] * z$1 + a[13];
+	            out[14] = a[2] * x$2$1 + a[6] * y$2$1 + a[10] * z$1 + a[14];
+	            out[15] = a[3] * x$2$1 + a[7] * y$2$1 + a[11] * z$1 + a[15];
+	        }
+	        else {
+	            a00$3 = a[0];
+	            a01$3 = a[1];
+	            a02$2 = a[2];
+	            a03$1 = a[3];
+	            a10$3 = a[4];
+	            a11$3 = a[5];
+	            a12$2 = a[6];
+	            a13$1 = a[7];
+	            a20$2 = a[8];
+	            a21$2 = a[9];
+	            a22$2 = a[10];
+	            a23$1 = a[11];
+	            out[0] = a00$3;
+	            out[1] = a01$3;
+	            out[2] = a02$2;
+	            out[3] = a03$1;
+	            out[4] = a10$3;
+	            out[5] = a11$3;
+	            out[6] = a12$2;
+	            out[7] = a13$1;
+	            out[8] = a20$2;
+	            out[9] = a21$2;
+	            out[10] = a22$2;
+	            out[11] = a23$1;
+	            out[12] = a00$3 * x$2$1 + a10$3 * y$2$1 + a20$2 * z$1 + a[12];
+	            out[13] = a01$3 * x$2$1 + a11$3 * y$2$1 + a21$2 * z$1 + a[13];
+	            out[14] = a02$2 * x$2$1 + a12$2 * y$2$1 + a22$2 * z$1 + a[14];
+	            out[15] = a03$1 * x$2$1 + a13$1 * y$2$1 + a23$1 * z$1 + a[15];
+	        }
+	        return out;
+	    };
+	    static transpose = (a, out = new Matrix4$1()) => {
+	        if (out === a) {
+	            a01$3 = a[1];
+	            a02$2 = a[2];
+	            a03$1 = a[3];
+	            a12$2 = a[6];
+	            a13$1 = a[7];
+	            a23$1 = a[11];
+	            out[1] = a[4];
+	            out[2] = a[8];
+	            out[3] = a[12];
+	            out[4] = a01$3;
+	            out[6] = a[9];
+	            out[7] = a[13];
+	            out[8] = a02$2;
+	            out[9] = a12$2;
+	            out[11] = a[14];
+	            out[12] = a03$1;
+	            out[13] = a13$1;
+	            out[14] = a23$1;
+	        }
+	        else {
+	            out[0] = a[0];
+	            out[1] = a[4];
+	            out[2] = a[8];
+	            out[3] = a[12];
+	            out[4] = a[1];
+	            out[5] = a[5];
+	            out[6] = a[9];
+	            out[7] = a[13];
+	            out[8] = a[2];
+	            out[9] = a[6];
+	            out[10] = a[10];
+	            out[11] = a[14];
+	            out[12] = a[3];
+	            out[13] = a[7];
+	            out[14] = a[11];
+	            out[15] = a[15];
+	        }
+	        return out;
+	    };
+	    constructor(data = UNIT_MATRIX4_DATA$1) {
+	        super(data);
 	    }
-	    else {
-	        out[0] = a[0];
-	        out[1] = a[4];
-	        out[2] = a[8];
-	        out[3] = a[12];
-	        out[4] = a[1];
-	        out[5] = a[5];
-	        out[6] = a[9];
-	        out[7] = a[13];
-	        out[8] = a[2];
-	        out[9] = a[6];
-	        out[10] = a[10];
-	        out[11] = a[14];
-	        out[12] = a[3];
-	        out[13] = a[7];
-	        out[14] = a[11];
-	        out[15] = a[15];
-	    }
-	    return out;
-	};
+	}
 
 	let x$1$1, y$1$1;
 	/**
@@ -3337,6 +3362,21 @@
 	 * @param {number} [a=0] | 旋转弧度，规定0弧度为笛卡尔坐标系x轴方向
 	 */
 	class Polar {
+	    /**
+	     * @public
+	     * @method create
+	     * @memberof Mathx.Polar
+	     * @desc 创建一个极坐标
+	     * @param {number} [r=0] 距离
+	     * @param {number} [a=0] 弧度
+	     * @returns {Mathx.Polar} 新的极坐标实例
+	     */
+	    static create(r = 0, a = 0) {
+	        return new Polar(r, a);
+	    }
+	    a;
+	    r;
+	    dataType = ArraybufferDataType$1.POLAR;
 	    /**
 	     * @public
 	     * @member {number} Mathx.Polar.prototype.a
@@ -3352,18 +3392,6 @@
 	    constructor(r = 0, a = 0) {
 	        this.r = r;
 	        this.a = a;
-	    }
-	    /**
-	     * @public
-	     * @method create
-	     * @memberof Mathx.Polar
-	     * @desc 创建一个极坐标
-	     * @param {number} [r=0] 距离
-	     * @param {number} [a=0] 弧度
-	     * @returns {Mathx.Polar} 新的极坐标实例
-	     */
-	    static create(r = 0, a = 0) {
-	        return new Polar(r, a);
 	    }
 	    /**
 	     * @public
@@ -3476,18 +3504,6 @@
 	    }
 	    /**
 	     * @public
-	     * @method Mathx.Polar.prototype.toVector2Json
-	     * @desc 将极坐标转化为二维向量的json形式，纯数据
-	     * @param {IVector2} [json] 被修改的json对象，如果不传则会新创建json对象。
-	     * @returns {IVector2} json
-	     */
-	    toVector2Json(vec2) {
-	        vec2[0] = this.x();
-	        vec2[1] = this.y();
-	        return vec2;
-	    }
-	    /**
-	     * @public
 	     * @method Mathx.Polar.prototype.x
 	     * @desc 获取极坐标对应二维向量的x的值
 	     * @returns {number} x
@@ -3510,6 +3526,267 @@
 	let s$1$1 = 0, c$1$1 = 0, rad = 0, dotTmp = 0, omega = 0, len$1$1 = 0, scale0 = 0, scale1 = 0;
 	const tmpVec3 = new Float32Array(3);
 	class Quaternion extends Float32Array {
+	    static angleTo = (a, b) => {
+	        dotTmp = Quaternion.dot(a, b);
+	        return Math.acos(2 * dotTmp * dotTmp - 1);
+	    };
+	    static conjugate = (a, out = new Quaternion()) => {
+	        out[0] = -a[0];
+	        out[1] = -a[1];
+	        out[2] = -a[2];
+	        out[3] = a[3];
+	        return out;
+	    };
+	    static create = (x = 0, y = 0, z = 0, w = 1, out = new Quaternion()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        out[3] = w;
+	        return out;
+	    };
+	    static dot = (a, b) => {
+	        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+	    };
+	    static fromAxisAngle = (axis, rad, out = new Quaternion()) => {
+	        rad = rad * 0.5;
+	        s$1$1 = Math.sin(rad);
+	        out[0] = s$1$1 * axis[0];
+	        out[1] = s$1$1 * axis[1];
+	        out[2] = s$1$1 * axis[2];
+	        out[3] = Math.cos(rad);
+	        return out;
+	    };
+	    static fromMatrix3 = (m, out = new Quaternion()) => {
+	        const fTrace = m[0] + m[4] + m[8];
+	        let fRoot;
+	        if (fTrace > 0.0) {
+	            fRoot = Math.sqrt(fTrace + 1.0); // 2w
+	            out[3] = 0.5 * fRoot;
+	            fRoot = 0.5 / fRoot; // 1/(4w)
+	            out[0] = (m[5] - m[7]) * fRoot;
+	            out[1] = (m[6] - m[2]) * fRoot;
+	            out[2] = (m[1] - m[3]) * fRoot;
+	        }
+	        else {
+	            let i = 0;
+	            if (m[4] > m[0])
+	                i = 1;
+	            if (m[8] > m[i * 3 + i])
+	                i = 2;
+	            const j = (i + 1) % 3;
+	            const k = (i + 2) % 3;
+	            fRoot = Math.sqrt(m[i * 3 + i] - m[j * 3 + j] - m[k * 3 + k] + 1.0);
+	            out[i] = 0.5 * fRoot;
+	            fRoot = 0.5 / fRoot;
+	            out[3] = (m[j * 3 + k] - m[k * 3 + j]) * fRoot;
+	            out[j] = (m[j * 3 + i] + m[i * 3 + j]) * fRoot;
+	            out[k] = (m[k * 3 + i] + m[i * 3 + k]) * fRoot;
+	        }
+	        return out;
+	    };
+	    static identity = (out = new Quaternion()) => {
+	        out[0] = 0;
+	        out[1] = 0;
+	        out[2] = 0;
+	        out[3] = 1;
+	        return out;
+	    };
+	    static invert = (a, out = new Quaternion()) => {
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        dotTmp = ax$1$1 * ax$1$1 + ay$1$1 * ay$1$1 + az$1$1 * az$1$1 + aw$1 * aw$1;
+	        if (dotTmp) {
+	            c$1$1 = 1.0 / dotTmp;
+	            out[0] = -ax$1$1 * c$1$1;
+	            out[1] = -ay$1$1 * c$1$1;
+	            out[2] = -az$1$1 * c$1$1;
+	            out[3] = aw$1 * c$1$1;
+	        }
+	        else {
+	            out[0] = 0;
+	            out[1] = 0;
+	            out[2] = 0;
+	            out[3] = 0;
+	        }
+	        return out;
+	    };
+	    static lerp = (a, b, t, out = new Quaternion()) => {
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        out[0] = ax$1$1 + t * (b[0] - ax$1$1);
+	        out[1] = ay$1$1 + t * (b[1] - ay$1$1);
+	        out[2] = az$1$1 + t * (b[2] - az$1$1);
+	        out[3] = aw$1 + t * (b[3] - aw$1);
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Quaternion()) => {
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        bx$1$1 = b[0];
+	        by$1$1 = b[1];
+	        bz$1$1 = b[2];
+	        bw = b[3];
+	        out[0] = ax$1$1 * bw + aw$1 * bx$1$1 + ay$1$1 * bz$1$1 - az$1$1 * by$1$1;
+	        out[1] = ay$1$1 * bw + aw$1 * by$1$1 + az$1$1 * bx$1$1 - ax$1$1 * bz$1$1;
+	        out[2] = az$1$1 * bw + aw$1 * bz$1$1 + ax$1$1 * by$1$1 - ay$1$1 * bx$1$1;
+	        out[3] = aw$1 * bw - ax$1$1 * bx$1$1 - ay$1$1 * by$1$1 - az$1$1 * bz$1$1;
+	        return out;
+	    };
+	    static normalize = (a, out = new Quaternion()) => {
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        len$1$1 = ax$1$1 * ax$1$1 + ay$1$1 * ay$1$1 + az$1$1 * az$1$1 + aw$1 * aw$1;
+	        if (len$1$1 > 0) {
+	            len$1$1 = 1 / Math.sqrt(len$1$1);
+	        }
+	        out[0] = ax$1$1 * len$1$1;
+	        out[1] = ay$1$1 * len$1$1;
+	        out[2] = az$1$1 * len$1$1;
+	        out[3] = aw$1 * len$1$1;
+	        return out;
+	    };
+	    static random = (out = new Quaternion()) => {
+	        ax$1$1 = Math.random();
+	        ay$1$1 = Math.random();
+	        az$1$1 = Math.random();
+	        c$1$1 = Math.sqrt(1 - ax$1$1);
+	        s$1$1 = Math.sqrt(ax$1$1);
+	        out[0] = c$1$1 * Math.sin(2.0 * Math.PI * ay$1$1);
+	        out[1] = c$1$1 * Math.cos(2.0 * Math.PI * ay$1$1);
+	        out[2] = s$1$1 * Math.sin(2.0 * Math.PI * az$1$1);
+	        out[3] = s$1$1 * Math.cos(2.0 * Math.PI * az$1$1);
+	        return out;
+	    };
+	    static rotationTo = (a, b, out = new Quaternion()) => {
+	        dotTmp = Vector3$1.dot(a, b);
+	        if (dotTmp < -1 + EPSILON$1) {
+	            Vector3$1.cross(Vector3$1.VECTOR3_LEFT, a, tmpVec3);
+	            if (Vector3$1.norm(tmpVec3) < EPSILON$1) {
+	                Vector3$1.cross(Vector3$1.VECTOR3_TOP, a, tmpVec3);
+	            }
+	            Vector3$1.normalize(tmpVec3, tmpVec3);
+	            Quaternion.fromAxisAngle(tmpVec3, Math.PI, out);
+	            return out;
+	        }
+	        else if (dotTmp > 1 - EPSILON$1) {
+	            out[0] = 0;
+	            out[1] = 0;
+	            out[2] = 0;
+	            out[3] = 1;
+	            return out;
+	        }
+	        else {
+	            Vector3$1.cross(tmpVec3, a, b);
+	            out[0] = tmpVec3[0];
+	            out[1] = tmpVec3[1];
+	            out[2] = tmpVec3[2];
+	            out[3] = 1 + dotTmp;
+	            return Quaternion.normalize(out, out);
+	        }
+	    };
+	    static rotateX = (a, rad, out = new Quaternion()) => {
+	        rad *= 0.5;
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        bx$1$1 = Math.sin(rad);
+	        bw = Math.cos(rad);
+	        out[0] = ax$1$1 * bw + aw$1 * bx$1$1;
+	        out[1] = ay$1$1 * bw + az$1$1 * bx$1$1;
+	        out[2] = az$1$1 * bw - ay$1$1 * bx$1$1;
+	        out[3] = aw$1 * bw - ax$1$1 * bx$1$1;
+	        return out;
+	    };
+	    static rotateY = (a, rad, out = new Quaternion()) => {
+	        rad *= 0.5;
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        by$1$1 = Math.sin(rad);
+	        bw = Math.cos(rad);
+	        out[0] = ax$1$1 * bw - az$1$1 * by$1$1;
+	        out[1] = ay$1$1 * bw + aw$1 * by$1$1;
+	        out[2] = az$1$1 * bw + ax$1$1 * by$1$1;
+	        out[3] = aw$1 * bw - ay$1$1 * by$1$1;
+	        return out;
+	    };
+	    static rotateZ = (a, rad, out = new Quaternion()) => {
+	        rad *= 0.5;
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        bz$1$1 = Math.sin(rad);
+	        bw = Math.cos(rad);
+	        out[0] = ax$1$1 * bw + ay$1$1 * bz$1$1;
+	        out[1] = ay$1$1 * bw - ax$1$1 * bz$1$1;
+	        out[2] = az$1$1 * bw + aw$1 * bz$1$1;
+	        out[3] = aw$1 * bw - az$1$1 * bz$1$1;
+	        return out;
+	    };
+	    static slerp = (a, b, t, out = new Quaternion()) => {
+	        ax$1$1 = a[0];
+	        ay$1$1 = a[1];
+	        az$1$1 = a[2];
+	        aw$1 = a[3];
+	        bx$1$1 = b[0];
+	        by$1$1 = b[1];
+	        bz$1$1 = b[2];
+	        bw = b[3];
+	        c$1$1 = ax$1$1 * bx$1$1 + ay$1$1 * by$1$1 + az$1$1 * bz$1$1 + aw$1 * bw;
+	        if (c$1$1 < 0.0) {
+	            c$1$1 = -c$1$1;
+	            bx$1$1 = -bx$1$1;
+	            by$1$1 = -by$1$1;
+	            bz$1$1 = -bz$1$1;
+	            bw = -bw;
+	        }
+	        if (1.0 - c$1$1 > EPSILON$1) {
+	            omega = Math.acos(c$1$1);
+	            s$1$1 = Math.sin(omega);
+	            scale0 = Math.sin((1.0 - t) * omega) / s$1$1;
+	            scale1 = Math.sin(t * omega) / s$1$1;
+	        }
+	        else {
+	            scale0 = 1.0 - t;
+	            scale1 = t;
+	        }
+	        out[0] = scale0 * ax$1$1 + scale1 * bx$1$1;
+	        out[1] = scale0 * ay$1$1 + scale1 * by$1$1;
+	        out[2] = scale0 * az$1$1 + scale1 * bz$1$1;
+	        out[3] = scale0 * aw$1 + scale1 * bw;
+	        return out;
+	    };
+	    static toAxisAngle = (q, outAxis) => {
+	        rad = Math.acos(q[3]) * 2.0;
+	        s$1$1 = Math.sin(rad / 2.0);
+	        if (s$1$1 > EPSILON$1) {
+	            outAxis[0] = q[0] / s$1$1;
+	            outAxis[1] = q[1] / s$1$1;
+	            outAxis[2] = q[2] / s$1$1;
+	        }
+	        else {
+	            outAxis[0] = 1;
+	            outAxis[1] = 0;
+	            outAxis[2] = 0;
+	        }
+	        return rad;
+	    };
+	    static toString = (a) => {
+	        return `quat("${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.QUATERNION;
 	    constructor(x = 0, y = 0, z = 0, w = 0) {
 	        super(4);
 	        this[0] = x;
@@ -3542,265 +3819,6 @@
 	        this[3] = value;
 	    }
 	}
-	Quaternion.angleTo = (a, b) => {
-	    dotTmp = Quaternion.dot(a, b);
-	    return Math.acos(2 * dotTmp * dotTmp - 1);
-	};
-	Quaternion.conjugate = (a, out = new Quaternion()) => {
-	    out[0] = -a[0];
-	    out[1] = -a[1];
-	    out[2] = -a[2];
-	    out[3] = a[3];
-	    return out;
-	};
-	Quaternion.create = (x = 0, y = 0, z = 0, w = 1, out = new Quaternion()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    out[3] = w;
-	    return out;
-	};
-	Quaternion.dot = (a, b) => {
-	    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-	};
-	Quaternion.fromAxisAngle = (axis, rad, out = new Quaternion()) => {
-	    rad = rad * 0.5;
-	    s$1$1 = Math.sin(rad);
-	    out[0] = s$1$1 * axis[0];
-	    out[1] = s$1$1 * axis[1];
-	    out[2] = s$1$1 * axis[2];
-	    out[3] = Math.cos(rad);
-	    return out;
-	};
-	Quaternion.fromMatrix3 = (m, out = new Quaternion()) => {
-	    const fTrace = m[0] + m[4] + m[8];
-	    let fRoot;
-	    if (fTrace > 0.0) {
-	        fRoot = Math.sqrt(fTrace + 1.0); // 2w
-	        out[3] = 0.5 * fRoot;
-	        fRoot = 0.5 / fRoot; // 1/(4w)
-	        out[0] = (m[5] - m[7]) * fRoot;
-	        out[1] = (m[6] - m[2]) * fRoot;
-	        out[2] = (m[1] - m[3]) * fRoot;
-	    }
-	    else {
-	        let i = 0;
-	        if (m[4] > m[0])
-	            i = 1;
-	        if (m[8] > m[i * 3 + i])
-	            i = 2;
-	        const j = (i + 1) % 3;
-	        const k = (i + 2) % 3;
-	        fRoot = Math.sqrt(m[i * 3 + i] - m[j * 3 + j] - m[k * 3 + k] + 1.0);
-	        out[i] = 0.5 * fRoot;
-	        fRoot = 0.5 / fRoot;
-	        out[3] = (m[j * 3 + k] - m[k * 3 + j]) * fRoot;
-	        out[j] = (m[j * 3 + i] + m[i * 3 + j]) * fRoot;
-	        out[k] = (m[k * 3 + i] + m[i * 3 + k]) * fRoot;
-	    }
-	    return out;
-	};
-	Quaternion.identity = (out = new Quaternion()) => {
-	    out[0] = 0;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 1;
-	    return out;
-	};
-	Quaternion.invert = (a, out = new Quaternion()) => {
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    dotTmp = ax$1$1 * ax$1$1 + ay$1$1 * ay$1$1 + az$1$1 * az$1$1 + aw$1 * aw$1;
-	    if (dotTmp) {
-	        c$1$1 = 1.0 / dotTmp;
-	        out[0] = -ax$1$1 * c$1$1;
-	        out[1] = -ay$1$1 * c$1$1;
-	        out[2] = -az$1$1 * c$1$1;
-	        out[3] = aw$1 * c$1$1;
-	    }
-	    else {
-	        out[0] = 0;
-	        out[1] = 0;
-	        out[2] = 0;
-	        out[3] = 0;
-	    }
-	    return out;
-	};
-	Quaternion.lerp = (a, b, t, out = new Quaternion()) => {
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    out[0] = ax$1$1 + t * (b[0] - ax$1$1);
-	    out[1] = ay$1$1 + t * (b[1] - ay$1$1);
-	    out[2] = az$1$1 + t * (b[2] - az$1$1);
-	    out[3] = aw$1 + t * (b[3] - aw$1);
-	    return out;
-	};
-	Quaternion.multiply = (a, b, out = new Quaternion()) => {
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    bx$1$1 = b[0];
-	    by$1$1 = b[1];
-	    bz$1$1 = b[2];
-	    bw = b[3];
-	    out[0] = ax$1$1 * bw + aw$1 * bx$1$1 + ay$1$1 * bz$1$1 - az$1$1 * by$1$1;
-	    out[1] = ay$1$1 * bw + aw$1 * by$1$1 + az$1$1 * bx$1$1 - ax$1$1 * bz$1$1;
-	    out[2] = az$1$1 * bw + aw$1 * bz$1$1 + ax$1$1 * by$1$1 - ay$1$1 * bx$1$1;
-	    out[3] = aw$1 * bw - ax$1$1 * bx$1$1 - ay$1$1 * by$1$1 - az$1$1 * bz$1$1;
-	    return out;
-	};
-	Quaternion.normalize = (a, out = new Quaternion()) => {
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    len$1$1 = ax$1$1 * ax$1$1 + ay$1$1 * ay$1$1 + az$1$1 * az$1$1 + aw$1 * aw$1;
-	    if (len$1$1 > 0) {
-	        len$1$1 = 1 / Math.sqrt(len$1$1);
-	    }
-	    out[0] = ax$1$1 * len$1$1;
-	    out[1] = ay$1$1 * len$1$1;
-	    out[2] = az$1$1 * len$1$1;
-	    out[3] = aw$1 * len$1$1;
-	    return out;
-	};
-	Quaternion.random = (out = new Quaternion()) => {
-	    ax$1$1 = Math.random();
-	    ay$1$1 = Math.random();
-	    az$1$1 = Math.random();
-	    c$1$1 = Math.sqrt(1 - ax$1$1);
-	    s$1$1 = Math.sqrt(ax$1$1);
-	    out[0] = c$1$1 * Math.sin(2.0 * Math.PI * ay$1$1);
-	    out[1] = c$1$1 * Math.cos(2.0 * Math.PI * ay$1$1);
-	    out[2] = s$1$1 * Math.sin(2.0 * Math.PI * az$1$1);
-	    out[3] = s$1$1 * Math.cos(2.0 * Math.PI * az$1$1);
-	    return out;
-	};
-	Quaternion.rotationTo = (a, b, out = new Quaternion()) => {
-	    dotTmp = Vector3$1.dot(a, b);
-	    if (dotTmp < -1 + EPSILON$1) {
-	        Vector3$1.cross(Vector3$1.VECTOR3_LEFT, a, tmpVec3);
-	        if (Vector3$1.norm(tmpVec3) < EPSILON$1) {
-	            Vector3$1.cross(Vector3$1.VECTOR3_TOP, a, tmpVec3);
-	        }
-	        Vector3$1.normalize(tmpVec3, tmpVec3);
-	        Quaternion.fromAxisAngle(tmpVec3, Math.PI, out);
-	        return out;
-	    }
-	    else if (dotTmp > 1 - EPSILON$1) {
-	        out[0] = 0;
-	        out[1] = 0;
-	        out[2] = 0;
-	        out[3] = 1;
-	        return out;
-	    }
-	    else {
-	        Vector3$1.cross(tmpVec3, a, b);
-	        out[0] = tmpVec3[0];
-	        out[1] = tmpVec3[1];
-	        out[2] = tmpVec3[2];
-	        out[3] = 1 + dotTmp;
-	        return Quaternion.normalize(out, out);
-	    }
-	};
-	Quaternion.rotateX = (a, rad, out = new Quaternion()) => {
-	    rad *= 0.5;
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    bx$1$1 = Math.sin(rad);
-	    bw = Math.cos(rad);
-	    out[0] = ax$1$1 * bw + aw$1 * bx$1$1;
-	    out[1] = ay$1$1 * bw + az$1$1 * bx$1$1;
-	    out[2] = az$1$1 * bw - ay$1$1 * bx$1$1;
-	    out[3] = aw$1 * bw - ax$1$1 * bx$1$1;
-	    return out;
-	};
-	Quaternion.rotateY = (a, rad, out = new Quaternion()) => {
-	    rad *= 0.5;
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    by$1$1 = Math.sin(rad);
-	    bw = Math.cos(rad);
-	    out[0] = ax$1$1 * bw - az$1$1 * by$1$1;
-	    out[1] = ay$1$1 * bw + aw$1 * by$1$1;
-	    out[2] = az$1$1 * bw + ax$1$1 * by$1$1;
-	    out[3] = aw$1 * bw - ay$1$1 * by$1$1;
-	    return out;
-	};
-	Quaternion.rotateZ = (a, rad, out = new Quaternion()) => {
-	    rad *= 0.5;
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    bz$1$1 = Math.sin(rad);
-	    bw = Math.cos(rad);
-	    out[0] = ax$1$1 * bw + ay$1$1 * bz$1$1;
-	    out[1] = ay$1$1 * bw - ax$1$1 * bz$1$1;
-	    out[2] = az$1$1 * bw + aw$1 * bz$1$1;
-	    out[3] = aw$1 * bw - az$1$1 * bz$1$1;
-	    return out;
-	};
-	Quaternion.slerp = (a, b, t, out = new Quaternion()) => {
-	    ax$1$1 = a[0];
-	    ay$1$1 = a[1];
-	    az$1$1 = a[2];
-	    aw$1 = a[3];
-	    bx$1$1 = b[0];
-	    by$1$1 = b[1];
-	    bz$1$1 = b[2];
-	    bw = b[3];
-	    c$1$1 = ax$1$1 * bx$1$1 + ay$1$1 * by$1$1 + az$1$1 * bz$1$1 + aw$1 * bw;
-	    if (c$1$1 < 0.0) {
-	        c$1$1 = -c$1$1;
-	        bx$1$1 = -bx$1$1;
-	        by$1$1 = -by$1$1;
-	        bz$1$1 = -bz$1$1;
-	        bw = -bw;
-	    }
-	    if (1.0 - c$1$1 > EPSILON$1) {
-	        omega = Math.acos(c$1$1);
-	        s$1$1 = Math.sin(omega);
-	        scale0 = Math.sin((1.0 - t) * omega) / s$1$1;
-	        scale1 = Math.sin(t * omega) / s$1$1;
-	    }
-	    else {
-	        scale0 = 1.0 - t;
-	        scale1 = t;
-	    }
-	    out[0] = scale0 * ax$1$1 + scale1 * bx$1$1;
-	    out[1] = scale0 * ay$1$1 + scale1 * by$1$1;
-	    out[2] = scale0 * az$1$1 + scale1 * bz$1$1;
-	    out[3] = scale0 * aw$1 + scale1 * bw;
-	    return out;
-	};
-	Quaternion.toAxisAngle = (q, outAxis) => {
-	    rad = Math.acos(q[3]) * 2.0;
-	    s$1$1 = Math.sin(rad / 2.0);
-	    if (s$1$1 > EPSILON$1) {
-	        outAxis[0] = q[0] / s$1$1;
-	        outAxis[1] = q[1] / s$1$1;
-	        outAxis[2] = q[2] / s$1$1;
-	    }
-	    else {
-	        outAxis[0] = 1;
-	        outAxis[1] = 0;
-	        outAxis[2] = 0;
-	    }
-	    return rad;
-	};
-	Quaternion.toString = (a) => {
-	    return `quat("${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
-	};
 
 	var rndFloat = (low, high) => {
 	    return low + Math.random() * (high - low);
@@ -3821,157 +3839,161 @@
 	const tb = new Vector3$1(), vA = new Vector3$1();
 	const defaultMax = [1, 1, 1];
 	class Cube {
+	    static clampPoint = (a, point, out = new Vector3$1()) => {
+	        return Vector3$1.clamp(point, a.min, a.max, out);
+	    };
+	    static containsPoint = (a, b) => {
+	        return (b[0] >= a.min[0] &&
+	            b[0] <= a.max[0] &&
+	            b[1] >= a.min[1] &&
+	            b[1] <= a.max[1] &&
+	            b[2] >= a.min[2] &&
+	            b[2] <= a.max[2]);
+	    };
+	    static containsCube = (a, b) => {
+	        return (a.min[0] <= b.min[0] &&
+	            b.max[0] <= a.max[0] &&
+	            a.min[1] <= b.min[1] &&
+	            b.max[1] <= a.max[1] &&
+	            a.min[2] <= b.min[2] &&
+	            b.max[2] <= a.max[2]);
+	    };
+	    static depth = (a) => {
+	        return a.max[2] - a.min[2];
+	    };
+	    static equals = (a, b) => {
+	        return Vector3$1.equals(a.min, b.min) && Vector3$1.equals(a.max, b.max);
+	    };
+	    static getCenter = (a, out = new Vector3$1()) => {
+	        Vector3$1.add(a.min, a.max, out);
+	        return Vector3$1.multiplyScalar(out, 0.5, out);
+	    };
+	    static getSize = (a, out = new Vector3$1()) => {
+	        return Vector3$1.minus(a.max, a.min, out);
+	    };
+	    static height = (a) => {
+	        return a.max[1] - a.min[1];
+	    };
+	    static intersect = (a, b, out = new Cube()) => {
+	        Vector3$1.max(a.min, b.min, out.min);
+	        Vector3$1.min(a.max, b.max, out.max);
+	        return out;
+	    };
+	    static intersectsBox = (a, b) => {
+	        return !(b.max[0] < a.min[0] ||
+	            b.min[0] > a.max[0] ||
+	            b.max[1] < a.min[1] ||
+	            b.min[1] > a.max[1] ||
+	            b.max[2] < a.min[2] ||
+	            b.min[2] > a.max[2]);
+	    };
+	    static intersectsSphere = (a, b) => {
+	        Cube.clampPoint(a, b.position, ta);
+	        return Vector3$1.distanceToSquared(ta, b.position) <= b.radius * b.radius;
+	    };
+	    static intersectsTriangle = (a, b) => {
+	        if (Cube.isEmpty(a)) {
+	            return false;
+	        }
+	        Cube.getCenter(a, ta);
+	        Vector3$1.minus(a.max, ta, tb);
+	        // translate triangle to aabb origin
+	        Vector3$1.minus(b.a, ta, v0);
+	        Vector3$1.minus(b.b, ta, v1);
+	        Vector3$1.minus(b.c, ta, v2);
+	        // compute edge vectors for triangle
+	        Vector3$1.minus(v1, v0, f0);
+	        Vector3$1.minus(v2, v1, f1);
+	        Vector3$1.minus(v0, v2, f2);
+	        // test against axes that are given by cross product combinations of the edges of the triangle and the edges of the aabb
+	        // make an axis testing of each of the 3 sides of the aabb against each of the 3 sides of the triangle = 9 axis of separation
+	        // axis_ij = u_i x f_j (u0, u1, u2 = face normals of aabb = x,y,z axes vectors since aabb is axis aligned)
+	        const axes = [
+	            0,
+	            -f0[2],
+	            f0[1],
+	            0,
+	            -f1[2],
+	            f1[1],
+	            0,
+	            -f2[2],
+	            f2[1],
+	            f0[2],
+	            0,
+	            -f0[0],
+	            f1[2],
+	            0,
+	            -f1[0],
+	            f2[2],
+	            0,
+	            -f2[0],
+	            -f0[1],
+	            f0[0],
+	            0,
+	            -f1[1],
+	            f1[0],
+	            0,
+	            -f2[1],
+	            f2[0],
+	            0
+	        ];
+	        if (!satForAxes(axes, v0, v1, v2, tb)) {
+	            return false;
+	        }
+	        // test 3 face normals from the aabb
+	        // ta = Matrix3.identity(); ???
+	        if (!satForAxes(axes, v0, v1, v2, tb)) {
+	            return false;
+	        }
+	        // finally testing the face normal of the triangle
+	        // use already existing triangle edge vectors here
+	        Vector3$1.cross(f0, f1, ta);
+	        // axes = [_triangleNormal.x, _triangleNormal.y, _triangleNormal.z];
+	        return satForAxes(ta, v0, v1, v2, tb);
+	    };
+	    static isEmpty = (a) => {
+	        return a.max[0] < a.min[0] || a.max[0] < a.min[0] || a.max[0] < a.min[0];
+	    };
+	    static round = (a, out = new Cube()) => {
+	        Vector3$1.round(a.min, out.min);
+	        Vector3$1.round(a.max, out.max);
+	        return out;
+	    };
+	    static size = (a, out = new Vector3$1()) => {
+	        return Vector3$1.minus(a.max, a.min, out);
+	    };
+	    static stretch = (a, b, c, out = new Cube()) => {
+	        Vector3$1.add(a.min, b, out.min);
+	        Vector3$1.add(a.max, c, out.max);
+	        return out;
+	    };
+	    static surfaceArea = (a) => {
+	        Cube.getSize(a, ta);
+	        return (ta.x * ta.y + ta.x * ta.z + ta.y * ta.z) * 2;
+	    };
+	    static translate = (a, b, out = new Cube()) => {
+	        Vector3$1.add(a.min, b, out.min);
+	        Vector3$1.add(a.max, b, out.max);
+	        return out;
+	    };
+	    static union = (a, b, out = new Cube()) => {
+	        Vector3$1.min(a.min, b.min, out.min);
+	        Vector3$1.max(a.max, b.max, out.max);
+	        return out;
+	    };
+	    static volume = (a) => {
+	        return (a.max[0] - a.min[0]) * (a.max[1] - a.min[1]) * (a.max[2] - a.min[2]);
+	    };
+	    static width = (a) => {
+	        return a.max[0] - a.min[0];
+	    };
+	    min = new Vector3$1();
+	    max = new Vector3$1();
 	    constructor(a = new Vector3$1(), b = Vector3$1.fromArray(defaultMax)) {
-	        this.min = new Vector3$1();
-	        this.max = new Vector3$1();
 	        Vector3$1.min(a, b, this.min);
 	        Vector3$1.max(a, b, this.max);
 	    }
 	}
-	Cube.clampPoint = (a, point, out = new Vector3$1()) => {
-	    return Vector3$1.clamp(point, a.min, a.max, out);
-	};
-	Cube.containsPoint = (a, b) => {
-	    return (b[0] >= a.min[0] &&
-	        b[0] <= a.max[0] &&
-	        b[1] >= a.min[1] &&
-	        b[1] <= a.max[1] &&
-	        b[2] >= a.min[2] &&
-	        b[2] <= a.max[2]);
-	};
-	Cube.containsCube = (a, b) => {
-	    return (a.min[0] <= b.min[0] &&
-	        b.max[0] <= a.max[0] &&
-	        a.min[1] <= b.min[1] &&
-	        b.max[1] <= a.max[1] &&
-	        a.min[2] <= b.min[2] &&
-	        b.max[2] <= a.max[2]);
-	};
-	Cube.depth = (a) => {
-	    return a.max[2] - a.min[2];
-	};
-	Cube.equals = (a, b) => {
-	    return Vector3$1.equals(a.min, b.min) && Vector3$1.equals(a.max, b.max);
-	};
-	Cube.getCenter = (a, out = new Vector3$1()) => {
-	    Vector3$1.add(a.min, a.max, out);
-	    return Vector3$1.multiplyScalar(out, 0.5, out);
-	};
-	Cube.getSize = (a, out = new Vector3$1()) => {
-	    return Vector3$1.minus(a.max, a.min, out);
-	};
-	Cube.height = (a) => {
-	    return a.max[1] - a.min[1];
-	};
-	Cube.intersect = (a, b, out = new Cube()) => {
-	    Vector3$1.max(a.min, b.min, out.min);
-	    Vector3$1.min(a.max, b.max, out.max);
-	    return out;
-	};
-	Cube.intersectsBox = (a, b) => {
-	    return !(b.max[0] < a.min[0] ||
-	        b.min[0] > a.max[0] ||
-	        b.max[1] < a.min[1] ||
-	        b.min[1] > a.max[1] ||
-	        b.max[2] < a.min[2] ||
-	        b.min[2] > a.max[2]);
-	};
-	Cube.intersectsSphere = (a, b) => {
-	    Cube.clampPoint(a, b.position, ta);
-	    return Vector3$1.distanceToSquared(ta, b.position) <= b.radius * b.radius;
-	};
-	Cube.intersectsTriangle = (a, b) => {
-	    if (Cube.isEmpty(a)) {
-	        return false;
-	    }
-	    Cube.getCenter(a, ta);
-	    Vector3$1.minus(a.max, ta, tb);
-	    // translate triangle to aabb origin
-	    Vector3$1.minus(b.a, ta, v0);
-	    Vector3$1.minus(b.b, ta, v1);
-	    Vector3$1.minus(b.c, ta, v2);
-	    // compute edge vectors for triangle
-	    Vector3$1.minus(v1, v0, f0);
-	    Vector3$1.minus(v2, v1, f1);
-	    Vector3$1.minus(v0, v2, f2);
-	    // test against axes that are given by cross product combinations of the edges of the triangle and the edges of the aabb
-	    // make an axis testing of each of the 3 sides of the aabb against each of the 3 sides of the triangle = 9 axis of separation
-	    // axis_ij = u_i x f_j (u0, u1, u2 = face normals of aabb = x,y,z axes vectors since aabb is axis aligned)
-	    const axes = [
-	        0,
-	        -f0[2],
-	        f0[1],
-	        0,
-	        -f1[2],
-	        f1[1],
-	        0,
-	        -f2[2],
-	        f2[1],
-	        f0[2],
-	        0,
-	        -f0[0],
-	        f1[2],
-	        0,
-	        -f1[0],
-	        f2[2],
-	        0,
-	        -f2[0],
-	        -f0[1],
-	        f0[0],
-	        0,
-	        -f1[1],
-	        f1[0],
-	        0,
-	        -f2[1],
-	        f2[0],
-	        0
-	    ];
-	    if (!satForAxes(axes, v0, v1, v2, tb)) {
-	        return false;
-	    }
-	    // test 3 face normals from the aabb
-	    // ta = Matrix3.identity(); ???
-	    if (!satForAxes(axes, v0, v1, v2, tb)) {
-	        return false;
-	    }
-	    // finally testing the face normal of the triangle
-	    // use already existing triangle edge vectors here
-	    Vector3$1.cross(f0, f1, ta);
-	    // axes = [_triangleNormal.x, _triangleNormal.y, _triangleNormal.z];
-	    return satForAxes(ta, v0, v1, v2, tb);
-	};
-	Cube.isEmpty = (a) => {
-	    return a.max[0] < a.min[0] || a.max[0] < a.min[0] || a.max[0] < a.min[0];
-	};
-	Cube.round = (a, out = new Cube()) => {
-	    Vector3$1.round(a.min, out.min);
-	    Vector3$1.round(a.max, out.max);
-	    return out;
-	};
-	Cube.size = (a, out = new Vector3$1()) => {
-	    return Vector3$1.minus(a.max, a.min, out);
-	};
-	Cube.stretch = (a, b, c, out = new Cube()) => {
-	    Vector3$1.add(a.min, b, out.min);
-	    Vector3$1.add(a.max, c, out.max);
-	    return out;
-	};
-	Cube.translate = (a, b, out = new Cube()) => {
-	    Vector3$1.add(a.min, b, out.min);
-	    Vector3$1.add(a.max, b, out.max);
-	    return out;
-	};
-	Cube.union = (a, b, out = new Cube()) => {
-	    Vector3$1.min(a.min, b.min, out.min);
-	    Vector3$1.max(a.max, b.max, out.max);
-	    return out;
-	};
-	Cube.volume = (a) => {
-	    return (a.max[0] - a.min[0]) * (a.max[1] - a.min[1]) * (a.max[2] - a.min[2]);
-	};
-	Cube.width = (a) => {
-	    return a.max[0] - a.min[0];
-	};
 	let i, j, p0, p1, p2, r$1;
 	function satForAxes(axes, v0, v1, v2, extents) {
 	    for (i = 0, j = axes.length - 3; i <= j; i += 3) {
@@ -3995,8 +4017,242 @@
 	    return true;
 	}
 
-	let x$5 = 0, y$5 = 0, c$3 = 0, s$4 = 0;
+	let x$5 = 0;
+	let y$5 = 0;
+	let c$3 = 0;
+	let s$4 = 0;
 	class Vector2$1 extends Float32Array {
+	    static VECTOR2_ZERO = new Vector2$1(0, 0);
+	    static VECTOR2_TOP = new Vector2$1(0, 1);
+	    static VECTOR2_BOTTOM = new Vector2$1(0, -1);
+	    static VECTOR2_LEFT = new Vector2$1(-1, 0);
+	    static VECTOR2_RIGHT = new Vector2$1(1, 0);
+	    static VECTOR2_ONE = new Vector2$1(1, 1);
+	    static add = (a, b, out = new Vector2$1()) => {
+	        out[0] = a[0] + b[0];
+	        out[1] = a[1] + b[1];
+	        return out;
+	    };
+	    static addScalar = (a, b, out = new Vector2$1(2)) => {
+	        out[0] = a[0] + b;
+	        out[1] = a[1] + b;
+	        return out;
+	    };
+	    static angle = (a) => {
+	        return Math.atan2(a[1], a[0]);
+	    };
+	    static ceil = (a, out = new Vector2$1()) => {
+	        out[0] = Math.ceil(a[0]);
+	        out[1] = Math.ceil(a[1]);
+	        return out;
+	    };
+	    static clamp = (a, min, max, out = new Vector2$1()) => {
+	        out[0] = clampCommon$1(a[0], min[0], max[0]);
+	        out[1] = clampCommon$1(a[1], min[1], max[1]);
+	        return out;
+	    };
+	    static clampSafe = (a, min, max, out = new Vector2$1()) => {
+	        out[0] = clampSafeCommon$1(a[0], min[0], max[0]);
+	        out[1] = clampSafeCommon$1(a[1], min[1], max[1]);
+	        return out;
+	    };
+	    static clampLength = (a, min, max, out = new Vector2$1()) => {
+	        out[0] = clampSafeCommon$1(a[0], min[0], max[0]);
+	        out[1] = clampSafeCommon$1(a[1], min[1], max[1]);
+	        return out;
+	    };
+	    static clampScalar = (a, min, max, out = new Vector2$1()) => {
+	        out[0] = clampCommon$1(a[0], min, max);
+	        out[1] = clampCommon$1(a[1], min, max);
+	        return out;
+	    };
+	    static closeTo = (a, b, epsilon = EPSILON$1) => {
+	        return Vector2$1.distanceTo(a, b) <= epsilon;
+	    };
+	    static closeToRect = (a, b, epsilon = EPSILON$1) => {
+	        return closeToCommon$1(a[0], b[0], epsilon) && closeToCommon$1(a[1], b[1], epsilon);
+	    };
+	    static closeToManhattan = (a, b, epsilon = EPSILON$1) => {
+	        return Vector2$1.distanceToManhattan(a, b) <= epsilon;
+	    };
+	    static clone = (a, out = new Vector2$1()) => {
+	        out[0] = a[0];
+	        out[1] = a[1];
+	        return out;
+	    };
+	    static cross = (a, b) => {
+	        return a[0] * b[1] - a[1] * b[0];
+	    };
+	    static create = (x = 0, y = 0, out = new Vector2$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        return out;
+	    };
+	    static distanceTo = (a, b) => {
+	        x$5 = b[0] - a[0];
+	        y$5 = b[1] - a[1];
+	        return Math.hypot(x$5, y$5);
+	    };
+	    static distanceToManhattan = (a, b) => {
+	        return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+	    };
+	    static distanceToSquared = (a, b) => {
+	        x$5 = a[0] - b[0];
+	        y$5 = a[1] - b[1];
+	        return x$5 * x$5 + y$5 * y$5;
+	    };
+	    static divide = (a, b, out = new Vector2$1()) => {
+	        out[0] = a[0] / b[0];
+	        out[1] = a[1] / b[1];
+	        return out;
+	    };
+	    static divideScalar = (a, scalar, out = new Vector2$1()) => {
+	        return Vector2$1.multiplyScalar(a, 1 / scalar, out);
+	    };
+	    static dot = (a, b) => {
+	        return a[0] * b[0] + a[1] * b[1];
+	    };
+	    static equals = (a, b) => {
+	        return a[0] === b[0] && a[1] === b[1];
+	    };
+	    static floor = (a, out = new Vector2$1()) => {
+	        out[0] = Math.floor(a[0]);
+	        out[1] = Math.floor(a[1]);
+	        return out;
+	    };
+	    static floorToZero = (a, out = new Vector2$1()) => {
+	        out[0] = floorToZeroCommon$1(a[0]);
+	        out[1] = floorToZeroCommon$1(a[1]);
+	        return out;
+	    };
+	    static fromArray = (arr, index = 0, out = new Vector2$1()) => {
+	        out[0] = arr[index];
+	        out[1] = arr[index + 1];
+	        return out;
+	    };
+	    static fromJson = (j, out = new Vector2$1()) => {
+	        out[0] = j.x;
+	        out[1] = j.y;
+	        return out;
+	    };
+	    static fromPolar = (p, out = new Vector2$1()) => {
+	        out[0] = Math.cos(p.a) * p.r;
+	        out[1] = Math.sin(p.a) * p.r;
+	        return out;
+	    };
+	    static fromScalar = (value = 0, out = new Vector2$1()) => {
+	        out[0] = out[1] = value;
+	        return out;
+	    };
+	    static inverse = (a, out = new Vector2$1()) => {
+	        out[0] = 1 / a[0] || 0;
+	        out[1] = 1 / a[1] || 0;
+	        return out;
+	    };
+	    static norm = (a) => {
+	        return Math.sqrt(a[0] * a[0] + a[1] * a[1]);
+	    };
+	    static lengthManhattan = (a) => {
+	        return Math.abs(a[0]) + Math.abs(a[1]);
+	    };
+	    static lengthSquared = (a) => {
+	        return a[0] * a[0] + a[1] * a[1];
+	    };
+	    static lerp = (a, b, alpha, out = new Vector2$1()) => {
+	        out[0] = (b[0] - a[0]) * alpha + a[0];
+	        out[1] = (b[1] - a[1]) * alpha + a[1];
+	        return out;
+	    };
+	    static max = (a, b, out = new Vector2$1()) => {
+	        out[0] = Math.max(a[0], b[0]);
+	        out[1] = Math.max(a[1], b[1]);
+	        return out;
+	    };
+	    static min = (a, b, out = new Vector2$1()) => {
+	        out[0] = Math.min(a[0], b[0]);
+	        out[1] = Math.min(a[1], b[1]);
+	        return out;
+	    };
+	    static minus = (a, b, out = new Vector2$1()) => {
+	        out[0] = a[0] - b[0];
+	        out[1] = a[1] - b[0];
+	        return out;
+	    };
+	    static minusScalar = (a, num, out = new Vector2$1()) => {
+	        out[0] = a[0] - num;
+	        out[1] = a[1] - num;
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Vector2$1()) => {
+	        out[0] = a[0] * b[0];
+	        out[1] = a[1] * b[1];
+	        return out;
+	    };
+	    static multiplyScalar = (a, scalar, out = new Vector2$1()) => {
+	        out[0] = a[0] * scalar;
+	        out[1] = a[1] * scalar;
+	        return out;
+	    };
+	    static negate = (a, out = new Vector2$1()) => {
+	        out[0] = -a[0];
+	        out[1] = -a[1];
+	        return out;
+	    };
+	    static normalize = (a, out = new Vector2$1()) => {
+	        return Vector2$1.divideScalar(a, Vector2$1.norm(a) || 1, out);
+	    };
+	    static random = (norm = 1, out = new Vector2$1()) => {
+	        x$5 = Math.random() * DEG_360_RAD$1;
+	        out[0] = Math.cos(x$5) * norm;
+	        out[1] = Math.sin(x$5) * norm;
+	        return out;
+	    };
+	    static rotate = (a, angle, center = Vector2$1.VECTOR2_ZERO, out = new Vector2$1(2)) => {
+	        c$3 = Math.cos(angle);
+	        s$4 = Math.sin(angle);
+	        x$5 = a[0] - center[0];
+	        y$5 = a[1] - center[1];
+	        out[0] = x$5 * c$3 - y$5 * s$4 + center[0];
+	        out[1] = x$5 * s$4 + y$5 * c$3 + center[1];
+	        return out;
+	    };
+	    static round = (a, out = new Vector2$1()) => {
+	        out[0] = Math.round(a[0]);
+	        out[1] = Math.round(a[1]);
+	        return out;
+	    };
+	    static set = (x = 0, y = 0, out = new Vector2$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        return out;
+	    };
+	    static setNorm = (a, length, out = new Vector2$1(2)) => {
+	        Vector2$1.normalize(a, out);
+	        Vector2$1.multiplyScalar(out, length, out);
+	        return out;
+	    };
+	    static toArray = (a, arr = []) => {
+	        arr[0] = a[0];
+	        arr[1] = a[1];
+	        return arr;
+	    };
+	    static toPalorJson = (a, p = { a: 0, r: 0 }) => {
+	        p.r = Vector2$1.norm(a);
+	        p.a = Vector2$1.angle(a);
+	        return p;
+	    };
+	    static toString = (a) => {
+	        return `(${a[0]}, ${a[1]})`;
+	    };
+	    static transformMatrix3 = (a, m, out = new Vector2$1()) => {
+	        x$5 = a[0];
+	        y$5 = a[1];
+	        out[0] = m[0] * x$5 + m[3] * y$5 + m[6];
+	        out[1] = m[1] * x$5 + m[4] * y$5 + m[7];
+	        return out;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.VECTOR2;
 	    constructor(x = 0, y = 0) {
 	        super(2);
 	        this[0] = x;
@@ -4015,424 +4271,475 @@
 	        this[1] = value;
 	    }
 	}
-	Vector2$1.VECTOR2_ZERO = new Float32Array([0, 0]);
-	Vector2$1.VECTOR2_TOP = new Float32Array([0, 1]);
-	Vector2$1.VECTOR2_BOTTOM = new Float32Array([0, -1]);
-	Vector2$1.VECTOR2_LEFT = new Float32Array([-1, 0]);
-	Vector2$1.VECTOR2_RIGHT = new Float32Array([1, 0]);
-	Vector2$1.add = (a, b, out = new Vector2$1()) => {
-	    out[0] = a[0] + b[0];
-	    out[1] = a[1] + b[1];
-	    return out;
-	};
-	Vector2$1.addScalar = (a, b, out = new Vector2$1(2)) => {
-	    out[0] = a[0] + b;
-	    out[1] = a[1] + b;
-	    return out;
-	};
-	Vector2$1.angle = (a) => {
-	    return Math.atan2(a[1], a[0]);
-	};
-	Vector2$1.ceil = (a, out = new Vector2$1()) => {
-	    out[0] = Math.ceil(a[0]);
-	    out[1] = Math.ceil(a[1]);
-	    return out;
-	};
-	Vector2$1.clamp = (a, min, max, out = new Vector2$1()) => {
-	    out[0] = clampCommon$1(a[0], min[0], max[0]);
-	    out[1] = clampCommon$1(a[1], min[1], max[1]);
-	    return out;
-	};
-	Vector2$1.clampSafe = (a, min, max, out = new Vector2$1()) => {
-	    out[0] = clampSafeCommon$1(a[0], min[0], max[0]);
-	    out[1] = clampSafeCommon$1(a[1], min[1], max[1]);
-	    return out;
-	};
-	Vector2$1.clampLength = (a, min, max, out = new Vector2$1()) => {
-	    out[0] = clampSafeCommon$1(a[0], min[0], max[0]);
-	    out[1] = clampSafeCommon$1(a[1], min[1], max[1]);
-	    return out;
-	};
-	Vector2$1.clampScalar = (a, min, max, out = new Vector2$1()) => {
-	    out[0] = clampCommon$1(a[0], min, max);
-	    out[1] = clampCommon$1(a[1], min, max);
-	    return out;
-	};
-	Vector2$1.closeTo = (a, b, epsilon = EPSILON$1) => {
-	    return Vector2$1.distanceTo(a, b) <= epsilon;
-	};
-	Vector2$1.closeToRect = (a, b, epsilon = EPSILON$1) => {
-	    return closeToCommon$1(a[0], b[0], epsilon) && closeToCommon$1(a[1], b[1], epsilon);
-	};
-	Vector2$1.closeToManhattan = (a, b, epsilon = EPSILON$1) => {
-	    return Vector2$1.distanceToManhattan(a, b) <= epsilon;
-	};
-	Vector2$1.clone = (a, out = new Vector2$1()) => {
-	    out[0] = a[0];
-	    out[1] = a[1];
-	    return out;
-	};
-	Vector2$1.cross = (a, b) => {
-	    return a[0] * b[1] - a[1] * b[0];
-	};
-	Vector2$1.create = (x = 0, y = 0, out = new Vector2$1()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    return out;
-	};
-	Vector2$1.distanceTo = (a, b) => {
-	    x$5 = b[0] - a[0];
-	    y$5 = b[1] - a[1];
-	    return Math.hypot(x$5, y$5);
-	};
-	Vector2$1.distanceToManhattan = (a, b) => {
-	    return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-	};
-	Vector2$1.distanceToSquared = (a, b) => {
-	    x$5 = a[0] - b[0];
-	    y$5 = a[1] - b[1];
-	    return x$5 * x$5 + y$5 * y$5;
-	};
-	Vector2$1.divide = (a, b, out = new Vector2$1()) => {
-	    out[0] = a[0] / b[0];
-	    out[1] = a[1] / b[1];
-	    return out;
-	};
-	Vector2$1.divideScalar = (a, scalar, out = new Vector2$1()) => {
-	    return Vector2$1.multiplyScalar(a, 1 / scalar, out);
-	};
-	Vector2$1.dot = (a, b) => {
-	    return a[0] * b[0] + a[1] * b[1];
-	};
-	Vector2$1.equals = (a, b) => {
-	    return a[0] === b[0] && a[1] === b[1];
-	};
-	Vector2$1.floor = (a, out = new Vector2$1()) => {
-	    out[0] = Math.floor(a[0]);
-	    out[1] = Math.floor(a[1]);
-	    return out;
-	};
-	Vector2$1.floorToZero = (a, out = new Vector2$1()) => {
-	    out[0] = floorToZeroCommon$1(a[0]);
-	    out[1] = floorToZeroCommon$1(a[1]);
-	    return out;
-	};
-	Vector2$1.fromArray = (arr, index = 0, out = new Vector2$1()) => {
-	    out[0] = arr[index];
-	    out[1] = arr[index + 1];
-	    return out;
-	};
-	Vector2$1.fromJson = (j, out = new Vector2$1()) => {
-	    out[0] = j.x;
-	    out[1] = j.y;
-	    return out;
-	};
-	Vector2$1.fromPolar = (p, out = new Vector2$1()) => {
-	    out[0] = Math.cos(p.a) * p.r;
-	    out[1] = Math.sin(p.a) * p.r;
-	    return out;
-	};
-	Vector2$1.fromScalar = (value = 0, out = new Vector2$1()) => {
-	    out[0] = out[1] = value;
-	    return out;
-	};
-	Vector2$1.inverse = (a, out = new Vector2$1()) => {
-	    out[0] = 1 / a[0] || 0;
-	    out[1] = 1 / a[1] || 0;
-	    return out;
-	};
-	Vector2$1.norm = (a) => {
-	    return Math.sqrt(a[0] * a[0] + a[1] * a[1]);
-	};
-	Vector2$1.lengthManhattan = (a) => {
-	    return Math.abs(a[0]) + Math.abs(a[1]);
-	};
-	Vector2$1.lengthSquared = (a) => {
-	    return a[0] * a[0] + a[1] * a[1];
-	};
-	Vector2$1.lerp = (a, b, alpha, out = new Vector2$1()) => {
-	    out[0] = (b[0] - a[0]) * alpha + a[0];
-	    out[1] = (b[1] - a[1]) * alpha + a[1];
-	    return out;
-	};
-	Vector2$1.max = (a, b, out = new Vector2$1()) => {
-	    out[0] = Math.max(a[0], b[0]);
-	    out[1] = Math.max(a[1], b[1]);
-	    return out;
-	};
-	Vector2$1.min = (a, b, out = new Vector2$1()) => {
-	    out[0] = Math.min(a[0], b[0]);
-	    out[1] = Math.min(a[1], b[1]);
-	    return out;
-	};
-	Vector2$1.minus = (a, b, out = new Vector2$1()) => {
-	    out[0] = a[0] - b[0];
-	    out[1] = a[1] - b[0];
-	    return out;
-	};
-	Vector2$1.minusScalar = (a, num, out = new Vector2$1()) => {
-	    out[0] = a[0] - num;
-	    out[1] = a[1] - num;
-	    return out;
-	};
-	Vector2$1.multiply = (a, b, out = new Vector2$1()) => {
-	    out[0] = a[0] * b[0];
-	    out[1] = a[1] * b[1];
-	    return out;
-	};
-	Vector2$1.multiplyScalar = (a, scalar, out = new Vector2$1()) => {
-	    out[0] = a[0] * scalar;
-	    out[1] = a[1] * scalar;
-	    return out;
-	};
-	Vector2$1.negate = (a, out = new Vector2$1()) => {
-	    out[0] = -a[0];
-	    out[1] = -a[1];
-	    return out;
-	};
-	Vector2$1.normalize = (a, out = new Vector2$1()) => {
-	    return Vector2$1.divideScalar(a, Vector2$1.norm(a) || 1, out);
-	};
-	Vector2$1.random = (norm = 1, out = new Vector2$1()) => {
-	    x$5 = Math.random() * DEG_360_RAD$1;
-	    out[0] = Math.cos(x$5) * norm;
-	    out[1] = Math.sin(x$5) * norm;
-	    return out;
-	};
-	Vector2$1.rotate = (a, angle, center = Vector2$1.VECTOR2_ZERO, out = new Vector2$1(2)) => {
-	    c$3 = Math.cos(angle);
-	    s$4 = Math.sin(angle);
-	    x$5 = a[0] - center[0];
-	    y$5 = a[1] - center[1];
-	    out[0] = x$5 * c$3 - y$5 * s$4 + center[0];
-	    out[1] = x$5 * s$4 + y$5 * c$3 + center[1];
-	    return out;
-	};
-	Vector2$1.round = (a, out = new Vector2$1()) => {
-	    out[0] = Math.round(a[0]);
-	    out[1] = Math.round(a[1]);
-	    return out;
-	};
-	Vector2$1.set = (x = 0, y = 0, out = new Vector2$1()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    return out;
-	};
-	Vector2$1.setLength = (a, length, out = new Vector2$1(2)) => {
-	    Vector2$1.normalize(a, out);
-	    Vector2$1.multiplyScalar(out, length, out);
-	    return out;
-	};
-	Vector2$1.toArray = (a, arr = []) => {
-	    arr[0] = a[0];
-	    arr[1] = a[1];
-	    return arr;
-	};
-	Vector2$1.toPalorJson = (a, p = { a: 0, r: 0 }) => {
-	    p.r = Vector2$1.norm(a);
-	    p.a = Vector2$1.angle(a);
-	    return p;
-	};
-	Vector2$1.toString = (a) => {
-	    return `(${a[0]}, ${a[1]})`;
-	};
-	Vector2$1.transformMatrix3 = (a, m, out) => {
-	    x$5 = a[0];
-	    y$5 = a[1];
-	    out[0] = m[0] * x$5 + m[3] * y$5 + m[6];
-	    out[1] = m[1] * x$5 + m[4] * y$5 + m[7];
-	    return out;
-	};
 
 	class Rectangle2 {
+	    static area = (a) => {
+	        return (a.max[0] - a.min[0]) * (a.max[1] - a.min[1]);
+	    };
+	    static containsPoint = (rect, a) => {
+	        return (a[0] >= rect.min[0] && a[0] <= rect.max[0] && a[1] >= rect.min[1] && a[1] <= rect.max[1]);
+	    };
+	    static containsRectangle = (rect, box) => {
+	        return (rect.min[0] <= box.min[0] &&
+	            box.max[0] <= rect.max[0] &&
+	            rect.min[1] <= box.min[1] &&
+	            box.max[1] <= rect.max[1]);
+	    };
+	    static create = (a = Vector2$1.create(), b = Vector2$1.create(1, 1)) => {
+	        return {
+	            max: Vector2$1.max(a, b),
+	            min: Vector2$1.min(a, b)
+	        };
+	    };
+	    static equals = (a, b) => {
+	        return Vector2$1.equals(a.min, b.min) && Vector2$1.equals(a.max, b.max);
+	    };
+	    static getCenter = (a, out = Vector2$1.create()) => {
+	        Vector2$1.add(a.min, a.max, out);
+	        return Vector2$1.multiplyScalar(out, 0.5, out);
+	    };
+	    static getSize = (a, out = Vector2$1.create()) => {
+	        return Vector2$1.minus(a.max, a.min, out);
+	    };
+	    static height = (a) => {
+	        return a.max[1] - a.min[1];
+	    };
+	    static intersect = (a, b, out = new Rectangle2()) => {
+	        Vector2$1.max(a.min, b.min, out.min);
+	        Vector2$1.min(a.max, b.max, out.max);
+	        return out;
+	    };
+	    static stretch = (a, b, c, out = new Rectangle2()) => {
+	        Vector2$1.add(a.min, b, out.min);
+	        Vector2$1.add(a.max, c, out.max);
+	        return out;
+	    };
+	    static translate = (a, b, out = new Rectangle2()) => {
+	        Vector2$1.add(a.min, b, out.min);
+	        Vector2$1.add(a.max, b, out.max);
+	        return out;
+	    };
+	    static union = (a, b, out = new Rectangle2()) => {
+	        Vector2$1.min(a.min, b.min, out.min);
+	        Vector2$1.max(a.max, b.max, out.max);
+	        return out;
+	    };
+	    static width = (a) => {
+	        return a.max[0] - a.min[0];
+	    };
+	    min = Vector2$1.create();
+	    max = Vector2$1.create();
 	    constructor(a = Vector2$1.create(), b = Vector2$1.create(1, 1)) {
-	        this.min = Vector2$1.create();
-	        this.max = Vector2$1.create();
 	        Vector2$1.min(a, b, this.min);
 	        Vector2$1.max(a, b, this.max);
 	    }
 	}
-	Rectangle2.area = (a) => {
-	    return (a.max[0] - a.min[0]) * (a.max[1] - a.min[1]);
-	};
-	Rectangle2.containsPoint = (rect, a) => {
-	    return (a[0] >= rect.min[0] && a[0] <= rect.max[0] && a[1] >= rect.min[1] && a[1] <= rect.max[1]);
-	};
-	Rectangle2.containsRectangle = (rect, box) => {
-	    return (rect.min[0] <= box.min[0] &&
-	        box.max[0] <= rect.max[0] &&
-	        rect.min[1] <= box.min[1] &&
-	        box.max[1] <= rect.max[1]);
-	};
-	Rectangle2.create = (a = Vector2$1.create(), b = Vector2$1.create(1, 1)) => {
-	    return {
-	        max: Vector2$1.max(a, b),
-	        min: Vector2$1.min(a, b)
-	    };
-	};
-	Rectangle2.equals = (a, b) => {
-	    return Vector2$1.equals(a.min, b.min) && Vector2$1.equals(a.max, b.max);
-	};
-	Rectangle2.getCenter = (a, out = Vector2$1.create()) => {
-	    Vector2$1.add(a.min, a.max, out);
-	    return Vector2$1.multiplyScalar(out, 0.5, out);
-	};
-	Rectangle2.getSize = (a, out = Vector2$1.create()) => {
-	    return Vector2$1.minus(a.max, a.min, out);
-	};
-	Rectangle2.height = (a) => {
-	    return a.max[1] - a.min[1];
-	};
-	Rectangle2.intersect = (a, b, out = new Rectangle2()) => {
-	    Vector2$1.max(a.min, b.min, out.min);
-	    Vector2$1.min(a.max, b.max, out.max);
-	    return out;
-	};
-	Rectangle2.stretch = (a, b, c, out = new Rectangle2()) => {
-	    Vector2$1.add(a.min, b, out.min);
-	    Vector2$1.add(a.max, c, out.max);
-	    return out;
-	};
-	Rectangle2.translate = (a, b, out = new Rectangle2()) => {
-	    Vector2$1.add(a.min, b, out.min);
-	    Vector2$1.add(a.max, b, out.max);
-	    return out;
-	};
-	Rectangle2.union = (a, b, out = new Rectangle2()) => {
-	    Vector2$1.min(a.min, b.min, out.min);
-	    Vector2$1.max(a.max, b.max, out.max);
-	    return out;
-	};
-	Rectangle2.width = (a) => {
-	    return a.max[0] - a.min[0];
-	};
 
 	let r = 0;
 	class Sphere {
+	    static boundingBox = (a, out = new Cube()) => {
+	        Vector3$1.minusScalar(a.position, a.radius, out.min);
+	        Vector3$1.addScalar(a.position, a.radius, out.max);
+	        return out;
+	    };
+	    static containsPoint = (a, b) => {
+	        return Vector3$1.distanceToSquared(a.position, b) <= a.radius * a.radius;
+	    };
+	    static distanceToPoint = (a, b) => {
+	        return Vector3$1.distanceTo(a.position, b) - a.radius;
+	    };
+	    static equals = (a, b) => {
+	        return Vector3$1.equals(a.position, b.position) && a.radius === b.radius;
+	    };
+	    static intersectsSphere = (a, b) => {
+	        r = a.radius + b.radius;
+	        return Vector3$1.distanceToSquared(a.position, b.position) <= r * r;
+	    };
+	    position;
+	    radius;
 	    constructor(position = new Vector3$1(), radius = 1) {
 	        this.position = position;
 	        this.radius = radius;
 	    }
 	}
-	Sphere.boundingBox = (a, out = new Cube()) => {
-	    Vector3$1.minusScalar(a.position, a.radius, out.min);
-	    Vector3$1.addScalar(a.position, a.radius, out.max);
-	    return out;
-	};
-	Sphere.containsPoint = (a, b) => {
-	    return Vector3$1.distanceToSquared(a.position, b) <= a.radius * a.radius;
-	};
-	Sphere.distanceToPoint = (a, b) => {
-	    return Vector3$1.distanceTo(a.position, b) - a.radius;
-	};
-	Sphere.equals = (a, b) => {
-	    return Vector3$1.equals(a.position, b.position) && a.radius === b.radius;
-	};
-	Sphere.intersectsSphere = (a, b) => {
-	    r = a.radius + b.radius;
-	    return Vector3$1.distanceToSquared(a.position, b.position) <= r * r;
-	};
 
-	const defaultA = [-1, -1, 0];
-	const defaultB = [1, -1, 0];
-	const defaultC = [0, 1, 0];
-	const ab = new Vector3$1();
-	const bc = new Vector3$1();
-	class Triangle3 {
-	    constructor(a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) {
+	const ab$1 = new Vector2$1();
+	const bc$1 = new Vector2$1();
+	class Triangle2 {
+	    static area = (t) => {
+	        const c = Triangle2.getABLength(t);
+	        const a = Triangle2.getBCLength(t);
+	        const b = Triangle2.getCALength(t);
+	        const p = (c + a + b) / 2;
+	        return Math.sqrt(p * (p - a) * (p - b) * (p - c));
+	    };
+	    static create = (a = new Vector2$1(-1, -1), b = new Vector2$1(1, -1), c = new Vector2$1(0, 1)) => {
+	        return new Triangle2(a, b, c);
+	    };
+	    static getABLength = (t) => {
+	        return Vector2$1.distanceTo(t.a, t.b);
+	    };
+	    static getBCLength = (t) => {
+	        return Vector2$1.distanceTo(t.b, t.c);
+	    };
+	    static getCALength = (t) => {
+	        return Vector2$1.distanceTo(t.c, t.a);
+	    };
+	    static normal = (t) => {
+	        Vector2$1.minus(t.c, t.b, bc$1);
+	        Vector2$1.minus(t.b, t.a, ab$1);
+	        const v = Vector2$1.cross(ab$1, bc$1);
+	        if (v > 0) {
+	            return 1;
+	        }
+	        if (v < 0) {
+	            return -1;
+	        }
+	        return 0;
+	    };
+	    static toFloat32Array = (t, out = new Float32Array(2)) => {
+	        out.set(t.a, 0);
+	        out.set(t.b, 2);
+	        out.set(t.c, 4);
+	        return out;
+	    };
+	    a;
+	    b;
+	    c;
+	    constructor(a = new Vector2$1(-1, -1), b = new Vector2$1(1, -1), c = new Vector2$1(0, 1)) {
 	        this.a = a;
 	        this.b = b;
 	        this.c = c;
 	    }
 	}
-	Triangle3.area = (t) => {
-	    const c = Triangle3.getABLength(t);
-	    const a = Triangle3.getBCLength(t);
-	    const b = Triangle3.getCALength(t);
-	    const p = (c + a + b) / 2;
-	    return Math.sqrt(p * (p - a) * (p - b) * (p - c));
-	};
-	Triangle3.create = (a = new Float32Array(defaultA), b = new Float32Array(defaultB), c = new Float32Array(defaultC)) => {
-	    return { a, b, c };
-	};
-	Triangle3.getABLength = (t) => {
-	    return Vector3$1.distanceTo(t.a, t.b);
-	};
-	Triangle3.getBCLength = (t) => {
-	    return Vector3$1.distanceTo(t.b, t.c);
-	};
-	Triangle3.getCALength = (t) => {
-	    return Vector3$1.distanceTo(t.c, t.a);
-	};
-	Triangle3.normal = (t, out = Vector3$1.create()) => {
-	    Vector3$1.minus(t.c, t.b, bc);
-	    Vector3$1.minus(t.b, t.a, ab);
-	    Vector3$1.cross(ab, bc, out);
-	    return Vector3$1.normalize(out);
-	};
-	Triangle3.toFloat32Array = (t, out = new Float32Array(3)) => {
-	    out.set(t.a, 0);
-	    out.set(t.b, 3);
-	    out.set(t.c, 6);
-	    return Vector3$1.normalize(out);
-	};
+
+	const ab = new Vector3$1();
+	const bc = new Vector3$1();
+	class Triangle3 {
+	    static area = (t) => {
+	        const c = Triangle3.getABLength(t);
+	        const a = Triangle3.getBCLength(t);
+	        const b = Triangle3.getCALength(t);
+	        const p = (c + a + b) / 2;
+	        return Math.sqrt(p * (p - a) * (p - b) * (p - c));
+	    };
+	    static create = (a = new Vector3$1(-1, -1, 0), b = new Vector3$1(1, -1, 0), c = new Vector3$1(0, 1, 0)) => {
+	        return { a, b, c };
+	    };
+	    static getABLength = (t) => {
+	        return Vector3$1.distanceTo(t.a, t.b);
+	    };
+	    static getBCLength = (t) => {
+	        return Vector3$1.distanceTo(t.b, t.c);
+	    };
+	    static getCALength = (t) => {
+	        return Vector3$1.distanceTo(t.c, t.a);
+	    };
+	    static normal = (t, out = Vector3$1.create()) => {
+	        Vector3$1.minus(t.c, t.b, bc);
+	        Vector3$1.minus(t.b, t.a, ab);
+	        Vector3$1.cross(ab, bc, out);
+	        return Vector3$1.normalize(out);
+	    };
+	    static toFloat32Array = (t, out = new Float32Array(9)) => {
+	        out.set(t.a, 0);
+	        out.set(t.b, 3);
+	        out.set(t.c, 6);
+	        return out;
+	    };
+	    a;
+	    b;
+	    c;
+	    constructor(a = new Vector3$1(-1, -1, 0), b = new Vector3$1(1, -1, 0), c = new Vector3$1(0, 1, 0)) {
+	        this.a = a;
+	        this.b = b;
+	        this.c = c;
+	    }
+	}
 
 	let dis, r2, d2;
 	const v = new Vector3$1();
 	class Ray3 {
+	    static at = (a, b, out = new Vector3$1()) => {
+	        return Vector3$1.multiplyScalar(a.direction, b, out);
+	    };
+	    static distanceToPoint = (a, point) => {
+	        return Math.sqrt(Ray3.distanceSqToPoint(a, point));
+	    };
+	    static distanceSqToPoint = (a, point) => {
+	        Vector3$1.minus(point, a.position, v);
+	        dis = Vector3$1.dot(v, a.direction);
+	        if (dis < 0) {
+	            return Vector3$1.distanceToSquared(a.position, point);
+	        }
+	        Vector3$1.multiplyScalar(a.direction, dis, v);
+	        Vector3$1.add(v, a.position, v);
+	        return Vector3$1.distanceToSquared(v, point);
+	    };
+	    static lookAt = (a, b, out = new Ray3()) => {
+	        if (a !== out) {
+	            Vector3$1.fromArray(a.position, 0, out.position);
+	        }
+	        Vector3$1.normalize(Vector3$1.minus(b, a.position, out.direction));
+	        return out;
+	    };
+	    static intersectSphere = (ray, sphere, target) => {
+	        Vector3$1.minus(sphere.position, ray.position, v);
+	        dis = Vector3$1.dot(v, ray.direction);
+	        d2 = Vector3$1.dot(v, v) - dis * dis;
+	        r2 = sphere.radius * sphere.radius;
+	        if (d2 > r2)
+	            return null;
+	        const thc = Math.sqrt(r2 - d2);
+	        const t0 = dis - thc;
+	        const t1 = dis + thc;
+	        if (t0 < 0 && t1 < 0)
+	            return null;
+	        if (t0 < 0)
+	            return Ray3.at(ray, t1, target);
+	        return Ray3.at(ray, t0, target);
+	    };
+	    static intersectsSphere = (ray, sphere) => {
+	        return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
+	    };
+	    position;
+	    direction;
 	    constructor(position = new Vector3$1(), direction = new Vector3$1(0, 0, -1)) {
 	        this.position = position;
 	        this.direction = Vector3$1.normalize(direction);
 	    }
 	}
-	Ray3.at = (a, b, out = new Vector3$1()) => {
-	    return Vector3$1.multiplyScalar(a.direction, b, out);
-	};
-	Ray3.distanceToPoint = (a, point) => {
-	    return Math.sqrt(Ray3.distanceSqToPoint(a, point));
-	};
-	Ray3.distanceSqToPoint = (a, point) => {
-	    Vector3$1.minus(point, a.position, v);
-	    dis = Vector3$1.dot(v, a.direction);
-	    if (dis < 0) {
-	        return Vector3$1.distanceToSquared(a.position, point);
-	    }
-	    Vector3$1.multiplyScalar(a.direction, dis, v);
-	    Vector3$1.add(v, a.position, v);
-	    return Vector3$1.distanceToSquared(v, point);
-	};
-	Ray3.lookAt = (a, b, out = new Ray3()) => {
-	    if (a !== out) {
-	        Vector3$1.fromArray(a.position, 0, out.position);
-	    }
-	    Vector3$1.normalize(Vector3$1.minus(b, a.position, out.direction));
-	    return out;
-	};
-	Ray3.intersectSphere = (ray, sphere, target) => {
-	    Vector3$1.minus(sphere.position, ray.position, v);
-	    dis = Vector3$1.dot(v, ray.direction);
-	    d2 = Vector3$1.dot(v, v) - dis * dis;
-	    r2 = sphere.radius * sphere.radius;
-	    if (d2 > r2)
-	        return null;
-	    const thc = Math.sqrt(r2 - d2);
-	    const t0 = dis - thc;
-	    const t1 = dis + thc;
-	    if (t0 < 0 && t1 < 0)
-	        return null;
-	    if (t0 < 0)
-	        return Ray3.at(ray, t1, target);
-	    return Ray3.at(ray, t0, target);
-	};
-	Ray3.intersectsSphere = (ray, sphere) => {
-	    return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
-	};
 
 	// import clampCommon from "../common/clamp";
 	let ax$3, ay$3, az$3, aw$2, bx$3, by$3, bz$3, len$4;
 	let ix$1, iy$1, iz$1, iw$1;
 	let A$1, B$1, C$1, D$1, E$1, F$1, G$1, H$1, I$1, J$1;
 	class Vector4$1 extends Float32Array {
+	    static VECTOR3_ZERO = new Vector4$1(0, 0, 0, 0);
+	    static VECTOR3_ONE = new Vector4$1(1, 1, 1, 1);
+	    static add = (a, b, out = new Vector4$1()) => {
+	        out[0] = a[0] + b[0];
+	        out[1] = a[1] + b[1];
+	        out[2] = a[2] + b[2];
+	        out[3] = a[3] + b[3];
+	        return out;
+	    };
+	    static ceil = (a, out = new Vector4$1()) => {
+	        out[0] = Math.ceil(a[0]);
+	        out[1] = Math.ceil(a[1]);
+	        out[2] = Math.ceil(a[2]);
+	        out[3] = Math.ceil(a[3]);
+	        return out;
+	    };
+	    static closeTo = (a, b) => {
+	        return (closeToCommon$1(a[0], b[0]) &&
+	            closeToCommon$1(a[1], b[1]) &&
+	            closeToCommon$1(a[2], b[2]) &&
+	            closeToCommon$1(a[3], b[3]));
+	    };
+	    static create = (x = 0, y = 0, z = 0, w = 0, out = new Vector4$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        out[3] = w;
+	        return out;
+	    };
+	    static cross = (u, v, w, out = new Vector4$1(4)) => {
+	        A$1 = v[0] * w[1] - v[1] * w[0];
+	        B$1 = v[0] * w[2] - v[2] * w[0];
+	        C$1 = v[0] * w[3] - v[3] * w[0];
+	        D$1 = v[1] * w[2] - v[2] * w[1];
+	        E$1 = v[1] * w[3] - v[3] * w[1];
+	        F$1 = v[2] * w[3] - v[3] * w[2];
+	        G$1 = u[0];
+	        H$1 = u[1];
+	        I$1 = u[2];
+	        J$1 = u[3];
+	        out[0] = H$1 * F$1 - I$1 * E$1 + J$1 * D$1;
+	        out[1] = -(G$1 * F$1) + I$1 * C$1 - J$1 * B$1;
+	        out[2] = G$1 * E$1 - H$1 * C$1 + J$1 * A$1;
+	        out[3] = -(G$1 * D$1) + H$1 * B$1 - I$1 * A$1;
+	        return out;
+	    };
+	    static distanceTo = (a, b) => {
+	        ax$3 = b[0] - a[0];
+	        ay$3 = b[1] - a[1];
+	        az$3 = b[2] - a[2];
+	        aw$2 = b[3] - a[3];
+	        return Math.hypot(ax$3, ay$3, az$3, aw$2);
+	    };
+	    static distanceToSquared = (a, b) => {
+	        ax$3 = b[0] - a[0];
+	        ay$3 = b[1] - a[1];
+	        az$3 = b[2] - a[2];
+	        aw$2 = b[3] - a[3];
+	        return ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw$2 * aw$2;
+	    };
+	    static divide = (a, b, out = new Vector4$1()) => {
+	        out[0] = a[0] / b[0];
+	        out[1] = a[1] / b[1];
+	        out[2] = a[2] / b[2];
+	        out[3] = a[3] / b[3];
+	        return out;
+	    };
+	    static dot = (a, b) => {
+	        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+	    };
+	    static equals = (a, b) => {
+	        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+	    };
+	    static floor = (a, out = new Vector4$1()) => {
+	        out[0] = Math.floor(a[0]);
+	        out[1] = Math.floor(a[1]);
+	        out[2] = Math.floor(a[2]);
+	        out[3] = Math.floor(a[3]);
+	        return out;
+	    };
+	    static fromValues = (x, y, z, w, out = new Vector4$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        out[3] = w;
+	        return out;
+	    };
+	    static inverse = (a, out = new Vector4$1()) => {
+	        out[0] = 1.0 / a[0];
+	        out[1] = 1.0 / a[1];
+	        out[2] = 1.0 / a[2];
+	        out[3] = 1.0 / a[3];
+	        return out;
+	    };
+	    static norm = (a) => {
+	        return Math.hypot(a[0], a[1], a[2], a[3]);
+	    };
+	    static lengthSquared = (a) => {
+	        ax$3 = a[0];
+	        ay$3 = a[1];
+	        az$3 = a[2];
+	        aw$2 = a[3];
+	        return ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw$2 * aw$2;
+	    };
+	    static lerp = (a, b, t, out = new Vector4$1()) => {
+	        ax$3 = a[0];
+	        ay$3 = a[1];
+	        az$3 = a[2];
+	        aw$2 = a[3];
+	        out[0] = ax$3 + t * (b[0] - ax$3);
+	        out[1] = ay$3 + t * (b[1] - ay$3);
+	        out[2] = az$3 + t * (b[2] - az$3);
+	        out[3] = aw$2 + t * (b[3] - aw$2);
+	        return out;
+	    };
+	    static max = (a, b, out = new Vector4$1()) => {
+	        out[0] = Math.max(a[0], b[0]);
+	        out[1] = Math.max(a[1], b[1]);
+	        out[2] = Math.max(a[2], b[2]);
+	        out[3] = Math.max(a[3], b[3]);
+	        return out;
+	    };
+	    static min = (a, b, out = new Vector4$1()) => {
+	        out[0] = Math.min(a[0], b[0]);
+	        out[1] = Math.min(a[1], b[1]);
+	        out[2] = Math.min(a[2], b[2]);
+	        out[3] = Math.min(a[3], b[3]);
+	        return out;
+	    };
+	    static minus = (a, b, out = new Vector4$1()) => {
+	        out[0] = a[0] - b[0];
+	        out[1] = a[1] - b[1];
+	        out[2] = a[2] - b[2];
+	        out[3] = a[3] - b[3];
+	        return out;
+	    };
+	    static multiply = (a, b, out = new Vector4$1()) => {
+	        out[0] = a[0] * b[0];
+	        out[1] = a[1] * b[1];
+	        out[2] = a[2] * b[2];
+	        out[3] = a[3] * b[3];
+	        return out;
+	    };
+	    static multiplyScalar = (a, b, out = new Vector4$1()) => {
+	        out[0] = a[0] * b;
+	        out[1] = a[1] * b;
+	        out[2] = a[2] * b;
+	        out[3] = a[3] * b;
+	        return out;
+	    };
+	    static negate = (a, out = new Vector4$1()) => {
+	        out[0] = -a[0];
+	        out[1] = -a[1];
+	        out[2] = -a[2];
+	        out[3] = -a[3];
+	        return out;
+	    };
+	    static normalize = (a, out = new Vector4$1()) => {
+	        ax$3 = a[0];
+	        ay$3 = a[1];
+	        az$3 = a[2];
+	        aw$2 = a[3];
+	        len$4 = ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw$2 * aw$2;
+	        if (len$4 > 0) {
+	            len$4 = 1 / Math.sqrt(len$4);
+	        }
+	        out[0] = ax$3 * len$4;
+	        out[1] = ay$3 * len$4;
+	        out[2] = az$3 * len$4;
+	        out[3] = aw$2 * len$4;
+	        return out;
+	    };
+	    static round = (a, out = new Vector4$1()) => {
+	        out[0] = Math.round(a[0]);
+	        out[1] = Math.round(a[1]);
+	        out[2] = Math.round(a[2]);
+	        out[3] = Math.round(a[3]);
+	        return out;
+	    };
+	    static set = (x = 0, y = 0, z = 0, w = 0, out = new Vector4$1()) => {
+	        out[0] = x;
+	        out[1] = y;
+	        out[2] = z;
+	        out[4] = w;
+	        return out;
+	    };
+	    static setNorm = (a, length, out = new Vector4$1(2)) => {
+	        Vector4$1.normalize(a, out);
+	        Vector4$1.multiplyScalar(out, length, out);
+	        return out;
+	    };
+	    static toString = (a) => {
+	        return `(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
+	    };
+	    static transformMatrix4 = (a, m, out = new Vector4$1()) => {
+	        ax$3 = a[0];
+	        ay$3 = a[1];
+	        az$3 = a[2];
+	        aw$2 = a[3];
+	        out[0] = m[0] * ax$3 + m[4] * ay$3 + m[8] * az$3 + m[12] * aw$2;
+	        out[1] = m[1] * ax$3 + m[5] * ay$3 + m[9] * az$3 + m[13] * aw$2;
+	        out[2] = m[2] * ax$3 + m[6] * ay$3 + m[10] * az$3 + m[14] * aw$2;
+	        out[3] = m[3] * ax$3 + m[7] * ay$3 + m[11] * az$3 + m[15] * aw$2;
+	        return out;
+	    };
+	    static transformQuat = (a, q, out = new Vector4$1()) => {
+	        bx$3 = a[0];
+	        by$3 = a[1];
+	        bz$3 = a[2];
+	        ax$3 = q[0];
+	        ay$3 = q[1];
+	        az$3 = q[2];
+	        aw$2 = q[3];
+	        ix$1 = aw$2 * bx$3 + ay$3 * bz$3 - az$3 * by$3;
+	        iy$1 = aw$2 * by$3 + az$3 * bx$3 - ax$3 * bz$3;
+	        iz$1 = aw$2 * bz$3 + ax$3 * by$3 - ay$3 * bx$3;
+	        iw$1 = -ax$3 * bx$3 - ay$3 * by$3 - az$3 * bz$3;
+	        out[0] = ix$1 * aw$2 + iw$1 * -ax$3 + iy$1 * -az$3 - iz$1 * -ay$3;
+	        out[1] = iy$1 * aw$2 + iw$1 * -ay$3 + iz$1 * -ax$3 - ix$1 * -az$3;
+	        out[2] = iz$1 * aw$2 + iw$1 * -az$3 + ix$1 * -ay$3 - iy$1 * -ax$3;
+	        out[3] = a[3];
+	        return out;
+	    };
+	    length;
+	    dataType = ArraybufferDataType$1.VECTOR4;
 	    constructor(x = 0, y = 0, z = 0, w = 0) {
 	        super(4);
 	        this[0] = x;
@@ -4465,218 +4772,10 @@
 	        this[3] = value;
 	    }
 	}
-	Vector4$1.add = (a, b, out = new Vector4$1()) => {
-	    out[0] = a[0] + b[0];
-	    out[1] = a[1] + b[1];
-	    out[2] = a[2] + b[2];
-	    out[3] = a[3] + b[3];
-	    return out;
-	};
-	Vector4$1.ceil = (a, out = new Vector4$1()) => {
-	    out[0] = Math.ceil(a[0]);
-	    out[1] = Math.ceil(a[1]);
-	    out[2] = Math.ceil(a[2]);
-	    out[3] = Math.ceil(a[3]);
-	    return out;
-	};
-	Vector4$1.closeTo = (a, b) => {
-	    return (closeToCommon$1(a[0], b[0]) &&
-	        closeToCommon$1(a[1], b[1]) &&
-	        closeToCommon$1(a[2], b[2]) &&
-	        closeToCommon$1(a[3], b[3]));
-	};
-	Vector4$1.create = (x = 0, y = 0, z = 0, w = 0, out = new Vector4$1()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    out[3] = w;
-	    return out;
-	};
-	Vector4$1.cross = (u, v, w, out = new Float32Array(4)) => {
-	    A$1 = v[0] * w[1] - v[1] * w[0];
-	    B$1 = v[0] * w[2] - v[2] * w[0];
-	    C$1 = v[0] * w[3] - v[3] * w[0];
-	    D$1 = v[1] * w[2] - v[2] * w[1];
-	    E$1 = v[1] * w[3] - v[3] * w[1];
-	    F$1 = v[2] * w[3] - v[3] * w[2];
-	    G$1 = u[0];
-	    H$1 = u[1];
-	    I$1 = u[2];
-	    J$1 = u[3];
-	    out[0] = H$1 * F$1 - I$1 * E$1 + J$1 * D$1;
-	    out[1] = -(G$1 * F$1) + I$1 * C$1 - J$1 * B$1;
-	    out[2] = G$1 * E$1 - H$1 * C$1 + J$1 * A$1;
-	    out[3] = -(G$1 * D$1) + H$1 * B$1 - I$1 * A$1;
-	    return out;
-	};
-	Vector4$1.distanceTo = (a, b) => {
-	    ax$3 = b[0] - a[0];
-	    ay$3 = b[1] - a[1];
-	    az$3 = b[2] - a[2];
-	    aw$2 = b[3] - a[3];
-	    return Math.hypot(ax$3, ay$3, az$3, aw$2);
-	};
-	Vector4$1.distanceToSquared = (a, b) => {
-	    ax$3 = b[0] - a[0];
-	    ay$3 = b[1] - a[1];
-	    az$3 = b[2] - a[2];
-	    aw$2 = b[3] - a[3];
-	    return ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw$2 * aw$2;
-	};
-	Vector4$1.divide = (a, b, out = new Vector4$1()) => {
-	    out[0] = a[0] / b[0];
-	    out[1] = a[1] / b[1];
-	    out[2] = a[2] / b[2];
-	    out[3] = a[3] / b[3];
-	    return out;
-	};
-	Vector4$1.dot = (a, b) => {
-	    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-	};
-	Vector4$1.equals = (a, b) => {
-	    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
-	};
-	Vector4$1.floor = (a, out = new Vector4$1()) => {
-	    out[0] = Math.floor(a[0]);
-	    out[1] = Math.floor(a[1]);
-	    out[2] = Math.floor(a[2]);
-	    out[3] = Math.floor(a[3]);
-	    return out;
-	};
-	Vector4$1.fromValues = (x, y, z, w, out = new Vector4$1()) => {
-	    out[0] = x;
-	    out[1] = y;
-	    out[2] = z;
-	    out[3] = w;
-	    return out;
-	};
-	Vector4$1.inverse = (a, out = new Vector4$1()) => {
-	    out[0] = 1.0 / a[0];
-	    out[1] = 1.0 / a[1];
-	    out[2] = 1.0 / a[2];
-	    out[3] = 1.0 / a[3];
-	    return out;
-	};
-	Vector4$1.norm = (a) => {
-	    return Math.hypot(a[0], a[1], a[2], a[3]);
-	};
-	Vector4$1.lengthSquared = (a) => {
-	    ax$3 = a[0];
-	    ay$3 = a[1];
-	    az$3 = a[2];
-	    aw$2 = a[3];
-	    return ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw$2 * aw$2;
-	};
-	Vector4$1.lerp = (a, b, t, out = new Vector4$1()) => {
-	    ax$3 = a[0];
-	    ay$3 = a[1];
-	    az$3 = a[2];
-	    aw$2 = a[3];
-	    out[0] = ax$3 + t * (b[0] - ax$3);
-	    out[1] = ay$3 + t * (b[1] - ay$3);
-	    out[2] = az$3 + t * (b[2] - az$3);
-	    out[3] = aw$2 + t * (b[3] - aw$2);
-	    return out;
-	};
-	Vector4$1.max = (a, b, out = new Vector4$1()) => {
-	    out[0] = Math.max(a[0], b[0]);
-	    out[1] = Math.max(a[1], b[1]);
-	    out[2] = Math.max(a[2], b[2]);
-	    out[3] = Math.max(a[3], b[3]);
-	    return out;
-	};
-	Vector4$1.min = (a, b, out = new Vector4$1()) => {
-	    out[0] = Math.min(a[0], b[0]);
-	    out[1] = Math.min(a[1], b[1]);
-	    out[2] = Math.min(a[2], b[2]);
-	    out[3] = Math.min(a[3], b[3]);
-	    return out;
-	};
-	Vector4$1.minus = (a, b, out = new Vector4$1()) => {
-	    out[0] = a[0] - b[0];
-	    out[1] = a[1] - b[1];
-	    out[2] = a[2] - b[2];
-	    out[3] = a[3] - b[3];
-	    return out;
-	};
-	Vector4$1.multiply = (a, b, out = new Vector4$1()) => {
-	    out[0] = a[0] * b[0];
-	    out[1] = a[1] * b[1];
-	    out[2] = a[2] * b[2];
-	    out[3] = a[3] * b[3];
-	    return out;
-	};
-	Vector4$1.multiplyScalar = (a, b, out = new Vector4$1()) => {
-	    out[0] = a[0] * b;
-	    out[1] = a[1] * b;
-	    out[2] = a[2] * b;
-	    out[3] = a[3] * b;
-	    return out;
-	};
-	Vector4$1.negate = (a, out = new Vector4$1()) => {
-	    out[0] = -a[0];
-	    out[1] = -a[1];
-	    out[2] = -a[2];
-	    out[3] = -a[3];
-	    return out;
-	};
-	Vector4$1.normalize = (a, out = new Vector4$1()) => {
-	    ax$3 = a[0];
-	    ay$3 = a[1];
-	    az$3 = a[2];
-	    aw$2 = a[3];
-	    len$4 = ax$3 * ax$3 + ay$3 * ay$3 + az$3 * az$3 + aw$2 * aw$2;
-	    if (len$4 > 0) {
-	        len$4 = 1 / Math.sqrt(len$4);
-	    }
-	    out[0] = ax$3 * len$4;
-	    out[1] = ay$3 * len$4;
-	    out[2] = az$3 * len$4;
-	    out[3] = aw$2 * len$4;
-	    return out;
-	};
-	Vector4$1.round = (a, out = new Vector4$1()) => {
-	    out[0] = Math.round(a[0]);
-	    out[1] = Math.round(a[1]);
-	    out[2] = Math.round(a[2]);
-	    out[3] = Math.round(a[3]);
-	    return out;
-	};
-	Vector4$1.toString = (a) => {
-	    return `(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
-	};
-	Vector4$1.transformMatrix4 = (a, m, out = new Vector4$1()) => {
-	    ax$3 = a[0];
-	    ay$3 = a[1];
-	    az$3 = a[2];
-	    aw$2 = a[3];
-	    out[0] = m[0] * ax$3 + m[4] * ay$3 + m[8] * az$3 + m[12] * aw$2;
-	    out[1] = m[1] * ax$3 + m[5] * ay$3 + m[9] * az$3 + m[13] * aw$2;
-	    out[2] = m[2] * ax$3 + m[6] * ay$3 + m[10] * az$3 + m[14] * aw$2;
-	    out[3] = m[3] * ax$3 + m[7] * ay$3 + m[11] * az$3 + m[15] * aw$2;
-	    return out;
-	};
-	Vector4$1.transformQuat = (a, q, out = new Vector4$1()) => {
-	    bx$3 = a[0];
-	    by$3 = a[1];
-	    bz$3 = a[2];
-	    ax$3 = q[0];
-	    ay$3 = q[1];
-	    az$3 = q[2];
-	    aw$2 = q[3];
-	    ix$1 = aw$2 * bx$3 + ay$3 * bz$3 - az$3 * by$3;
-	    iy$1 = aw$2 * by$3 + az$3 * bx$3 - ax$3 * bz$3;
-	    iz$1 = aw$2 * bz$3 + ax$3 * by$3 - ay$3 * bx$3;
-	    iw$1 = -ax$3 * bx$3 - ay$3 * by$3 - az$3 * bz$3;
-	    out[0] = ix$1 * aw$2 + iw$1 * -ax$3 + iy$1 * -az$3 - iz$1 * -ay$3;
-	    out[1] = iy$1 * aw$2 + iw$1 * -ay$3 + iz$1 * -ax$3 - ix$1 * -az$3;
-	    out[2] = iz$1 * aw$2 + iw$1 * -az$3 + ix$1 * -ay$3 - iy$1 * -ax$3;
-	    out[3] = a[3];
-	    return out;
-	};
 
 	var Mathx_module = /*#__PURE__*/Object.freeze({
 		__proto__: null,
+		ArraybufferDataType: ArraybufferDataType$1,
 		COLOR_HEX_MAP: COLOR_HEX_MAP,
 		ColorGPU: ColorGPU,
 		ColorRGB: ColorRGB,
@@ -4694,6 +4793,7 @@
 		Ray3: Ray3,
 		Rectangle2: Rectangle2,
 		Sphere: Sphere,
+		Triangle2: Triangle2,
 		Triangle3: Triangle3,
 		Vector2: Vector2$1,
 		Vector3: Vector3$1,
@@ -5671,28 +5771,76 @@
 	    }
 	};
 
+	var createTriangle2 = (t = Triangle2.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+	    let geo = new Geometry(2, 3, topology, cullMode);
+	    let stride = 3;
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 2,
+	            }];
+	        if (options.hasUV) {
+	            stride = 4;
+	        }
+	        let result = new Float32Array(stride * 3);
+	        result.set(t.a);
+	        result.set(t.b, stride);
+	        result.set(t.c, stride + stride);
+	        if (options.hasUV) {
+	            let offset = 2;
+	            result.set([0, 1], offset);
+	            result.set([1, 1], stride + offset);
+	            result.set([0.5, 0], stride + stride + offset);
+	            pickers.push({
+	                name: UV,
+	                offset,
+	                length: 2,
+	            });
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        let result = new Float32Array(6);
+	        result.set(t.a);
+	        result.set(t.b, 2);
+	        result.set(t.c, 4);
+	        geo.addAttribute(POSITION, result, 2);
+	        if (options.hasUV) {
+	            result = new Float32Array(6);
+	            result.set([0, 0], 0);
+	            result.set([1, 0], 2);
+	            result.set([0.5, 1], 4);
+	            geo.addAttribute(UV, result, 2);
+	        }
+	        return geo;
+	    }
+	};
+
 	var index$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		createCircle2: createCircle2,
-		createPlane2: createPlane2
+		createPlane2: createPlane2,
+		createTriangle2: createTriangle2
 	});
 
-	const FIND_LEAVES_VISITOR = {
+	const FIND_LEAVES_VISITOR$1 = {
 	    enter: (node, result) => {
 	        if (!node.children.length) {
 	            result.push(node);
 	        }
 	    }
 	};
-	const ARRAY_VISITOR = {
+	const ARRAY_VISITOR$1 = {
 	    enter: (node, result) => {
 	        result.push(node);
 	    }
 	};
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base = Object) => {
+	const mixin$1 = (Base = Object) => {
 	    return class TreeNode extends Base {
-	        static mixin = mixin;
+	        static mixin = mixin$1;
 	        static addChild(node, child) {
 	            if (TreeNode.hasAncestor(node, child)) {
 	                throw new Error("The node added is one of the ancestors of current one.");
@@ -5719,7 +5867,7 @@
 	        }
 	        static findLeaves(node) {
 	            const result = [];
-	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR$1, result);
 	            return result;
 	        }
 	        static findRoot(node) {
@@ -5750,7 +5898,7 @@
 	        }
 	        static toArray(node) {
 	            const result = [];
-	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            TreeNode.traverse(node, ARRAY_VISITOR$1, result);
 	            return result;
 	        }
 	        static traverse(node, visitor, rest) {
@@ -5790,7 +5938,7 @@
 	        }
 	    };
 	};
-	var TreeNode = mixin(Object);
+	var TreeNode$1 = mixin$1(Object);
 
 	const IdGeneratorInstance = new IdGenerator();
 
@@ -6079,7 +6227,7 @@
 	    }
 	}
 
-	const TreeNodeWithEvent = mixin$1(TreeNode);
+	const TreeNodeWithEvent = mixin$2(TreeNode$1);
 
 	let arr$1;
 	class Entity extends TreeNodeWithEvent {
@@ -6489,7 +6637,7 @@
 			@builtin(position) position : vec4<f32>
 		};
 
-		@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+		@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 			var out: VertexOutput;
 			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 			return out;
@@ -6501,7 +6649,7 @@
 	  	};
 	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
 
-		@stage(fragment) fn main() -> @location(0) vec4<f32> {
+		@fragment fn main() -> @location(0) vec4<f32> {
 			return uniforms.color;
 		}
 	`
@@ -6541,7 +6689,7 @@ struct VertexOutput {
 	@location(0) depth : vec4<f32>
 };
 
-@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	out.depth = out.position;
@@ -6556,7 +6704,7 @@ struct VertexOutput {
 // 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
 // 	return r * PackUpscale;
 // }
-@stage(fragment) fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
+@fragment fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
 	var fragCoordZ: f32 = depth.z / depth.w;
 	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
 }`;
@@ -6578,14 +6726,14 @@ struct VertexOutput {
 	@location(0) normal : vec4<f32>
 };
 
-@stage(vertex) fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
+@vertex fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	out.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));
 	return out;
 }`;
 	const fragmentShader = `
-@stage(fragment) fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
+@fragment fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
 	class NormalMaterial extends Material {
@@ -6652,7 +6800,7 @@ struct VertexOutput {
         @location(0) uv: vec2<f32>
     }
 
-    @stage(vertex) fn main(@location(0) position: vec3<f32>, @location(2) uv: vec2<f32>) -> VertexOutput {
+    @vertex fn main(@location(0) position: vec3<f32>, @location(2) uv: vec2<f32>) -> VertexOutput {
         var out: VertexOutput;
         out.position = uniforms.matrix * vec4<f32>(position, 1.0);
         out.uv = uv;
@@ -6753,7 +6901,7 @@ struct VertexOutput {
 			@location(0) uv : vec2<f32>
 		};
 
-		@stage(vertex) fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
+		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
 			var out: VertexOutput;
 			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
 			out.uv = uv;
@@ -6764,7 +6912,7 @@ struct VertexOutput {
 		@binding(1) @group(0) var mySampler: sampler;
 		@binding(2) @group(0) var myTexture: texture_2d<f32>;
 
-		@stage(fragment) fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
 			return textureSample(myTexture, mySampler, uv);
 		}
 	`
@@ -7557,7 +7705,7 @@ struct VertexOutput {
 	    }
 	}
 
-	/*! *****************************************************************************
+	/******************************************************************************
 	Copyright (c) Microsoft Corporation.
 
 	Permission to use, copy, modify, and/or distribute this software for any
@@ -8231,9 +8379,9 @@ struct VertexOutput {
 	        return this;
 	    }
 	    handle(entity) {
-	        let routeComponent = entity.getComponentsByTagLabel("HashRoute");
-	        for (let i = routeComponent.length - 1; i > -1; i--) {
-	            routeComponent[i].route(this.currentPath, entity);
+	        let routeComponents = entity.getComponentsByTagLabel("HashRoute");
+	        for (let i = routeComponents.length - 1; i > -1; i--) {
+	            routeComponents[i].route(this.currentPath, entity);
 	        }
 	        return this;
 	    }
@@ -8241,7 +8389,6 @@ struct VertexOutput {
 	        if (HashRouteSystem.currentPath === this.currentPath) {
 	            return this;
 	        }
-	        console.log(HashRouteSystem.currentPath);
 	        this.currentPath = HashRouteSystem.currentPath;
 	        super.run(world);
 	        return this;
@@ -8253,6 +8400,121 @@ struct VertexOutput {
 	    HashRouteSystem.currentPath = location.hash.slice(1) || "/";
 	};
 	HashRouteSystem.currentPath = location.hash.slice(1) || "/";
+
+	const FIND_LEAVES_VISITOR = {
+	    enter: (node, result) => {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
+	};
+	const ARRAY_VISITOR = {
+	    enter: (node, result) => {
+	        result.push(node);
+	    }
+	};
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin = (Base = Object) => {
+	    return class TreeNode extends Base {
+	        static mixin = mixin;
+	        static addChild(node, child) {
+	            if (TreeNode.hasAncestor(node, child)) {
+	                throw new Error("The node added is one of the ancestors of current one.");
+	            }
+	            node.children.push(child);
+	            child.parent = node;
+	            return node;
+	        }
+	        static depth(node) {
+	            if (!node.children.length) {
+	                return 1;
+	            }
+	            else {
+	                const childrenDepth = [];
+	                for (const item of node.children) {
+	                    item && childrenDepth.push(this.depth(item));
+	                }
+	                let max = 0;
+	                for (const item of childrenDepth) {
+	                    max = Math.max(max, item);
+	                }
+	                return 1 + max;
+	            }
+	        }
+	        static findLeaves(node) {
+	            const result = [];
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            return result;
+	        }
+	        static findRoot(node) {
+	            if (node.parent) {
+	                return this.findRoot(node.parent);
+	            }
+	            return node;
+	        }
+	        static hasAncestor(node, ancestor) {
+	            if (!node.parent) {
+	                return false;
+	            }
+	            else {
+	                if (node.parent === ancestor) {
+	                    return true;
+	                }
+	                else {
+	                    return TreeNode.hasAncestor(node.parent, ancestor);
+	                }
+	            }
+	        }
+	        static removeChild(node, child) {
+	            if (node.children.includes(child)) {
+	                node.children.splice(node.children.indexOf(child), 1);
+	                child.parent = null;
+	            }
+	            return node;
+	        }
+	        static toArray(node) {
+	            const result = [];
+	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            return result;
+	        }
+	        static traverse(node, visitor, rest) {
+	            visitor.enter?.(node, rest);
+	            visitor.visit?.(node, rest);
+	            for (const item of node.children) {
+	                item && TreeNode.traverse(item, visitor, rest);
+	            }
+	            visitor.leave?.(node, rest);
+	            return node;
+	        }
+	        parent = null;
+	        children = [];
+	        addChild(node) {
+	            return TreeNode.addChild(this, node);
+	        }
+	        depth() {
+	            return TreeNode.depth(this);
+	        }
+	        findLeaves() {
+	            return TreeNode.findLeaves(this);
+	        }
+	        findRoot() {
+	            return TreeNode.findRoot(this);
+	        }
+	        hasAncestor(ancestor) {
+	            return TreeNode.hasAncestor(this, ancestor);
+	        }
+	        removeChild(child) {
+	            return TreeNode.removeChild(this, child);
+	        }
+	        toArray() {
+	            return TreeNode.toArray(this);
+	        }
+	        traverse(visitor, rest) {
+	            return TreeNode.traverse(this, visitor, rest);
+	        }
+	    };
+	};
+	var TreeNode = mixin(Object);
 
 	class HashRouteComponent extends TreeNode.mixin(Component) {
 	    constructor(name, data) {
@@ -8280,9 +8542,11 @@ struct VertexOutput {
 	                    this.children[i].route(str, entity);
 	                }
 	            }
-	            this.data.action(entity, false);
-	            for (let i = this.children.length - 1; i > -1; i--) {
-	                this.children[i].route("", entity);
+	            else {
+	                this.data.action(entity, false);
+	                for (let i = this.children.length - 1; i > -1; i--) {
+	                    this.children[i].route("", entity);
+	                }
 	            }
 	        }
 	        else {
@@ -8329,7 +8593,7 @@ fn mapRange(
 	return (value - d1 * 0.5) / d2 / d1;
 };
 
-@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var output : VertexOutput;
 	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	if (output.Position.w == 1.0) {
@@ -8338,7 +8602,7 @@ fn mapRange(
 	return output;
 }
 `, `
-@stage(fragment) fn main() -> @location(0) vec4<f32> {
+@fragment fn main() -> @location(0) vec4<f32> {
 	return vec4<f32>(1., 1., 1., 1.0);
 }
 `);
@@ -9137,6 +9401,21 @@ fn mapRange(
 	    EulerRotationOrders["YXZ"] = "yxz";
 	})(EulerRotationOrders || (EulerRotationOrders = {}));
 
+	const ArraybufferDataType = {
+	    COLOR_GPU: "col",
+	    COLOR_RGB: "col_rgb",
+	    COLOR_RGBA: "col_rgba",
+	    EULER: "euler",
+	    MATRIX2: "mat2",
+	    MATRIX3: "mat3",
+	    MATRIX4: "mat4",
+	    POLAR: "polar",
+	    QUATERNION: "qua",
+	    VECTOR2: "vec2",
+	    VECTOR3: "vec3",
+	    VECTOR4: "vec4"
+	};
+
 	/**
 	 * @function clamp
 	 * @desc 将目标值限定在指定区间内。假定min小于等于max才能得到正确的结果。
@@ -9183,6 +9462,7 @@ fn mapRange(
 	class Vector3 extends Float32Array {
 	    constructor(x = 0, y = 0, z = 0) {
 	        super(3);
+	        this.dataType = ArraybufferDataType.VECTOR3;
 	        this[0] = x;
 	        this[1] = y;
 	        this[2] = z;
@@ -9206,14 +9486,14 @@ fn mapRange(
 	        this[2] = value;
 	    }
 	}
-	Vector3.VECTOR3_ZERO = new Float32Array([0, 0, 0]);
-	Vector3.VECTOR3_ONE = new Float32Array([1, 1, 1]);
-	Vector3.VECTOR3_TOP = new Float32Array([0, 1, 0]);
-	Vector3.VECTOR3_BOTTOM = new Float32Array([0, -1, 0]);
-	Vector3.VECTOR3_LEFT = new Float32Array([-1, 0, 0]);
-	Vector3.VECTOR3_RIGHT = new Float32Array([1, 0, 0]);
-	Vector3.VECTOR3_FRONT = new Float32Array([0, 0, -1]);
-	Vector3.VECTOR3_BACK = new Float32Array([0, 0, 1]);
+	Vector3.VECTOR3_ZERO = new Vector3(0, 0, 0);
+	Vector3.VECTOR3_ONE = new Vector3(1, 1, 1);
+	Vector3.VECTOR3_TOP = new Vector3(0, 1, 0);
+	Vector3.VECTOR3_BOTTOM = new Vector3(0, -1, 0);
+	Vector3.VECTOR3_LEFT = new Vector3(-1, 0, 0);
+	Vector3.VECTOR3_RIGHT = new Vector3(1, 0, 0);
+	Vector3.VECTOR3_FRONT = new Vector3(0, 0, -1);
+	Vector3.VECTOR3_BACK = new Vector3(0, 0, 1);
 	Vector3.add = (a, b, out = new Vector3()) => {
 	    out[0] = a[0] + b[0];
 	    out[1] = a[1] + b[1];
@@ -10777,7 +11057,7 @@ fn mapRange(
 	            device: engine.device,
 	            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 	            format: engine.preferredFormat,
-	            compositingAlphaMode: "premultiplied"
+	            alphaMode: "premultiplied"
 	        });
 	        this.setScissor(scissor).setViewport(viewport);
 	    }
@@ -10835,10 +11115,14 @@ fn mapRange(
 	    }
 	}
 
-	let x = 0, y = 0, c = 0, s = 0;
+	let x = 0;
+	let y = 0;
+	let c = 0;
+	let s = 0;
 	class Vector2 extends Float32Array {
 	    constructor(x = 0, y = 0) {
 	        super(2);
+	        this.dataType = ArraybufferDataType.VECTOR2;
 	        this[0] = x;
 	        this[1] = y;
 	    }
@@ -10855,11 +11139,12 @@ fn mapRange(
 	        this[1] = value;
 	    }
 	}
-	Vector2.VECTOR2_ZERO = new Float32Array([0, 0]);
-	Vector2.VECTOR2_TOP = new Float32Array([0, 1]);
-	Vector2.VECTOR2_BOTTOM = new Float32Array([0, -1]);
-	Vector2.VECTOR2_LEFT = new Float32Array([-1, 0]);
-	Vector2.VECTOR2_RIGHT = new Float32Array([1, 0]);
+	Vector2.VECTOR2_ZERO = new Vector2(0, 0);
+	Vector2.VECTOR2_TOP = new Vector2(0, 1);
+	Vector2.VECTOR2_BOTTOM = new Vector2(0, -1);
+	Vector2.VECTOR2_LEFT = new Vector2(-1, 0);
+	Vector2.VECTOR2_RIGHT = new Vector2(1, 0);
+	Vector2.VECTOR2_ONE = new Vector2(1, 1);
 	Vector2.add = (a, b, out = new Vector2()) => {
 	    out[0] = a[0] + b[0];
 	    out[1] = a[1] + b[1];
@@ -11058,7 +11343,7 @@ fn mapRange(
 	    out[1] = y;
 	    return out;
 	};
-	Vector2.setLength = (a, length, out = new Vector2(2)) => {
+	Vector2.setNorm = (a, length, out = new Vector2(2)) => {
 	    Vector2.normalize(a, out);
 	    Vector2.multiplyScalar(out, length, out);
 	    return out;
@@ -11076,7 +11361,7 @@ fn mapRange(
 	Vector2.toString = (a) => {
 	    return `(${a[0]}, ${a[1]})`;
 	};
-	Vector2.transformMatrix3 = (a, m, out) => {
+	Vector2.transformMatrix3 = (a, m, out = new Vector2()) => {
 	    x = a[0];
 	    y = a[1];
 	    out[0] = m[0] * x + m[3] * y + m[6];
@@ -11091,6 +11376,7 @@ fn mapRange(
 	class Vector4 extends Float32Array {
 	    constructor(x = 0, y = 0, z = 0, w = 0) {
 	        super(4);
+	        this.dataType = ArraybufferDataType.VECTOR4;
 	        this[0] = x;
 	        this[1] = y;
 	        this[2] = z;
@@ -11121,6 +11407,8 @@ fn mapRange(
 	        this[3] = value;
 	    }
 	}
+	Vector4.VECTOR3_ZERO = new Vector4(0, 0, 0, 0);
+	Vector4.VECTOR3_ONE = new Vector4(1, 1, 1, 1);
 	Vector4.add = (a, b, out = new Vector4()) => {
 	    out[0] = a[0] + b[0];
 	    out[1] = a[1] + b[1];
@@ -11148,7 +11436,7 @@ fn mapRange(
 	    out[3] = w;
 	    return out;
 	};
-	Vector4.cross = (u, v, w, out = new Float32Array(4)) => {
+	Vector4.cross = (u, v, w, out = new Vector4(4)) => {
 	    A = v[0] * w[1] - v[1] * w[0];
 	    B = v[0] * w[2] - v[2] * w[0];
 	    C = v[0] * w[3] - v[3] * w[0];
@@ -11296,6 +11584,18 @@ fn mapRange(
 	    out[1] = Math.round(a[1]);
 	    out[2] = Math.round(a[2]);
 	    out[3] = Math.round(a[3]);
+	    return out;
+	};
+	Vector4.set = (x = 0, y = 0, z = 0, w = 0, out = new Vector4()) => {
+	    out[0] = x;
+	    out[1] = y;
+	    out[2] = z;
+	    out[4] = w;
+	    return out;
+	};
+	Vector4.setNorm = (a, length, out = new Vector4(2)) => {
+	    Vector4.normalize(a, out);
+	    Vector4.multiplyScalar(out, length, out);
 	    return out;
 	};
 	Vector4.toString = (a) => {

@@ -12,7 +12,7 @@ struct VertexOutput {
 	@location(0) depth : vec4<f32>
 };
 
-@stage(vertex) fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
 	var out: VertexOutput;
 	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
 	out.depth = out.position;
@@ -28,7 +28,7 @@ const fragmentShader = `
 // 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
 // 	return r * PackUpscale;
 // }
-@stage(fragment) fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
+@fragment fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
 	var fragCoordZ: f32 = depth.z / depth.w;
 	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
 }`;
