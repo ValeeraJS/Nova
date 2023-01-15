@@ -1,10 +1,10 @@
 import Material from "./Material";
 
-export const DEFAULT_MATERIAL = new Material(`
+export const DEFAULT_MATERIAL3 = new Material(`
 struct Uniforms {
 	modelViewProjectionMatrix : mat4x4<f32>
-  };
-  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
+};
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 struct VertexOutput {
 	@builtin(position) Position : vec4<f32>
@@ -27,6 +27,29 @@ fn mapRange(
 	if (output.Position.w == 1.0) {
 		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
 	}
+	return output;
+}
+`,`
+@fragment fn main() -> @location(0) vec4<f32> {
+	return vec4<f32>(1., 1., 1., 1.0);
+}
+`);
+
+export const DEFAULT_MATERIAL2 = new Material(`
+struct Uniforms {
+	modelViewProjectionMatrix : mat3x3<f32>
+};
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	@builtin(position) Position : vec4<f32>
+};
+
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+	var output : VertexOutput;
+	var p: vec3<f32> = uniforms.modelViewProjectionMatrix * position;
+	output.Position = vec4<f32>(p.x, p.y, p.z, 1.);
+
 	return output;
 }
 `,`

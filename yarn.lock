@@ -440,10 +440,10 @@
   resolved "https://registry.npmmirror.com/@valeera/idgenerator/-/idgenerator-1.1.1.tgz#e09e33dd11f3caa3a05a8bdf8bb089beb51cac7f"
   integrity sha512-ATbUOvCkgrg+VA6qUoWxhQPYS5RkFw9/r2nfEYagLMlmwwFx1wPrLaknp96M/mkaVV4Y+Mt/u4eA1oRyahRG+A==
 
-"@valeera/mathx@0.1.38":
-  version "0.1.38"
-  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.38.tgz#fe24d8831799d599c99e6c4824df7942c7c93a32"
-  integrity sha512-KmQNADdgFX45ttyXVoASaVbb3we2BO7nhy6TmYGhBlfWN/Noq6Zye0UAGTkIEhVvw4TnKQm6dkjtPLKVo0D2jw==
+"@valeera/mathx@0.1.42":
+  version "0.1.42"
+  resolved "https://registry.npmmirror.com/@valeera/mathx/-/mathx-0.1.42.tgz#302cae8e7a3029f96f6b044224ea2c4269401ffd"
+  integrity sha512-3uUgudthBcgJ7jhMSi1IcA7DD5aQyUbUUitHtJ/AuWSBcycivze5Oh6QvhQJffJnVv8SDwmLV2waMWvTX5yxpg==
 
 "@valeera/timeline@0.1.2":
   version "0.1.2"
@@ -475,10 +475,10 @@
     "@valeera/tree" "0.1.5-b"
     clone-deep "^4.0.1"
 
-"@webgpu/types@^0.1.21":
-  version "0.1.21"
-  resolved "https://registry.npmmirror.com/@webgpu/types/-/types-0.1.21.tgz#b181202daec30d66ccd67264de23814cfd176d3a"
-  integrity sha512-pUrWq3V5PiSGFLeLxoGqReTZmiiXwY3jRkIG5sLLKjyqNxrwm/04b4nw7LSmGWJcKk59XOM/YRTUwOzo4MMlow==
+"@webgpu/types@^0.1.24":
+  version "0.1.24"
+  resolved "https://registry.npmmirror.com/@webgpu/types/-/types-0.1.24.tgz#9188a394ddccfd9e7e054ab91c4edfd9a0597dd2"
+  integrity sha512-Mkz+SVJwHApTg6nCzqIuHDt3HsGRcCvHJNkWT2PgZTTC2Gy+LXvN4+7x6YvduAcx3F/pEDWW5OfAHs6VSo6J4Q==
 
 "@yarn-tool/resolve-package@^1.0.40":
   version "1.0.47"

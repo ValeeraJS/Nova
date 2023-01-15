@@ -150,8 +150,6 @@ export default class MeshRenderer implements IWebGLRenderer {
 			entries: groupEntries,
 		};
 
-		console.log(uniformBindGroup);
-
 		return {
 			mvp: new Float32Array(16),
 			attributesBuffers: buffers,

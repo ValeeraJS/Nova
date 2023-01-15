@@ -1,5 +1,6 @@
 import { Matrix4 } from "@valeera/mathx";
 import { Entity, IEntity } from "@valeera/x";
+import { Anchor3 } from "../components";
 import { MODEL_3D, WORLD_MATRIX4 } from "../components/constants";
 import EuclidPosition3 from "../components/matrix4/EuclidPosition3";
 import EulerRotation3 from "../components/matrix4/EulerRotation3";
@@ -27,7 +28,7 @@ export default class Object3 extends Entity implements IObject3 {
         this.scaling = new Vector3Scale3();
         this.position = new EuclidPosition3();
         this.rotation = new EulerRotation3();
-        this.anchor = new EuclidPosition3();
+        this.anchor = new Anchor3();
         this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
             label: MODEL_3D,
             unique: true 

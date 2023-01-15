@@ -2515,6 +2515,25 @@ class Matrix4$1 extends Float32Array {
         out[15] = 1;
         return out;
     };
+    static fromMatrix3MVP = (data, out = new Matrix4$1()) => {
+        out[0] = data[0];
+        out[1] = data[1];
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = data[3];
+        out[5] = data[4];
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 0;
+        out[9] = 0;
+        out[10] = 1;
+        out[11] = 0;
+        out[12] = data[6];
+        out[13] = data[7];
+        out[14] = 0;
+        out[15] = 1;
+        return out;
+    };
     static fromQuaternion = (q, out = new Matrix4$1()) => {
         const x = q[0], y = q[1], z = q[2], w = q[3];
         const x2 = x + x;
@@ -3355,7 +3374,7 @@ let x$1$1, y$1$1;
  * @param {number} [r=0] | 距离极点距离
  * @param {number} [a=0] | 旋转弧度，规定0弧度为笛卡尔坐标系x轴方向
  */
-class Polar {
+class Polar extends Float32Array {
     /**
      * @public
      * @method create
@@ -3368,8 +3387,22 @@ class Polar {
     static create(r = 0, a = 0) {
         return new Polar(r, a);
     }
-    a;
-    r;
+    get a() {
+        return this[1];
+    }
+    ;
+    set a(v) {
+        this[1] = v;
+    }
+    ;
+    get r() {
+        return this[0];
+    }
+    ;
+    set r(v) {
+        this[0] = v;
+    }
+    ;
     dataType = ArraybufferDataType$1.POLAR;
     /**
      * @public
@@ -3384,6 +3417,7 @@ class Polar {
      * @default 0
      */
     constructor(r = 0, a = 0) {
+        super(2);
         this.r = r;
         this.a = a;
     }
@@ -3439,19 +3473,6 @@ class Polar {
      */
     lengthManhattan() {
         return (Math.cos(this.a) + Math.sin(this.a)) * this.r;
-    }
-    /**
-     * @public
-     * @method Mathx.Polar.prototype.set
-     * @desc 设置极坐标值
-     * @param {number} [r=0] 距离
-     * @param {number} [a=0] 弧度
-     * @returns {number} this
-     */
-    set(r = 0, a = 0) {
-        this.r = r;
-        this.a = a;
-        return this;
     }
     /**
      * @public
@@ -7008,43 +7029,38 @@ class Anchor2 extends Matrix3Component {
                 label: ANCHOR_2D,
                 unique: true
             }]);
-        this.vec3 = new Vector2$1();
-        Vector2$1.fromArray(vec, 0, this.vec3);
+        this.vec2 = new Vector2$1();
+        Vector2$1.fromArray(vec, 0, this.vec2);
         this.update();
     }
     get x() {
-        return this.vec3[0];
+        return this.vec2[0];
     }
     set x(value) {
-        this.vec3[0] = value;
-        this.data[6] = value;
+        this.vec2[0] = value;
+        this.data[6] = -value;
         this.dirty = true;
     }
     get y() {
-        return this.vec3[1];
+        return this.vec2[1];
     }
     set y(value) {
-        this.vec3[1] = value;
-        this.data[7] = value;
+        this.vec2[1] = value;
+        this.data[7] = -value;
         this.dirty = true;
     }
     set(arr) {
-        this.vec3.set(arr);
-        this.data[6] = arr[0];
-        this.data[7] = arr[1];
-        this.dirty = true;
-        return this;
+        this.vec2.set(arr);
+        return this.update();
     }
     setXY(x, y, z) {
-        this.vec3[0] = x;
-        this.vec3[1] = y;
-        this.data[6] = x;
-        this.data[7] = y;
-        this.dirty = true;
-        return this;
+        this.vec2[0] = x;
+        this.vec2[1] = y;
+        return this.update();
     }
     update() {
-        Matrix3$1.fromTranslation(this.vec3, this.data);
+        this.data[6] = -this.x;
+        this.data[7] = -this.y;
         this.dirty = true;
         return this;
     }
@@ -7131,22 +7147,97 @@ class EuclidPosition2 extends APosition2 {
     }
 }
 
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+function __classPrivateFieldGet(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+}
+
+function __classPrivateFieldSet(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+}
+
+var _AngleRotation2_angle;
 class AngleRotation2 extends ARotation2 {
     constructor(angle = 0) {
         super();
+        _AngleRotation2_angle.set(this, void 0);
         this.data = Matrix3$1.identity();
-        this._angle = angle;
+        __classPrivateFieldSet(this, _AngleRotation2_angle, angle, "f");
         this.update();
     }
-    get angle() {
-        return this._angle;
+    get a() {
+        return __classPrivateFieldGet(this, _AngleRotation2_angle, "f");
     }
-    set angle(value) {
-        this._angle = value;
+    set a(value) {
+        __classPrivateFieldSet(this, _AngleRotation2_angle, value, "f");
         this.update();
     }
     update() {
-        Matrix3$1.fromRotation(this._angle, this.data);
+        Matrix3$1.fromRotation(__classPrivateFieldGet(this, _AngleRotation2_angle, "f"), this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+_AngleRotation2_angle = new WeakMap();
+
+class PolarPosition2 extends APosition2 {
+    constructor(radius = 0, angle = 0) {
+        super();
+        this.polar = new Polar();
+        this.polar.r = radius;
+        this.polar.a = angle;
+    }
+    get r() {
+        return this.polar.r;
+    }
+    set r(value) {
+        this.polar.r = value;
+        this.update();
+    }
+    get a() {
+        return this.polar[1];
+    }
+    set a(value) {
+        this.polar[1] = value;
+        this.update();
+    }
+    set(r, a) {
+        this.polar.a = a;
+        this.polar.r = r;
+        return this;
+    }
+    update() {
+        this.data[6] = this.polar.x();
+        this.data[7] = this.polar.y();
         this.dirty = true;
         return this;
     }
@@ -7325,7 +7416,7 @@ class Anchor3 extends Matrix4Component {
     }
     set x(value) {
         this.vec3[0] = value;
-        this.data[12] = value;
+        this.data[12] = -value;
         this.dirty = true;
     }
     get y() {
@@ -7333,7 +7424,7 @@ class Anchor3 extends Matrix4Component {
     }
     set y(value) {
         this.vec3[1] = value;
-        this.data[13] = value;
+        this.data[13] = -value;
         this.dirty = true;
     }
     get z() {
@@ -7341,29 +7432,23 @@ class Anchor3 extends Matrix4Component {
     }
     set z(value) {
         this.vec3[2] = value;
-        this.data[14] = value;
+        this.data[14] = -value;
         this.dirty = true;
     }
     set(arr) {
         this.vec3.set(arr);
-        this.data[12] = arr[0];
-        this.data[13] = arr[1];
-        this.data[14] = arr[2];
-        this.dirty = true;
-        return this;
+        return this.update();
     }
     setXYZ(x, y, z) {
         this.vec3[0] = x;
         this.vec3[1] = y;
         this.vec3[2] = z;
-        this.data[12] = x;
-        this.data[13] = y;
-        this.data[14] = z;
-        this.dirty = true;
-        return this;
+        return this.update();
     }
     update() {
-        Matrix4$1.fromTranslation(this.vec3, this.data);
+        this.data[12] = -this.x;
+        this.data[13] = -this.y;
+        this.data[14] = -this.z;
         this.dirty = true;
         return this;
     }
@@ -7697,31 +7782,6 @@ class Renderable extends Component$1 {
                 unique: true
             }];
     }
-}
-
-/******************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
 }
 
 const canvases = []; // 储存多个canvas，可能存在n个图同时画
@@ -8220,7 +8280,7 @@ class Object3$1 extends Entity {
         this.scaling = new Vector2Scale2();
         this.position = new EuclidPosition2();
         this.rotation = new AngleRotation2();
-        this.anchor = new EuclidPosition2();
+        this.anchor = new Anchor2();
         this.modelMatrix = new Matrix3Component(MODEL_2D, Matrix3$1.create(), [{
                 label: MODEL_3D,
                 unique: true
@@ -8245,7 +8305,7 @@ class Object3 extends Entity {
         this.scaling = new Vector3Scale3();
         this.position = new EuclidPosition3();
         this.rotation = new EulerRotation3();
-        this.anchor = new EuclidPosition3();
+        this.anchor = new Anchor3();
         this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4$1.create(), [{
                 label: MODEL_3D,
                 unique: true
@@ -8566,11 +8626,11 @@ var createVerticesBuffer = (device, data) => {
     return buffer;
 };
 
-const DEFAULT_MATERIAL = new Material(`
+const DEFAULT_MATERIAL3 = new Material(`
 struct Uniforms {
 	modelViewProjectionMatrix : mat4x4<f32>
-  };
-  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
+};
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 
 struct VertexOutput {
 	@builtin(position) Position : vec4<f32>
@@ -8600,6 +8660,28 @@ fn mapRange(
 	return vec4<f32>(1., 1., 1., 1.0);
 }
 `);
+new Material(`
+struct Uniforms {
+	modelViewProjectionMatrix : mat3x3<f32>
+};
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	@builtin(position) Position : vec4<f32>
+};
+
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+	var output : VertexOutput;
+	var p: vec3<f32> = uniforms.modelViewProjectionMatrix * position;
+	output.Position = vec4<f32>(p.x, p.y, p.z, 1.);
+
+	return output;
+}
+`, `
+@fragment fn main() -> @location(0) vec4<f32> {
+	return vec4<f32>(1., 1., 1., 1.0);
+}
+`);
 
 class Mesh2Renderer {
     constructor(engine, camera) {
@@ -8612,7 +8694,7 @@ class Mesh2Renderer {
         var _a;
         let cacheData = this.entityCacheData.get(mesh);
         // 假设更换了几何体和材质则重新生成缓存
-        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
         let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
         if (!cacheData || ((_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
             cacheData = this.createCacheData(mesh);
@@ -8632,7 +8714,7 @@ class Mesh2Renderer {
         const mvpExt = cacheData.mvpExt;
         Matrix3$1.multiply(this.camera.projection.data, Matrix3$1.invert(updateModelMatrixComponent$1(this.camera).data), mvp);
         Matrix3$1.multiply(mvp, mesh.worldMatrix.data, mvp);
-        Matrix4$1.fromMatrix3(mvp, mvpExt);
+        fromMatrix3MVP(mvp, mvpExt);
         this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvpExt.buffer, mvpExt.byteOffset, mvpExt.byteLength);
         cacheData.uniformMap.forEach((uniform, key) => {
             if (uniform.type === BUFFER && uniform.dirty) {
@@ -8662,7 +8744,7 @@ class Mesh2Renderer {
         });
         let buffers = [];
         let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
-        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
         let nodes = geometry.data;
         for (let i = 0; i < nodes.length; i++) {
             buffers.push(createVerticesBuffer(device, nodes[i].data));
@@ -8846,6 +8928,25 @@ class Mesh2Renderer {
     }
 }
 Mesh2Renderer.renderTypes = MESH2;
+function fromMatrix3MVP(data, out = new Matrix4$1()) {
+    out[0] = data[0];
+    out[1] = data[1];
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = data[3];
+    out[5] = data[4];
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = data[6];
+    out[13] = data[7];
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+}
 
 const DEG_360_RAD = Math.PI * 2;
 const EPSILON = Math.pow(2, -52);
@@ -9964,6 +10065,25 @@ Matrix4.fromMatrix3 = (data, out = new Matrix4()) => {
     out[15] = 1;
     return out;
 };
+Matrix4.fromMatrix3MVP = (data, out = new Matrix4()) => {
+    out[0] = data[0];
+    out[1] = data[1];
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = data[3];
+    out[5] = data[4];
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[10] = 1;
+    out[11] = 0;
+    out[12] = data[6];
+    out[13] = data[7];
+    out[14] = 0;
+    out[15] = 1;
+    return out;
+};
 Matrix4.fromQuaternion = (q, out = new Matrix4()) => {
     const x = q[0], y = q[1], z = q[2], w = q[3];
     const x2 = x + x;
@@ -10801,7 +10921,7 @@ class Mesh3Renderer {
         var _a;
         let cacheData = this.entityCacheData.get(mesh);
         // 假设更换了几何体和材质则重新生成缓存
-        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
         let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
         if (!cacheData || ((_a = mesh.getFirstComponentByTagLabel(MATERIAL)) === null || _a === void 0 ? void 0 : _a.dirty) || material !== cacheData.material || geometry !== cacheData.geometry) {
             cacheData = this.createCacheData(mesh);
@@ -10849,7 +10969,7 @@ class Mesh3Renderer {
         });
         let buffers = [];
         let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
-        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
         let nodes = geometry.data;
         for (let i = 0; i < nodes.length; i++) {
             buffers.push(createVerticesBuffer(device, nodes[i].data));
@@ -11677,7 +11797,7 @@ var createCamera3 = (projection, name = "camera", world) => {
     return entity;
 };
 
-var createMesh2 = (geometry, material = DEFAULT_MATERIAL, name = MESH2, world) => {
+var createMesh2 = (geometry, material = DEFAULT_MATERIAL3, name = MESH2, world) => {
     const entity = new Object3$1(name);
     entity.addComponent(geometry)
         .addComponent(material)
@@ -11688,7 +11808,7 @@ var createMesh2 = (geometry, material = DEFAULT_MATERIAL, name = MESH2, world) =
     return entity;
 };
 
-var createMesh3 = (geometry, material = DEFAULT_MATERIAL, name = MESH3, world) => {
+var createMesh3 = (geometry, material = DEFAULT_MATERIAL3, name = MESH3, world) => {
     const entity = new Object3(name);
     entity.addComponent(geometry)
         .addComponent(material)
@@ -11707,4 +11827,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, AtlasTexture, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, EngineTexture, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Manager, Material, Mathx_module as Mathx, Matrix3Component, Matrix4Component, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, Projection2D, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector2Scale2, Vector3Scale3, WebGLEngine, WebGPUEngine, Mesh2Renderer as WebGPUMesh2Renderer, Mesh3Renderer as WebGPUMesh3Renderer, RenderSystem as WebGPURenderSystem, World };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, AtlasTexture, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorMaterial, Component, ComponentManager, index$1 as ComponentProxy, DepthMaterial, EngineEvents, EngineTexture, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerRotation3, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Manager, Material, Mathx_module as Mathx, Matrix3Component, Matrix4Component, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PolarPosition2, Projection2D, PureSystem, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, Timeline, Tween, TweenSystem, Vector2Scale2, Vector3Scale3, WebGLEngine, WebGPUEngine, Mesh2Renderer as WebGPUMesh2Renderer, Mesh3Renderer as WebGPUMesh3Renderer, RenderSystem as WebGPURenderSystem, World };

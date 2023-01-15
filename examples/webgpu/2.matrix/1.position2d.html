@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script>
+		const canvas = document.getElementById("gpucanvas");
+		const engine = new Nova.WebGPUEngine(canvas);
+		const world = new Nova.World();
+
+		const geometry = Nova.Geometry2Factory.createTriangle2();
+
+		const mesh = Nova.EntityFactory.createMesh2(geometry);
+
+		engine.once(Nova.EngineEvents.INITED, (e) => {
+			const projection = new Nova.Projection2D(-canvas.width / 200, canvas.width / 200, -canvas.height / 200, canvas.height / 200);
+			const camera = new Nova.Camera2("", projection);
+			let renderSystem = new Nova.WebGPURenderSystem(engine);
+			let renderer = new Nova.WebGPUMesh2Renderer(engine, camera);
+			renderSystem.addRenderer(renderer);
+			world.addSystem(renderSystem).add(mesh);
+
+			createGUI();
+		});
+
+		engine.addTask(() => {
+			world.run();
+		});
+
+		function createGUI() {
+			const gui = new dat.GUI();
+
+			gui.add(mesh.position, "x", -5, 5).step(0.1);
+			gui.add(mesh.position, "y", -5, 5).step(0.1);
+		}
+	</script>
+</body>

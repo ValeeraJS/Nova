@@ -1,5 +1,5 @@
 import Component from "@valeera/x/src/Component";
-import { Matrix3 } from "@valeera/mathx";
+import { Matrix3, Matrix4 } from "@valeera/mathx";
 import { ComponentTag } from "@valeera/x/src/interfaces/IComponent";
 import { IObject3 } from "../../entities/Object3";
 
@@ -30,7 +30,6 @@ export const updateModelMatrixComponent = (mesh: IObject3) => {
 		if (a3) {
 			Matrix3.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
 		}
-
 		if (p3) {
 			p3.dirty = false;
 		}
@@ -51,6 +50,5 @@ export const updateModelMatrixComponent = (mesh: IObject3) => {
 	} else {
 		Matrix3.fromArray(m3.data, worldMatrix.data);
 	}
-
 	return m3;
 }

@@ -10,7 +10,7 @@ import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
 import { ICamera3 } from "../../entities/Camera3";
 import Object3 from "../../entities/Object3";
-import { DEFAULT_MATERIAL } from "../../components/material/defaultMaterial";
+import { DEFAULT_MATERIAL3 } from "../../components/material/defaultMaterial";
 
 interface ICacheData {
 	mvp: Float32Array;
@@ -37,7 +37,7 @@ export default class Mesh3Renderer implements IRenderer {
 	render(mesh: Object3, passEncoder: GPURenderPassEncoder): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
-		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 
 		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
@@ -108,7 +108,7 @@ export default class Mesh3Renderer implements IRenderer {
 		});
 		let buffers = [];
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry;
-		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL;
+		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL3;
 		let nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
 			buffers.push(createVerticesBuffer(device, nodes[i].data));

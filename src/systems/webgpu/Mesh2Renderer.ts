@@ -9,7 +9,7 @@ import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
 import { ICamera2 } from "../../entities/Camera2";
 import Object2 from "../../entities/Object2";
-import { DEFAULT_MATERIAL } from "../../components/material/defaultMaterial";
+import { DEFAULT_MATERIAL3 } from "../../components/material/defaultMaterial";
 import { Matrix3, Matrix4 } from "@valeera/mathx";
 
 interface ICacheData {
@@ -38,7 +38,7 @@ export default class Mesh2Renderer implements IRenderer {
 	render(mesh: Object2, passEncoder: GPURenderPassEncoder): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
-		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL;
+		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 
 		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
@@ -61,7 +61,7 @@ export default class Mesh2Renderer implements IRenderer {
 		Matrix3.multiply(this.camera.projection.data,
 			(Matrix3.invert(updateModelMatrixComponent(this.camera).data) as Float32Array), mvp);
 		Matrix3.multiply(mvp, mesh.worldMatrix.data, mvp);
-		Matrix4.fromMatrix3(mvp, mvpExt);
+		fromMatrix3MVP(mvp, mvpExt);
 
 		this.engine.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
@@ -111,7 +111,7 @@ export default class Mesh2Renderer implements IRenderer {
 		});
 		let buffers = [];
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry;
-		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL;
+		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL3;
 		let nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
 			buffers.push(createVerticesBuffer(device, nodes[i].data));
@@ -187,7 +187,7 @@ export default class Mesh2Renderer implements IRenderer {
 			bindGroupLayouts: [this.createBindGroupLayout(material)],
 		});
 		let vertexBuffers: GPUVertexBufferLayout[] = this.parseGeometryBufferLayout(geometry);
-		
+
 		let stages = this.createStages(material, vertexBuffers);
 
 		let pipeline = this.engine.device.createRenderPipeline({
@@ -299,7 +299,7 @@ export default class Mesh2Renderer implements IRenderer {
 				}
 			]
 		};
-		
+
 		material.dirty = false;
 		return {
 			vertex,
@@ -307,3 +307,30 @@ export default class Mesh2Renderer implements IRenderer {
 		};
 	}
 }
+
+function fromMatrix3MVP(
+	data: Float32Array | number[] | Matrix3,
+	out = new Matrix4()
+): Matrix4 {
+	out[0] = data[0];
+	out[1] = data[1];
+	out[2] = 0;
+	out[3] = 0;
+
+	out[4] = data[3];
+	out[5] = data[4];
+	out[6] = 0;
+	out[7] = 0;
+
+	out[8] = 0;
+	out[9] = 0;
+	out[10] = 1;
+	out[11] = 0;
+
+	out[12] = data[6];
+	out[13] = data[7];
+	out[14] = 0;
+	out[15] = 1;
+
+	return out;
+};

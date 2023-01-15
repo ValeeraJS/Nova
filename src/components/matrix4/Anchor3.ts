@@ -19,7 +19,7 @@ export default class Anchor3 extends Matrix4Component {
 
 	set x(value: number) {
 		this.vec3[0] = value;
-		this.data[12] = value;
+		this.data[12] = -value;
 		this.dirty = true;
 	}
 
@@ -29,7 +29,7 @@ export default class Anchor3 extends Matrix4Component {
 
 	set y(value: number) {
 		this.vec3[1] = value;
-		this.data[13] = value;
+		this.data[13] = -value;
 		this.dirty = true;
 	}
 
@@ -39,18 +39,14 @@ export default class Anchor3 extends Matrix4Component {
 
 	set z(value: number) {
 		this.vec3[2] = value;
-		this.data[14] = value;
+		this.data[14] = -value;
 		this.dirty = true;
 	}
 
 	set(arr: Float32Array | number[]) {
 		this.vec3.set(arr);
 
-        this.data[12] = arr[0];
-        this.data[13] = arr[1];
-        this.data[14] = arr[2];
-        this.dirty = true;
-		return this;
+		return this.update();
 	}
 
 	setXYZ(x: number, y: number, z: number) {
@@ -58,17 +54,13 @@ export default class Anchor3 extends Matrix4Component {
 		this.vec3[1] = y;
 		this.vec3[2] = z;
 
-
-		this.data[12] = x;
-		this.data[13] = y;
-		this.data[14] = z;
-		this.dirty = true;
-
-		return this;
+		return this.update();
 	}
 
 	update() {
-		Matrix4.fromTranslation(this.vec3, this.data);
+		this.data[12] = -this.x;
+		this.data[13] = -this.y;
+		this.data[14] = -this.z;
 		this.dirty = true;
 
 		return this;
