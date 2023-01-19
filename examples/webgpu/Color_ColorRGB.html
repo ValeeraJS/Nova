@@ -10,6 +10,7 @@
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Nova.WebGPUEngine(canvas);
+		engine.clearColor = new Nova.Mathx.ColorRGB();
 		const world = new Nova.World();
 
 		engine.once(Nova.EngineEvents.INITED, (e) => {
@@ -30,10 +31,9 @@
 				engine.clearColor = engine.clearColor;
 			}
 			
-			f.add(engine.clearColor, "r", 0, 1).step(0.01).onChange(updateColor);
-			f.add(engine.clearColor, "g", 0, 1).step(0.01).onChange(updateColor);
-			f.add(engine.clearColor, "b", 0, 1).step(0.01).onChange(updateColor);
-			f.add(engine.clearColor, "a", 0, 1).step(0.01).onChange(updateColor);
+			f.add(engine.clearColor, "r", 0, 255).step(1).onChange(updateColor);
+			f.add(engine.clearColor, "g", 0, 255).step(1).onChange(updateColor);
+			f.add(engine.clearColor, "b", 0, 255).step(1).onChange(updateColor);
 		}
 	</script>
 </body>
