@@ -711,7 +711,7 @@
 
 	let max = 0, min = 0;
 	let h = 0, s$4 = 0, l = 0;
-	class ColorHSL extends Uint8Array {
+	class ColorHSL extends Float32Array {
 	    dataType = ArraybufferDataType$1.COLOR_HSL;
 	    static fromRGBUnsignedNormal(r, g, b, out = new ColorHSL()) {
 	        max = Math.max(r, g, b);

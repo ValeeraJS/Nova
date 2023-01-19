@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-	<link rel="stylesheet" href="./../../style/common.css" />
+	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
 	<canvas id="gpucanvas"></canvas>
 	<canvas id="gpucanvas2"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
-	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const canvas2 = document.getElementById("gpucanvas2");
@@ -21,7 +21,7 @@
 		});
 
 		function createWorld(engine, clearColor) {
-			engine.setClearColor(clearColor);
+			engine.clearColor = clearColor;
 			const world = new Nova.World();
 			const geo = Nova.Geometry3Factory.createTriangle3();
 			const mesh = Nova.EntityFactory.createMesh3(geo);

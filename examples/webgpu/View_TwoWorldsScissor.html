@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-	<link rel="stylesheet" href="./../../style/common.css" />
+	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
 	<canvas id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
-	<script type="text/javascript" src="./../../../build/Nova.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const engine = new Nova.WebGPUEngine(canvas);
@@ -45,8 +45,8 @@
 				{
 					x: 0,
 					y: 0,
-					width: engine.canvas.width / 2,
-					height: engine.canvas.height
+					width: 0.5,
+					height: 1
 				},
 				new Nova.TextureMaterial(
 					new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
@@ -55,10 +55,10 @@
 			createWorld(
 				engine,
 				{
-					x: engine.canvas.width / 2,
+					x: 0.5,
 					y: 0,
-					width: engine.canvas.width / 2,
-					height: engine.canvas.height
+					width: 0.5,
+					height: 1
 				},
 				new Nova.NormalMaterial()
 			);
