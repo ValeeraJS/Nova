@@ -4,7 +4,6 @@ import { ComponentTag } from "@valeera/x/src/interfaces/IComponent";
 import { IObject3 } from "../../entities/Object3";
 
 export default class Matrix4Component extends Component<Float32Array> {
-    data!: Float32Array;
     constructor(name: string, data = Matrix4.create(), tags: ComponentTag[] = []) {
         super(name, data, tags);
         this.dirty = true;
