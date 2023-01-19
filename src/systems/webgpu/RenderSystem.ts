@@ -61,8 +61,8 @@ export default class RenderSystem extends System {
 		this.viewport = viewport || {
 			x: 0,
 			y: 0,
-			width: this.engine.canvas.width,
-			height: this.engine.canvas.height,
+			width: 1,
+			height: 1,
 			minDepth: 0,
 			maxDepth: 1
 		};
@@ -73,18 +73,20 @@ export default class RenderSystem extends System {
 		this.scissor = scissor || {
 			x: 0,
 			y: 0,
-			width: this.engine.canvas.width,
-			height: this.engine.canvas.height
+			width: 1,
+			height: 1
 		};
 		return this;
 	}
 
 	run(world: IWorld) {
-		let passEncoder = this.engine.renderPassEncoder;
+		const w = this.engine.canvas.width;
+		const h = this.engine.canvas.height;
+		const passEncoder = this.engine.renderPassEncoder;
 		passEncoder.setViewport(
-			this.viewport.x, this.viewport.y, this.viewport.width, this.viewport.height, this.viewport.minDepth, this.viewport.maxDepth);
+			this.viewport.x * w, this.viewport.y * h, this.viewport.width * w, this.viewport.height * h, this.viewport.minDepth, this.viewport.maxDepth);
 		passEncoder.setScissorRect(
-			this.scissor.x, this.scissor.y, this.scissor.width, this.scissor.height);
+			this.scissor.x * w, this.scissor.y * h, this.scissor.width * w, this.scissor.height * h);
 		world.store.set("passEncoder", passEncoder);
 		super.run(world);
 		return this;

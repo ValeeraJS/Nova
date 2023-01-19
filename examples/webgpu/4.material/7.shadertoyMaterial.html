@@ -20,25 +20,21 @@
 		@binding(2) @group(0) var iChannel0: texture_2d<f32>;
 		@binding(3) @group(0) var<uniform> uniforms: Uniforms;
 
-		fn mod(a: f32, b: f32) -> f32 {
-			return a - b * floor(a / b);
-		}
-
-		let numSamples: i32 = 6;
-		let C: vec2<f32> = vec2<f32>(0.5, 0.5);
-		let TwoPi: f32 = 6.2831;
+		const numSamples: i32 = 6;
+		const C: vec2<f32> = vec2<f32>(0.5, 0.5);
+		const TwoPi: f32 = 6.2831;
 
 		fn line(uv: vec2<f32>, p1: vec2<f32>, p2: vec2<f32>, w: f32, f: f32) -> f32 {
-			let dif: vec2<f32> = p2 - p1;
+			var dif: vec2<f32> = p2 - p1;
 			return 1.0 - clamp((distance((uv-p1) - clamp(dot(uv - p1, dif) / dot(dif, dif), 0.0, 1.0) * dif, vec2<f32>(0.0, 0.0)) - w) / f, 0.0, 1.0);
 		}
 
 		fn orbit(rot: f32, dist: f32) -> vec2<f32> {
-			let v: f32 = -rot - 0.5;
+			var v: f32 = -rot - 0.5;
 			return vec2<f32>(sin(v * TwoPi), cos(v * TwoPi)) * dist;
 		}
 
-		@stage(fragment) fn main(@location(0) uv2: vec2<f32>) -> @location(0) vec4<f32> {
+		@fragment fn main(@location(0) uv2: vec2<f32>) -> @location(0) vec4<f32> {
 			var clock: vec4<f32> = vec4<f32>(0.0);
 			var ar: f32 = uniforms.iResolution.x / uniforms.iResolution.y;
 			var v: f32 = ar - 1.0;

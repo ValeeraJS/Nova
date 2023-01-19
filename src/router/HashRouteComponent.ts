@@ -6,14 +6,18 @@ type RouteComponentData = {
     action: (entity: IEntity, matching: boolean) => any
 }
 
+function fixData(data: RouteComponentData) {
+    if (!data.path.startsWith("/")) {
+        data.path = "/" + data.path;
+    }
+    return data;
+}
+
 export default class HashRouteComponent extends TreeNode.mixin(Component)<RouteComponentData> {
-    children: HashRouteComponent[];
+    children: HashRouteComponent[] = [];
     
     public constructor(name, data: RouteComponentData) {
-        if (!data.path.startsWith("/")) {
-            data.path = "/" + data.path;
-        }
-        super(name, data, [{
+        super(name, fixData(data), [{
             label: "HashRoute",
             unique: false
         }]);

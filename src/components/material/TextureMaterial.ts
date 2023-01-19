@@ -2,7 +2,7 @@ import { SAMPLER, TEXTURE_IMAGE } from "../constants";
 import EngineTexture from "../texture/EngineTexture";
 import Sampler from "../texture/Sampler";
 import Texture from "../texture/Texture";
-import IMaterial, { IShaderCode } from "./IMatrial";
+import IMaterial from "./IMatrial";
 import Material from "./Material";
 
 const wgslShaders = {
@@ -35,7 +35,6 @@ const wgslShaders = {
 };
 
 export default class TextureMaterial extends Material implements IMaterial {
-	public data!: IShaderCode;
 	public constructor(texture: Texture | EngineTexture, sampler: Sampler = new Sampler()) {
 		super(wgslShaders.vertex, wgslShaders.fragment, [
 			{
