@@ -1,12 +1,12 @@
 import { BUFFER, SAMPLER, TEXTURE_IMAGE } from "../constants";
 import ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
-import IMaterial, { IShaderCode } from "./IMatrial";
+import IMaterial from "./IMatrial";
 import Material from "./Material";
 
 const CommonData = {
-    date: new Date(),
-    vs: `struct Uniforms {
+	date: new Date(),
+	vs: `struct Uniforms {
         matrix: mat4x4<f32>
     }
     @binding(0) @group(0) var<uniform> uniforms: Uniforms;
@@ -26,25 +26,24 @@ const CommonData = {
 }
 
 export default class ShadertoyMaterial extends Material implements IMaterial {
-    data!: IShaderCode;
 	private dataD: Date;
 
-    public constructor(fs: string, texture: ImageBitmapTexture, sampler: Sampler = new Sampler()) {
-        super( CommonData.vs, fs, [
-            {
-                name: "iSampler0",
-                type: SAMPLER,
-                value: sampler,
-                binding: 1,
-                dirty: true,
-            },
-            { 
-                name: "iChannel0",
-                type: TEXTURE_IMAGE,
+	public constructor(fs: string, texture: ImageBitmapTexture, sampler: Sampler = new Sampler()) {
+		super(CommonData.vs, fs, [
+			{
+				name: "iSampler0",
+				type: SAMPLER,
+				value: sampler,
+				binding: 1,
+				dirty: true,
+			},
+			{
+				name: "iChannel0",
+				type: TEXTURE_IMAGE,
 				value: texture,
 				binding: 2,
 				dirty: true,
-            },
+			},
 			{
 				name: "uniforms",
 				type: BUFFER,
@@ -56,14 +55,17 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 					1024, 1024, // iResolution 4-5
 					0, 0, // iMouse 6-7,
 					0, // iTime 8
+					0, // 9
+					0, // 10
+					0, // 11
 				]),
 				binding: 3,
 				dirty: true,
 			}
-        ]);
+		]);
 		this.dataD = CommonData.date;
 		this.dirty = true;
-    }
+	}
 
 	public get sampler(): Sampler {
 		return this.data.uniforms[0].value as Sampler;
