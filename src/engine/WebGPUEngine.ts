@@ -1,12 +1,11 @@
 import EventFire from "@valeera/eventdispatcher";
 import Timeline from "@valeera/timeline";
 import { ColorGPU, IColorGPU, IColorRGB, IColorRGBA, IColorRGBAJson, IColorRGBJson } from "@valeera/mathx";
-import getColorGPU from "../utils/getColorGPU";
+import getColorGPU, { ColorFormatType } from "../utils/getColorGPU";
 import IEngine, { DEFAULT_ENGINE_OPTIONS, EngineEvents, EngineOptions } from "./IEngine";
 
 export default class WebGPUEngine extends EventFire.mixin(Timeline) implements IEngine {
 	public options: Required<EngineOptions>;
-	public clearColor: ColorGPU = new ColorGPU(0, 0, 0, 1);
 	public swapChainTexture: GPUTexture;
 	public targetTexture: GPUTexture;
 	public renderPassEncoder: GPURenderPassEncoder;
@@ -45,6 +44,17 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 	public currentCommandEncoder: GPUCommandEncoder;
 
 	private renderPassDescriptor: GPURenderPassDescriptor;
+	#clearColorGPU = new ColorGPU(0, 0, 0, 1);
+	#clearColor: ColorFormatType = new ColorGPU(0, 0, 0, 1);
+
+	get clearColor(): ColorFormatType {
+		return this.#clearColor;
+	}
+
+	set clearColor(value: ColorFormatType) {
+		this.#clearColor = value;
+		getColorGPU(value, this.#clearColorGPU);
+	}
 
 	public constructor(canvas: HTMLCanvasElement = document.createElement("canvas"), options: EngineOptions = {}) {
 		super();
@@ -90,11 +100,6 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 		return this;
 	}
 
-	public setClearColor(color: IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson): this {
-		getColorGPU(color, this.clearColor);
-		return this;
-	}
-
 	protected update(time: number, delta: number): this {
 		this.loopStart();
 		super.update(time, delta);
@@ -122,7 +127,7 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 				{
 					view: null,
 					loadOp: "clear",
-					clearValue: this.clearColor,
+					clearValue: this.#clearColorGPU,
 					storeOp: "store"
 				}
 			]
