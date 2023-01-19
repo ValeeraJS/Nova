@@ -87,6 +87,18 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 		this.canvas.style.height = height + 'px';
 		this.canvas.width = width * resolution;
 		this.canvas.height = height * resolution;
+		if (this.device) {
+			this.setRenderPassDescripter();
+
+			if (this.targetTexture) {
+				this.targetTexture.destroy();
+			}
+			this.targetTexture = this.device.createTexture({
+				size: [this.canvas.width, this.canvas.height],
+				format: this.preferredFormat,
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+			});
+		}
 		return this;
 	}
 
@@ -116,7 +128,12 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 		this.device.queue.submit([this.currentCommandEncoder.finish()]);
 	}
 
+	#depthTexture: GPUTexture | undefined;
+
 	private setRenderPassDescripter() {
+		if (this.#depthTexture) {
+			this.#depthTexture.destroy();
+		}
 		let renderPassDescriptor: GPURenderPassDescriptor = {
 			colorAttachments: [
 				{
@@ -128,13 +145,13 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 			]
 		}
 		if (!this.options.noDepthTexture) {
-			let depthTexture = this.device.createTexture({
+			this.#depthTexture = this.device.createTexture({
 				size: { width: this.canvas.width, height: this.canvas.height, depthOrArrayLayers: 1 },
 				format: "depth24plus",
 				usage: GPUTextureUsage.RENDER_ATTACHMENT
 			});
 			renderPassDescriptor.depthStencilAttachment = {
-				view: depthTexture.createView(),
+				view: this.#depthTexture.createView(),
 				depthClearValue: 1.0,
 				depthLoadOp: "clear",
 				depthStoreOp: "store"
