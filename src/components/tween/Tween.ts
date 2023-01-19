@@ -22,7 +22,6 @@ export default class Tween extends Component<Map<string, InterpolationType>> {
 	public loop: number;
 	public state: TWEEN_STATE;
 	public time: number;
-	public data!: Map<string, InterpolationType>;
 	private oldLoop: number;
 
 	constructor(from: any, to: any, duration: number = 1000, loop = 0) {
