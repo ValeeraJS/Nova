@@ -2,7 +2,6 @@ import Component from "@valeera/x/src/Component";
 import WebGPUEngine from "../../engine/WebGPUEngine";
 
 export default class EngineTexture extends Component<GPUTexture> {
-	dirty: boolean;
 	width: number;
 	height: number;
 
