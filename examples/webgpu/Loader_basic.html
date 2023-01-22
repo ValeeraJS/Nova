@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+<body>
+	<canvas id="gpucanvas"></canvas>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script>
+		const resources = [
+			{
+				type: "texture",
+				name: "aaa",
+				onLoad: () => {
+					console.log("AAA loaded");
+				},
+				onProgress: (p, t) => {
+					console.log("AAA loading:", p, t);
+				},
+				onLoadError: console.log,
+				onParseError: console.log,
+				loadParts: [
+					{
+						url: "./../textures/test.png",
+						type: "blob",
+						onLoad: () => {
+							console.log("AAA part loaded");
+						},
+						onProgress: (p, t, d) => {
+							console.log("AAA part loading", p, t, d);
+						},
+						onLoadError: console.log
+					},
+					{
+						url: "./../textures/test.jpg",
+						type: "arrayBuffer",
+						onLoad: () => {
+							console.log("AAA part2 loaded");
+						},
+						onProgress: (p, t, d) => {
+							console.log("AAA part2 loading", p, t, d);
+						},
+						onLoadError: console.log
+					}
+				]
+			}
+		];
+
+		const loader = new Nova.Loader();
+		loader.load(resources);
+		loader.load(resources);
+		loader.load(resources);
+	</script>
+</body>

@@ -10,7 +10,7 @@ export default {
 			format: "umd",
 			indent: "\t",
 			name: "Nova",
-			sourcemap: true
+			sourcemap: false
 		},
 		{
 			file: "build/Nova.module.js",

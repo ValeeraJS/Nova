@@ -102,9 +102,9 @@
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$2 = (Base = Object, eventKeyList = []) => {
+	const mixin$3 = (Base = Object, eventKeyList = []) => {
 	    return class EventFirer extends Base {
-	        static mixin = mixin$2;
+	        static mixin = mixin$3;
 	        eventKeyList = eventKeyList;
 	        /**
 	         * store all the filters
@@ -211,7 +211,7 @@
 	        }
 	    };
 	};
-	var EventDispatcher = mixin$2(Object);
+	var EventDispatcher$1 = mixin$3(Object);
 
 	const S4 = () => {
 	    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -6096,9 +6096,9 @@
 	    }
 	};
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$1 = (Base = Object) => {
+	const mixin$2 = (Base = Object) => {
 	    return class TreeNode extends Base {
-	        static mixin = mixin$1;
+	        static mixin = mixin$2;
 	        static addChild(node, child) {
 	            if (TreeNode.hasAncestor(node, child)) {
 	                throw new Error("The node added is one of the ancestors of current one.");
@@ -6196,7 +6196,7 @@
 	        }
 	    };
 	};
-	var TreeNode$1 = mixin$1(Object);
+	var TreeNode$1 = mixin$2(Object);
 
 	const IdGeneratorInstance = new IdGenerator();
 
@@ -6348,7 +6348,7 @@
 	    ADD: "add",
 	    REMOVE: "remove"
 	};
-	class Manager extends EventDispatcher {
+	class Manager extends EventDispatcher$1 {
 	    static Events = ElementChangeEvent;
 	    elements = new Map();
 	    disabled = false;
@@ -6485,7 +6485,7 @@
 	    }
 	}
 
-	const TreeNodeWithEvent = mixin$2(TreeNode$1);
+	const TreeNodeWithEvent = mixin$3(TreeNode$1);
 
 	let arr$1;
 	class Entity extends TreeNodeWithEvent {
@@ -8355,7 +8355,7 @@ struct VertexOutput {
 	    renderToTarget: false
 	};
 
-	class WebGPUEngine extends EventDispatcher.mixin(Timeline) {
+	class WebGPUEngine extends EventDispatcher$1.mixin(Timeline) {
 	    options;
 	    swapChainTexture;
 	    targetTexture;
@@ -8495,7 +8495,7 @@ struct VertexOutput {
 	    }
 	}
 
-	class WebGLEngine extends EventDispatcher {
+	class WebGLEngine extends EventDispatcher$1 {
 	    static async detect(canvas = document.createElement("canvas")) {
 	        const context = canvas.getContext("webgl");
 	        if (!context) {
@@ -8586,6 +8586,316 @@ struct VertexOutput {
 	        super(name);
 	        this.projection = projection;
 	    }
+	}
+
+	exports.LoadType = void 0;
+	(function (LoadType) {
+	    LoadType["JSON"] = "json";
+	    LoadType["BLOB"] = "blob";
+	    LoadType["TEXT"] = "text";
+	    LoadType["ARRAY_BUFFER"] = "arrayBuffer";
+	})(exports.LoadType || (exports.LoadType = {}));
+
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin$1 = (Base = Object, eventKeyList = []) => {
+	    return class EventFirer extends Base {
+	        static mixin = mixin$1;
+	        #isFire = false;
+	        #fireIndex = -1;
+	        #offCount = new Map();
+	        eventKeyList = eventKeyList;
+	        filters = [];
+	        listeners = new Map();
+	        all(listener) {
+	            return this.filt(() => true, listener);
+	        }
+	        clearListenersByKey(eventKey) {
+	            this.listeners.delete(eventKey);
+	            return this;
+	        }
+	        clearAllListeners() {
+	            const keys = this.listeners.keys();
+	            for (const key of keys) {
+	                this.listeners.delete(key);
+	            }
+	            return this;
+	        }
+	        filt(rule, listener) {
+	            this.filters.push({
+	                listener,
+	                rule
+	            });
+	            return this;
+	        }
+	        fire(eventKey, target) {
+	            if (eventKey instanceof Array) {
+	                for (let i = 0, len = eventKey.length; i < len; i++) {
+	                    this.fire(eventKey[i], target);
+	                }
+	                return this;
+	            }
+	            this.#isFire = true;
+	            if (!this.checkEventKeyAvailable(eventKey)) {
+	                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
+	                return this;
+	            }
+	            const array = this.listeners.get(eventKey) || [];
+	            // let len = array.length;
+	            let item;
+	            for (let i = 0; i < array.length; i++) {
+	                this.#fireIndex = i;
+	                item = array[i];
+	                item.listener(target);
+	                item.times--;
+	                if (item.times <= 0) {
+	                    array.splice(i--, 1);
+	                }
+	                const count = this.#offCount.get(eventKey);
+	                if (count) {
+	                    // 如果在当前事件触发时，监听器依次触发，已触发的被移除
+	                    i -= count;
+	                    this.#offCount.clear();
+	                }
+	            }
+	            this.checkFilt(eventKey, target);
+	            this.#fireIndex = -1;
+	            this.#offCount.clear();
+	            this.#isFire = false;
+	            return this;
+	        }
+	        off(eventKey, listener) {
+	            const array = this.listeners.get(eventKey);
+	            if (!array) {
+	                return this;
+	            }
+	            const len = array.length;
+	            for (let i = 0; i < len; i++) {
+	                if (array[i].listener === listener) {
+	                    array.splice(i, 1);
+	                    if (this.#isFire && this.#fireIndex >= i) {
+	                        const v = this.#offCount.get(eventKey) ?? 0;
+	                        this.#offCount.set(eventKey, v + 1);
+	                    }
+	                    break;
+	                }
+	            }
+	            return this;
+	        }
+	        on(eventKey, listener) {
+	            if (eventKey instanceof Array) {
+	                for (let i = 0, j = eventKey.length; i < j; i++) {
+	                    this.times(eventKey[i], Infinity, listener);
+	                }
+	                return this;
+	            }
+	            return this.times(eventKey, Infinity, listener);
+	        }
+	        once(eventKey, listener) {
+	            return this.times(eventKey, 1, listener);
+	        }
+	        times(eventKey, times, listener) {
+	            if (!this.checkEventKeyAvailable(eventKey)) {
+	                console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
+	                return this;
+	            }
+	            const array = this.listeners.get(eventKey) || [];
+	            if (!this.listeners.has(eventKey)) {
+	                this.listeners.set(eventKey, array);
+	            }
+	            array.push({
+	                listener,
+	                times
+	            });
+	            return this;
+	        }
+	        checkFilt(eventKey, target) {
+	            for (const item of this.filters) {
+	                if (item.rule(eventKey, target)) {
+	                    item.listener(target, eventKey);
+	                }
+	            }
+	            return this;
+	        }
+	        checkEventKeyAvailable(eventKey) {
+	            if (this.eventKeyList.length) {
+	                return this.eventKeyList.includes(eventKey);
+	            }
+	            return true;
+	        }
+	    };
+	};
+	var EventDispatcher = mixin$1(Object);
+
+	class Loader extends EventDispatcher {
+	    static WILL_LOAD = "willLoad";
+	    static LOADING = "loading";
+	    static LOADED = "loaded";
+	    resourcesMap = new Map();
+	    loadItems = {
+	        [exports.LoadType.TEXT]: new Map(),
+	        [exports.LoadType.JSON]: new Map(),
+	        [exports.LoadType.ARRAY_BUFFER]: new Map(),
+	        [exports.LoadType.BLOB]: new Map(),
+	    };
+	    parsers = new Map();
+	    #toLoadStack = [];
+	    #loadingTasks = new Set();
+	    maxTasks = 5;
+	    #loadTagsMap = new Map();
+	    getResource(name, type) {
+	        const map = this.resourcesMap.get(type);
+	        if (!map) {
+	            return null;
+	        }
+	        return map.get(name);
+	    }
+	    load = (arr) => {
+	        for (let item of arr) {
+	            let check = this.getResource(item.name, item.type);
+	            if (check) {
+	                // 重复资源不加载
+	                continue;
+	            }
+	            check = this.#loadTagsMap.get(item);
+	            if (check) {
+	                // 防止一个资源连续执行多次加载
+	                return;
+	            }
+	            if (item.loadParts.length) {
+	                for (let part of item.loadParts) {
+	                    this.#toLoadStack.push({
+	                        part,
+	                        belongsTo: item
+	                    });
+	                }
+	                this.#loadTagsMap.set(item, item.loadParts.length);
+	            }
+	        }
+	        const toLoadLength = this.#toLoadStack.length;
+	        this.fire(Loader.WILL_LOAD, this);
+	        for (let i = 0; i < toLoadLength && i < this.maxTasks; i++) {
+	            const part = this.#toLoadStack.pop();
+	            let promise = this.#loadPart(part);
+	            promise.finally(() => {
+	                this.#loadingTasks.delete(promise);
+	                if (this.#toLoadStack.length) {
+	                    this.#loadPart(this.#toLoadStack.pop());
+	                }
+	                else {
+	                    this.fire(Loader.LOADED, this);
+	                }
+	            });
+	            this.#loadingTasks.add(promise);
+	        }
+	    };
+	    getUrlLoaded(url, type) {
+	        if (type) {
+	            return this.loadItems[type].get(url);
+	        }
+	        let result = this.loadItems[exports.LoadType.TEXT].get(url);
+	        if (result) {
+	            return result;
+	        }
+	        result = this.loadItems[exports.LoadType.BLOB].get(url);
+	        if (result) {
+	            return result;
+	        }
+	        result = this.loadItems[exports.LoadType.ARRAY_BUFFER].get(url);
+	        if (result) {
+	            return result;
+	        }
+	        result = this.loadItems[exports.LoadType.JSON].get(url);
+	        if (result) {
+	            return result;
+	        }
+	        return null;
+	    }
+	    #loadPart = (partRecord) => {
+	        const part = partRecord.part;
+	        const len = partRecord.belongsTo.loadParts.length;
+	        let process = 0;
+	        const assets = this.getUrlLoaded(part.url, part.type);
+	        if (assets) {
+	            return new Promise((resolve) => {
+	                part.onLoad?.(assets);
+	                resolve(assets);
+	            });
+	        }
+	        return fetch(part.url).then((response) => {
+	            const { body, headers } = response;
+	            let size = parseInt(headers.get('content-length'), 10) || 0;
+	            let currentSize = 0;
+	            let stream;
+	            const reader = body.getReader();
+	            stream = new ReadableStream({
+	                start: (controller) => {
+	                    const push = (reader) => {
+	                        reader.read().then((res) => {
+	                            let currentReadData = res;
+	                            let { done, value } = res;
+	                            if (done) {
+	                                controller.close();
+	                                return;
+	                            }
+	                            else {
+	                                if (!currentReadData || !currentReadData.value) {
+	                                    process = 0;
+	                                }
+	                                else {
+	                                    const arr = currentReadData.value;
+	                                    process = arr.length * arr.constructor.BYTES_PER_ELEMENT;
+	                                }
+	                                currentSize += process;
+	                                part.onProgress?.(currentSize, size, process);
+	                                controller.enqueue(value);
+	                            }
+	                            push(reader);
+	                        }).catch((e) => {
+	                            part.onLoadError?.(e);
+	                        });
+	                    };
+	                    push(reader);
+	                },
+	                cancel: () => {
+	                    part.onCancel?.();
+	                }
+	            });
+	            return new Response(stream, { headers });
+	        }).then((response) => {
+	            if (part.type === exports.LoadType.JSON) {
+	                return response.json();
+	            }
+	            if (part.type === exports.LoadType.TEXT) {
+	                return response.text();
+	            }
+	            if (part.type === exports.LoadType.BLOB) {
+	                return response.blob();
+	            }
+	            return response.arrayBuffer();
+	        }).then((data) => {
+	            part.onLoad?.(data);
+	            this.loadItems[part.type ?? exports.LoadType.ARRAY_BUFFER].set(part.url, data);
+	            let count = this.#loadTagsMap.get(partRecord.belongsTo);
+	            partRecord.belongsTo.onProgress?.(len - count + 1, len);
+	            if (count < 2) {
+	                this.#loadTagsMap.delete(partRecord.belongsTo);
+	                partRecord.belongsTo.onLoad?.();
+	                this.#parserResource(partRecord.belongsTo);
+	            }
+	            else {
+	                this.#loadTagsMap.set(partRecord.belongsTo, count - 1);
+	            }
+	            return data;
+	        }).catch((e) => {
+	            part.onLoadError?.(e);
+	        });
+	    };
+	    #parserResource = (resource) => {
+	        let parser = this.parsers.get(resource.type);
+	        if (!parser) {
+	            resource.onParseError?.(new Error('No parser found: ' + resource.type));
+	        }
+	    };
 	}
 
 	let weakMapTmp;
@@ -12130,7 +12440,7 @@ struct VertexOutput {
 	exports.EuclidPosition2 = EuclidPosition2;
 	exports.EuclidPosition3 = EuclidPosition3;
 	exports.EulerRotation3 = EulerRotation3;
-	exports.EventFire = EventDispatcher;
+	exports.EventFire = EventDispatcher$1;
 	exports.Geometry = Geometry;
 	exports.Geometry2Factory = index$2;
 	exports.Geometry3Factory = index$3;
@@ -12138,6 +12448,7 @@ struct VertexOutput {
 	exports.HashRouteSystem = HashRouteSystem;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;
+	exports.Loader = Loader;
 	exports.Manager = Manager;
 	exports.Material = Material;
 	exports.Mathx = Mathx_module;
@@ -12175,4 +12486,3 @@ struct VertexOutput {
 	Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
-//# sourceMappingURL=Nova.js.map
