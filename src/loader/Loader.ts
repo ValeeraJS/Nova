@@ -1,5 +1,5 @@
 import EventFirer from "@valeera/eventfirer";
-import { ILoadItem, ILoadPart, LoadPartType, LoadType } from "./IResourceItem";
+import { ILoadItem, ILoadPart, IParser, LoadPartType, LoadType } from "./IResourceItem";
 
 type ToLoadPartRecord = {
     part: ILoadPart,
@@ -18,14 +18,14 @@ export class Loader extends EventFirer {
         [LoadType.ARRAY_BUFFER]: new Map<string, ArrayBuffer>(),
         [LoadType.BLOB]: new Map<string, Blob>(),
     };
-    public parsers = new Map<string, any>();
+    public parsers = new Map<string, IParser<any>>();
 
     #toLoadStack: ToLoadPartRecord[] = [];
     #loadingTasks: Set<Promise<LoadPartType>> = new Set();
 
     public maxTasks = 5;
 
-    #loadTagsMap = new Map<ILoadItem<any>, number>()
+    #loadTagsMap = new Map<ILoadItem<any>, number>();
 
     getResource(name: string, type: string): any {
         const map = this.resourcesMap.get(type);
@@ -33,6 +33,17 @@ export class Loader extends EventFirer {
             return null;
         }
         return map.get(name);
+    }
+
+    setResource(data: any, type: string, name: string): this {
+        let map = this.resourcesMap.get(type);
+        if (!map) {
+            map = new Map();
+            this.resourcesMap.set(type, map);
+        }
+        map.set(name, data);
+        
+        return this;
     }
 
     load = (arr: ILoadItem<LoadPartType>[]) => {
@@ -191,5 +202,27 @@ export class Loader extends EventFirer {
         if (!parser) {
             resource.onParseError?.(new Error('No parser found: ' + resource.type));
         }
+
+        const data: any = [];
+        for (let part of resource.loadParts) {
+            data.push(this.getUrlLoaded(part.url, part.type));
+        }
+        let result = parser(this, resource, ...data);
+        if (result instanceof Promise) {
+            return result.then((data: any) => {
+                this.setResource(data, resource.type, resource.name);
+                resource.onParse?.(data);
+            });
+        } else {
+            this.setResource(data, resource.type, resource.name);
+            resource.onParse?.(data);
+        }
+
+        return this;
+    }
+
+    registerParser(parser: IParser<any>, type: string) {
+        this.parsers.set(type, parser);
+        return this;
     }
 }

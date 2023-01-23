@@ -8016,6 +8016,7 @@ struct VertexOutput {
 	        super(name, img);
 	        this.width = width;
 	        this.height = height;
+	        this.imageBitmap = img;
 	    }
 	    destroy() {
 	        this.data?.close();
@@ -8749,6 +8750,15 @@ struct VertexOutput {
 	        }
 	        return map.get(name);
 	    }
+	    setResource(data, type, name) {
+	        let map = this.resourcesMap.get(type);
+	        if (!map) {
+	            map = new Map();
+	            this.resourcesMap.set(type, map);
+	        }
+	        map.set(name, data);
+	        return this;
+	    }
 	    load = (arr) => {
 	        for (let item of arr) {
 	            let check = this.getResource(item.name, item.type);
@@ -8895,8 +8905,33 @@ struct VertexOutput {
 	        if (!parser) {
 	            resource.onParseError?.(new Error('No parser found: ' + resource.type));
 	        }
+	        const data = [];
+	        for (let part of resource.loadParts) {
+	            data.push(this.getUrlLoaded(part.url, part.type));
+	        }
+	        let result = parser(this, resource, ...data);
+	        if (result instanceof Promise) {
+	            return result.then((data) => {
+	                this.setResource(data, resource.type, resource.name);
+	                resource.onParse?.(data);
+	            });
+	        }
+	        else {
+	            this.setResource(data, resource.type, resource.name);
+	            resource.onParse?.(data);
+	        }
+	        return this;
 	    };
+	    registerParser(parser, type) {
+	        this.parsers.set(type, parser);
+	        return this;
+	    }
 	}
+
+	const TextureParser = async (loader, resource, blob) => {
+	    const bitmap = await createImageBitmap(blob);
+	    return new Texture(bitmap.width, bitmap.height, bitmap);
+	};
 
 	let weakMapTmp;
 	class System {
@@ -11530,7 +11565,7 @@ struct VertexOutput {
 	                uniform.dirty = false;
 	            }
 	            else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
-	                if (uniform.value.loaded) {
+	                if (uniform.value.loaded !== false) {
 	                    if (uniform.value.data) {
 	                        this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
 	                        uniform.value.dirty = uniform.dirty = false;
@@ -12471,6 +12506,7 @@ struct VertexOutput {
 	exports.SystemManager = SystemManager;
 	exports.Texture = Texture;
 	exports.TextureMaterial = TextureMaterial;
+	exports.TextureParser = TextureParser;
 	exports.Timeline = Timeline;
 	exports.Tween = Tween;
 	exports.TweenSystem = TweenSystem;

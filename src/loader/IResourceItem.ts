@@ -31,4 +31,4 @@ export interface ILoadItem<T> {
     onProgress?: (loaded: number, total: number) => any;
 }
 
-export type IParser<T> = (loader: Loader, resource: ILoadItem<any>, ...args: any[]) => T;
+export type IParser<T> = (loader: Loader, resource: ILoadItem<any>, ...args: any[]) => T | Promise<T>;

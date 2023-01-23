@@ -79,7 +79,7 @@ export default class Mesh3Renderer implements IRenderer {
 				);
 				uniform.dirty = false;
 			} else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
-				if (uniform.value.loaded) {
+				if (uniform.value.loaded !== false) {
 					if (uniform.value.data) {
 						this.engine.device.queue.copyExternalImageToTexture(
 							{ source: uniform.value.data },

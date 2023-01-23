@@ -9,6 +9,7 @@ export default class Texture extends Component<ImageBitmap | undefined | null> {
 		super(name, img);
 		this.width = width;
 		this.height = height;
+		this.imageBitmap = img;
 	}
 
 	public destroy() {
