@@ -1,4 +1,5 @@
-import { ColorGPU, ColorRGBA, IColorGPUJson, IColorRGB, IColorRGBA, ColorHSL } from "@valeera/mathx"
+import { ColorGPU } from "@valeera/mathx"
+import { ColorFormatType } from "../utils/getColorGPU"
 
 export default interface IEngine {
 	context: GPUCanvasContext | WebGLRenderingContext | WebGL2RenderingContext;
@@ -16,7 +17,7 @@ export interface EngineOptions {
 	resolution?: number;
 	autoResize?: boolean;
 	noDepthTexture?: boolean;
-	clearColor?: string | number | ColorGPU | Float32Array | number[] | IColorGPUJson | ColorHSL;
+	clearColor?: ColorFormatType;
 	autoStart?: boolean;
 	renderToSwapChain?: boolean;
 	renderToTarget?: boolean;
