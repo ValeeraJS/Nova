@@ -40,7 +40,7 @@ export default class Mesh3Renderer implements IRenderer {
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 
-		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
+		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
 			cacheData = this.createCacheData(mesh);
 			this.entityCacheData.set(mesh, cacheData);
 		} else {

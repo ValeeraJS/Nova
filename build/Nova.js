@@ -8386,13 +8386,19 @@ struct VertexOutput {
 	    currentCommandEncoder;
 	    renderPassDescriptor;
 	    #clearColorGPU = new ColorGPU(0, 0, 0, 1);
-	    #clearColor = new ColorGPU(0, 0, 0, 1);
 	    get clearColor() {
-	        return this.#clearColor;
+	        return this.options.clearColor;
 	    }
 	    set clearColor(value) {
-	        this.#clearColor = value;
+	        this.options.clearColor = value;
 	        getColorGPU(value, this.#clearColorGPU);
+	    }
+	    get resolution() {
+	        return this.options.resolution;
+	    }
+	    set resolution(v) {
+	        this.options.resolution = v;
+	        this.resize(this.options.width, this.options.height, v);
 	    }
 	    constructor(canvas = document.createElement("canvas"), options = {}) {
 	        super();
