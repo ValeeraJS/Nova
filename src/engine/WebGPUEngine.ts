@@ -1,6 +1,6 @@
 import EventFire from "@valeera/eventdispatcher";
 import Timeline from "@valeera/timeline";
-import { ColorGPU, IColorGPU, IColorRGB, IColorRGBA, IColorRGBAJson, IColorRGBJson } from "@valeera/mathx";
+import { ColorGPU } from "@valeera/mathx";
 import getColorGPU, { ColorFormatType } from "../utils/getColorGPU";
 import IEngine, { DEFAULT_ENGINE_OPTIONS, EngineEvents, EngineOptions } from "./IEngine";
 
@@ -45,15 +45,24 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 
 	private renderPassDescriptor: GPURenderPassDescriptor;
 	#clearColorGPU = new ColorGPU(0, 0, 0, 1);
-	#clearColor: ColorFormatType = new ColorGPU(0, 0, 0, 1);
 
 	get clearColor(): ColorFormatType {
-		return this.#clearColor;
+		return this.options.clearColor;
 	}
 
 	set clearColor(value: ColorFormatType) {
-		this.#clearColor = value;
+		this.options.clearColor = value;
 		getColorGPU(value, this.#clearColorGPU);
+	}
+
+	get resolution(): number {
+		return this.options.resolution;
+	}
+
+	set resolution(v: number) {
+		this.options.resolution = v;
+
+		this.resize(this.options.width, this.options.height, v);
 	}
 
 	public constructor(canvas: HTMLCanvasElement = document.createElement("canvas"), options: EngineOptions = {}) {
