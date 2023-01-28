@@ -1,3 +1,4 @@
+import { Matrix3, Matrix4 } from "@valeera/mathx";
 import Component from "@valeera/x/src/Component";
 import { GEOMETRY } from "../constants";
 import { POSITION } from "./constants";
@@ -96,7 +97,7 @@ let x: number, y: number;
 
 export const transformMatrix3 = (
     a: Float32Array,
-    m: Float32Array,
+    m: Matrix3,
     offset: number,
 ): Float32Array => {
     x = a[offset];
@@ -109,7 +110,7 @@ export const transformMatrix3 = (
 
 export const transformMatrix4 = (
     a: Float32Array,
-    m: Float32Array,
+    m: Matrix4,
     offset: number,
 ): Float32Array => {
     let ax = a[0 + offset];
