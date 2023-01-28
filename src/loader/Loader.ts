@@ -10,6 +10,7 @@ export class Loader extends EventFirer {
     public static readonly WILL_LOAD = "willLoad";
     public static readonly LOADING = "loading";
     public static readonly LOADED = "loaded";
+    public static readonly PARSED = "parsed";
     public resourcesMap = new Map<string, Map<string, any>>();
 
     public loadItems = {
@@ -26,7 +27,7 @@ export class Loader extends EventFirer {
     public maxTasks = 5;
 
     #loadTagsMap = new Map<ILoadItem<any>, number>();
-
+    #countToParse = 0;
     getResource(name: string, type: string): any {
         const map = this.resourcesMap.get(type);
         if (!map) {
@@ -57,7 +58,7 @@ export class Loader extends EventFirer {
             check = this.#loadTagsMap.get(item);
             if (check) {
                 // 防止一个资源连续执行多次加载
-                return;
+                continue;
             }
 
             if (item.loadParts.length) {
@@ -69,6 +70,7 @@ export class Loader extends EventFirer {
                 }
 
                 this.#loadTagsMap.set(item, item.loadParts.length);
+                this.#countToParse++;
             }
         }
 
@@ -151,7 +153,7 @@ export class Loader extends EventFirer {
                                     process = arr.length * arr.constructor.BYTES_PER_ELEMENT;
                                 }
                                 currentSize += process;
-                                part.onProgress?.(currentSize, size, process);
+                                part.onLoadProgress?.(currentSize, size, process);
                                 controller.enqueue(value);
                             }
                             push(reader);
@@ -182,7 +184,7 @@ export class Loader extends EventFirer {
             part.onLoad?.(data);
             this.loadItems[part.type ?? LoadType.ARRAY_BUFFER].set(part.url, data);
             let count = this.#loadTagsMap.get(partRecord.belongsTo);
-            partRecord.belongsTo.onProgress?.(len - count + 1, len);
+            partRecord.belongsTo.onLoadProgress?.(len - count + 1, len);
             if (count < 2) {
                 this.#loadTagsMap.delete(partRecord.belongsTo);
                 partRecord.belongsTo.onLoad?.();
@@ -207,18 +209,32 @@ export class Loader extends EventFirer {
         for (let part of resource.loadParts) {
             data.push(this.getUrlLoaded(part.url, part.type));
         }
-        let result = parser(this, resource, ...data);
+        let result = parser(...data);
         if (result instanceof Promise) {
             return result.then((data: any) => {
-                this.setResource(data, resource.type, resource.name);
-                resource.onParse?.(data);
+                this.#checkAllParseAndSetResource(resource, data);
+            }).catch((e) => {
+                resource.onParseError?.(e);
+                this.#countToParse--;
+                if (!this.#countToParse) {
+                    this.fire(Loader.PARSED, this);
+                }
             });
         } else {
-            this.setResource(data, resource.type, resource.name);
-            resource.onParse?.(data);
+            this.#checkAllParseAndSetResource(resource, data);
         }
 
         return this;
+    }
+
+    #checkAllParseAndSetResource = (resource: ILoadItem<any>, data: any) => {
+        this.setResource(data, resource.type, resource.name);
+        resource.onParse?.(data);
+        this.#countToParse--;
+
+        if (!this.#countToParse) {
+            this.fire(Loader.PARSED, this);
+        }
     }
 
     registerParser(parser: IParser<any>, type: string) {
