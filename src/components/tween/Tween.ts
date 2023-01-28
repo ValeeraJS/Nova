@@ -45,10 +45,32 @@ export default class Tween extends Component<Map<string, InterpolationType>> {
 	// 检查from 和 to哪些属性是可以插值的
 	private checkKeyAndType(from: any, to: any) {
 		let map = this.data;
+		if (from instanceof Float32Array && to instanceof Float32Array) {
+			if (Math.min(from.length, to.length) === 2) {
+				map.set(' ', {
+					type: 'vector2',
+					origin: new Float32Array(from),
+					delta: Vector2.minus(to, from)
+				});
+			} else if (Math.min(from.length, to.length) === 3) {
+				map.set(' ', {
+					type: 'vector3',
+					origin: new Float32Array(from),
+					delta: Vector3.minus(to, from)
+				});
+			} else if (Math.min(from.length, to.length) === 4) {
+				map.set(' ', {
+					type: 'vector4',
+					origin: new Float32Array(from),
+					delta: Vector4.minus(to, from)
+				});
+			}
+			return this;
+		}
 		for (let key in to) {
 			if (key in from) {
 				// TODO 目前只支持数字和F32数组插值，后续扩展
-				if (typeof to[key] === 'number' && 'number' === from[key]) {
+				if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
 					map.set(key, {
 						type: 'number',
 						origin: from[key],

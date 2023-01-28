@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Vector4 } from "@valeera/mathx/src/vector";
+import { Vector2, Vector3, Vector4 } from "@valeera/mathx";
 import System from "@valeera/x/src/System";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
@@ -19,12 +19,28 @@ export default class TweenSystem extends System {
         return super.run(world);
     }
 
-    public handle(entity: IEntity, _params: TWorldInjection): this {
+    public handle(entity: IEntity): this {
         let tweenC = entity.getComponent("tween") as Tween;
         let map = tweenC.data;
         let from= tweenC.from;
+        let rate = tweenC.time / tweenC.duration;
+        if (from instanceof Float32Array) {
+            let data = map.get(' ') as any;
+            if (data.type === "vector2") {
+                Vector2.multiplyScalar(data.delta as Float32Array, rate, from as any);
+                Vector2.add(data.delta as Float32Array, data.origin as Float32Array, from as any);
+            } else if (data.type === "vector3") {
+                Vector3.multiplyScalar(data.delta as Float32Array, rate, from as any);
+                Vector3.add(data.delta as Float32Array, data.origin as Float32Array, from as any);
+            } else if (data.type === "vector4") {
+                Vector4.multiplyScalar(data.delta as Float32Array, rate, from as any);
+                Vector4.add(data.delta as Float32Array, data.origin as Float32Array, from as any);
+            }
+
+            return this;
+        }
+
         map.forEach((data, key) => {
-            let rate = tweenC.time / tweenC.duration;
             if (data.type === "number") {
                 from[key] = (data.origin as number) + (data.delta as number) * rate;
             } else if (data.type === "vector2") {
