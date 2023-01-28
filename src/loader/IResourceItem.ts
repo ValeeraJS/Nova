@@ -16,7 +16,7 @@ export interface ILoadPart {
     onCancel?: () => void;
     onLoad?: (data: LoadPartType) => any;
     onLoadError?: (e: Error) => any;
-    onProgress?: (current: number, total: number, delta: number) => any;
+    onLoadProgress?: (current: number, total: number, delta: number) => any;
 }
 
 export interface ILoadItem<T> {
@@ -26,9 +26,9 @@ export interface ILoadItem<T> {
     onCancel?: () => void;
     onLoad?: () => any;
     onLoadError?: (e: any) => any;
+    onLoadProgress?: (loaded: number, total: number) => any;
     onParse?: (obj: T) => any;
     onParseError?: (e: any) => any;
-    onProgress?: (loaded: number, total: number) => any;
 }
 
-export type IParser<T> = (loader: Loader, resource: ILoadItem<any>, ...args: any[]) => T | Promise<T>;
+export type IParser<T> = (...args: any[]) => T | Promise<T>;
