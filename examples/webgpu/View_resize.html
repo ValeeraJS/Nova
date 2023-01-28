@@ -40,16 +40,11 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("canvas size");
-			const options = {
-				width: 800,
-				height: 450
-			};
-			f.add(options, "width", 400, 1600).step(1).onChange(onChange);
-			f.add(options, "height", 225, 900).step(1).onChange(onChange);
+			f.add(engine, "width", 400, 1600).step(1).onChange(onChange);
+			f.add(engine, "height", 225, 900).step(1).onChange(onChange);
 
 			function onChange(val) {
-				engine.resize(options.width, options.height);
-				perspectiveProjection.aspect = options.width / options.height;
+				perspectiveProjection.aspect = engine.width / engine.height;
 			}
 		}
 	</script>
