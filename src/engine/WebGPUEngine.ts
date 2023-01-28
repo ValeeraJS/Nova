@@ -65,6 +65,26 @@ export default class WebGPUEngine extends EventFire.mixin(Timeline) implements I
 		this.resize(this.options.width, this.options.height, v);
 	}
 
+	get width(): number {
+		return this.options.width;
+	}
+
+	set width(v: number) {
+		this.options.width = v;
+
+		this.resize(v, this.options.height, this.options.resolution);
+	}
+
+	get height(): number {
+		return this.options.height;
+	}
+
+	set height(v: number) {
+		this.options.height = v;
+
+		this.resize(this.options.width, v, this.options.resolution);
+	}
+
 	public constructor(canvas: HTMLCanvasElement = document.createElement("canvas"), options: EngineOptions = {}) {
 		super();
 		this.canvas = canvas;
