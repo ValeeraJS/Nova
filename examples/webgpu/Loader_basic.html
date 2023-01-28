@@ -15,7 +15,7 @@
 				onLoad: () => {
 					console.log("AAA loaded");
 				},
-				onProgress: (p, t) => {
+				onLoadProgress: (p, t) => {
 					console.log("AAA loading:", p, t);
 				},
 				onParse: (texture) => {
@@ -31,7 +31,7 @@
 						onLoad: () => {
 							console.log("Texture loaded");
 						},
-						onProgress: (p, t, d) => {
+						onLoadProgress: (p, t, d) => {
 							console.log("Texture loading", p, t, d);
 						},
 						onLoadError: console.log
