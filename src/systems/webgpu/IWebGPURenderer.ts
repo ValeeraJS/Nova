@@ -1,6 +1,14 @@
-import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IRenderer from "./../IRenderer";
+import type { IEntity } from "@valeera/x";
+import { IRenderer } from "./../IRenderer";
 
-export default interface IWebGPURenderer extends IRenderer{
-    render(entity: IEntity, passEncoder: GPURenderPassEncoder, scissor?: any): any; // 处理渲染逻辑
+export interface GPURendererContext {
+    gpu: GPUCanvasContext;
+    adapter: GPUAdapter;
+    device: GPUDevice;
+    passEncoder: GPURenderPassEncoder;
+    preferredFormat: GPUTextureFormat;
+}
+
+export interface IWebGPURenderer extends IRenderer {
+    render(entity: IEntity, context: GPURendererContext): any; // 处理渲染逻辑
 }
