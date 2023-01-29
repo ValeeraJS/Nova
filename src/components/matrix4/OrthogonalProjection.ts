@@ -4,7 +4,7 @@ import AProjection3 from "./AProjection3";
 export default class OrthogonalProjection extends AProjection3 {
     options: { left: number; right: number; bottom: number; top: number; near: number; far: number; };
 
-    constructor(left: number, right: number, bottom: number, top: number, near: number, far: number) {
+    constructor(left: number = -window.innerWidth * 0.005, right: number = window.innerWidth * 0.005, bottom: number = -window.innerHeight * 0.005, top: number = window.innerHeight * 0.005, near: number = 0.01, far: number = 100) {
         super();
         this.options = {
             left,
@@ -20,17 +20,17 @@ export default class OrthogonalProjection extends AProjection3 {
     get left() {
         return this.options.left;
     }
-    
+
     set left(value: number) {
         this.options.left = value;
 
         this.update();
     }
-    
+
     get right() {
-        return this.right;
+        return this.options.right;
     }
-    
+
     set right(value: number) {
         this.options.right = value;
 
@@ -38,7 +38,7 @@ export default class OrthogonalProjection extends AProjection3 {
     }
 
     get top() {
-        return this.top;
+        return this.options.top;
     }
 
     set top(value: number) {
@@ -46,31 +46,31 @@ export default class OrthogonalProjection extends AProjection3 {
 
         this.update();
     }
-    
+
     get bottom() {
-        return this.bottom;
+        return this.options.bottom;
     }
-    
+
     set bottom(value: number) {
         this.options.bottom = value;
 
         this.update();
     }
-    
+
     get near() {
         return this.options.near;
     }
-    
+
     set near(value: number) {
         this.options.near = value;
 
         this.update();
     }
-    
+
     get far() {
         return this.options.far;
     }
-    
+
     set far(value: number) {
         this.options.far = value;
 
