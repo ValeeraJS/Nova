@@ -22,7 +22,6 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("clear color");
-
 			f.add(renderSystem.clearColor, "h", 0, 1).step(0.01);
 			f.add(renderSystem.clearColor, "s", 0, 1).step(0.01);
 			f.add(renderSystem.clearColor, "l", 0, 1).step(0.01);

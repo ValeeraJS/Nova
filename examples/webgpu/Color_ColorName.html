@@ -11,7 +11,7 @@
 		const world = new Nova.World();
 
 		const renderSystem = new Nova.WebGPURenderSystem();
-		renderSystem.clearColor = new Nova.Mathx.ColorRGB();
+		renderSystem.clearColor = 'black';
 		world.addSystem(renderSystem);
 		createGUI();
 
@@ -22,9 +22,7 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("clear color");
-			f.add(renderSystem.clearColor, "r", 0, 255).step(1);
-			f.add(renderSystem.clearColor, "g", 0, 255).step(1);
-			f.add(renderSystem.clearColor, "b", 0, 255).step(1);
+			f.add(renderSystem, "clearColor", Object.keys(Nova.Mathx.COLOR_HEX_MAP));
 		}
 	</script>
 </body>
