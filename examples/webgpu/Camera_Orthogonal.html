@@ -23,9 +23,9 @@
 
 		const projection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
 
-		const camera = new Nova.Camera3("test-camera", projection);
+		const camera = new Nova.Camera3("", projection);
 
-		const renderSystem = new Nova.WebGPURenderSystem(engine);
+		const renderSystem = new Nova.WebGPURenderSystem();
 		const renderer = new Nova.WebGPUMesh3Renderer(camera);
 		renderSystem.addRenderer(renderer);
 		world.addSystem(renderSystem).add(mesh);

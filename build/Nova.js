@@ -7546,7 +7546,7 @@ struct VertexOutput {
 
 	class OrthogonalProjection extends AProjection3 {
 	    options;
-	    constructor(left, right, bottom, top, near, far) {
+	    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 100) {
 	        super();
 	        this.options = {
 	            left,
@@ -7566,21 +7566,21 @@ struct VertexOutput {
 	        this.update();
 	    }
 	    get right() {
-	        return this.right;
+	        return this.options.right;
 	    }
 	    set right(value) {
 	        this.options.right = value;
 	        this.update();
 	    }
 	    get top() {
-	        return this.top;
+	        return this.options.top;
 	    }
 	    set top(value) {
 	        this.options.top = value;
 	        this.update();
 	    }
 	    get bottom() {
-	        return this.bottom;
+	        return this.options.bottom;
 	    }
 	    set bottom(value) {
 	        this.options.bottom = value;
@@ -7618,7 +7618,7 @@ struct VertexOutput {
 
 	class PerspectiveProjection extends AProjection3 {
 	    options;
-	    constructor(fovy, aspect, near, far) {
+	    constructor(fovy = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
 	        super();
 	        this.options = {
 	            fovy,
@@ -7636,7 +7636,7 @@ struct VertexOutput {
 	        this.update();
 	    }
 	    get aspect() {
-	        return this.aspect;
+	        return this.options.aspect;
 	    }
 	    set aspect(value) {
 	        this.options.aspect = value;
@@ -7794,16 +7794,16 @@ struct VertexOutput {
 	class EngineTexture extends Component$1 {
 	    width;
 	    height;
-	    constructor(engine, name = "texture-gpu") {
-	        super(name, engine.device.createTexture({
-	            size: [engine.options.width, engine.options.height],
-	            format: engine.preferredFormat,
-	            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-	        }));
-	        this.width = engine.options.width;
-	        this.height = engine.options.height;
-	        this.dirty = true;
-	    }
+	    // public constructor(engine: WebGPUEngine, name: string = "texture-gpu") {
+	    // 	super(name, engine.device.createTexture({
+	    // 		size: [engine.options.width, engine.options.height],
+	    // 		format: engine.preferredFormat,
+	    // 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+	    // 	}));
+	    // 	this.width = engine.options.width;
+	    // 	this.height = engine.options.height;
+	    // 	this.dirty = true;
+	    // }
 	    destroy() {
 	        this.data = undefined;
 	        this.width = 0;
@@ -8060,251 +8060,15 @@ struct VertexOutput {
 		getEulerRotation3Proxy: getEulerRotation3Proxy
 	});
 
-	var getColorGPU = (color, result = new ColorGPU()) => {
-	    if (color instanceof ColorGPU) {
-	        result.set(color);
-	    }
-	    else if (typeof color === "string") {
-	        ColorGPU.fromString(color, result);
-	    }
-	    else if (typeof color === "number") {
-	        ColorGPU.fromHex(color, 1, result);
-	    }
-	    else if (color instanceof ColorRGB) {
-	        ColorGPU.fromColorRGB(color, result);
-	    }
-	    else if (color instanceof ColorRGBA) {
-	        ColorGPU.fromColorRGBA(color, result);
-	    }
-	    else if (color instanceof ColorHSL) {
-	        ColorGPU.fromColorHSL(color.h, color.s, color.l, result);
-	    }
-	    else if (color instanceof Float32Array || color instanceof Array) {
-	        ColorGPU.fromArray(color, result);
-	    }
-	    else if (color instanceof Float32Array || color instanceof Array) {
-	        ColorGPU.fromArray(color, result);
-	    }
-	    else {
-	        if ("a" in color) {
-	            ColorGPU.fromJson(color, result);
-	        }
-	        else {
-	            ColorGPU.fromJson({
-	                ...color,
-	                a: 1
-	            }, result);
-	        }
-	    }
-	    return result;
-	};
-
 	exports.EngineEvents = void 0;
 	(function (EngineEvents) {
-	    EngineEvents["INITED"] = "inited";
 	    EngineEvents["LOOP_STARTED"] = "loop-started";
 	    EngineEvents["LOOP_ENDED"] = "loop-ended";
 	})(exports.EngineEvents || (exports.EngineEvents = {}));
 	const DEFAULT_ENGINE_OPTIONS = {
 	    autoStart: true,
-	    width: window.innerWidth,
-	    height: window.innerHeight,
-	    resolution: window.devicePixelRatio,
-	    autoResize: false,
-	    noDepthTexture: false,
-	    clearColor: new ColorGPU(0, 0, 0, 1),
-	    renderToSwapChain: true,
-	    renderToTarget: false
+	    container: document.body
 	};
-
-	class WebGPUEngine extends EventDispatcher$1.mixin(Timeline) {
-	    options;
-	    swapChainTexture;
-	    targetTexture;
-	    renderPassEncoder;
-	    static async detect(canvas = document.createElement("canvas")) {
-	        const context = canvas.getContext("webgpu");
-	        if (!context) {
-	            throw new Error('WebGPU not supported: ');
-	        }
-	        const adapter = await navigator?.gpu?.requestAdapter();
-	        if (!adapter) {
-	            throw new Error('WebGPU not supported: ');
-	        }
-	        const device = await adapter.requestDevice();
-	        if (!device) {
-	            throw new Error('WebGPU not supported: ');
-	        }
-	        return { context, adapter, device };
-	    }
-	    static Events = exports.EngineEvents;
-	    adapter;
-	    canvas;
-	    context;
-	    device;
-	    inited = false;
-	    preferredFormat;
-	    currentCommandEncoder;
-	    renderPassDescriptor;
-	    #clearColorGPU = new ColorGPU(0, 0, 0, 1);
-	    get clearColor() {
-	        return this.options.clearColor;
-	    }
-	    set clearColor(value) {
-	        this.options.clearColor = value;
-	        getColorGPU(value, this.#clearColorGPU);
-	    }
-	    get resolution() {
-	        return this.options.resolution;
-	    }
-	    set resolution(v) {
-	        this.options.resolution = v;
-	        this.resize(this.options.width, this.options.height, v);
-	    }
-	    get width() {
-	        return this.options.width;
-	    }
-	    set width(v) {
-	        this.options.width = v;
-	        this.resize(v, this.options.height, this.options.resolution);
-	    }
-	    get height() {
-	        return this.options.height;
-	    }
-	    set height(v) {
-	        this.options.height = v;
-	        this.resize(this.options.width, v, this.options.resolution);
-	    }
-	    constructor(canvas = document.createElement("canvas"), options = {}) {
-	        super();
-	        this.canvas = canvas;
-	        this.options = {
-	            ...DEFAULT_ENGINE_OPTIONS,
-	            ...options,
-	        };
-	        this.resize(options.width ?? window.innerWidth, options.height ?? window.innerHeight, options.resolution ?? window.devicePixelRatio);
-	        WebGPUEngine.detect(canvas).then(({ context, adapter, device }) => {
-	            this.context = context;
-	            this.adapter = adapter;
-	            this.device = device;
-	            this.inited = true;
-	            this.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
-	            this.setRenderPassDescripter();
-	            this.targetTexture = this.device.createTexture({
-	                size: [this.canvas.width, this.canvas.height],
-	                format: this.preferredFormat,
-	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
-	            });
-	            this.fire(exports.EngineEvents.INITED, {
-	                eventKey: exports.EngineEvents.INITED,
-	                target: this
-	            });
-	            if (this.options.autoStart) {
-	                this.start();
-	            }
-	        }).catch((error) => {
-	            throw error;
-	        });
-	    }
-	    resize(width, height, resolution = this.options.resolution) {
-	        this.options.width = width;
-	        this.options.height = height;
-	        this.options.resolution = resolution;
-	        this.canvas.style.width = width + 'px';
-	        this.canvas.style.height = height + 'px';
-	        this.canvas.width = width * resolution;
-	        this.canvas.height = height * resolution;
-	        if (this.device) {
-	            this.setRenderPassDescripter();
-	            if (this.targetTexture) {
-	                this.targetTexture.destroy();
-	            }
-	            this.targetTexture = this.device.createTexture({
-	                size: [this.canvas.width, this.canvas.height],
-	                format: this.preferredFormat,
-	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
-	            });
-	        }
-	        return this;
-	    }
-	    update(time, delta) {
-	        this.loopStart();
-	        super.update(time, delta);
-	        this.loopEnd();
-	        return this;
-	    }
-	    loopStart() {
-	        this.currentCommandEncoder = this.device.createCommandEncoder();
-	        this.swapChainTexture = this.context.getCurrentTexture();
-	        this.renderPassDescriptor.colorAttachments[0].view = this.options.renderToSwapChain ? this.swapChainTexture.createView() : this.targetTexture.createView();
-	        this.renderPassEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
-	        this.fire(exports.EngineEvents.LOOP_STARTED, this);
-	    }
-	    loopEnd() {
-	        this.renderPassEncoder.end();
-	        this.fire(exports.EngineEvents.LOOP_ENDED, this);
-	        this.device.queue.submit([this.currentCommandEncoder.finish()]);
-	    }
-	    #depthTexture;
-	    setRenderPassDescripter() {
-	        if (this.#depthTexture) {
-	            this.#depthTexture.destroy();
-	        }
-	        let renderPassDescriptor = {
-	            colorAttachments: [
-	                {
-	                    view: null,
-	                    loadOp: "clear",
-	                    clearValue: this.#clearColorGPU,
-	                    storeOp: "store"
-	                }
-	            ]
-	        };
-	        if (!this.options.noDepthTexture) {
-	            this.#depthTexture = this.device.createTexture({
-	                size: { width: this.canvas.width, height: this.canvas.height, depthOrArrayLayers: 1 },
-	                format: "depth24plus",
-	                usage: GPUTextureUsage.RENDER_ATTACHMENT
-	            });
-	            renderPassDescriptor.depthStencilAttachment = {
-	                view: this.#depthTexture.createView(),
-	                depthClearValue: 1.0,
-	                depthLoadOp: "clear",
-	                depthStoreOp: "store"
-	            };
-	        }
-	        this.renderPassDescriptor = renderPassDescriptor;
-	    }
-	}
-
-	class WebGLEngine extends EventDispatcher$1 {
-	    static async detect(canvas = document.createElement("canvas")) {
-	        const context = canvas.getContext("webgl");
-	        if (!context) {
-	            throw new Error('WebGL not supported: ');
-	        }
-	        return { context };
-	    }
-	    canvas;
-	    context;
-	    inited = false;
-	    constructor(canvas = document.createElement("canvas")) {
-	        super();
-	        this.canvas = canvas;
-	        WebGLEngine.detect(canvas).then(({ context }) => {
-	            this.context = context;
-	            this.inited = true;
-	            this.fire(exports.EngineEvents.INITED, {
-	                eventKey: exports.EngineEvents.INITED,
-	                target: this
-	            });
-	        }).catch((error) => {
-	            throw error;
-	        });
-	    }
-	    createRenderer() {
-	    }
-	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	const mixin$1 = (Base = Object, eventKeyList = []) => {
@@ -8440,6 +8204,10 @@ struct VertexOutput {
 	    static START = 'start';
 	    static END = 'end';
 	    name;
+	    disabled = false;
+	    time = 0;
+	    delta = 0;
+	    taskTimeMap = new WeakMap();
 	    #tasks = [];
 	    get tasksCount() {
 	        return this.#tasks.length;
@@ -8448,8 +8216,11 @@ struct VertexOutput {
 	        super();
 	        this.name = name;
 	    }
-	    addTask(task) {
+	    addTask(task, needTimeReset) {
 	        this.#tasks.push(task);
+	        if (needTimeReset) {
+	            this.taskTimeMap.set(task, this.time);
+	        }
 	    }
 	    removeTask(task) {
 	        let i = this.#tasks.indexOf(task);
@@ -8458,13 +8229,76 @@ struct VertexOutput {
 	        }
 	    }
 	    run = (time, delta) => {
+	        this.time = time;
+	        this.delta = delta;
 	        this.fire(EngineTaskChunk.START, this);
 	        let len = this.#tasks.length;
 	        for (let i = 0; i < len; i++) {
-	            this.#tasks[i](time, delta);
+	            const t = this.#tasks[i];
+	            t(time - (this.taskTimeMap.get(t) ?? 0), delta);
 	        }
 	        return this.fire(EngineTaskChunk.END, this);
 	    };
+	}
+
+	class Engine extends EventDispatcher$1.mixin(Timeline) {
+	    options;
+	    static Events = exports.EngineEvents;
+	    taskChunkTimeMap = new Map();
+	    #taskChunks = new Map();
+	    constructor(options = {}) {
+	        super();
+	        this.options = {
+	            ...DEFAULT_ENGINE_OPTIONS,
+	            ...options,
+	        };
+	        if (this.options.autoStart) {
+	            this.start();
+	        }
+	    }
+	    addTask(task, needTimeReset, chunkName) {
+	        if (!chunkName) {
+	            return super.addTask(task, needTimeReset);
+	        }
+	        const chunk = this.#taskChunks.get(chunkName);
+	        if (!chunkName) {
+	            return super.addTask(task, needTimeReset);
+	        }
+	        chunk.addTask(task, needTimeReset);
+	        return this;
+	    }
+	    addTaskChunk(chunk, needTimeReset) {
+	        this.#taskChunks.set(chunk.name, chunk);
+	        if (needTimeReset) {
+	            this.taskChunkTimeMap.set(chunk, this.time);
+	        }
+	        return this;
+	    }
+	    removeTaskChunk(chunk) {
+	        if (typeof chunk === 'string') {
+	            this.#taskChunks.delete(chunk);
+	        }
+	        else {
+	            this.#taskChunks.delete(chunk.name);
+	        }
+	        return this;
+	    }
+	    runChunk(chunk, time, delta) {
+	        if (chunk.disabled) {
+	            return this;
+	        }
+	        chunk.run(time - (this.taskChunkTimeMap.get(chunk) ?? 0), delta);
+	        return this;
+	    }
+	    update(time, delta) {
+	        this.fire(Engine.Events.LOOP_STARTED, this);
+	        super.update(time, delta);
+	        this.#taskChunks.forEach((chunk) => {
+	            this.runChunk(chunk, time, delta);
+	        });
+	        this.fire(Engine.Events.LOOP_ENDED, this);
+	        return this;
+	    }
 	}
 
 	class Object3$1 extends Entity {
@@ -9220,62 +9054,60 @@ struct VertexOutput {
 }
 `);
 
-	class Mesh2Renderer {
+	class WebGPUMesh2Renderer {
 	    static renderTypes = MESH2;
 	    renderTypes = MESH2;
 	    camera;
 	    entityCacheData = new WeakMap();
-	    engine;
-	    constructor(engine, camera) {
-	        this.engine = engine;
+	    constructor(camera) {
 	        this.camera = camera;
 	    }
-	    render(mesh, passEncoder) {
+	    render(mesh, context) {
 	        let cacheData = this.entityCacheData.get(mesh);
 	        // 假设更换了几何体和材质则重新生成缓存
 	        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 	        if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
-	            cacheData = this.createCacheData(mesh);
+	            cacheData = this.createCacheData(mesh, context);
 	            this.entityCacheData.set(mesh, cacheData);
 	        }
 	        else {
 	            // TODO update cache
 	            updateModelMatrixComponent$1(mesh);
 	        }
-	        passEncoder.setPipeline(cacheData.pipeline);
+	        context.passEncoder.setPipeline(cacheData.pipeline);
 	        // passEncoder.setScissorRect(0, 0, 400, 225);
 	        // TODO 有多个attribute buffer
 	        for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
-	            passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+	            context.passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
 	        }
 	        const mvp = cacheData.mvp;
 	        const mvpExt = cacheData.mvpExt;
 	        Matrix3$1.multiply(this.camera.projection.data, Matrix3$1.invert(updateModelMatrixComponent$1(this.camera).data), mvp);
 	        Matrix3$1.multiply(mvp, mesh.worldMatrix.data, mvp);
 	        fromMatrix3MVP(mvp, mvpExt);
-	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvpExt.buffer, mvpExt.byteOffset, mvpExt.byteLength);
+	        context.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvpExt.buffer, mvpExt.byteOffset, mvpExt.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
 	            if (uniform.type === BUFFER && uniform.dirty) {
-	                this.engine.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
+	                context.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
 	                uniform.dirty = false;
 	            }
 	            else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
 	                if (uniform.value.loaded) {
 	                    if (uniform.value.data) {
-	                        this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
+	                        context.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
 	                        uniform.value.dirty = uniform.dirty = false;
 	                    }
 	                }
 	            }
 	        });
-	        passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-	        passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY).count, 1, 0, 0);
+	        context.passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+	        context.passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY).count, 1, 0, 0);
 	        return this;
 	    }
-	    createCacheData(mesh) {
+	    createCacheData(mesh, context) {
 	        updateModelMatrixComponent$1(mesh);
-	        let device = this.engine.device;
+	        let device = context.device;
 	        let uniformBuffer = device.createBuffer({
 	            size: 64,
 	            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -9287,7 +9119,7 @@ struct VertexOutput {
 	        for (let i = 0; i < nodes.length; i++) {
 	            buffers.push(createVerticesBuffer(device, nodes[i].data));
 	        }
-	        let pipeline = this.createPipeline(geometry, material);
+	        let pipeline = this.createPipeline(geometry, material, context);
 	        let groupEntries = [{
 	                binding: 0,
 	                resource: {
@@ -9350,13 +9182,13 @@ struct VertexOutput {
 	            geometry
 	        };
 	    }
-	    createPipeline(geometry, material) {
-	        const pipelineLayout = this.engine.device.createPipelineLayout({
-	            bindGroupLayouts: [this.createBindGroupLayout(material)],
+	    createPipeline(geometry, material, context) {
+	        const pipelineLayout = context.device.createPipelineLayout({
+	            bindGroupLayouts: [this.createBindGroupLayout(material, context)],
 	        });
 	        let vertexBuffers = this.parseGeometryBufferLayout(geometry);
-	        let stages = this.createStages(material, vertexBuffers);
-	        let pipeline = this.engine.device.createRenderPipeline({
+	        let stages = this.createStages(material, vertexBuffers, context);
+	        let pipeline = context.device.createRenderPipeline({
 	            layout: pipelineLayout,
 	            vertex: stages.vertex,
 	            fragment: stages.fragment,
@@ -9392,7 +9224,7 @@ struct VertexOutput {
 	        }
 	        return vertexBuffers;
 	    }
-	    createBindGroupLayout(material) {
+	    createBindGroupLayout(material, context) {
 	        let uniforms = material.data.uniforms;
 	        let entries = [
 	            {
@@ -9434,26 +9266,26 @@ struct VertexOutput {
 	                }
 	            }
 	        }
-	        return this.engine.device.createBindGroupLayout({
+	        return context.device.createBindGroupLayout({
 	            entries,
 	        });
 	    }
-	    createStages(material, vertexBuffers) {
+	    createStages(material, vertexBuffers, context) {
 	        let vertex = {
-	            module: this.engine.device.createShaderModule({
+	            module: context.device.createShaderModule({
 	                code: material.data.vertex,
 	            }),
 	            entryPoint: "main",
 	            buffers: vertexBuffers
 	        };
 	        let fragment = {
-	            module: this.engine.device.createShaderModule({
+	            module: context.device.createShaderModule({
 	                code: material.data.fragment,
 	            }),
 	            entryPoint: "main",
 	            targets: [
 	                {
-	                    format: this.engine.preferredFormat,
+	                    format: context.preferredFormat,
 	                    blend: material?.data.blend
 	                }
 	            ]
@@ -11441,60 +11273,58 @@ struct VertexOutput {
 	    }
 	}
 
-	class Mesh3Renderer {
+	class WebGPUMesh3Renderer {
 	    static renderTypes = MESH3;
 	    renderTypes = MESH3;
 	    camera;
 	    entityCacheData = new WeakMap();
-	    engine;
-	    constructor(engine, camera) {
-	        this.engine = engine;
+	    constructor(camera) {
 	        this.camera = camera;
 	    }
-	    render(mesh, passEncoder) {
+	    render(mesh, context) {
 	        let cacheData = this.entityCacheData.get(mesh);
 	        // 假设更换了几何体和材质则重新生成缓存
 	        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 	        if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
-	            cacheData = this.createCacheData(mesh);
+	            cacheData = this.createCacheData(mesh, context);
 	            this.entityCacheData.set(mesh, cacheData);
 	        }
 	        else {
 	            // TODO update cache
 	            updateModelMatrixComponent(mesh);
 	        }
-	        passEncoder.setPipeline(cacheData.pipeline);
+	        context.passEncoder.setPipeline(cacheData.pipeline);
 	        // passEncoder.setScissorRect(0, 0, 400, 225);
 	        // TODO 有多个attribute buffer
 	        for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
-	            passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+	            context.passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
 	        }
 	        const mvp = cacheData.mvp;
 	        Matrix4.multiply(this.camera.projection.data, Matrix4.invert(updateModelMatrixComponent(this.camera).data), mvp);
 	        Matrix4.multiply(mvp, mesh.worldMatrix.data, mvp);
-	        this.engine.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
+	        context.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
 	            if (uniform.type === BUFFER && uniform.dirty) {
-	                this.engine.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
+	                context.device.queue.writeBuffer(key, 0, uniform.value.buffer, uniform.value.byteOffset, uniform.value.byteLength);
 	                uniform.dirty = false;
 	            }
 	            else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
 	                if (uniform.value.loaded !== false) {
 	                    if (uniform.value.data) {
-	                        this.engine.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
+	                        context.device.queue.copyExternalImageToTexture({ source: uniform.value.data }, { texture: key }, [uniform.value.data.width, uniform.value.data.height, 1]);
 	                        uniform.value.dirty = uniform.dirty = false;
 	                    }
 	                }
 	            }
 	        });
-	        passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-	        passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY).count, 1, 0, 0);
+	        context.passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+	        context.passEncoder.draw(mesh.getFirstComponentByTagLabel(GEOMETRY).count, 1, 0, 0);
 	        return this;
 	    }
-	    createCacheData(mesh) {
+	    createCacheData(mesh, context) {
 	        updateModelMatrixComponent(mesh);
-	        let device = this.engine.device;
+	        let device = context.device;
 	        let uniformBuffer = device.createBuffer({
 	            size: 64,
 	            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -11506,7 +11336,7 @@ struct VertexOutput {
 	        for (let i = 0; i < nodes.length; i++) {
 	            buffers.push(createVerticesBuffer(device, nodes[i].data));
 	        }
-	        let pipeline = this.createPipeline(geometry, material);
+	        let pipeline = this.createPipeline(geometry, material, context);
 	        let groupEntries = [{
 	                binding: 0,
 	                resource: {
@@ -11568,13 +11398,13 @@ struct VertexOutput {
 	            geometry
 	        };
 	    }
-	    createPipeline(geometry, material) {
-	        const pipelineLayout = this.engine.device.createPipelineLayout({
-	            bindGroupLayouts: [this.createBindGroupLayout(material)],
+	    createPipeline(geometry, material, context) {
+	        const pipelineLayout = context.device.createPipelineLayout({
+	            bindGroupLayouts: [this.createBindGroupLayout(material, context)],
 	        });
 	        let vertexBuffers = this.parseGeometryBufferLayout(geometry);
-	        let stages = this.createStages(material, vertexBuffers);
-	        let pipeline = this.engine.device.createRenderPipeline({
+	        let stages = this.createStages(material, vertexBuffers, context);
+	        let pipeline = context.device.createRenderPipeline({
 	            layout: pipelineLayout,
 	            vertex: stages.vertex,
 	            fragment: stages.fragment,
@@ -11610,7 +11440,7 @@ struct VertexOutput {
 	        }
 	        return vertexBuffers;
 	    }
-	    createBindGroupLayout(material) {
+	    createBindGroupLayout(material, context) {
 	        let uniforms = material.data.uniforms;
 	        let entries = [
 	            {
@@ -11652,26 +11482,26 @@ struct VertexOutput {
 	                }
 	            }
 	        }
-	        return this.engine.device.createBindGroupLayout({
+	        return context.device.createBindGroupLayout({
 	            entries,
 	        });
 	    }
-	    createStages(material, vertexBuffers) {
+	    createStages(material, vertexBuffers, context) {
 	        let vertex = {
-	            module: this.engine.device.createShaderModule({
+	            module: context.device.createShaderModule({
 	                code: material.data.vertex,
 	            }),
 	            entryPoint: "main",
 	            buffers: vertexBuffers
 	        };
 	        let fragment = {
-	            module: this.engine.device.createShaderModule({
+	            module: context.device.createShaderModule({
 	                code: material.data.fragment,
 	            }),
 	            entryPoint: "main",
 	            targets: [
 	                {
-	                    format: this.engine.preferredFormat,
+	                    format: context.preferredFormat,
 	                    blend: material?.data.blend
 	                }
 	            ]
@@ -11684,28 +11514,128 @@ struct VertexOutput {
 	    }
 	}
 
-	class RenderSystem extends System {
-	    engine;
-	    rendererMap;
-	    scissor = {
-	        x: 0, y: 0, width: 0, height: 0,
-	    };
+	var getColorGPU = (color, result = new ColorGPU()) => {
+	    if (color instanceof ColorGPU) {
+	        result.set(color);
+	    }
+	    else if (typeof color === "string") {
+	        ColorGPU.fromString(color, result);
+	    }
+	    else if (typeof color === "number") {
+	        ColorGPU.fromHex(color, 1, result);
+	    }
+	    else if (color instanceof ColorRGB) {
+	        ColorGPU.fromColorRGB(color, result);
+	    }
+	    else if (color instanceof ColorRGBA) {
+	        ColorGPU.fromColorRGBA(color, result);
+	    }
+	    else if (color instanceof ColorHSL) {
+	        ColorGPU.fromColorHSL(color.h, color.s, color.l, result);
+	    }
+	    else if (color instanceof Float32Array || color instanceof Array) {
+	        ColorGPU.fromArray(color, result);
+	    }
+	    else if (color instanceof Float32Array || color instanceof Array) {
+	        ColorGPU.fromArray(color, result);
+	    }
+	    else {
+	        if ("a" in color) {
+	            ColorGPU.fromJson(color, result);
+	        }
+	        else {
+	            ColorGPU.fromJson({
+	                ...color,
+	                a: 1
+	            }, result);
+	        }
+	    }
+	    return result;
+	};
+
+	class RenderSystemInCanvas extends System$1 {
+	    context;
+	    alphaMode;
 	    viewport = {
-	        x: 0, y: 0, width: 0, height: 0, minDepth: 0, maxDepth: 1
+	        x: 0,
+	        y: 0,
+	        width: 1,
+	        height: 1,
+	        minDepth: 0,
+	        maxDepth: 1
 	    };
-	    constructor(engine, viewport, scissor) {
-	        super("Render System", (entity) => {
+	    scissor = {
+	        x: 0,
+	        y: 0,
+	        width: 1,
+	        height: 1
+	    };
+	    id = 0;
+	    cache = new WeakMap();
+	    entitySet = new WeakMap();
+	    loopTimes = 0;
+	    name = "";
+	    usedBy = [];
+	    rendererMap = new Map();
+	    canvas;
+	    options = {
+	        width: 0,
+	        height: 0,
+	        resolution: 1,
+	        alphaMode: "",
+	        autoResize: false,
+	        clearColor: new ColorGPU(),
+	        noDepthTexture: false
+	    };
+	    constructor(name, options) {
+	        super(name, (entity) => {
 	            return entity.getComponent(RENDERABLE)?.data;
 	        });
-	        this.engine = engine;
-	        this.rendererMap = new Map();
-	        engine.context.configure({
-	            device: engine.device,
-	            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
-	            format: engine.preferredFormat,
-	            alphaMode: "premultiplied"
-	        });
-	        this.setScissor(scissor).setViewport(viewport);
+	        const element = options.element ?? document.body;
+	        if (element instanceof HTMLCanvasElement) {
+	            this.canvas = element;
+	        }
+	        else {
+	            this.canvas = document.createElement("canvas");
+	            element.appendChild(this.canvas);
+	        }
+	        const parent = this.canvas.parentElement;
+	        this.width = options.width ?? parent?.offsetWidth ?? window.innerWidth;
+	        this.height = options.height ?? parent?.offsetHeight ?? window.innerHeight;
+	        this.resolution = options.resolution ?? window.devicePixelRatio;
+	        this.alphaMode = options.alphaMode ?? "premultiplied";
+	        this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
+	        this.options.autoResize = options.autoResize ?? false;
+	        this.options.noDepthTexture = options.noDepthTexture ?? false;
+	    }
+	    clearColorGPU = new ColorGPU(0, 0, 0, 1);
+	    get clearColor() {
+	        return this.options.clearColor;
+	    }
+	    set clearColor(value) {
+	        this.options.clearColor = value;
+	        getColorGPU(value, this.clearColorGPU);
+	    }
+	    get resolution() {
+	        return this.options.resolution;
+	    }
+	    set resolution(v) {
+	        this.options.resolution = v;
+	        this.resize(this.options.width, this.options.height, v);
+	    }
+	    get width() {
+	        return this.options.width;
+	    }
+	    set width(v) {
+	        this.options.width = v;
+	        this.resize(v, this.options.height, this.options.resolution);
+	    }
+	    get height() {
+	        return this.options.height;
+	    }
+	    set height(v) {
+	        this.options.height = v;
+	        this.resize(this.options.width, v, this.options.resolution);
 	    }
 	    addRenderer(renderer) {
 	        if (typeof renderer.renderTypes === "string") {
@@ -11722,43 +11652,140 @@ struct VertexOutput {
 	        this.rendererMap.clear();
 	        return this;
 	    }
-	    handle(entity, store) {
-	        if (entity.disabled) {
-	            return this;
+	    resize(width, height, resolution = this.resolution) {
+	        this.options.width = width;
+	        this.options.height = height;
+	        this.options.resolution = resolution;
+	        this.canvas.style.width = width + 'px';
+	        this.canvas.style.height = height + 'px';
+	        this.canvas.width = width * resolution;
+	        this.canvas.height = height * resolution;
+	        return this;
+	    }
+	    serialize() {
+	        return {
+	            id: this.id,
+	            name: this.name,
+	            type: "RenderSystem"
+	        };
+	    }
+	}
+
+	class WebGPURenderSystem extends RenderSystemInCanvas {
+	    static async detect(canvas = document.createElement("canvas")) {
+	        const gpu = canvas.getContext("webgpu");
+	        if (!gpu) {
+	            throw new Error('WebGPU not supported: ');
 	        }
-	        // 根据不同类别进行渲染
-	        this.rendererMap.get(entity.getComponent(RENDERABLE)?.data)?.render(entity, store.get("passEncoder"));
-	        return this;
+	        const adapter = await navigator?.gpu?.requestAdapter();
+	        if (!adapter) {
+	            throw new Error('WebGPU not supported: ');
+	        }
+	        const device = await adapter.requestDevice();
+	        if (!device) {
+	            throw new Error('WebGPU not supported: ');
+	        }
+	        return { gpu, adapter, device };
 	    }
-	    setViewport(viewport) {
-	        this.viewport = viewport || {
-	            x: 0,
-	            y: 0,
-	            width: 1,
-	            height: 1,
-	            minDepth: 0,
-	            maxDepth: 1
-	        };
-	        return this;
+	    rendererMap = new Map();
+	    inited = false;
+	    context = undefined;
+	    currentCommandEncoder;
+	    swapChainTexture;
+	    targetTexture;
+	    renderPassDescriptor;
+	    constructor(name = "WebGPU Render System", options = {}) {
+	        super(name, options);
+	        WebGPURenderSystem.detect(this.canvas).then((data) => {
+	            this.context = data;
+	            this.context.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+	            this.setRenderPassDescripter();
+	            data.gpu.configure({
+	                device: data.device,
+	                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+	                format: this.context.preferredFormat,
+	                alphaMode: "premultiplied"
+	            });
+	            this.inited = true;
+	        });
 	    }
-	    setScissor(scissor) {
-	        this.scissor = scissor || {
-	            x: 0,
-	            y: 0,
-	            width: 1,
-	            height: 1
-	        };
+	    resize(width, height, resolution = this.resolution) {
+	        super.resize(width, height, resolution);
+	        if (this.context) {
+	            this.setRenderPassDescripter();
+	            if (this.targetTexture) {
+	                this.targetTexture.destroy();
+	            }
+	            this.targetTexture = this.context.device.createTexture({
+	                size: [this.canvas.width, this.canvas.height],
+	                format: this.context.preferredFormat,
+	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+	            });
+	        }
 	        return this;
 	    }
 	    run(world) {
-	        const w = this.engine.canvas.width;
-	        const h = this.engine.canvas.height;
-	        const passEncoder = this.engine.renderPassEncoder;
+	        if (!this.inited) {
+	            return this;
+	        }
+	        this.loopStart();
+	        const w = this.canvas.width;
+	        const h = this.canvas.height;
+	        const passEncoder = this.context.passEncoder;
 	        passEncoder.setViewport(this.viewport.x * w, this.viewport.y * h, this.viewport.width * w, this.viewport.height * h, this.viewport.minDepth, this.viewport.maxDepth);
 	        passEncoder.setScissorRect(this.scissor.x * w, this.scissor.y * h, this.scissor.width * w, this.scissor.height * h);
 	        world.store.set("passEncoder", passEncoder);
 	        super.run(world);
+	        this.loopEnd();
 	        return this;
+	    }
+	    handle(entity) {
+	        if (entity.disabled) {
+	            return this;
+	        }
+	        // 根据不同类别进行渲染
+	        this.rendererMap.get(entity.getComponent(RENDERABLE)?.data)?.render(entity, this.context);
+	        return this;
+	    }
+	    loopStart() {
+	        this.currentCommandEncoder = this.context.device.createCommandEncoder();
+	        this.swapChainTexture = this.context.gpu.getCurrentTexture();
+	        this.renderPassDescriptor.colorAttachments[0].view = this.swapChainTexture.createView();
+	        this.context.passEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
+	    }
+	    loopEnd() {
+	        this.context.passEncoder.end();
+	        this.context.device.queue.submit([this.currentCommandEncoder.finish()]);
+	    }
+	    #depthTexture;
+	    setRenderPassDescripter() {
+	        if (this.#depthTexture) {
+	            this.#depthTexture.destroy();
+	        }
+	        let renderPassDescriptor = {
+	            colorAttachments: [
+	                {
+	                    view: null,
+	                    loadOp: "clear",
+	                    clearValue: this.clearColorGPU,
+	                    storeOp: "store"
+	                }
+	            ]
+	        };
+	        if (!this.options.noDepthTexture) {
+	            this.#depthTexture = this.context.device.createTexture({
+	                size: { width: this.canvas.width, height: this.canvas.height, depthOrArrayLayers: 1 },
+	                format: "depth24plus",
+	                usage: GPUTextureUsage.RENDER_ATTACHMENT
+	            });
+	            renderPassDescriptor.depthStencilAttachment = {
+	                view: this.#depthTexture.createView(),
+	                depthClearValue: 1.0,
+	                depthLoadOp: "clear",
+	                depthStoreOp: "store"
+	            };
+	        }
+	        this.renderPassDescriptor = renderPassDescriptor;
 	    }
 	}
 
@@ -11880,7 +11907,9 @@ struct VertexOutput {
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
 	exports.ComponentProxy = index$1;
+	exports.DEFAULT_ENGINE_OPTIONS = DEFAULT_ENGINE_OPTIONS;
 	exports.DepthMaterial = DepthMaterial;
+	exports.Engine = Engine;
 	exports.EngineTaskChunk = EngineTaskChunk;
 	exports.EngineTexture = EngineTexture;
 	exports.Entity = Entity;
@@ -11927,11 +11956,10 @@ struct VertexOutput {
 	exports.TweenSystem = TweenSystem;
 	exports.Vector2Scale2 = Vector2Scale2;
 	exports.Vector3Scale3 = Vector3Scale3;
-	exports.WebGLEngine = WebGLEngine;
-	exports.WebGPUEngine = WebGPUEngine;
-	exports.WebGPUMesh2Renderer = Mesh2Renderer;
-	exports.WebGPUMesh3Renderer = Mesh3Renderer;
-	exports.WebGPURenderSystem = RenderSystem;
+	exports.WebGPUMesh2Renderer = WebGPUMesh2Renderer;
+	exports.WebGPUMesh3Renderer = WebGPUMesh3Renderer;
+	exports.WebGPURenderSystem = WebGPURenderSystem;
+	exports.WebGPURenderSystem2 = WebGPURenderSystem;
 	exports.World = World;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
