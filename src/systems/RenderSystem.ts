@@ -1,46 +1,147 @@
+import { ColorGPU } from "@valeera/mathx";
+import { System } from "@valeera/x";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import IEntityManager from "@valeera/x/src/interfaces/IEntityManager";
 import ISystemManager from "@valeera/x/src/interfaces/ISystemManager";
-import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
-import IRenderSystem from "./IRenderSystem";
+import { RENDERABLE } from "../components/constants";
+import getColorGPU, { ColorFormatType } from "../utils/getColorGPU";
+import { IRenderer } from "./IRenderer";
+import { IRenderSystemInCanvas, IRenderSystemInCanvasOptions } from "./IRenderSystem";
+import IScissor from "./IScissor";
+import IViewport from "./IViewport";
 
-export default abstract class RenderSystem implements IRenderSystem {
-    destroy(): this {
-        throw new Error("Method not implemented.");
-    }
-    addRenderer(renderer: any): this {
-        throw new Error("Method not implemented.");
-    }
-    setClear(): this {
-        throw new Error("Method not implemented.");
-    }
+export abstract class RenderSystemInCanvas extends System implements IRenderSystemInCanvas {
+    context: any;
+    alphaMode: string;
+    viewport: IViewport = {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        minDepth: 0,
+        maxDepth: 1
+    };
+    scissor: IScissor = {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1
+    };
     id: number = 0;
     cache: WeakMap<IEntity, any> = new WeakMap<IEntity, any>();
-    disabled: boolean = false;
     entitySet: WeakMap<IEntityManager, Set<IEntity>> = new WeakMap<IEntityManager, Set<IEntity>>();
     loopTimes: number = 0;
     name: string = "";
     usedBy: ISystemManager[] = [];
-    checkEntityManager(entityManager: IEntityManager): this {
-        throw new Error("Method not implemented.");
+    rendererMap: Map<string, IRenderer> = new Map();
+    canvas: HTMLCanvasElement;
+
+    options: Required<Omit<IRenderSystemInCanvasOptions, "element">> = {
+        width: 0,
+        height: 0,
+        resolution: 1,
+        alphaMode: "",
+        autoResize: false,
+        clearColor: new ColorGPU(),
+        noDepthTexture: false
+    };
+
+    constructor(name: string, options: IRenderSystemInCanvasOptions) {
+        super(name, (entity) => {
+            return entity.getComponent(RENDERABLE)?.data;
+        });
+        const element = options.element ?? document.body;
+        if (element instanceof HTMLCanvasElement) {
+            this.canvas = element;
+        } else {
+            this.canvas = document.createElement("canvas");
+            element.appendChild(this.canvas);
+        }
+        const parent = this.canvas.parentElement;
+        this.width = options.width ?? parent?.offsetWidth ?? window.innerWidth;
+        this.height = options.height ?? parent?.offsetHeight ?? window.innerHeight;
+        this.resolution = options.resolution ?? window.devicePixelRatio;
+        this.alphaMode = options.alphaMode ?? "premultiplied";
+        this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
+        this.options.autoResize = options.autoResize ?? false;
+        this.options.noDepthTexture = options.noDepthTexture ?? false;
     }
-    checkUpdatedEntities(manager: IEntityManager | null): this {
-        throw new Error("Method not implemented.");
+
+    clearColorGPU = new ColorGPU(0, 0, 0, 1);
+
+    get clearColor(): ColorFormatType {
+        return this.options.clearColor;
     }
-    query(entity: IEntity): boolean {
-        throw new Error("Method not implemented.");
+
+    set clearColor(value: ColorFormatType) {
+        this.options.clearColor = value;
+        getColorGPU(value, this.clearColorGPU);
     }
-    handle(entity: IEntity, params: TWorldInjection): this {
-        throw new Error("Method not implemented.");
+
+    get resolution(): number {
+        return this.options.resolution;
     }
-    run(world: IWorld): this {
-        throw new Error("Method not implemented.");
+
+    set resolution(v: number) {
+        this.options.resolution = v;
+
+        this.resize(this.options.width, this.options.height, v);
     }
+
+    get width(): number {
+        return this.options.width;
+    }
+
+    set width(v: number) {
+        this.options.width = v;
+
+        this.resize(v, this.options.height, this.options.resolution);
+    }
+
+    get height(): number {
+        return this.options.height;
+    }
+
+    set height(v: number) {
+        this.options.height = v;
+
+        this.resize(this.options.width, v, this.options.resolution);
+    }
+
+    addRenderer(renderer: IRenderer): this {
+        if (typeof renderer.renderTypes === "string") {
+            this.rendererMap.set(renderer.renderTypes, renderer);
+        } else {
+            for (let item of renderer.renderTypes) {
+                this.rendererMap.set(item, renderer);
+            }
+        }
+        return this;
+    }
+
+    destroy() {
+        this.rendererMap.clear();
+
+        return this;
+    }
+
+    resize(width: number, height: number, resolution: number = this.resolution): this {
+        this.options.width = width;
+        this.options.height = height;
+        this.options.resolution = resolution;
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
+        this.canvas.width = width * resolution;
+        this.canvas.height = height * resolution;
+
+        return this;
+    }
+
     serialize(): any {
         return {
             id: this.id,
             name: this.name,
-            type: "system"
+            type: "RenderSystem"
         };
     }
 }
