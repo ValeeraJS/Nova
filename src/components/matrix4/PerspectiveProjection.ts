@@ -4,7 +4,7 @@ import AProjection3 from "./AProjection3";
 export default class PerspectiveProjection extends AProjection3 {
     options: { fovy: number; aspect: number; near: number; far: number; };
 
-    constructor(fovy: number, aspect: number, near: number, far: number) {
+    constructor(fovy: number = Math.PI * 0.25, aspect: number = window.innerWidth / window.innerHeight, near: number = 0.01, far: number = 100) {
         super();
         this.options = {
             fovy,
@@ -18,37 +18,37 @@ export default class PerspectiveProjection extends AProjection3 {
     get fovy() {
         return this.options.fovy;
     }
-    
+
     set fovy(value: number) {
         this.options.fovy = value;
 
         this.update();
     }
-    
+
     get aspect() {
         return this.aspect;
     }
-    
+
     set aspect(value: number) {
         this.options.aspect = value;
 
         this.update();
     }
-    
+
     get near() {
         return this.options.near;
     }
-    
+
     set near(value: number) {
         this.options.near = value;
 
         this.update();
     }
-    
+
     get far() {
         return this.options.far;
     }
-    
+
     set far(value: number) {
         this.options.far = value;
 
