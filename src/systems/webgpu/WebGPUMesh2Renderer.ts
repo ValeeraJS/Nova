@@ -2,9 +2,8 @@ import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
 import { BUFFER, GEOMETRY, MATERIAL, MESH2, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
 import { updateModelMatrixComponent } from "../../components/matrix3/Matrix3Component";
-import WebGPUEngine from "../../engine/WebGPUEngine";
 import createVerticesBuffer from "./createVerticesBuffer";
-import IRenderer from "./IWebGPURenderer";
+import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { IUniformSlot } from "../../components/material/IMatrial";
 import Material from "../../components/material/Material";
 import { ICamera2 } from "../../entities/Camera2";
@@ -24,36 +23,35 @@ interface ICacheData {
 	material: Material;
 }
 
-export default class Mesh2Renderer implements IRenderer {
+export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	public static readonly renderTypes = MESH2;
 	public readonly renderTypes = MESH2;
 	public camera: ICamera2;
 	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
-	engine: WebGPUEngine;
-	public constructor(engine: WebGPUEngine, camera: ICamera2) {
-		this.engine = engine;
+
+	public constructor(camera: ICamera2) {
 		this.camera = camera;
 	}
 
-	render(mesh: Object2, passEncoder: GPURenderPassEncoder): this {
+	render(mesh: Object2, context: GPURendererContext): this {
 		let cacheData = this.entityCacheData.get(mesh);
 		// 假设更换了几何体和材质则重新生成缓存
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 
 		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
-			cacheData = this.createCacheData(mesh);
+			cacheData = this.createCacheData(mesh, context);
 			this.entityCacheData.set(mesh, cacheData);
 		} else {
 			// TODO update cache
 			updateModelMatrixComponent(mesh);
 		}
 
-		passEncoder.setPipeline(cacheData.pipeline);
+		context.passEncoder.setPipeline(cacheData.pipeline);
 		// passEncoder.setScissorRect(0, 0, 400, 225);
 		// TODO 有多个attribute buffer
 		for (let i = 0; i < cacheData.attributesBuffers.length; i++) {
-			passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
+			context.passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
 		}
 
 		const mvp = cacheData.mvp;
@@ -63,7 +61,7 @@ export default class Mesh2Renderer implements IRenderer {
 		Matrix3.multiply(mvp, mesh.worldMatrix.data, mvp);
 		fromMatrix3MVP(mvp, mvpExt);
 
-		this.engine.device.queue.writeBuffer(
+		context.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
 			0,
 			mvpExt.buffer,
@@ -73,7 +71,7 @@ export default class Mesh2Renderer implements IRenderer {
 
 		cacheData.uniformMap.forEach((uniform, key) => {
 			if (uniform.type === BUFFER && uniform.dirty) {
-				this.engine.device.queue.writeBuffer(
+				context.device.queue.writeBuffer(
 					key,
 					0,
 					uniform.value.buffer,
@@ -84,7 +82,7 @@ export default class Mesh2Renderer implements IRenderer {
 			} else if (uniform.type === TEXTURE_IMAGE && (uniform.dirty || uniform.value.dirty)) {
 				if (uniform.value.loaded) {
 					if (uniform.value.data) {
-						this.engine.device.queue.copyExternalImageToTexture(
+						context.device.queue.copyExternalImageToTexture(
 							{ source: uniform.value.data },
 							{ texture: key },
 							[uniform.value.data.width, uniform.value.data.height, 1]
@@ -95,15 +93,15 @@ export default class Mesh2Renderer implements IRenderer {
 			}
 		});
 
-		passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
-		passEncoder.draw((mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry).count, 1, 0, 0);
+		context.passEncoder.setBindGroup(0, cacheData.uniformBindGroup);
+		context.passEncoder.draw((mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry).count, 1, 0, 0);
 
 		return this;
 	}
 
-	private createCacheData(mesh: Object2): ICacheData {
+	private createCacheData(mesh: Object2, context: GPURendererContext): ICacheData {
 		updateModelMatrixComponent(mesh);
-		let device = this.engine.device;
+		let device = context.device;
 
 		let uniformBuffer = device.createBuffer({
 			size: 64,
@@ -117,7 +115,7 @@ export default class Mesh2Renderer implements IRenderer {
 			buffers.push(createVerticesBuffer(device, nodes[i].data));
 		}
 
-		let pipeline = this.createPipeline(geometry, material);
+		let pipeline = this.createPipeline(geometry, material, context);
 		let groupEntries: GPUBindGroupEntry[] = [{
 			binding: 0,
 			resource: {
@@ -182,15 +180,15 @@ export default class Mesh2Renderer implements IRenderer {
 		};
 	}
 
-	private createPipeline(geometry: Geometry, material: Material) {
-		const pipelineLayout = this.engine.device.createPipelineLayout({
-			bindGroupLayouts: [this.createBindGroupLayout(material)],
+	private createPipeline(geometry: Geometry, material: Material, context: GPURendererContext) {
+		const pipelineLayout = context.device.createPipelineLayout({
+			bindGroupLayouts: [this.createBindGroupLayout(material, context)],
 		});
 		let vertexBuffers: GPUVertexBufferLayout[] = this.parseGeometryBufferLayout(geometry);
 
-		let stages = this.createStages(material, vertexBuffers);
+		let stages = this.createStages(material, vertexBuffers, context);
 
-		let pipeline = this.engine.device.createRenderPipeline({
+		let pipeline = context.device.createRenderPipeline({
 			layout: pipelineLayout,
 			vertex: stages.vertex,
 			fragment: stages.fragment,
@@ -230,7 +228,7 @@ export default class Mesh2Renderer implements IRenderer {
 		return vertexBuffers;
 	}
 
-	private createBindGroupLayout(material: Material) {
+	private createBindGroupLayout(material: Material, context: GPURendererContext) {
 		let uniforms: IUniformSlot[] = material.data.uniforms;
 		let entries: GPUBindGroupLayoutEntry[] = [
 			{
@@ -271,30 +269,30 @@ export default class Mesh2Renderer implements IRenderer {
 
 			}
 		}
-		return this.engine.device.createBindGroupLayout({
+		return context.device.createBindGroupLayout({
 			entries,
 		});
 	}
 
-	private createStages(material: Material, vertexBuffers: GPUVertexBufferLayout[]): {
+	private createStages(material: Material, vertexBuffers: GPUVertexBufferLayout[], context: GPURendererContext): {
 		vertex: GPUVertexState,
 		fragment: GPUFragmentState
 	} {
 		let vertex = {
-			module: this.engine.device.createShaderModule({
+			module: context.device.createShaderModule({
 				code: material.data.vertex,
 			}),
 			entryPoint: "main",
 			buffers: vertexBuffers
 		};
 		let fragment = {
-			module: this.engine.device.createShaderModule({
+			module: context.device.createShaderModule({
 				code: material.data.fragment,
 			}),
 			entryPoint: "main",
 			targets: [
 				{
-					format: this.engine.preferredFormat,
+					format: context.preferredFormat,
 					blend: material?.data.blend
 				}
 			]
