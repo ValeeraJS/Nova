@@ -67,15 +67,26 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
         this.options.noDepthTexture = options.noDepthTexture ?? false;
     }
 
-    clearColorGPU = new ColorGPU(0, 0, 0, 1);
+    protected clearColorGPU = new ColorGPU(0, 0, 0, 1);
 
     get clearColor(): ColorFormatType {
         return this.options.clearColor;
     }
 
     set clearColor(value: ColorFormatType) {
-        this.options.clearColor = value;
         getColorGPU(value, this.clearColorGPU);
+
+        if (value instanceof Object) {
+            this.options.clearColor = new Proxy(value, {
+                get: (target, property, receiver) => {
+                    const res = Reflect.get(target, property, receiver);
+                    this.clearColor = target;
+                    return res;
+                },
+            });
+        } else {
+            this.options.clearColor = value;
+        }
     }
 
     get resolution(): number {

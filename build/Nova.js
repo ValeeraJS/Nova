@@ -11613,8 +11613,19 @@ struct VertexOutput {
 	        return this.options.clearColor;
 	    }
 	    set clearColor(value) {
-	        this.options.clearColor = value;
 	        getColorGPU(value, this.clearColorGPU);
+	        if (value instanceof Object) {
+	            this.options.clearColor = new Proxy(value, {
+	                get: (target, property, receiver) => {
+	                    const res = Reflect.get(target, property, receiver);
+	                    this.clearColor = target;
+	                    return res;
+	                },
+	            });
+	        }
+	        else {
+	            this.options.clearColor = value;
+	        }
 	    }
 	    get resolution() {
 	        return this.options.resolution;

@@ -10,7 +10,7 @@
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		let renderSystem = new Nova.WebGPURenderSystem();
+		const renderSystem = new Nova.WebGPURenderSystem();
 		world.addSystem(renderSystem);
 		createGUI();
 
@@ -21,15 +21,10 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("clear color");
-
-			function updateColor() {
-				renderSystem.clearColor = renderSystem.clearColor;
-			}
-
-			f.add(renderSystem.clearColor, "r", 0, 1).step(0.01).onChange(updateColor);
-			f.add(renderSystem.clearColor, "g", 0, 1).step(0.01).onChange(updateColor);
-			f.add(renderSystem.clearColor, "b", 0, 1).step(0.01).onChange(updateColor);
-			f.add(renderSystem.clearColor, "a", 0, 1).step(0.01).onChange(updateColor);
+			f.add(renderSystem.clearColor, "r", 0, 1).step(0.01);
+			f.add(renderSystem.clearColor, "g", 0, 1).step(0.01);
+			f.add(renderSystem.clearColor, "b", 0, 1).step(0.01);
+			f.add(renderSystem.clearColor, "a", 0, 1).step(0.01);
 		}
 	</script>
 </body>

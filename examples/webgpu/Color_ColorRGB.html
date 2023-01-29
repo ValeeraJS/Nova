@@ -4,23 +4,19 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="../../build/Nova.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
-		engine.clearColor = new Nova.Mathx.ColorRGB();
+		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			world.addSystem(renderSystem);
-			createGUI();
+		const renderSystem = new Nova.WebGPURenderSystem();
+		renderSystem.clearColor = new Nova.Mathx.ColorRGB();
+		world.addSystem(renderSystem);
+		createGUI();
 
-			engine.addTask(() => {
-				world.run();
-			});
+		engine.addTask(() => {
+			world.run();
 		});
 
 		function createGUI() {
@@ -30,10 +26,10 @@
 			function updateColor() {
 				engine.clearColor = engine.clearColor;
 			}
-			
-			f.add(engine.clearColor, "r", 0, 255).step(1).onChange(updateColor);
-			f.add(engine.clearColor, "g", 0, 255).step(1).onChange(updateColor);
-			f.add(engine.clearColor, "b", 0, 255).step(1).onChange(updateColor);
+
+			f.add(renderSystem.clearColor, "r", 0, 255).step(1);
+			f.add(renderSystem.clearColor, "g", 0, 255).step(1);
+			f.add(renderSystem.clearColor, "b", 0, 255).step(1);
 		}
 	</script>
 </body>
