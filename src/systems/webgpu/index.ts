@@ -1,5 +1,7 @@
-export type {default as IWebGPURenderer} from './IWebGPURenderer';
+export * from './IWebGPURenderer';
 // export {default as WebGPUClearer} from './Clearer';
-export {default as WebGPUMesh2Renderer} from './Mesh2Renderer';
-export {default as WebGPUMesh3Renderer} from './Mesh3Renderer';
-export {default as WebGPURenderSystem} from './RenderSystem';
+export * from './WebGPUMesh2Renderer';
+export * from './WebGPUMesh3Renderer';
+export * from './WebGPURenderSystem';
+
+export { WebGPURenderSystem as WebGPURenderSystem2 } from "./WebGPURenderSystem";
