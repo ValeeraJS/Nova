@@ -1,7 +1,6 @@
-import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IEngine from "../engine/IEngine";
+import type { IEntity } from "@valeera/x";
 
-export default interface IWebGLRenderer {
-    engine: IEngine;
-    renderTypes: string | string[]; // 某渲染器可渲染的实例渲染标记类型
+export interface IRenderer {
+    renderTypes: string | string[];
+    render(entity: IEntity, ...args: any[]): any; // 处理渲染逻辑
 }
