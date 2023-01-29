@@ -26,7 +26,7 @@ export default class PerspectiveProjection extends AProjection3 {
     }
 
     get aspect() {
-        return this.aspect;
+        return this.options.aspect;
     }
 
     set aspect(value: number) {
