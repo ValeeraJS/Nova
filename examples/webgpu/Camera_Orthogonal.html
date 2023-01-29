@@ -1,15 +1,15 @@
 <!DOCTYPE html>
+
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
+
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
+		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
 		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
@@ -22,16 +22,15 @@
 		mesh.position.z = -5;
 
 		const projection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
-		
+
 		const camera = new Nova.Camera3("test-camera", projection);
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
-			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem).add(mesh);
-			createGUI();
-		}).addTask(() => {
+		const renderSystem = new Nova.WebGPURenderSystem(engine);
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(mesh);
+		createGUI();
+		engine.addTask(() => {
 			world.run();
 			mesh.rotation.y -= 0.01;
 		});
@@ -39,24 +38,12 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("Orthogonal camera");
-			const options = {
-				left: -8,
-				right: 8,
-				top: 4.5,
-				bottom: -4.5,
-				near: 0.01,
-				far: 10
-			};
-			f.add(options, "left", -16, -2).step(0.1).onChange(onChange);
-			f.add(options, "right", 2, 16).step(0.1).onChange(onChange);
-			f.add(options, "top", 2, 9).step(0.1).onChange(onChange);
-			f.add(options, "bottom", -9, -2).step(0.1).onChange(onChange);
-			f.add(options, "near", 0.1, 2).step(0.1).onChange(onChange);
-			f.add(options, "far", 3, 10).step(0.1).onChange(onChange);
-
-			function onChange(val) {
-				camera.projection.set(options.left, options.right, options.bottom, options.top, options.near, options.far);
-			}
+			f.add(projection, "left", -16, -2).step(0.1);
+			f.add(projection, "right", 2, 16).step(0.1);
+			f.add(projection, "top", 2, 9).step(0.1);
+			f.add(projection, "bottom", -9, -2).step(0.1);
+			f.add(projection, "near", 0.1, 2).step(0.1);
+			f.add(projection, "far", 3, 100).step(0.1);
 		}
 	</script>
 </body>
