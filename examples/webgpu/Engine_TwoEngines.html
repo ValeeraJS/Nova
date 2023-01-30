@@ -11,17 +11,10 @@
 	<script>
 		const canvas = document.getElementById("gpucanvas");
 		const canvas2 = document.getElementById("gpucanvas2");
-		const engine1 = new Nova.WebGPUEngine(canvas, {
-			width: 800,
-			height: 450
-		});
-		const engine2 = new Nova.WebGPUEngine(canvas2, {
-			width: 800,
-			height: 450
-		});
+		const engine1 = new Nova.Engine();
+		const engine2 = new Nova.Engine();
 
-		function createWorld(engine, clearColor) {
-			engine.clearColor = clearColor;
+		function createWorld(engine, canvas, clearColor) {
 			const world = new Nova.World();
 			const geo = Nova.Geometry3Factory.createTriangle3();
 			const mesh = Nova.EntityFactory.createMesh3(geo);
@@ -35,24 +28,20 @@
 			);
 			const camera = new Nova.Camera3("", projection);
 
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
+			let renderSystem = new Nova.WebGPURenderSystem('', {
+				element: canvas,
+				clearColor
+			});
+			let renderer = new Nova.WebGPUMesh3Renderer(camera);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem).add(mesh);
 
 			engine.addTask(() => {
 				world.run();
 			});
-
-			return renderSystem;
 		}
 
-		engine1.once(Nova.EngineEvents.INITED, (e) => {
-			createWorld(engine1, new Nova.Mathx.ColorGPU(1, 0, 0, 1));
-		});
-
-		engine2.once(Nova.EngineEvents.INITED, (e) => {
-			createWorld(engine2, new Nova.Mathx.ColorGPU(0, 0, 1, 1));
-		});
+		createWorld(engine1, canvas, new Nova.Mathx.ColorGPU(1, 0, 0, 1));
+		createWorld(engine2, canvas2, new Nova.Mathx.ColorGPU(0, 0, 1, 1));
 	</script>
 </body>
