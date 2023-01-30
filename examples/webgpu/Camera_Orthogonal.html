@@ -21,7 +21,7 @@
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
 		mesh.position.z = -5;
 
-		const projection = new Nova.OrthogonalProjection(-8, 8, -4.5, 4.5, 1, 9);
+		const projection = new Nova.OrthogonalProjection();
 
 		const camera = new Nova.Camera3("", projection);
 
