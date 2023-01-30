@@ -26,9 +26,14 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 	public static readonly renderTypes = MESH3;
 	public readonly renderTypes = MESH3;
 	public camera: ICamera3;
-	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
+	private entityCacheData: Map<IEntity, ICacheData> = new Map();
 	public constructor(camera: ICamera3) {
 		this.camera = camera;
+	}
+
+	clearCache() {
+		this.entityCacheData.clear();
+		return this;
 	}
 
 	render(mesh: Object3, context: GPURendererContext): this {
@@ -124,9 +129,9 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		let uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
-				let uniform = uniforms[i];
+				const uniform = uniforms[i];
 				if (uniform.type === BUFFER) {
-					let buffer: GPUBuffer = device.createBuffer({
+					const buffer: GPUBuffer = device.createBuffer({
 						size: uniform.value.length * 4,
 						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 					});
@@ -138,14 +143,14 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 						}
 					});
 				} else if (uniform.type === SAMPLER) {
-					let sampler: GPUSampler = device.createSampler(uniform.value.data);
+					const sampler: GPUSampler = device.createSampler(uniform.value.data);
 					uniformMap.set(sampler, uniform);
 					groupEntries.push({
 						binding: uniform.binding,
 						resource: sampler
 					});
 				} else if (uniform.type === TEXTURE_IMAGE) {
-					let texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
+					const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
 						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',
 						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
@@ -159,7 +164,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 			}
 		}
 
-		let uniformBindGroup = device.createBindGroup({
+		const uniformBindGroup = device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
 			entries: groupEntries,
 		});
@@ -180,11 +185,9 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		const pipelineLayout = context.device.createPipelineLayout({
 			bindGroupLayouts: [this.createBindGroupLayout(material, context)],
 		});
-		let vertexBuffers: GPUVertexBufferLayout[] = this.parseGeometryBufferLayout(geometry);
-		
-		let stages = this.createStages(material, vertexBuffers, context);
-
-		let pipeline = context.device.createRenderPipeline({
+		const vertexBuffers: GPUVertexBufferLayout[] = this.parseGeometryBufferLayout(geometry);
+		const stages = this.createStages(material, vertexBuffers, context);
+		const des: GPURenderPipelineDescriptor = {
 			layout: pipelineLayout,
 			vertex: stages.vertex,
 			fragment: stages.fragment,
@@ -196,10 +199,12 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 				depthWriteEnabled: true,
 				depthCompare: 'less',
 				format: 'depth24plus',
-			},
-		});
-
-		return pipeline;
+			}
+		};
+		if (context.multisample) {
+			des.multisample = context.multisample;
+		}
+		return context.device.createRenderPipeline(des);
 	}
 
 	private parseGeometryBufferLayout(geometry: Geometry) {
