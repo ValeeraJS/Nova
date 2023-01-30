@@ -7722,6 +7722,60 @@ struct VertexOutput {
 	    }
 	}
 
+	class PerspectiveProjectionX extends AProjection3 {
+	    options;
+	    constructor(fovx = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
+	        super();
+	        this.options = {
+	            fovx,
+	            aspect,
+	            near,
+	            far,
+	        };
+	        this.update();
+	    }
+	    get fovx() {
+	        return this.options.fovx;
+	    }
+	    set fovx(value) {
+	        this.options.fovx = value;
+	        this.update();
+	    }
+	    get aspect() {
+	        return this.options.aspect;
+	    }
+	    set aspect(value) {
+	        this.options.aspect = value;
+	        this.update();
+	    }
+	    get near() {
+	        return this.options.near;
+	    }
+	    set near(value) {
+	        this.options.near = value;
+	        this.update();
+	    }
+	    get far() {
+	        return this.options.far;
+	    }
+	    set far(value) {
+	        this.options.far = value;
+	        this.update();
+	    }
+	    set(fovx = this.fovx, aspect = this.aspect, near = this.near, far = this.far) {
+	        this.options.fovx = fovx;
+	        this.options.aspect = aspect;
+	        this.options.near = near;
+	        this.options.far = far;
+	        return this.update();
+	    }
+	    update() {
+	        Matrix4$1.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
 	class Renderable extends Component$1 {
 	    tags = [{
 	            label: RENDERABLE,
@@ -9058,9 +9112,13 @@ struct VertexOutput {
 	    static renderTypes = MESH2;
 	    renderTypes = MESH2;
 	    camera;
-	    entityCacheData = new WeakMap();
+	    entityCacheData = new Map();
 	    constructor(camera) {
 	        this.camera = camera;
+	    }
+	    clearCache() {
+	        this.entityCacheData.clear();
+	        return this;
 	    }
 	    render(mesh, context) {
 	        let cacheData = this.entityCacheData.get(mesh);
@@ -11277,9 +11335,13 @@ struct VertexOutput {
 	    static renderTypes = MESH3;
 	    renderTypes = MESH3;
 	    camera;
-	    entityCacheData = new WeakMap();
+	    entityCacheData = new Map();
 	    constructor(camera) {
 	        this.camera = camera;
+	    }
+	    clearCache() {
+	        this.entityCacheData.clear();
+	        return this;
 	    }
 	    render(mesh, context) {
 	        let cacheData = this.entityCacheData.get(mesh);
@@ -11347,9 +11409,9 @@ struct VertexOutput {
 	        let uniformMap = new Map();
 	        if (uniforms) {
 	            for (let i = 0; i < uniforms.length; i++) {
-	                let uniform = uniforms[i];
+	                const uniform = uniforms[i];
 	                if (uniform.type === BUFFER) {
-	                    let buffer = device.createBuffer({
+	                    const buffer = device.createBuffer({
 	                        size: uniform.value.length * 4,
 	                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	                    });
@@ -11362,7 +11424,7 @@ struct VertexOutput {
 	                    });
 	                }
 	                else if (uniform.type === SAMPLER) {
-	                    let sampler = device.createSampler(uniform.value.data);
+	                    const sampler = device.createSampler(uniform.value.data);
 	                    uniformMap.set(sampler, uniform);
 	                    groupEntries.push({
 	                        binding: uniform.binding,
@@ -11370,7 +11432,7 @@ struct VertexOutput {
 	                    });
 	                }
 	                else if (uniform.type === TEXTURE_IMAGE) {
-	                    let texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
+	                    const texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
 	                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 	                        format: 'rgba8unorm',
 	                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
@@ -11383,7 +11445,7 @@ struct VertexOutput {
 	                }
 	            }
 	        }
-	        let uniformBindGroup = device.createBindGroup({
+	        const uniformBindGroup = device.createBindGroup({
 	            layout: pipeline.getBindGroupLayout(0),
 	            entries: groupEntries,
 	        });
@@ -11402,9 +11464,9 @@ struct VertexOutput {
 	        const pipelineLayout = context.device.createPipelineLayout({
 	            bindGroupLayouts: [this.createBindGroupLayout(material, context)],
 	        });
-	        let vertexBuffers = this.parseGeometryBufferLayout(geometry);
-	        let stages = this.createStages(material, vertexBuffers, context);
-	        let pipeline = context.device.createRenderPipeline({
+	        const vertexBuffers = this.parseGeometryBufferLayout(geometry);
+	        const stages = this.createStages(material, vertexBuffers, context);
+	        const des = {
 	            layout: pipelineLayout,
 	            vertex: stages.vertex,
 	            fragment: stages.fragment,
@@ -11416,9 +11478,12 @@ struct VertexOutput {
 	                depthWriteEnabled: true,
 	                depthCompare: 'less',
 	                format: 'depth24plus',
-	            },
-	        });
-	        return pipeline;
+	            }
+	        };
+	        if (context.multisample) {
+	            des.multisample = context.multisample;
+	        }
+	        return context.device.createRenderPipeline(des);
 	    }
 	    parseGeometryBufferLayout(geometry) {
 	        let vertexBuffers = [];
@@ -11592,6 +11657,8 @@ struct VertexOutput {
 	            return entity.getComponent(RENDERABLE)?.data;
 	        });
 	        const element = options.element ?? document.body;
+	        const w = element.offsetWidth;
+	        const h = element.offsetHeight;
 	        if (element instanceof HTMLCanvasElement) {
 	            this.canvas = element;
 	        }
@@ -11599,13 +11666,12 @@ struct VertexOutput {
 	            this.canvas = document.createElement("canvas");
 	            element.appendChild(this.canvas);
 	        }
-	        const parent = this.canvas.parentElement;
-	        this.width = options.width ?? parent?.offsetWidth ?? window.innerWidth;
-	        this.height = options.height ?? parent?.offsetHeight ?? window.innerHeight;
+	        this.width = options.width ?? w;
+	        this.height = options.height ?? h;
 	        this.resolution = options.resolution ?? window.devicePixelRatio;
 	        this.alphaMode = options.alphaMode ?? "premultiplied";
 	        this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
-	        this.options.autoResize = options.autoResize ?? false;
+	        this.autoResize = options.autoResize ?? false;
 	        this.options.noDepthTexture = options.noDepthTexture ?? false;
 	    }
 	    clearColorGPU = new ColorGPU(0, 0, 0, 1);
@@ -11648,6 +11714,47 @@ struct VertexOutput {
 	        this.options.height = v;
 	        this.resize(this.options.width, v, this.options.resolution);
 	    }
+	    get autoResize() {
+	        return this.options.autoResize;
+	    }
+	    set autoResize(v) {
+	        this.options.autoResize = v;
+	        if (v) {
+	            this.#turnOnAutoResize();
+	        }
+	        else {
+	            this.#turnOffAutoResize();
+	        }
+	    }
+	    #isResizeObserverConnect = false;
+	    #resizeObserver = new ResizeObserver((parent) => {
+	        if (parent[0]) {
+	            const div = parent[0].target;
+	            this.resize(div.offsetWidth, div.offsetHeight);
+	        }
+	    });
+	    #turnOnAutoResize = () => {
+	        if (this.#isResizeObserverConnect) {
+	            return this;
+	        }
+	        let parent = this.canvas.parentElement;
+	        if (parent) {
+	            this.#resizeObserver.observe(parent);
+	            this.#isResizeObserverConnect = true;
+	        }
+	        return this;
+	    };
+	    #turnOffAutoResize = () => {
+	        if (!this.#isResizeObserverConnect) {
+	            return this;
+	        }
+	        let parent = this.canvas.parentElement;
+	        if (parent) {
+	            this.#resizeObserver.unobserve(parent);
+	            this.#isResizeObserverConnect = false;
+	        }
+	        return this;
+	    };
 	    addRenderer(renderer) {
 	        if (typeof renderer.renderTypes === "string") {
 	            this.rendererMap.set(renderer.renderTypes, renderer);
@@ -11704,12 +11811,14 @@ struct VertexOutput {
 	    currentCommandEncoder;
 	    swapChainTexture;
 	    targetTexture;
+	    msaaTexture;
 	    renderPassDescriptor;
 	    constructor(name = "WebGPU Render System", options = {}) {
 	        super(name, options);
 	        WebGPURenderSystem.detect(this.canvas).then((data) => {
 	            this.context = data;
 	            this.context.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+	            this.setMSAA(options.multisample ?? false);
 	            this.setRenderPassDescripter();
 	            data.gpu.configure({
 	                device: data.device,
@@ -11717,8 +11826,48 @@ struct VertexOutput {
 	                format: this.context.preferredFormat,
 	                alphaMode: "premultiplied"
 	            });
+	            this.targetTexture = this.context.device.createTexture({
+	                size: [this.canvas.width, this.canvas.height],
+	                format: this.context.preferredFormat,
+	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+	            });
+	            if (options.multisample?.count > 1) {
+	                this.msaaTexture = this.context.device.createTexture({
+	                    size: [this.canvas.width, this.canvas.height],
+	                    format: this.context.preferredFormat,
+	                    sampleCount: this.context.multisample ? (this.context.multisample.count ?? 1) : 1,
+	                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+	                });
+	            }
 	            this.inited = true;
 	        });
+	    }
+	    setMSAA(data) {
+	        this.endTaskQueue.push(() => {
+	            if (typeof data === 'boolean') {
+	                if (data) {
+	                    this.context.multisample = {
+	                        count: 4
+	                    };
+	                }
+	                else {
+	                    delete this.context.multisample;
+	                }
+	            }
+	            else {
+	                if (data.count === 1) {
+	                    delete this.context.multisample;
+	                }
+	                else {
+	                    this.context.multisample = data;
+	                }
+	            }
+	            this.setRenderPassDescripter();
+	            for (const renderer of this.rendererMap) {
+	                renderer[1].clearCache();
+	            }
+	        });
+	        return this;
 	    }
 	    resize(width, height, resolution = this.resolution) {
 	        super.resize(width, height, resolution);
@@ -11726,6 +11875,10 @@ struct VertexOutput {
 	            this.setRenderPassDescripter();
 	            if (this.targetTexture) {
 	                this.targetTexture.destroy();
+	            }
+	            if (this.msaaTexture) {
+	                this.msaaTexture.destroy();
+	                this.msaaTexture = undefined;
 	            }
 	            this.targetTexture = this.context.device.createTexture({
 	                size: [this.canvas.width, this.canvas.height],
@@ -11761,13 +11914,31 @@ struct VertexOutput {
 	    loopStart() {
 	        this.currentCommandEncoder = this.context.device.createCommandEncoder();
 	        this.swapChainTexture = this.context.gpu.getCurrentTexture();
-	        this.renderPassDescriptor.colorAttachments[0].view = this.swapChainTexture.createView();
+	        if (this.context.multisample?.count > 1) {
+	            if (!this.msaaTexture) {
+	                this.msaaTexture = this.context.device.createTexture({
+	                    size: [this.canvas.width, this.canvas.height],
+	                    format: this.context.preferredFormat,
+	                    sampleCount: this.context.multisample ? (this.context.multisample.count ?? 1) : 1,
+	                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+	                });
+	            }
+	            this.renderPassDescriptor.colorAttachments[0].view = this.msaaTexture.createView();
+	            this.renderPassDescriptor.colorAttachments[0].resolveTarget = this.swapChainTexture.createView();
+	        }
+	        else {
+	            this.renderPassDescriptor.colorAttachments[0].view = this.swapChainTexture.createView();
+	        }
 	        this.context.passEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
 	    }
 	    loopEnd() {
 	        this.context.passEncoder.end();
 	        this.context.device.queue.submit([this.currentCommandEncoder.finish()]);
+	        while (this.endTaskQueue.length) {
+	            this.endTaskQueue.shift()();
+	        }
 	    }
+	    endTaskQueue = [];
 	    #depthTexture;
 	    setRenderPassDescripter() {
 	        if (this.#depthTexture) {
@@ -11787,6 +11958,7 @@ struct VertexOutput {
 	            this.#depthTexture = this.context.device.createTexture({
 	                size: { width: this.canvas.width, height: this.canvas.height, depthOrArrayLayers: 1 },
 	                format: "depth24plus",
+	                sampleCount: this.context.multisample ? (this.context.multisample.count ?? 1) : 1,
 	                usage: GPUTextureUsage.RENDER_ATTACHMENT
 	            });
 	            renderPassDescriptor.depthStencilAttachment = {
@@ -11949,6 +12121,7 @@ struct VertexOutput {
 	exports.Object3 = Object3;
 	exports.OrthogonalProjection = OrthogonalProjection;
 	exports.PerspectiveProjection = PerspectiveProjection;
+	exports.PerspectiveProjectionX = PerspectiveProjectionX;
 	exports.PolarPosition2 = PolarPosition2;
 	exports.Projection2D = Projection2D;
 	exports.PureSystem = PureSystem;

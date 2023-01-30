@@ -1,4 +1,4 @@
-import EventFire from "@valeera/eventdispatcher";
+import EventFire from "@valeera/eventfirer";
 import Timeline from "@valeera/timeline";
 import { DEFAULT_ENGINE_OPTIONS, EngineEvents, EngineOptions } from "./IEngine";
 import { EngineTaskChunk } from "./TaskChunk";

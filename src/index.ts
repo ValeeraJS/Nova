@@ -1,5 +1,5 @@
 import Timeline from "@valeera/timeline";
-import EventFire from "@valeera/eventdispatcher";
+import EventFire from "@valeera/eventfirer";
 
 export * from "./components";
 export * from "./engine";

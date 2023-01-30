@@ -71,12 +71,13 @@
 		"directories": {}
 	},
 	"dependencies": {
-		"@valeera/eventfirer": "1.0.0",
-		"@valeera/mathx": "0.1.52",
-		"@valeera/timeline": "0.1.2",
-		"@valeera/tree": "0.1.6",
-		"@valeera/webgpu-constant": "0.1.1",
-		"@valeera/x": "0.1.19"
+		"@valeera/eventfirer": "latest",
+		"@valeera/idgenerator": "latest",
+		"@valeera/mathx": "latest",
+		"@valeera/timeline": "latest",
+		"@valeera/tree": "latest",
+		"@valeera/webgpu-constant": "latest",
+		"@valeera/x": "latest"
 	},
 	"publishConfig": {
 		"access": "public"
