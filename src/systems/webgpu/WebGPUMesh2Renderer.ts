@@ -27,10 +27,15 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	public static readonly renderTypes = MESH2;
 	public readonly renderTypes = MESH2;
 	public camera: ICamera2;
-	private entityCacheData: WeakMap<IEntity, ICacheData> = new WeakMap();
+	private entityCacheData: Map<IEntity, ICacheData> = new Map();
 
 	public constructor(camera: ICamera2) {
 		this.camera = camera;
+	}
+
+	clearCache() {
+		this.entityCacheData.clear();
+		return this;
 	}
 
 	render(mesh: Object2, context: GPURendererContext): this {
