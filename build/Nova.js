@@ -102,17 +102,14 @@
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$3 = (Base = Object, eventKeyList = []) => {
+	const mixin$1 = (Base = Object, eventKeyList = []) => {
 	    return class EventFirer extends Base {
-	        static mixin = mixin$3;
+	        static mixin = mixin$1;
+	        #isFire = false;
+	        #fireIndex = -1;
+	        #offCount = new Map();
 	        eventKeyList = eventKeyList;
-	        /**
-	         * store all the filters
-	         */
 	        filters = [];
-	        /**
-	         * store all the listeners by key
-	         */
 	        listeners = new Map();
 	        all(listener) {
 	            return this.filt(() => true, listener);
@@ -136,23 +133,40 @@
 	            return this;
 	        }
 	        fire(eventKey, target) {
+	            if (eventKey instanceof Array) {
+	                for (let i = 0, len = eventKey.length; i < len; i++) {
+	                    this.fire(eventKey[i], target);
+	                }
+	                return this;
+	            }
+	            this.#isFire = true;
 	            if (!this.checkEventKeyAvailable(eventKey)) {
 	                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
 	                return this;
 	            }
 	            const array = this.listeners.get(eventKey) || [];
-	            let len = array.length;
+	            // let len = array.length;
 	            let item;
-	            for (let i = 0; i < len; i++) {
+	            for (let i = 0; i < array.length; i++) {
+	                this.#fireIndex = i;
 	                item = array[i];
 	                item.listener(target);
 	                item.times--;
 	                if (item.times <= 0) {
 	                    array.splice(i--, 1);
-	                    --len;
+	                }
+	                const count = this.#offCount.get(eventKey);
+	                if (count) {
+	                    // 如果在当前事件触发时，监听器依次触发，已触发的被移除
+	                    i -= count;
+	                    this.#offCount.clear();
 	                }
 	            }
-	            return this.checkFilt(eventKey, target);
+	            this.checkFilt(eventKey, target);
+	            this.#fireIndex = -1;
+	            this.#offCount.clear();
+	            this.#isFire = false;
+	            return this;
 	        }
 	        off(eventKey, listener) {
 	            const array = this.listeners.get(eventKey);
@@ -163,6 +177,10 @@
 	            for (let i = 0; i < len; i++) {
 	                if (array[i].listener === listener) {
 	                    array.splice(i, 1);
+	                    if (this.#isFire && this.#fireIndex >= i) {
+	                        const v = this.#offCount.get(eventKey) ?? 0;
+	                        this.#offCount.set(eventKey, v + 1);
+	                    }
 	                    break;
 	                }
 	            }
@@ -211,11 +229,11 @@
 	        }
 	    };
 	};
-	var EventDispatcher$1 = mixin$3(Object);
+	var EventDispatcher = mixin$1(Object);
 
-	const S4 = () => {
-	    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-	};
+	// const S4 = () => {
+	// 	return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+	// };
 	/**
 	 * @class
 	 * @classdesc 数字id生成器，用于生成递增id
@@ -224,7 +242,7 @@
 	 */
 	class IdGenerator {
 	    initValue;
-	    value;
+	    #value;
 	    /**
 	     * @member IdGenerator.initValue
 	     * @desc id从该值开始递增，在创建实例时进行设置。设置之后将无法修改。
@@ -232,7 +250,7 @@
 	     * @public
 	     */
 	    constructor(initValue = 0) {
-	        this.value = this.initValue = initValue;
+	        this.#value = this.initValue = initValue;
 	    }
 	    /**
 	     * @method IdGenerator.prototype.current
@@ -242,11 +260,11 @@
 	     * @returns {number} id
 	     */
 	    current() {
-	        return this.value;
+	        return this.#value;
 	    }
 	    jumpTo(value) {
-	        if (this.value < value) {
-	            this.value = value;
+	        if (this.#value < value) {
+	            this.#value = value;
 	            return true;
 	        }
 	        return false;
@@ -258,7 +276,7 @@
 	     * @returns {number} id
 	     */
 	    next() {
-	        return ++this.value;
+	        return ++this.#value;
 	    }
 	    /**
 	     * @method IdGenerator.prototype.skip
@@ -268,11 +286,8 @@
 	     * @returns {number} id
 	     */
 	    skip(value = 1) {
-	        if (value < 1) {
-	            value = 1;
-	        }
-	        this.value += value;
-	        return ++this.value;
+	        this.#value += Math.min(1, value);
+	        return ++this.#value;
 	    }
 	    /**
 	     * @method IdGenerator.prototype.skip
@@ -281,12 +296,12 @@
 	     * @returns {string} uuid
 	     */
 	    uuid() {
-	        if (crypto.randomUUID) {
-	            return crypto.randomUUID();
-	        }
-	        else {
-	            return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
-	        }
+	        // if (crypto.randomUUID) {
+	        // 	return (crypto as any).randomUUID();
+	        // } else {
+	        // 	return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
+	        // }
+	        return crypto.randomUUID();
 	    }
 	    /**
 	     * @method IdGenerator.prototype.skip
@@ -5820,22 +5835,22 @@
 		createTriangle2: createTriangle2
 	});
 
-	const FIND_LEAVES_VISITOR$1 = {
+	const FIND_LEAVES_VISITOR = {
 	    enter: (node, result) => {
 	        if (!node.children.length) {
 	            result.push(node);
 	        }
 	    }
 	};
-	const ARRAY_VISITOR$1 = {
+	const ARRAY_VISITOR = {
 	    enter: (node, result) => {
 	        result.push(node);
 	    }
 	};
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$2 = (Base = Object) => {
+	const mixin = (Base = Object) => {
 	    return class TreeNode extends Base {
-	        static mixin = mixin$2;
+	        static mixin = mixin;
 	        static addChild(node, child) {
 	            if (TreeNode.hasAncestor(node, child)) {
 	                throw new Error("The node added is one of the ancestors of current one.");
@@ -5862,7 +5877,7 @@
 	        }
 	        static findLeaves(node) {
 	            const result = [];
-	            TreeNode.traverse(node, FIND_LEAVES_VISITOR$1, result);
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
 	            return result;
 	        }
 	        static findRoot(node) {
@@ -5893,7 +5908,7 @@
 	        }
 	        static toArray(node) {
 	            const result = [];
-	            TreeNode.traverse(node, ARRAY_VISITOR$1, result);
+	            TreeNode.traverse(node, ARRAY_VISITOR, result);
 	            return result;
 	        }
 	        static traverse(node, visitor, rest) {
@@ -5933,12 +5948,12 @@
 	        }
 	    };
 	};
-	var TreeNode$1 = mixin$2(Object);
+	var TreeNode = mixin(Object);
 
 	const IdGeneratorInstance = new IdGenerator();
 
 	let weakMapTmp$1;
-	class System$1 {
+	class System$1 extends EventDispatcher {
 	    id = IdGeneratorInstance.next();
 	    isSystem = true;
 	    name = "";
@@ -5955,6 +5970,7 @@
 	        this._disabled = value;
 	    }
 	    constructor(name = "", fitRule) {
+	        super();
 	        this.name = name;
 	        this.disabled = false;
 	        this.rule = fitRule;
@@ -6085,7 +6101,7 @@
 	    ADD: "add",
 	    REMOVE: "remove"
 	};
-	class Manager extends EventDispatcher$1 {
+	class Manager extends EventDispatcher {
 	    static Events = ElementChangeEvent;
 	    elements = new Map();
 	    disabled = false;
@@ -6222,10 +6238,8 @@
 	    }
 	}
 
-	const TreeNodeWithEvent = mixin$3(TreeNode$1);
-
 	let arr$1;
-	class Entity extends TreeNodeWithEvent {
+	class Entity extends TreeNode.mixin(EventDispatcher) {
 	    id = IdGeneratorInstance.next();
 	    isEntity = true;
 	    componentManager = null;
@@ -6414,12 +6428,12 @@
 	        }
 	        return this;
 	    }
-	    run(world) {
+	    run(world, time, delta) {
 	        this.fire(SystemManager.Events.BEFORE_RUN, this);
 	        this.elements.forEach((item) => {
 	            item.checkUpdatedEntities(world.entityManager);
 	            if (!item.disabled) {
-	                item.run(world);
+	                item.run(world, time, delta);
 	            }
 	        });
 	        if (world.entityManager) {
@@ -6545,12 +6559,12 @@
 	        }
 	        return this;
 	    }
-	    run() {
+	    run(time, delta) {
 	        if (this.disabled) {
 	            return this;
 	        }
 	        if (this.systemManager) {
-	            this.systemManager.run(this);
+	            this.systemManager.run(this, time, delta);
 	        }
 	        return this;
 	    }
@@ -8124,136 +8138,6 @@ struct VertexOutput {
 	    container: document.body
 	};
 
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$1 = (Base = Object, eventKeyList = []) => {
-	    return class EventFirer extends Base {
-	        static mixin = mixin$1;
-	        #isFire = false;
-	        #fireIndex = -1;
-	        #offCount = new Map();
-	        eventKeyList = eventKeyList;
-	        filters = [];
-	        listeners = new Map();
-	        all(listener) {
-	            return this.filt(() => true, listener);
-	        }
-	        clearListenersByKey(eventKey) {
-	            this.listeners.delete(eventKey);
-	            return this;
-	        }
-	        clearAllListeners() {
-	            const keys = this.listeners.keys();
-	            for (const key of keys) {
-	                this.listeners.delete(key);
-	            }
-	            return this;
-	        }
-	        filt(rule, listener) {
-	            this.filters.push({
-	                listener,
-	                rule
-	            });
-	            return this;
-	        }
-	        fire(eventKey, target) {
-	            if (eventKey instanceof Array) {
-	                for (let i = 0, len = eventKey.length; i < len; i++) {
-	                    this.fire(eventKey[i], target);
-	                }
-	                return this;
-	            }
-	            this.#isFire = true;
-	            if (!this.checkEventKeyAvailable(eventKey)) {
-	                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
-	                return this;
-	            }
-	            const array = this.listeners.get(eventKey) || [];
-	            // let len = array.length;
-	            let item;
-	            for (let i = 0; i < array.length; i++) {
-	                this.#fireIndex = i;
-	                item = array[i];
-	                item.listener(target);
-	                item.times--;
-	                if (item.times <= 0) {
-	                    array.splice(i--, 1);
-	                }
-	                const count = this.#offCount.get(eventKey);
-	                if (count) {
-	                    // 如果在当前事件触发时，监听器依次触发，已触发的被移除
-	                    i -= count;
-	                    this.#offCount.clear();
-	                }
-	            }
-	            this.checkFilt(eventKey, target);
-	            this.#fireIndex = -1;
-	            this.#offCount.clear();
-	            this.#isFire = false;
-	            return this;
-	        }
-	        off(eventKey, listener) {
-	            const array = this.listeners.get(eventKey);
-	            if (!array) {
-	                return this;
-	            }
-	            const len = array.length;
-	            for (let i = 0; i < len; i++) {
-	                if (array[i].listener === listener) {
-	                    array.splice(i, 1);
-	                    if (this.#isFire && this.#fireIndex >= i) {
-	                        const v = this.#offCount.get(eventKey) ?? 0;
-	                        this.#offCount.set(eventKey, v + 1);
-	                    }
-	                    break;
-	                }
-	            }
-	            return this;
-	        }
-	        on(eventKey, listener) {
-	            if (eventKey instanceof Array) {
-	                for (let i = 0, j = eventKey.length; i < j; i++) {
-	                    this.times(eventKey[i], Infinity, listener);
-	                }
-	                return this;
-	            }
-	            return this.times(eventKey, Infinity, listener);
-	        }
-	        once(eventKey, listener) {
-	            return this.times(eventKey, 1, listener);
-	        }
-	        times(eventKey, times, listener) {
-	            if (!this.checkEventKeyAvailable(eventKey)) {
-	                console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
-	                return this;
-	            }
-	            const array = this.listeners.get(eventKey) || [];
-	            if (!this.listeners.has(eventKey)) {
-	                this.listeners.set(eventKey, array);
-	            }
-	            array.push({
-	                listener,
-	                times
-	            });
-	            return this;
-	        }
-	        checkFilt(eventKey, target) {
-	            for (const item of this.filters) {
-	                if (item.rule(eventKey, target)) {
-	                    item.listener(target, eventKey);
-	                }
-	            }
-	            return this;
-	        }
-	        checkEventKeyAvailable(eventKey) {
-	            if (this.eventKeyList.length) {
-	                return this.eventKeyList.includes(eventKey);
-	            }
-	            return true;
-	        }
-	    };
-	};
-	var EventDispatcher = mixin$1(Object);
-
 	class EngineTaskChunk extends EventDispatcher {
 	    static START = 'start';
 	    static END = 'end';
@@ -8295,7 +8179,7 @@ struct VertexOutput {
 	    };
 	}
 
-	class Engine extends EventDispatcher$1.mixin(Timeline) {
+	class Engine extends EventDispatcher.mixin(Timeline) {
 	    options;
 	    static Events = exports.EngineEvents;
 	    taskChunkTimeMap = new Map();
@@ -8746,7 +8630,7 @@ struct VertexOutput {
 	};
 
 	let weakMapTmp;
-	class System {
+	class System extends EventDispatcher {
 	    id = IdGeneratorInstance$1.next();
 	    isSystem = true;
 	    name = "";
@@ -8763,6 +8647,7 @@ struct VertexOutput {
 	        this._disabled = value;
 	    }
 	    constructor(name = "", fitRule) {
+	        super();
 	        this.name = name;
 	        this.disabled = false;
 	        this.rule = fitRule;
@@ -8875,121 +8760,6 @@ struct VertexOutput {
 	        return this;
 	    }
 	}
-
-	const FIND_LEAVES_VISITOR = {
-	    enter: (node, result) => {
-	        if (!node.children.length) {
-	            result.push(node);
-	        }
-	    }
-	};
-	const ARRAY_VISITOR = {
-	    enter: (node, result) => {
-	        result.push(node);
-	    }
-	};
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base = Object) => {
-	    return class TreeNode extends Base {
-	        static mixin = mixin;
-	        static addChild(node, child) {
-	            if (TreeNode.hasAncestor(node, child)) {
-	                throw new Error("The node added is one of the ancestors of current one.");
-	            }
-	            node.children.push(child);
-	            child.parent = node;
-	            return node;
-	        }
-	        static depth(node) {
-	            if (!node.children.length) {
-	                return 1;
-	            }
-	            else {
-	                const childrenDepth = [];
-	                for (const item of node.children) {
-	                    item && childrenDepth.push(this.depth(item));
-	                }
-	                let max = 0;
-	                for (const item of childrenDepth) {
-	                    max = Math.max(max, item);
-	                }
-	                return 1 + max;
-	            }
-	        }
-	        static findLeaves(node) {
-	            const result = [];
-	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
-	            return result;
-	        }
-	        static findRoot(node) {
-	            if (node.parent) {
-	                return this.findRoot(node.parent);
-	            }
-	            return node;
-	        }
-	        static hasAncestor(node, ancestor) {
-	            if (!node.parent) {
-	                return false;
-	            }
-	            else {
-	                if (node.parent === ancestor) {
-	                    return true;
-	                }
-	                else {
-	                    return TreeNode.hasAncestor(node.parent, ancestor);
-	                }
-	            }
-	        }
-	        static removeChild(node, child) {
-	            if (node.children.includes(child)) {
-	                node.children.splice(node.children.indexOf(child), 1);
-	                child.parent = null;
-	            }
-	            return node;
-	        }
-	        static toArray(node) {
-	            const result = [];
-	            TreeNode.traverse(node, ARRAY_VISITOR, result);
-	            return result;
-	        }
-	        static traverse(node, visitor, rest) {
-	            visitor.enter?.(node, rest);
-	            visitor.visit?.(node, rest);
-	            for (const item of node.children) {
-	                item && TreeNode.traverse(item, visitor, rest);
-	            }
-	            visitor.leave?.(node, rest);
-	            return node;
-	        }
-	        parent = null;
-	        children = [];
-	        addChild(node) {
-	            return TreeNode.addChild(this, node);
-	        }
-	        depth() {
-	            return TreeNode.depth(this);
-	        }
-	        findLeaves() {
-	            return TreeNode.findLeaves(this);
-	        }
-	        findRoot() {
-	            return TreeNode.findRoot(this);
-	        }
-	        hasAncestor(ancestor) {
-	            return TreeNode.hasAncestor(this, ancestor);
-	        }
-	        removeChild(child) {
-	            return TreeNode.removeChild(this, child);
-	        }
-	        toArray() {
-	            return TreeNode.toArray(this);
-	        }
-	        traverse(visitor, rest) {
-	            return TreeNode.traverse(this, visitor, rest);
-	        }
-	    };
-	};
-	var TreeNode = mixin(Object);
 
 	function fixData(data) {
 	    if (!data.path.startsWith("/")) {
@@ -12101,7 +11871,7 @@ struct VertexOutput {
 	exports.EuclidPosition2 = EuclidPosition2;
 	exports.EuclidPosition3 = EuclidPosition3;
 	exports.EulerRotation3 = EulerRotation3;
-	exports.EventFire = EventDispatcher$1;
+	exports.EventFire = EventDispatcher;
 	exports.Geometry = Geometry;
 	exports.Geometry2Factory = index$2;
 	exports.Geometry3Factory = index$3;

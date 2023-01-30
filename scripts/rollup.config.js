@@ -1,4 +1,4 @@
-import json from "rollup-plugin-json";
+import json from "@rollup/plugin-json";
 import typescript from "rollup-plugin-typescript2";
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 
