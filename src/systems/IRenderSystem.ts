@@ -28,3 +28,7 @@ export interface IRenderSystemInCanvasOptions {
 	width?: number;
 	noDepthTexture?: boolean;
 }
+
+export interface IRenderSystemWebGPUOptions extends IRenderSystemInCanvasOptions{
+	multisample?: GPUMultisampleState
+}
