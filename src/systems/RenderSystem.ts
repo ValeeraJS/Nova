@@ -1,6 +1,5 @@
 import { ColorGPU } from "@valeera/mathx";
-import { System } from "@valeera/x";
-import IEntity from "@valeera/x/src/interfaces/IEntity";
+import { IEntity, System } from "@valeera/x";
 import IEntityManager from "@valeera/x/src/interfaces/IEntityManager";
 import ISystemManager from "@valeera/x/src/interfaces/ISystemManager";
 import { RENDERABLE } from "../components/constants";
@@ -49,21 +48,22 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
     constructor(name: string, options: IRenderSystemInCanvasOptions) {
         super(name, (entity) => {
             return entity.getComponent(RENDERABLE)?.data;
-        });
+        });    
         const element = options.element ?? document.body;
+        const w = element.offsetWidth;
+        const h = element.offsetHeight;
         if (element instanceof HTMLCanvasElement) {
             this.canvas = element;
         } else {
             this.canvas = document.createElement("canvas");
             element.appendChild(this.canvas);
         }
-        const parent = this.canvas.parentElement;
-        this.width = options.width ?? parent?.offsetWidth ?? window.innerWidth;
-        this.height = options.height ?? parent?.offsetHeight ?? window.innerHeight;
+        this.width = options.width ?? w;
+        this.height = options.height ?? h;
         this.resolution = options.resolution ?? window.devicePixelRatio;
         this.alphaMode = options.alphaMode ?? "premultiplied";
         this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
-        this.options.autoResize = options.autoResize ?? false;
+        this.autoResize = options.autoResize ?? false;
         this.options.noDepthTexture = options.noDepthTexture ?? false;
     }
 
@@ -118,6 +118,50 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
 
         this.resize(this.options.width, v, this.options.resolution);
     }
+
+    get autoResize(): boolean {
+        return this.options.autoResize;
+    }
+
+    set autoResize(v: boolean) {
+        this.options.autoResize = v;
+        if (v) {
+            this.#turnOnAutoResize();
+        } else {
+            this.#turnOffAutoResize();
+        }
+    }
+
+
+	#isResizeObserverConnect = false;
+	#resizeObserver: ResizeObserver = new ResizeObserver((parent) => {
+		if (parent[0]) {
+			const div = parent[0].target as HTMLElement;
+			this.resize(div.offsetWidth, div.offsetHeight);
+		}
+	});
+	#turnOnAutoResize = () => {
+		if (this.#isResizeObserverConnect) {
+			return this;
+		}
+		let parent = this.canvas.parentElement;
+		if (parent) {
+			this.#resizeObserver.observe(parent);
+			this.#isResizeObserverConnect = true;
+		}
+		return this;
+	}
+	#turnOffAutoResize = () => {
+		if (!this.#isResizeObserverConnect) {
+			return this;
+		}
+		let parent = this.canvas.parentElement;
+		if (parent) {
+			this.#resizeObserver.unobserve(parent);
+			this.#isResizeObserverConnect = false;
+		}
+		return this;
+	}
 
     addRenderer(renderer: IRenderer): this {
         if (typeof renderer.renderTypes === "string") {
