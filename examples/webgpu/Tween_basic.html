@@ -36,9 +36,7 @@
 		world.addSystem(tweenSystem);
 
 		engine.addTask((time, delta) => {
-			// console.log(time, delta);
-			tween.time = time;
-			world.run();
+			world.run(time, delta);
 		});
 	</script>
 </body>

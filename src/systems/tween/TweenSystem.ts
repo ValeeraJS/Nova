@@ -7,20 +7,33 @@ import Tween from "../../components/tween/Tween";
 export default class TweenSystem extends System {
 
     public query(entity: IEntity): boolean {
-        return entity.hasComponent("tween");
+        let component = entity.getComponent("tween") as Tween;
+        if (!component) {
+            return false;
+        }
+        component.time = 0;
+        return true;
     }
 
     public destroy(): this {
         throw new Error("Method not implemented.");
     }
 
-    public run(world: IWorld, time: number, delta: number): this {
-        
-        return super.run(world, time, delta);
-    }
-
-    public handle(entity: IEntity): this {
+    public handle(entity: IEntity, time: number, delta: number): this {
         let tweenC = entity.getComponent("tween") as Tween;
+        if (tweenC.end) {
+            return this;
+        }
+        tweenC.time += delta;
+        if (tweenC.time > tweenC.duration) {
+            tweenC.loop--;
+            if (tweenC.loop >= 0) {
+                tweenC.time -= tweenC.duration;
+            } else {
+                tweenC.end = true;
+                tweenC.time = tweenC.duration;
+            }
+        }
         let map = tweenC.data;
         let from= tweenC.from;
         let rate = tweenC.time / tweenC.duration;

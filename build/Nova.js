@@ -6034,14 +6034,14 @@
 	    query(entity) {
 	        return this.rule(entity);
 	    }
-	    run(world) {
+	    run(world, time, delta) {
 	        if (this.disabled) {
 	            return this;
 	        }
 	        if (world.entityManager) {
 	            this.entitySet.get(world.entityManager)?.forEach((item) => {
 	                // 此处不应该校验disabled。这个交给各自系统自行判断
-	                this.handle(item, world.store);
+	                this.handle(item, time, delta);
 	            });
 	        }
 	        return this;
@@ -6063,8 +6063,8 @@
 	        super(name, fitRule);
 	        this.handler = handler;
 	    }
-	    handle(entity, params) {
-	        this.handler(entity, params);
+	    handle(entity, time, delta) {
+	        this.handler(entity, time, delta);
 	        return this;
 	    }
 	}
@@ -8009,10 +8009,11 @@ struct VertexOutput {
 	    loop;
 	    state;
 	    time;
-	    oldLoop;
+	    end = false;
+	    loopWholeTimes;
 	    constructor(from, to, duration = 1000, loop = 0) {
 	        super("tween", new Map());
-	        this.oldLoop = loop;
+	        this.loopWholeTimes = loop;
 	        this.from = from;
 	        this.to = to;
 	        this.duration = duration;
@@ -8022,9 +8023,10 @@ struct VertexOutput {
 	        this.checkKeyAndType(from, to);
 	    }
 	    reset() {
-	        this.loop = this.oldLoop;
+	        this.loop = this.loopWholeTimes;
 	        this.time = 0;
 	        this.state = TWEEN_STATE.IDLE;
+	        this.end = false;
 	    }
 	    // 检查from 和 to哪些属性是可以插值的
 	    checkKeyAndType(from, to) {
@@ -8740,14 +8742,14 @@ struct VertexOutput {
 	    query(entity) {
 	        return this.rule(entity);
 	    }
-	    run(world) {
+	    run(world, time, delta) {
 	        if (this.disabled) {
 	            return this;
 	        }
 	        if (world.entityManager) {
 	            this.entitySet.get(world.entityManager)?.forEach((item) => {
 	                // 此处不应该校验disabled。这个交给各自系统自行判断
-	                this.handle(item, world.store);
+	                this.handle(item, time, delta);
 	            });
 	        }
 	        return this;
@@ -9836,16 +9838,32 @@ struct VertexOutput {
 
 	class TweenSystem extends System {
 	    query(entity) {
-	        return entity.hasComponent("tween");
+	        let component = entity.getComponent("tween");
+	        if (!component) {
+	            return false;
+	        }
+	        component.time = 0;
+	        return true;
 	    }
 	    destroy() {
 	        throw new Error("Method not implemented.");
 	    }
-	    run(world) {
-	        return super.run(world);
-	    }
-	    handle(entity) {
+	    handle(entity, time, delta) {
 	        let tweenC = entity.getComponent("tween");
+	        if (tweenC.end) {
+	            return this;
+	        }
+	        tweenC.time += delta;
+	        if (tweenC.time > tweenC.duration) {
+	            tweenC.loop--;
+	            if (tweenC.loop >= 0) {
+	                tweenC.time -= tweenC.duration;
+	            }
+	            else {
+	                tweenC.end = true;
+	                tweenC.time = tweenC.duration;
+	            }
+	        }
 	        let map = tweenC.data;
 	        let from = tweenC.from;
 	        let rate = tweenC.time / tweenC.duration;

@@ -22,11 +22,12 @@ export default class Tween extends Component<Map<string, InterpolationType>> {
 	public loop: number;
 	public state: TWEEN_STATE;
 	public time: number;
-	private oldLoop: number;
+	public end = false;
+	private loopWholeTimes: number;
 
 	constructor(from: any, to: any, duration: number = 1000, loop = 0) {
 		super("tween", new Map());
-		this.oldLoop = loop;
+		this.loopWholeTimes = loop;
 		this.from = from;
 		this.to = to;
 		this.duration = duration;
@@ -37,9 +38,10 @@ export default class Tween extends Component<Map<string, InterpolationType>> {
 	}
 
 	public reset() {
-		this.loop = this.oldLoop;
+		this.loop = this.loopWholeTimes;
 		this.time = 0;
 		this.state = TWEEN_STATE.IDLE;
+		this.end = false;
 	}
 
 	// 检查from 和 to哪些属性是可以插值的
