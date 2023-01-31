@@ -1,7 +1,7 @@
 import { Vector2, Vector3, Vector4 } from "@valeera/mathx";
 import System from "@valeera/x/src/System";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
+import IWorld from "@valeera/x/src/interfaces/IWorld";
 import Tween from "../../components/tween/Tween";
 
 export default class TweenSystem extends System {
@@ -14,9 +14,9 @@ export default class TweenSystem extends System {
         throw new Error("Method not implemented.");
     }
 
-    public run(world: IWorld): this {
+    public run(world: IWorld, time: number, delta: number): this {
         
-        return super.run(world);
+        return super.run(world, time, delta);
     }
 
     public handle(entity: IEntity): this {

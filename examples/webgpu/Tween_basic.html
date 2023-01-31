@@ -4,45 +4,36 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
+		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
 		// 创建一个三角形的几何数据，传入顶点数量，拓扑类型，剔除方式，顶点attribute数据
 		const geometry = Nova.Geometry3Factory.createTriangle3({
 			a: [-1, -1, 0],
 			b: [1, -1, 0],
-			c: [0, 1, 0]
+			c: [0, 1, 0],
 		});
 
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
 		mesh.position.setXYZ(-4, 0, -10);
 
 		const tween = new Nova.Tween(mesh.position, {
-			x: 4
+			x: 4,
 		});
 		mesh.addComponent(tween);
-		const projection = new Nova.PerspectiveProjection(
-			Math.PI / 3,
-			canvas.width / canvas.height,
-			0.01,
-			20
-		);
+		const projection = new Nova.PerspectiveProjection();
 		const camera = new Nova.Camera3("", projection);
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
-			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem).add(mesh);
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(mesh);
 
-			let tweenSystem = new Nova.TweenSystem(engine);
-			world.addSystem(tweenSystem);
-		});
+		const tweenSystem = new Nova.TweenSystem();
+		world.addSystem(tweenSystem);
 
 		engine.addTask((time, delta) => {
 			// console.log(time, delta);

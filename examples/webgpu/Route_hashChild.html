@@ -4,7 +4,6 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<div style="position: fixed; top: 0; color: white !important">
 		<a href="#/aaa" rel="external nofollow">/aaa</a> <br />
 		<a href="#/bbb" rel="external nofollow">/bbb</a> <br />
@@ -13,23 +12,20 @@
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
+		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
 		const geo = Nova.Geometry3Factory.createPlane3({
 			width: 3,
-			height: 3
+			height: 3,
 		});
-		const material = new Nova.TextureMaterial(
-			new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512)
-		);
+		const material = new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512));
 		const mesh = Nova.EntityFactory.createMesh3(geo, material, "aaa");
 		const aaa = new Nova.HashRouteComponent("aaa", {
 			path: "/aaa",
 			action: (entity, match) => {
 				entity.disabled = !match;
-			}
+			},
 		});
 		mesh.addComponent(aaa);
 
@@ -40,7 +36,7 @@
 			path: "/bbb",
 			action: (entity, match) => {
 				entity.disabled = !match;
-			}
+			},
 		});
 		mesh2.addComponent(bbb);
 
@@ -48,41 +44,32 @@
 			path: "/aaa",
 			action: (entity, match) => {
 				entity.disabled = !match;
-			}
+			},
 		});
 		aaabbb.addChild(bbb);
 
 		const mesh3 = Nova.EntityFactory.createMesh3(
 			geo2,
-			new Nova.TextureMaterial(
-				new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512)
-			),
-			"aaabbb"
+			new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512)),
+			"aaabbb",
 		);
 		mesh3.addComponent(aaabbb);
 
-		const projection = new Nova.PerspectiveProjection(
-			Math.PI / 3,
-			canvas.width / canvas.height,
-			0.01,
-			10
-		);
+		const projection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
 		const camera = new Nova.Camera3("test-camera", projection);
 		camera.position.z = 5;
 
-		engine
-			.once(Nova.EngineEvents.INITED, (e) => {
-				let renderSystem = new Nova.WebGPURenderSystem(engine);
-				let routeSystem = new Nova.HashRouteSystem();
-				let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
-				renderSystem.addRenderer(renderer);
-				world.add(renderSystem).add(routeSystem).add(mesh).add(mesh2).add(mesh3);
-			})
-			.addTask(() => {
-				world.run();
-				mesh.rotation.y -= 0.01;
-				mesh2.rotation.y += 0.01;
-				mesh3.rotation.x += 0.01;
-			});
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const routeSystem = new Nova.HashRouteSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.add(renderSystem).add(routeSystem).add(mesh).add(mesh2).add(mesh3);
+
+		engine.addTask(() => {
+			world.run();
+			mesh.rotation.y -= 0.01;
+			mesh2.rotation.y += 0.01;
+			mesh3.rotation.x += 0.01;
+		});
 	</script>
 </body>

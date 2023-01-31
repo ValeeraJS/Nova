@@ -70,7 +70,7 @@
 		"@valeera/timeline": "latest",
 		"@valeera/tree": "latest",
 		"@valeera/webgpu-constant": "latest",
-		"@valeera/x": "latest"
+		"@valeera/x": "0.1.23"
 	},
 	"publishConfig": {
 		"access": "public"
