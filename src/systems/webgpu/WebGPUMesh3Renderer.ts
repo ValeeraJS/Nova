@@ -1,4 +1,4 @@
-import { Matrix4 } from "@valeera/mathx/src/matrix";
+import { Matrix4 } from "@valeera/mathx";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
 import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
 import { BUFFER, GEOMETRY, MATERIAL, MESH3, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";

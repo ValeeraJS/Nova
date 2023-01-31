@@ -10,7 +10,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 	public static async detect(
 		canvas: HTMLCanvasElement = document.createElement("canvas"),
 	): Promise<{ gpu: GPUCanvasContext, adapter: GPUAdapter, device: GPUDevice }> {
-		const gpu = canvas.getContext("webgpu") as GPUCanvasContext;
+		const gpu = canvas.getContext("webgpu") as any as GPUCanvasContext;
 
 		if (!gpu) {
 			throw new Error('WebGPU not supported: ');
