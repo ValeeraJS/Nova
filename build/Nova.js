@@ -455,6 +455,7 @@
 	     * 剔除方式
 	     */
 	    cullMode;
+	    frontFace;
 	    data = [];
 	    tags = [{
 	            label: GEOMETRY,
@@ -466,6 +467,7 @@
 	        this.cullMode = cullMode;
 	        this.dimension = dimension;
 	        this.topology = topology;
+	        this.frontFace = "ccw";
 	    }
 	    addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
 	        stride = Math.floor(stride);
@@ -9067,6 +9069,7 @@ struct VertexOutput {
 	            primitive: {
 	                topology: geometry.topology,
 	                cullMode: geometry.cullMode,
+	                frontFace: geometry.frontFace,
 	            },
 	            depthStencil: {
 	                depthWriteEnabled: true,
@@ -9331,6 +9334,7 @@ struct VertexOutput {
 	            primitive: {
 	                topology: geometry.topology,
 	                cullMode: geometry.cullMode,
+	                frontFace: geometry.frontFace,
 	            },
 	            depthStencil: {
 	                depthWriteEnabled: true,

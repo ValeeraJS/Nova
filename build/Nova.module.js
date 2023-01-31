@@ -449,6 +449,7 @@ class Geometry extends Component$1 {
      * 剔除方式
      */
     cullMode;
+    frontFace;
     data = [];
     tags = [{
             label: GEOMETRY,
@@ -460,6 +461,7 @@ class Geometry extends Component$1 {
         this.cullMode = cullMode;
         this.dimension = dimension;
         this.topology = topology;
+        this.frontFace = "ccw";
     }
     addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
         stride = Math.floor(stride);
@@ -9061,6 +9063,7 @@ class WebGPUMesh2Renderer {
             primitive: {
                 topology: geometry.topology,
                 cullMode: geometry.cullMode,
+                frontFace: geometry.frontFace,
             },
             depthStencil: {
                 depthWriteEnabled: true,
@@ -9325,6 +9328,7 @@ class WebGPUMesh3Renderer {
             primitive: {
                 topology: geometry.topology,
                 cullMode: geometry.cullMode,
+                frontFace: geometry.frontFace,
             },
             depthStencil: {
                 depthWriteEnabled: true,

@@ -36,6 +36,7 @@ export default class Geometry extends Component<AttributesNodeData[]> {
      * 剔除方式
      */
     cullMode: GPUCullMode;
+    frontFace: GPUFrontFace;
     data: AttributesNodeData[] = [];
     tags = [{
         label: GEOMETRY,
@@ -48,6 +49,7 @@ export default class Geometry extends Component<AttributesNodeData[]> {
         this.cullMode = cullMode;
         this.dimension = dimension;
         this.topology = topology;
+        this.frontFace = "ccw";
     }
 
     addAttribute(name: string, arr: Float32Array, stride: number = arr.length / this.count, attributes: AttributePicker[] = []) {

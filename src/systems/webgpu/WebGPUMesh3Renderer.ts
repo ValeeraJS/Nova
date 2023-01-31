@@ -194,6 +194,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 			primitive: {
 				topology: geometry.topology,
 				cullMode: geometry.cullMode,
+				frontFace: geometry.frontFace,
 			},
 			depthStencil: {
 				depthWriteEnabled: true,
