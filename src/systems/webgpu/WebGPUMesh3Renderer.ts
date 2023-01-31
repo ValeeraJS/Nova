@@ -43,7 +43,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
 
-		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
+		if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
 			cacheData = this.createCacheData(mesh, context);
 			this.entityCacheData.set(mesh, cacheData);
 		} else {

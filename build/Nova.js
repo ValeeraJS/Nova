@@ -9206,7 +9206,7 @@ struct VertexOutput {
 	        // 假设更换了几何体和材质则重新生成缓存
 	        let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
 	        let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
-	        if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry) {
+	        if (!cacheData || mesh.getFirstComponentByTagLabel(MATERIAL)?.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
 	            cacheData = this.createCacheData(mesh, context);
 	            this.entityCacheData.set(mesh, cacheData);
 	        }
