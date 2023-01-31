@@ -529,6 +529,24 @@
 	    return a;
 	};
 
+	const ArraybufferDataType = {
+	    COLOR_GPU: "col",
+	    COLOR_RGB: "col_rgb",
+	    COLOR_RGBA: "col_rgba",
+	    COLOR_HSL: "col_hsl",
+	    COLOR_HSLA: "col_hsla",
+	    EULER: "euler",
+	    MATRIX2: "mat2",
+	    MATRIX3: "mat3",
+	    MATRIX4: "mat4",
+	    POLAR: "polar",
+	    QUATERNION: "qua",
+	    SPHERICAL: "spherical",
+	    VECTOR2: "vec2",
+	    VECTOR3: "vec3",
+	    VECTOR4: "vec4"
+	};
+
 	const DEG_TO_RAD = Math.PI / 180;
 	const DEG_360_RAD = Math.PI * 2;
 	const DEG_90_RAD = Math.PI * 0.5;
@@ -705,23 +723,6 @@
 	    whitesmoke: 0xf5f5f5,
 	    yellow: 0xffff00,
 	    yellowgreen: 0x9acd32
-	};
-
-	const ArraybufferDataType = {
-	    COLOR_GPU: "col",
-	    COLOR_RGB: "col_rgb",
-	    COLOR_RGBA: "col_rgba",
-	    COLOR_HSL: "col_hsl",
-	    COLOR_HSLA: "col_hsla",
-	    EULER: "euler",
-	    MATRIX2: "mat2",
-	    MATRIX3: "mat3",
-	    MATRIX4: "mat4",
-	    POLAR: "polar",
-	    QUATERNION: "qua",
-	    VECTOR2: "vec2",
-	    VECTOR3: "vec3",
-	    VECTOR4: "vec4"
 	};
 
 	let max = 0, min = 0;
@@ -1175,7 +1176,7 @@
 	 * Mathx.clamp(-1, 0, 2); // 0;
 	 * Mathx.clamp(3, 0, 2); // 2;
 	 */
-	var clampCommon = (val, min, max) => {
+	var clamp = (val, min, max) => {
 	    return Math.max(min, Math.min(max, val));
 	};
 
@@ -1566,7 +1567,7 @@
 	        const m31 = matrix4[2], m32 = matrix4[6], m33 = matrix4[10];
 	        switch (out.order) {
 	            case exports.EulerRotationOrders.XYZ:
-	                out.y = Math.asin(clampCommon(m13, -1, 1));
+	                out.y = Math.asin(clamp(m13, -1, 1));
 	                if (Math.abs(m13) < 0.9999999) {
 	                    out.x = Math.atan2(-m23, m33);
 	                    out.z = Math.atan2(-m12, m11);
@@ -1577,7 +1578,7 @@
 	                }
 	                break;
 	            case exports.EulerRotationOrders.YXZ:
-	                out.x = Math.asin(-clampCommon(m23, -1, 1));
+	                out.x = Math.asin(-clamp(m23, -1, 1));
 	                if (Math.abs(m23) < 0.9999999) {
 	                    out.y = Math.atan2(m13, m33);
 	                    out.z = Math.atan2(m21, m22);
@@ -1588,7 +1589,7 @@
 	                }
 	                break;
 	            case exports.EulerRotationOrders.ZXY:
-	                out.x = Math.asin(clampCommon(m32, -1, 1));
+	                out.x = Math.asin(clamp(m32, -1, 1));
 	                if (Math.abs(m32) < 0.9999999) {
 	                    out.y = Math.atan2(-m31, m33);
 	                    out.z = Math.atan2(-m12, m22);
@@ -1599,7 +1600,7 @@
 	                }
 	                break;
 	            case exports.EulerRotationOrders.ZYX:
-	                out.y = Math.asin(-clampCommon(m31, -1, 1));
+	                out.y = Math.asin(-clamp(m31, -1, 1));
 	                if (Math.abs(m31) < 0.9999999) {
 	                    out.x = Math.atan2(m32, m33);
 	                    out.z = Math.atan2(m21, m11);
@@ -1610,7 +1611,7 @@
 	                }
 	                break;
 	            case exports.EulerRotationOrders.YZX:
-	                out.z = Math.asin(clampCommon(m21, -1, 1));
+	                out.z = Math.asin(clamp(m21, -1, 1));
 	                if (Math.abs(m21) < 0.9999999) {
 	                    out.x = Math.atan2(-m23, m22);
 	                    out.y = Math.atan2(-m31, m11);
@@ -1621,7 +1622,7 @@
 	                }
 	                break;
 	            case exports.EulerRotationOrders.XZY:
-	                out.z = Math.asin(-clampCommon(m12, -1, 1));
+	                out.z = Math.asin(-clamp(m12, -1, 1));
 	                if (Math.abs(m12) < 0.9999999) {
 	                    out.x = Math.atan2(m32, m22);
 	                    out.y = Math.atan2(m13, m11);
@@ -2215,12 +2216,12 @@
 	        by$1 = b[1];
 	        bz$1 = b[2];
 	        const mag1 = Math.sqrt(ax$1 * ax$1 + ay$1 * ay$1 + az$1 * az$1), mag2 = Math.sqrt(bx$1 * bx$1 + by$1 * by$1 + bz$1 * bz$1), mag = mag1 * mag2, cosine = mag && Vector3.dot(a, b) / mag;
-	        return Math.acos(clampCommon(cosine, -1, 1));
+	        return Math.acos(clamp(cosine, -1, 1));
 	    };
 	    static clamp = (a, min, max, out = new Vector3()) => {
-	        out[0] = clampCommon(a[0], min[0], max[0]);
-	        out[1] = clampCommon(a[1], min[1], max[1]);
-	        out[2] = clampCommon(a[2], min[2], max[2]);
+	        out[0] = clamp(a[0], min[0], max[0]);
+	        out[1] = clamp(a[1], min[1], max[1]);
+	        out[2] = clamp(a[2], min[2], max[2]);
 	        return out;
 	    };
 	    static clampSafe = (a, min, max, out = new Vector3()) => {
@@ -2230,9 +2231,9 @@
 	        return out;
 	    };
 	    static clampScalar = (a, min, max, out = new Vector3()) => {
-	        out[0] = clampCommon(a[0], min, max);
-	        out[1] = clampCommon(a[1], min, max);
-	        out[2] = clampCommon(a[2], min, max);
+	        out[0] = clamp(a[0], min, max);
+	        out[1] = clamp(a[1], min, max);
+	        out[2] = clamp(a[2], min, max);
 	        return out;
 	    };
 	    static clone = (a, out = new Vector3()) => {
@@ -3722,6 +3723,94 @@
 	    return low + Math.floor(Math.random() * (high - low + 1));
 	};
 
+	let dis, r2, d2;
+	const v = new Vector3();
+	class Ray3 {
+	    static at = (a, b, out = new Vector3()) => {
+	        return Vector3.multiplyScalar(a.direction, b, out);
+	    };
+	    static distanceToPlane = (ray, plane) => {
+	        const denominator = Vector3.dot(plane.normal, ray.direction);
+	        if (denominator === 0) {
+	            // line is coplanar, return origin
+	            if (plane.distanceToPoint(ray.position) === 0) {
+	                return 0;
+	            }
+	            return null;
+	        }
+	        const t = -(Vector3.dot(ray.position, plane.normal) + plane.distance) / denominator;
+	        return t >= 0 ? t : null;
+	    };
+	    static distanceToPoint = (a, point) => {
+	        return Math.sqrt(Ray3.distanceSqToPoint(a, point));
+	    };
+	    static distanceSqToPoint = (a, point) => {
+	        Vector3.minus(point, a.position, v);
+	        dis = Vector3.dot(v, a.direction);
+	        if (dis < 0) {
+	            return Vector3.distanceToSquared(a.position, point);
+	        }
+	        Vector3.multiplyScalar(a.direction, dis, v);
+	        Vector3.add(v, a.position, v);
+	        return Vector3.distanceToSquared(v, point);
+	    };
+	    static lookAt = (a, b, out = new Ray3()) => {
+	        if (a !== out) {
+	            Vector3.fromArray(a.position, 0, out.position);
+	        }
+	        Vector3.normalize(Vector3.minus(b, a.position, out.direction));
+	        return out;
+	    };
+	    static intersectPlanePoint = (ray, plane, out = new Vector3()) => {
+	        const t = Ray3.distanceToPlane(ray, plane);
+	        if (t === null) {
+	            return null;
+	        }
+	        return Ray3.at(ray, t, out);
+	    };
+	    static intersectSpherePoint = (ray, sphere, target) => {
+	        Vector3.minus(sphere.position, ray.position, v);
+	        dis = Vector3.dot(v, ray.direction);
+	        d2 = Vector3.dot(v, v) - dis * dis;
+	        r2 = sphere.radius * sphere.radius;
+	        if (d2 > r2)
+	            return null;
+	        const thc = Math.sqrt(r2 - d2);
+	        const t0 = dis - thc;
+	        const t1 = dis + thc;
+	        if (t0 < 0 && t1 < 0)
+	            return null;
+	        if (t0 < 0)
+	            return Ray3.at(ray, t1, target);
+	        return Ray3.at(ray, t0, target);
+	    };
+	    static isIntersectSphere = (ray, sphere) => {
+	        return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
+	    };
+	    static intersectsPlane = (ray, plane) => {
+	        const distToPoint = plane.distanceToPoint(ray.position);
+	        if (distToPoint === 0) {
+	            return true;
+	        }
+	        const denominator = Vector3.dot(plane.normal, ray.direction);
+	        if (denominator * distToPoint < 0) {
+	            return true;
+	        }
+	        return false;
+	    };
+	    static recast = (ray, distance, out = new Ray3()) => {
+	        v.set(Ray3.at(ray, distance));
+	        out.direction.set(v);
+	        return out;
+	    };
+	    position = new Vector3();
+	    direction = new Vector3();
+	    constructor(position = Vector3.VECTOR3_ZERO, direction = Vector3.VECTOR3_BACK) {
+	        this.position.set(position);
+	        Vector3.normalize(direction, this.direction);
+	    }
+	}
+
 	// import Matrix3 from "../matrix/Matrix3";
 	const v1 = new Vector3(), v2 = new Vector3(), v0 = new Vector3(), f1 = new Vector3(), f2 = new Vector3(), f0 = new Vector3();
 	const ta = new Vector3();
@@ -3936,8 +4025,8 @@
 	        return out;
 	    };
 	    static clamp = (a, min, max, out = new Vector2()) => {
-	        out[0] = clampCommon(a[0], min[0], max[0]);
-	        out[1] = clampCommon(a[1], min[1], max[1]);
+	        out[0] = clamp(a[0], min[0], max[0]);
+	        out[1] = clamp(a[1], min[1], max[1]);
 	        return out;
 	    };
 	    static clampSafe = (a, min, max, out = new Vector2()) => {
@@ -3951,8 +4040,8 @@
 	        return out;
 	    };
 	    static clampScalar = (a, min, max, out = new Vector2()) => {
-	        out[0] = clampCommon(a[0], min, max);
-	        out[1] = clampCommon(a[1], min, max);
+	        out[0] = clamp(a[0], min, max);
+	        out[1] = clamp(a[1], min, max);
 	        return out;
 	    };
 	    static closeTo = (a, b, epsilon = EPSILON) => {
@@ -4342,94 +4431,6 @@
 	    }
 	}
 
-	let dis, r2, d2;
-	const v = new Vector3();
-	class Ray3 {
-	    static at = (a, b, out = new Vector3()) => {
-	        return Vector3.multiplyScalar(a.direction, b, out);
-	    };
-	    static distanceToPlane = (ray, plane) => {
-	        const denominator = Vector3.dot(plane.normal, ray.direction);
-	        if (denominator === 0) {
-	            // line is coplanar, return origin
-	            if (plane.distanceToPoint(ray.position) === 0) {
-	                return 0;
-	            }
-	            return null;
-	        }
-	        const t = -(Vector3.dot(ray.position, plane.normal) + plane.distance) / denominator;
-	        return t >= 0 ? t : null;
-	    };
-	    static distanceToPoint = (a, point) => {
-	        return Math.sqrt(Ray3.distanceSqToPoint(a, point));
-	    };
-	    static distanceSqToPoint = (a, point) => {
-	        Vector3.minus(point, a.position, v);
-	        dis = Vector3.dot(v, a.direction);
-	        if (dis < 0) {
-	            return Vector3.distanceToSquared(a.position, point);
-	        }
-	        Vector3.multiplyScalar(a.direction, dis, v);
-	        Vector3.add(v, a.position, v);
-	        return Vector3.distanceToSquared(v, point);
-	    };
-	    static lookAt = (a, b, out = new Ray3()) => {
-	        if (a !== out) {
-	            Vector3.fromArray(a.position, 0, out.position);
-	        }
-	        Vector3.normalize(Vector3.minus(b, a.position, out.direction));
-	        return out;
-	    };
-	    static intersectPlanePoint = (ray, plane, out = new Vector3()) => {
-	        const t = Ray3.distanceToPlane(ray, plane);
-	        if (t === null) {
-	            return null;
-	        }
-	        return Ray3.at(ray, t, out);
-	    };
-	    static intersectSpherePoint = (ray, sphere, target) => {
-	        Vector3.minus(sphere.position, ray.position, v);
-	        dis = Vector3.dot(v, ray.direction);
-	        d2 = Vector3.dot(v, v) - dis * dis;
-	        r2 = sphere.radius * sphere.radius;
-	        if (d2 > r2)
-	            return null;
-	        const thc = Math.sqrt(r2 - d2);
-	        const t0 = dis - thc;
-	        const t1 = dis + thc;
-	        if (t0 < 0 && t1 < 0)
-	            return null;
-	        if (t0 < 0)
-	            return Ray3.at(ray, t1, target);
-	        return Ray3.at(ray, t0, target);
-	    };
-	    static isIntersectSphere = (ray, sphere) => {
-	        return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
-	    };
-	    static intersectsPlane = (ray, plane) => {
-	        const distToPoint = plane.distanceToPoint(ray.position);
-	        if (distToPoint === 0) {
-	            return true;
-	        }
-	        const denominator = Vector3.dot(plane.normal, ray.direction);
-	        if (denominator * distToPoint < 0) {
-	            return true;
-	        }
-	        return false;
-	    };
-	    static recast = (ray, distance, out = new Ray3()) => {
-	        v.set(Ray3.at(ray, distance));
-	        out.direction.set(v);
-	        return out;
-	    };
-	    position = new Vector3();
-	    direction = new Vector3();
-	    constructor(position = Vector3.VECTOR3_ZERO, direction = Vector3.VECTOR3_BACK) {
-	        this.position.set(position);
-	        Vector3.normalize(direction, this.direction);
-	    }
-	}
-
 	// import clampCommon from "../common/clamp";
 	let ax, ay, az, aw, bx, by, bz, len;
 	let ix, iy, iz, iw;
@@ -4689,6 +4690,64 @@
 	    }
 	    set w(value) {
 	        this[3] = value;
+	    }
+	}
+
+	class Spherical extends Float32Array {
+	    static fromArray(arr, out = new Spherical) {
+	        out.set(arr);
+	        return out;
+	    }
+	    static fromVector3(v, out = new Spherical) {
+	        const x = v[0];
+	        const y = v[1];
+	        const z = v[2];
+	        out[0] = Math.sqrt(x * x + y * y + z * z);
+	        if (out[0] === 0) {
+	            out[1] = 0;
+	            out[2] = 0;
+	        }
+	        else {
+	            out[1] = Math.acos(clamp(y / out[0], -1, 1));
+	            out[2] = Math.atan2(x, z);
+	        }
+	        return out;
+	    }
+	    dataType = ArraybufferDataType.SPHERICAL;
+	    constructor(radius = 1, phi = 0, theta = 0) {
+	        super(3);
+	        this[0] = radius;
+	        this[1] = phi;
+	        this[2] = theta;
+	        return this;
+	    }
+	    get radius() {
+	        return this[0];
+	    }
+	    set radius(value) {
+	        this[0] = value;
+	    }
+	    get phi() {
+	        return this[1];
+	    }
+	    set phi(value) {
+	        this[1] = value;
+	    }
+	    get theta() {
+	        return this[2];
+	    }
+	    set theta(value) {
+	        this[2] = value;
+	    }
+	    fromArray(arr) {
+	        return Spherical.fromArray(arr, this);
+	    }
+	    toVector3(out = new Vector3()) {
+	        const rst = this[0] * Math.sin(this[2]);
+	        out[0] = rst * Math.cos(this[1]);
+	        out[1] = rst * Math.sin(this[1]);
+	        out[2] = this[0] * Math.cos(this[2]);
+	        return out;
 	    }
 	}
 
@@ -7158,7 +7217,7 @@ struct VertexOutput {
 
 	class Projection2D extends AProjection2 {
 	    options;
-	    constructor(left, right, bottom, top) {
+	    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005) {
 	        super();
 	        this.options = {
 	            left,
@@ -7406,9 +7465,11 @@ struct VertexOutput {
 
 	class EuclidPosition3 extends APosition3 {
 	    vec3 = new Vector3();
-	    constructor(vec3 = new Float32Array(3)) {
+	    constructor(vec3) {
 	        super();
-	        Vector3.fromArray(vec3, 0, this.vec3);
+	        if (vec3) {
+	            Vector3.fromArray(vec3, 0, this.vec3);
+	        }
 	        this.update();
 	    }
 	    get x() {
@@ -7428,7 +7489,7 @@ struct VertexOutput {
 	        this.dirty = true;
 	    }
 	    get z() {
-	        return this.vec3[1];
+	        return this.vec3[2];
 	    }
 	    set z(value) {
 	        this.vec3[2] = value;
@@ -7635,6 +7696,53 @@ struct VertexOutput {
 	    }
 	    update() {
 	        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class SphericalPosition3 extends APosition3 {
+	    spherical = new Spherical();
+	    #vec3 = new Vector3();
+	    constructor(spherical = new Float32Array(3)) {
+	        super();
+	        Spherical.fromArray(spherical, this.spherical);
+	        this.update();
+	    }
+	    get radius() {
+	        return this.spherical[0];
+	    }
+	    set radius(value) {
+	        this.spherical[0] = value;
+	        this.update();
+	    }
+	    get phi() {
+	        return this.spherical[1];
+	    }
+	    set phi(value) {
+	        this.spherical[1] = value;
+	        this.update;
+	    }
+	    get theta() {
+	        return this.spherical[2];
+	    }
+	    set theta(value) {
+	        this.spherical[2] = value;
+	        this.update();
+	    }
+	    set(arr) {
+	        this.spherical.set(arr);
+	        return this.update();
+	    }
+	    setXYZ(radius, phi, theta) {
+	        this.spherical[0] = radius;
+	        this.spherical[1] = phi;
+	        this.spherical[2] = theta;
+	        return this.update();
+	    }
+	    update() {
+	        this.spherical.toVector3(this.#vec3);
+	        Matrix4.fromTranslation(this.#vec3, this.data);
 	        this.dirty = true;
 	        return this;
 	    }
@@ -9894,6 +10002,8 @@ struct VertexOutput {
 	exports.ShaderMaterial = ShaderMaterial;
 	exports.ShadertoyMaterial = ShadertoyMaterial;
 	exports.Sphere = Sphere;
+	exports.Spherical = Spherical;
+	exports.SphericalPosition3 = SphericalPosition3;
 	exports.SpritesheetTexture = SpritesheetTexture;
 	exports.System = System$1;
 	exports.SystemManager = SystemManager;
@@ -9916,7 +10026,7 @@ struct VertexOutput {
 	exports.WebGPURenderSystem2 = WebGPURenderSystem;
 	exports.World = World;
 	exports.ceilPowerOfTwo = ceilPowerOfTwo;
-	exports.clamp = clampCommon;
+	exports.clamp = clamp;
 	exports.clampCircle = clampCircle;
 	exports.clampSafe = clampSafeCommon;
 	exports.closeTo = closeToCommon;

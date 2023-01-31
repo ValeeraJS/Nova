@@ -8,5 +8,6 @@ export {default as EulerRotation3} from "./EulerRotation3";
 export {default as Matrix4Component} from "./Matrix4Component";
 export {default as OrthogonalProjection} from "./OrthogonalProjection";
 export {default as PerspectiveProjection} from "./PerspectiveProjection";
+export * from "./SphericalPosition3";
 export {default as Vector3Scale3} from "./Vector3Scale3";
 export * from "./PerspectiveProjectionX";

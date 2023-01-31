@@ -59,17 +59,14 @@
 			"README.md",
 			"build/engine.js",
 			"build/engine.min.js",
-			"build/engine.module.js",
-			"build/engine.legacy.js",
-			"build/engine.legacy.min.js",
-			"build/engine.legacy.module.js"
+			"build/engine.module.js"
 		],
 		"directories": {}
 	},
 	"dependencies": {
 		"@valeera/eventfirer": "latest",
 		"@valeera/idgenerator": "latest",
-		"@valeera/mathx": "latest",
+		"@valeera/mathx": "0.1.54",
 		"@valeera/timeline": "latest",
 		"@valeera/tree": "latest",
 		"@valeera/webgpu-constant": "latest",

@@ -4,7 +4,7 @@ import AProjection2 from "./AProjection2";
 export default class Projection2D extends AProjection2 {
     options: { left: number; right: number; bottom: number; top: number;};
 
-    constructor(left: number, right: number, bottom: number, top: number) {
+    constructor(left: number = -window.innerWidth * 0.005, right: number = window.innerWidth * 0.005, bottom: number = -window.innerHeight * 0.005, top: number = window.innerHeight * 0.005) {
         super();
         this.options = {
             left,

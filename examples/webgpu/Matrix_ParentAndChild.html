@@ -4,12 +4,10 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
+		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
 		const geo = Nova.Geometry3Factory.createTriangle3();
@@ -21,24 +19,17 @@
 
 		meshChild.position.setXYZ(0, 1, 0);
 
-		const projection = new Nova.PerspectiveProjection(
-			Math.PI / 3,
-			canvas.width / canvas.height,
-			0.01,
-			100
-		);
+		const projection = new Nova.PerspectiveProjection();
 		const camera = new Nova.Camera3("", projection);
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
-			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem).add(meshParent);
-			createGUI();
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(meshParent);
+		createGUI();
 
-			engine.addTask(() => {
-				world.run();
-			});
+		engine.addTask(() => {
+			world.run();
 		});
 
 		function createGUI() {
@@ -47,7 +38,7 @@
 
 			f.add(meshParent.position, "x", -1, 1).step(0.01);
 			f.add(meshParent.position, "y", -1, 1).step(0.01);
-			
+
 			const f2 = gui.addFolder("child position");
 
 			f2.add(meshChild.position, "x", -1, 1).step(0.01);

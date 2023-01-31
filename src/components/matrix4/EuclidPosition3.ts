@@ -1,12 +1,14 @@
-import { Matrix4, Vector3 } from "@valeera/mathx";
+import { Matrix4, Vector3, Vector3Like } from "@valeera/mathx";
 import APosition3 from "./APosition3";
 
 export default class EuclidPosition3 extends APosition3 {
 	vec3: Vector3 = new Vector3();
 
-	constructor(vec3: Float32Array | number[] = new Float32Array(3)) {
+	constructor(vec3?: Vector3Like) {
 		super();
-		Vector3.fromArray(vec3, 0, this.vec3);
+		if (vec3) {
+			Vector3.fromArray(vec3, 0, this.vec3);
+		}
 		this.update();
 	}
 
@@ -31,7 +33,7 @@ export default class EuclidPosition3 extends APosition3 {
 	}
 
 	get z() {
-		return this.vec3[1];
+		return this.vec3[2];
 	}
 
 	set z(value: number) {
