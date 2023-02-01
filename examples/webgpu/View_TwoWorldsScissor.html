@@ -4,12 +4,15 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
+		const engine = new Nova.Engine();
+		const projection = new Nova.PerspectiveProjection();
+		const camera = new Nova.Camera3("test-camera", projection);
+		let renderer = new Nova.WebGPUMesh3Renderer(camera);
+		let renderSystem = new Nova.WebGPURenderSystem();
+		renderSystem.addRenderer(renderer);
 
 		function createWorld(engine, scissors, material) {
 			const world = new Nova.World();
@@ -17,21 +20,10 @@
 			const mesh = Nova.EntityFactory.createMesh3(geo, material);
 			mesh.position.z = -5;
 
-			const projection = new Nova.PerspectiveProjection(
-				Math.PI / 3,
-				canvas.width / canvas.height,
-				0.01,
-				10
-			);
-			const camera = new Nova.Camera3("test-camera", projection);
-
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			renderSystem.setScissor(scissors);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
-			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem).add(mesh);
 
 			engine.addTask(() => {
+				renderSystem.scissor = scissors;
 				world.run();
 				mesh.rotation.y += 0.01;
 			});
@@ -39,29 +31,25 @@
 			return renderSystem;
 		}
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			createWorld(
-				engine,
-				{
-					x: 0,
-					y: 0,
-					width: 0.5,
-					height: 1
-				},
-				new Nova.TextureMaterial(
-					new Nova.ImageBitmapTexture("./../../textures/test.png", 512, 512)
-				)
-			);
-			createWorld(
-				engine,
-				{
-					x: 0.5,
-					y: 0,
-					width: 0.5,
-					height: 1
-				},
-				new Nova.NormalMaterial()
-			);
-		});
+		createWorld(
+			engine,
+			{
+				x: 0,
+				y: 0,
+				width: 0.5,
+				height: 1,
+			},
+			new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512)),
+		);
+		createWorld(
+			engine,
+			{
+				x: 0.5,
+				y: 0,
+				width: 0.5,
+				height: 1,
+			},
+			new Nova.NormalMaterial(),
+		);
 	</script>
 </body>

@@ -111,6 +111,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		});
 		let buffers = [];
 		let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY) as Geometry;
+		geometry.dirty = true;
 		let material = mesh.getFirstComponentByTagLabel(MATERIAL) as Material || DEFAULT_MATERIAL3;
 		let nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
@@ -150,6 +151,8 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 						resource: sampler
 					});
 				} else if (uniform.type === TEXTURE_IMAGE) {
+					uniform.value.dirty = true;
+					uniform.dirty = true;
 					const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
 						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
 						format: 'rgba8unorm',

@@ -9250,6 +9250,7 @@ class WebGPUMesh3Renderer {
         });
         let buffers = [];
         let geometry = mesh.getFirstComponentByTagLabel(GEOMETRY);
+        geometry.dirty = true;
         let material = mesh.getFirstComponentByTagLabel(MATERIAL) || DEFAULT_MATERIAL3;
         let nodes = geometry.data;
         for (let i = 0; i < nodes.length; i++) {
@@ -9289,6 +9290,8 @@ class WebGPUMesh3Renderer {
                     });
                 }
                 else if (uniform.type === TEXTURE_IMAGE) {
+                    uniform.value.dirty = true;
+                    uniform.dirty = true;
                     const texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
                         size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
                         format: 'rgba8unorm',
@@ -9486,12 +9489,6 @@ class RenderSystemInCanvas extends System$1 {
         height: 1,
         minDepth: 0,
         maxDepth: 1
-    };
-    scissor = {
-        x: 0,
-        y: 0,
-        width: 1,
-        height: 1
     };
     id = 0;
     cache = new WeakMap();
@@ -9746,7 +9743,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
         }
         return this;
     }
-    run(world) {
+    run(world, time, delta) {
         if (!this.inited) {
             return this;
         }
@@ -9756,10 +9753,21 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
         const passEncoder = this.context.passEncoder;
         passEncoder.setViewport(this.viewport.x * w, this.viewport.y * h, this.viewport.width * w, this.viewport.height * h, this.viewport.minDepth, this.viewport.maxDepth);
         passEncoder.setScissorRect(this.scissor.x * w, this.scissor.y * h, this.scissor.width * w, this.scissor.height * h);
-        world.store.set("passEncoder", passEncoder);
-        super.run(world);
+        super.run(world, time, delta);
         this.loopEnd();
         return this;
+    }
+    #scissor = {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1
+    };
+    get scissor() {
+        return this.#scissor;
+    }
+    set scissor(value) {
+        this.#scissor = value;
     }
     handle(entity) {
         if (entity.disabled) {

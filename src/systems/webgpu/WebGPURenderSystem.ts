@@ -4,6 +4,7 @@ import { RenderSystemInCanvas } from "../RenderSystem";
 import { IRenderSystemWebGPUOptions } from "../IRenderSystem";
 import { IEntity } from "@valeera/x";
 import { RENDERABLE } from "../../components/constants";
+import IScissor from "../IScissor";
 
 export class WebGPURenderSystem extends RenderSystemInCanvas {
 
@@ -116,7 +117,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		return this;
 	}
 
-	run(world: IWorld): this {
+	run(world: IWorld, time: number, delta: number): this {
 		if (!this.inited) {
 			return this;
 		}
@@ -128,11 +129,25 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 			this.viewport.x * w, this.viewport.y * h, this.viewport.width * w, this.viewport.height * h, this.viewport.minDepth, this.viewport.maxDepth);
 		passEncoder.setScissorRect(
 			this.scissor.x * w, this.scissor.y * h, this.scissor.width * w, this.scissor.height * h);
-		world.store.set("passEncoder", passEncoder);
-		super.run(world);
+		super.run(world, time, delta);
 		this.loopEnd();
 
 		return this;
+	}
+
+	#scissor: IScissor = {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1
+    };
+
+	get scissor() {
+		return this.#scissor;
+	}
+
+	set scissor(value: IScissor) {
+		this.#scissor = value;
 	}
 
 	handle(entity: IEntity): this {

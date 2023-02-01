@@ -6,7 +6,6 @@ import { RENDERABLE } from "../components/constants";
 import getColorGPU, { ColorFormatType } from "../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";
 import { IRenderSystemInCanvas, IRenderSystemInCanvasOptions } from "./IRenderSystem";
-import IScissor from "./IScissor";
 import IViewport from "./IViewport";
 
 export abstract class RenderSystemInCanvas extends System implements IRenderSystemInCanvas {
@@ -19,12 +18,6 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
         height: 1,
         minDepth: 0,
         maxDepth: 1
-    };
-    scissor: IScissor = {
-        x: 0,
-        y: 0,
-        width: 1,
-        height: 1
     };
     id: number = 0;
     cache: WeakMap<IEntity, any> = new WeakMap<IEntity, any>();
