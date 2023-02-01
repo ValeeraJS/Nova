@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
-
 <body>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
@@ -15,7 +13,7 @@
 		const geometry = Nova.Geometry3Factory.createTriangle3();
 
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
-		mesh.position.z = -5;
+		mesh.position.z = -10;
 		const projection = new Nova.PerspectiveProjection();
 		const camera = new Nova.Camera3("test-camera", projection);
 
@@ -28,13 +26,14 @@
 
 		engine.addTask(() => {
 			world.run();
-			mesh.rotation.y -= 0.01;
 		});
 
 		function createGUI() {
 			const gui = new dat.GUI();
-			const f = gui.addFolder("cull mode");
-			f.add(geometry, "cullMode", ["none", "front", "back"]);
+			const f = gui.addFolder("position");
+			f.add(mesh.position, "x", -5, 5).step(0.1);
+			f.add(mesh.position, "y", -5, 5).step(0.1);
+			f.add(mesh.position, "z", -15, -5).step(0.1);
 		}
 	</script>
 </body>

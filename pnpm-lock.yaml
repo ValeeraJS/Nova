@@ -7,7 +7,7 @@ specifiers:
   '@typescript-eslint/parser': latest
   '@valeera/eventfirer': latest
   '@valeera/idgenerator': latest
-  '@valeera/mathx': 0.1.54
+  '@valeera/mathx': 0.1.55
   '@valeera/timeline': latest
   '@valeera/tree': latest
   '@valeera/webgpu-constant': latest
@@ -31,15 +31,15 @@ specifiers:
 dependencies:
   '@valeera/eventfirer': 1.0.0
   '@valeera/idgenerator': 1.2.2
-  '@valeera/mathx': 0.1.54
+  '@valeera/mathx': 0.1.55
   '@valeera/timeline': 0.1.2
   '@valeera/tree': 0.1.6
   '@valeera/webgpu-constant': 0.1.1
   '@valeera/x': 0.1.23
 
 devDependencies:
-  '@rollup/plugin-json': 6.0.0_rollup@3.12.0
-  '@rollup/plugin-node-resolve': 15.0.1_rollup@3.12.0
+  '@rollup/plugin-json': 6.0.0_rollup@3.12.1
+  '@rollup/plugin-node-resolve': 15.0.1_rollup@3.12.1
   '@typescript-eslint/eslint-plugin': 5.50.0_go4drrxstycfikanvu45pi4vgq
   '@typescript-eslint/parser': 5.50.0_4vsywjlpuriuw3tl5oq6zy5a64
   '@webgpu/types': 0.1.26
@@ -54,8 +54,8 @@ devDependencies:
   mocha: 10.2.0
   nyc: 15.1.0
   prettier: 2.8.3
-  rollup: 3.12.0
-  rollup-plugin-typescript2: 0.34.1_57vedagq2cmrfjmj2y3ihk5v4y
+  rollup: 3.12.1
+  rollup-plugin-typescript2: 0.34.1_6obmv22rvtpvvjwvy2ncneqrsu
   typescript: 4.9.5
 
 packages:
@@ -374,7 +374,7 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@rollup/plugin-json/6.0.0_rollup@3.12.0:
+  /@rollup/plugin-json/6.0.0_rollup@3.12.1:
     resolution: {integrity: sha512-i/4C5Jrdr1XUarRhVu27EEwjt4GObltD7c+MkCIpO2QIbojw8MUs+CCTqOphQi3Qtg1FLmYt+l+6YeoIf51J7w==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -383,11 +383,11 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2_rollup@3.12.0
-      rollup: 3.12.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.12.1
+      rollup: 3.12.1
     dev: true
 
-  /@rollup/plugin-node-resolve/15.0.1_rollup@3.12.0:
+  /@rollup/plugin-node-resolve/15.0.1_rollup@3.12.1:
     resolution: {integrity: sha512-ReY88T7JhJjeRVbfCyNj+NXAG3IIsVMsX9b5/9jC98dRP8/yxlZdz7mHZbHk5zHr24wZZICS5AcXsFZAXYUQEg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -396,13 +396,13 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2_rollup@3.12.0
+      '@rollup/pluginutils': 5.0.2_rollup@3.12.1
       '@types/resolve': 1.20.2
       deepmerge: 4.3.0
       is-builtin-module: 3.2.1
       is-module: 1.0.0
       resolve: 1.22.1
-      rollup: 3.12.0
+      rollup: 3.12.1
     dev: true
 
   /@rollup/pluginutils/4.2.1:
@@ -413,7 +413,7 @@ packages:
       picomatch: 2.3.1
     dev: true
 
-  /@rollup/pluginutils/5.0.2_rollup@3.12.0:
+  /@rollup/pluginutils/5.0.2_rollup@3.12.1:
     resolution: {integrity: sha512-pTd9rIsP92h+B6wWwFbW8RkZv4hiR/xKsqre4SIuAOaOEQRxi0lqLke9k2/7WegC85GgUs9pjmOjCUi3In4vwA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -425,7 +425,7 @@ packages:
       '@types/estree': 1.0.0
       estree-walker: 2.0.2
       picomatch: 2.3.1
-      rollup: 3.12.0
+      rollup: 3.12.1
     dev: true
 
   /@types/estree/1.0.0:
@@ -582,8 +582,8 @@ packages:
     resolution: {integrity: sha512-41ZTOa+L5p10IIFJXX2WIDy802DHN/Xv2xN5QqMAnZTw8kuKWpbkWkf7EeUghxgSFLNeD/112Oi0egsinPV9Tw==}
     dev: false
 
-  /@valeera/mathx/0.1.54:
-    resolution: {integrity: sha512-u7/itIegjMkkjIGkSrFx12hLXvXY4DJNAu0esWUZpMvCnGcUKGB3++nCBtdZoAN4ygC0J5QZ2UCm3mptReBdbQ==}
+  /@valeera/mathx/0.1.55:
+    resolution: {integrity: sha512-jtwTi5xeOz9oT7c4hJVy2aZx25AtMUCx91f4/P49b5shpXQ5A3sySwt67c0AF7o61K7iP4H8l4K2SuBjqLgO6A==}
     dev: false
 
   /@valeera/timeline/0.1.2:
@@ -2338,7 +2338,7 @@ packages:
       glob: 7.2.3
     dev: true
 
-  /rollup-plugin-typescript2/0.34.1_57vedagq2cmrfjmj2y3ihk5v4y:
+  /rollup-plugin-typescript2/0.34.1_6obmv22rvtpvvjwvy2ncneqrsu:
     resolution: {integrity: sha512-P4cHLtGikESmqi1CA+tdMDUv8WbQV48mzPYt77TSTOPJpERyZ9TXdDgjSDix8Fkqce6soYz3+fa4lrC93IEkcw==}
     peerDependencies:
       rollup: '>=1.26.3'
@@ -2347,14 +2347,14 @@ packages:
       '@rollup/pluginutils': 4.2.1
       find-cache-dir: 3.3.2
       fs-extra: 10.1.0
-      rollup: 3.12.0
+      rollup: 3.12.1
       semver: 7.3.8
       tslib: 2.5.0
       typescript: 4.9.5
     dev: true
 
-  /rollup/3.12.0:
-    resolution: {integrity: sha512-4MZ8kA2HNYahIjz63rzrMMRvDqQDeS9LoriJvMuV0V6zIGysP36e9t4yObUfwdT9h/szXoHQideICftcdZklWg==}
+  /rollup/3.12.1:
+    resolution: {integrity: sha512-t9elERrz2i4UU9z7AwISj3CQcXP39cWxgRWLdf4Tm6aKm1eYrqHIgjzXBgb67GNY1sZckTFFi0oMozh3/S++Ig==}
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
     optionalDependencies:

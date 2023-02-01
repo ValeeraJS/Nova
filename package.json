@@ -66,7 +66,7 @@
 	"dependencies": {
 		"@valeera/eventfirer": "latest",
 		"@valeera/idgenerator": "latest",
-		"@valeera/mathx": "0.1.54",
+		"@valeera/mathx": "0.1.55",
 		"@valeera/timeline": "latest",
 		"@valeera/tree": "latest",
 		"@valeera/webgpu-constant": "latest",

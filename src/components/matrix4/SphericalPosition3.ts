@@ -26,7 +26,7 @@ export class SphericalPosition3 extends APosition3 {
 
 	set phi(value: number) {
 		this.spherical[1] = value;
-		this.update;
+		this.update();
 	}
 
 	get theta() {
@@ -40,14 +40,6 @@ export class SphericalPosition3 extends APosition3 {
 
 	set(arr: SphericalLike): this {
 		this.spherical.set(arr);
-
-		return this.update();
-	}
-
-	setXYZ(radius: number, phi: number, theta: number) {
-		this.spherical[0] = radius;
-		this.spherical[1] = phi;
-		this.spherical[2] = theta;
 
 		return this.update();
 	}

@@ -327,7 +327,7 @@
 
 	let Component$1 = class Component {
 	    static unserialize(json) {
-	        const component = new Component$1(json.name, json.data);
+	        const component = new Component(json.name, json.data);
 	        component.disabled = json.disabled;
 	        return component;
 	    }
@@ -345,7 +345,7 @@
 	        this.tags = tags;
 	    }
 	    clone() {
-	        return new Component$1(this.name, this.data, this.tags);
+	        return new Component(this.name, this.data, this.tags);
 	    }
 	    // 此处为只要tag标签相同就是同一类
 	    hasTagLabel(label) {
@@ -4746,9 +4746,9 @@
 	    }
 	    toVector3(out = new Vector3()) {
 	        const rst = this[0] * Math.sin(this[2]);
-	        out[0] = rst * Math.cos(this[1]);
-	        out[1] = rst * Math.sin(this[1]);
-	        out[2] = this[0] * Math.cos(this[2]);
+	        out[2] = rst * Math.cos(this[1]);
+	        out[0] = rst * Math.sin(this[1]);
+	        out[1] = this[0] * Math.cos(this[2]);
 	        return out;
 	    }
 	}
@@ -7723,7 +7723,7 @@ struct VertexOutput {
 	    }
 	    set phi(value) {
 	        this.spherical[1] = value;
-	        this.update;
+	        this.update();
 	    }
 	    get theta() {
 	        return this.spherical[2];
@@ -7734,12 +7734,6 @@ struct VertexOutput {
 	    }
 	    set(arr) {
 	        this.spherical.set(arr);
-	        return this.update();
-	    }
-	    setXYZ(radius, phi, theta) {
-	        this.spherical[0] = radius;
-	        this.spherical[1] = phi;
-	        this.spherical[2] = theta;
 	        return this.update();
 	    }
 	    update() {

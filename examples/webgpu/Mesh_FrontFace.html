@@ -12,11 +12,7 @@
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geometry = Nova.Geometry3Factory.createTriangle3({
-			a: [-1, -1, 0],
-			b: [1, -1, 0],
-			c: [0, 1, 0],
-		});
+		const geometry = Nova.Geometry3Factory.createTriangle3();
 		geometry.cullMode = "front";
 
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
