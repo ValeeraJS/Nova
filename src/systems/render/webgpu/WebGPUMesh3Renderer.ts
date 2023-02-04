@@ -1,15 +1,15 @@
 import { Matrix4 } from "@valeera/mathx";
 import IEntity from "@valeera/x/src/interfaces/IEntity";
-import Geometry, { AttributesNodeData } from "../../components/geometry/Geometry";
-import { BUFFER, GEOMETRY, MATERIAL, MESH3, SAMPLER, TEXTURE_IMAGE } from "../../components/constants";
-import { updateModelMatrixComponent } from "../../components/matrix4/Matrix4Component";
+import Geometry, { AttributesNodeData } from "../../../components/geometry/Geometry";
+import { BUFFER, GEOMETRY, MATERIAL, MESH3, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
+import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import {GPURendererContext, IWebGPURenderer} from "./IWebGPURenderer";
-import { IUniformSlot } from "../../components/material/IMatrial";
-import Material from "../../components/material/Material";
-import { ICamera3 } from "../../entities/Camera3";
-import Object3 from "../../entities/Object3";
-import { DEFAULT_MATERIAL3 } from "../../components/material/defaultMaterial";
+import { IUniformSlot } from "../../../components/material/IMatrial";
+import Material from "../../../components/material/Material";
+import { ICamera3 } from "../../../entities/Camera3";
+import Object3 from "../../../entities/Object3";
+import { DEFAULT_MATERIAL3 } from "../../../components/material/defaultMaterial";
 
 interface ICacheData {
 	mvp: Float32Array;

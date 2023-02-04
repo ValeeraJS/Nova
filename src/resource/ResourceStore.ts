@@ -6,7 +6,7 @@ type ToLoadPartRecord = {
     belongsTo: ILoadItem<any>,
 }
 
-export class Loader extends EventFirer {
+export class ResourceStore extends EventFirer {
     public static readonly WILL_LOAD = "willLoad";
     public static readonly LOADING = "loading";
     public static readonly LOADED = "loaded";
@@ -47,7 +47,7 @@ export class Loader extends EventFirer {
         return this;
     }
 
-    load = (arr: ILoadItem<LoadPartType>[]) => {
+    loadAndParse = (arr: ILoadItem<LoadPartType>[]) => {
         for (let item of arr) {
             let check = this.getResource(item.name, item.type);
             if (check) {
@@ -77,7 +77,7 @@ export class Loader extends EventFirer {
 
         const toLoadLength = this.#toLoadStack.length
 
-        this.fire(Loader.WILL_LOAD, this);
+        this.fire(ResourceStore.WILL_LOAD, this);
 
         for (let i = 0; i < toLoadLength && i < this.maxTasks; i++) {
             const part = this.#toLoadStack.pop();
@@ -88,7 +88,7 @@ export class Loader extends EventFirer {
                 if (this.#toLoadStack.length) {
                     this.#loadPart(this.#toLoadStack.pop());
                 } else {
-                    this.fire(Loader.LOADED, this);
+                    this.fire(ResourceStore.LOADED, this);
                 }
             });
             this.#loadingTasks.add(promise);
@@ -217,7 +217,7 @@ export class Loader extends EventFirer {
                 resource.onParseError?.(e);
                 this.#countToParse--;
                 if (!this.#countToParse) {
-                    this.fire(Loader.PARSED, this);
+                    this.fire(ResourceStore.PARSED, this);
                 }
             });
         } else {
@@ -233,7 +233,7 @@ export class Loader extends EventFirer {
         this.#countToParse--;
 
         if (!this.#countToParse) {
-            this.fire(Loader.PARSED, this);
+            this.fire(ResourceStore.PARSED, this);
         }
     }
 

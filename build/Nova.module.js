@@ -8347,7 +8347,7 @@ var LoadType;
     LoadType["ARRAY_BUFFER"] = "arrayBuffer";
 })(LoadType || (LoadType = {}));
 
-class Loader extends EventDispatcher {
+class ResourceStore extends EventDispatcher {
     static WILL_LOAD = "willLoad";
     static LOADING = "loading";
     static LOADED = "loaded";
@@ -8381,7 +8381,7 @@ class Loader extends EventDispatcher {
         map.set(name, data);
         return this;
     }
-    load = (arr) => {
+    loadAndParse = (arr) => {
         for (let item of arr) {
             let check = this.getResource(item.name, item.type);
             if (check) {
@@ -8405,7 +8405,7 @@ class Loader extends EventDispatcher {
             }
         }
         const toLoadLength = this.#toLoadStack.length;
-        this.fire(Loader.WILL_LOAD, this);
+        this.fire(ResourceStore.WILL_LOAD, this);
         for (let i = 0; i < toLoadLength && i < this.maxTasks; i++) {
             const part = this.#toLoadStack.pop();
             let promise = this.#loadPart(part);
@@ -8415,7 +8415,7 @@ class Loader extends EventDispatcher {
                     this.#loadPart(this.#toLoadStack.pop());
                 }
                 else {
-                    this.fire(Loader.LOADED, this);
+                    this.fire(ResourceStore.LOADED, this);
                 }
             });
             this.#loadingTasks.add(promise);
@@ -8540,7 +8540,7 @@ class Loader extends EventDispatcher {
                 resource.onParseError?.(e);
                 this.#countToParse--;
                 if (!this.#countToParse) {
-                    this.fire(Loader.PARSED, this);
+                    this.fire(ResourceStore.PARSED, this);
                 }
             });
         }
@@ -8554,7 +8554,7 @@ class Loader extends EventDispatcher {
         resource.onParse?.(data);
         this.#countToParse--;
         if (!this.#countToParse) {
-            this.fire(Loader.PARSED, this);
+            this.fire(ResourceStore.PARSED, this);
         }
     };
     registerParser(parser, type) {
@@ -8787,12 +8787,12 @@ class HashRouteSystem extends System {
         }
         return this;
     }
-    run(world) {
+    run(world, time, delta) {
         if (HashRouteSystem.currentPath === this.currentPath) {
             return this;
         }
         this.currentPath = HashRouteSystem.currentPath;
-        super.run(world);
+        super.run(world, time, delta);
         return this;
     }
 }
@@ -9946,4 +9946,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$1 as ComponentProxy, constants as Constants, Cube, DEFAULT_ENGINE_OPTIONS, DepthMaterial, index$4 as Easing, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Loader, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, Renderable, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPURenderSystem, WebGPURenderSystem as WebGPURenderSystem2, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$1 as ComponentProxy, constants as Constants, Cube, DEFAULT_ENGINE_OPTIONS, DepthMaterial, index$4 as Easing, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System$1 as System, SystemManager, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPURenderSystem, WebGPURenderSystem as WebGPURenderSystem2, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };

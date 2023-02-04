@@ -3,7 +3,7 @@ import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { RenderSystemInCanvas } from "../RenderSystem";
 import { IRenderSystemWebGPUOptions } from "../IRenderSystem";
 import { IEntity } from "@valeera/x";
-import { RENDERABLE } from "../../components/constants";
+import { RENDERABLE } from "../../../components/constants";
 import IScissor from "../IScissor";
 
 export class WebGPURenderSystem extends RenderSystemInCanvas {

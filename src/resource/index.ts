@@ -1,3 +1,3 @@
 export * from "./IResourceItem";
-export * from "./Loader";
+export * from "./ResourceStore";
 export * from "./parsers";

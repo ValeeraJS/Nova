@@ -1,4 +1,4 @@
-import { Loader } from "./Loader";
+import { ResourceStore } from "./ResourceStore";
 
 export enum LoadType {
     JSON = 'json',

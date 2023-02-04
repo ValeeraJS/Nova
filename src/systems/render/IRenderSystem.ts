@@ -1,5 +1,5 @@
 import ISystem from "@valeera/x/src/interfaces/ISystem";
-import { ColorFormatType } from "../utils/getColorGPU";
+import { ColorFormatType } from "../../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";
 
 export interface IRenderSystemInCanvas extends ISystem {

@@ -38,10 +38,9 @@
 				],
 			},
 		];
-
-		const loader = new Nova.Loader();
-		loader.registerParser(Nova.TextureParser, "texture");
-		loader.load(resources);
+		const store = new Nova.ResourceStore();
+		store.registerParser(Nova.TextureParser, "texture");
+		store.loadAndParse(resources);
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 

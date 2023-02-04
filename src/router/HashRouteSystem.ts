@@ -46,12 +46,12 @@ export default class HashRouteSystem extends System {
 		return this;
 	}
 
-	run(world: IWorld) {
+	run(world: IWorld, time: number, delta: number) {
 		if (HashRouteSystem.currentPath === this.currentPath) {
 			return this;
 		}
 		this.currentPath = HashRouteSystem.currentPath;
-		super.run(world);
+		super.run(world, time, delta);
 		return this;
 	}
 }

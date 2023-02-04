@@ -8353,7 +8353,7 @@ struct VertexOutput {
 	    LoadType["ARRAY_BUFFER"] = "arrayBuffer";
 	})(exports.LoadType || (exports.LoadType = {}));
 
-	class Loader extends EventDispatcher {
+	class ResourceStore extends EventDispatcher {
 	    static WILL_LOAD = "willLoad";
 	    static LOADING = "loading";
 	    static LOADED = "loaded";
@@ -8387,7 +8387,7 @@ struct VertexOutput {
 	        map.set(name, data);
 	        return this;
 	    }
-	    load = (arr) => {
+	    loadAndParse = (arr) => {
 	        for (let item of arr) {
 	            let check = this.getResource(item.name, item.type);
 	            if (check) {
@@ -8411,7 +8411,7 @@ struct VertexOutput {
 	            }
 	        }
 	        const toLoadLength = this.#toLoadStack.length;
-	        this.fire(Loader.WILL_LOAD, this);
+	        this.fire(ResourceStore.WILL_LOAD, this);
 	        for (let i = 0; i < toLoadLength && i < this.maxTasks; i++) {
 	            const part = this.#toLoadStack.pop();
 	            let promise = this.#loadPart(part);
@@ -8421,7 +8421,7 @@ struct VertexOutput {
 	                    this.#loadPart(this.#toLoadStack.pop());
 	                }
 	                else {
-	                    this.fire(Loader.LOADED, this);
+	                    this.fire(ResourceStore.LOADED, this);
 	                }
 	            });
 	            this.#loadingTasks.add(promise);
@@ -8546,7 +8546,7 @@ struct VertexOutput {
 	                resource.onParseError?.(e);
 	                this.#countToParse--;
 	                if (!this.#countToParse) {
-	                    this.fire(Loader.PARSED, this);
+	                    this.fire(ResourceStore.PARSED, this);
 	                }
 	            });
 	        }
@@ -8560,7 +8560,7 @@ struct VertexOutput {
 	        resource.onParse?.(data);
 	        this.#countToParse--;
 	        if (!this.#countToParse) {
-	            this.fire(Loader.PARSED, this);
+	            this.fire(ResourceStore.PARSED, this);
 	        }
 	    };
 	    registerParser(parser, type) {
@@ -8793,12 +8793,12 @@ struct VertexOutput {
 	        }
 	        return this;
 	    }
-	    run(world) {
+	    run(world, time, delta) {
 	        if (HashRouteSystem.currentPath === this.currentPath) {
 	            return this;
 	        }
 	        this.currentPath = HashRouteSystem.currentPath;
-	        super.run(world);
+	        super.run(world, time, delta);
 	        return this;
 	    }
 	}
@@ -10000,7 +10000,6 @@ struct VertexOutput {
 	exports.HashRouteSystem = HashRouteSystem;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
 	exports.ImageBitmapTexture = ImageBitmapTexture;
-	exports.Loader = Loader;
 	exports.Manager = Manager;
 	exports.Material = Material;
 	exports.Matrix2 = Matrix2;
@@ -10022,6 +10021,7 @@ struct VertexOutput {
 	exports.Ray3 = Ray3;
 	exports.Rectangle2 = Rectangle2;
 	exports.Renderable = Renderable;
+	exports.ResourceStore = ResourceStore;
 	exports.Sampler = Sampler;
 	exports.ShaderMaterial = ShaderMaterial;
 	exports.ShadertoyMaterial = ShadertoyMaterial;
