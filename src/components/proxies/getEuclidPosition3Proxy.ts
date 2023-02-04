@@ -1,4 +1,4 @@
-import IEntity from "@valeera/x/src/interfaces/IEntity";
+import { IEntity } from "@valeera/x";
 import Matrix4Component from "../matrix4/Matrix4Component";
 import { TRANSLATION_3D } from "../constants";
 

@@ -21,7 +21,7 @@ export default {
 	],
 	plugins: [
 		json(),
-		nodeResolve(),
+		// nodeResolve(),
 		typescript({
 			tsconfig: "./tsconfig.json"
 		})

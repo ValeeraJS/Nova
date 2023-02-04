@@ -1,4 +1,4 @@
-import Component from "@valeera/x/src/Component";
+import { Component } from "@valeera/x";
 
 export default class Texture extends Component<ImageBitmap | undefined | null> {
 	dirty = false;

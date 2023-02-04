@@ -1,6 +1,4 @@
-import IComponent from "@valeera/x/src/interfaces/IComponent";
-import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IWorld from "@valeera/x/src/interfaces/IWorld";
+import { IComponent, IEntity, IWorld } from "@valeera/x";
 import { MESH2 } from "../../components/constants";
 import { DEFAULT_MATERIAL3 } from "../../components/material/defaultMaterial";
 import IMaterial from "../../components/material/IMatrial";

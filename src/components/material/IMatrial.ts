@@ -1,4 +1,4 @@
-import IComponent from "@valeera/x/src/interfaces/IComponent";
+import { IComponent } from "@valeera/x";
 
 export interface IUniformSlot {
     name: string;
@@ -16,4 +16,4 @@ export interface IShaderCode {
     blend: GPUBlendState
 }
 
-export default interface IMaterial extends IComponent<IShaderCode> {}
+export default interface IMaterial extends IComponent<IShaderCode> { }

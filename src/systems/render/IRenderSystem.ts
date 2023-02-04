@@ -1,4 +1,4 @@
-import ISystem from "@valeera/x/src/interfaces/ISystem";
+import { ISystem } from "@valeera/x";
 import { ColorFormatType } from "../../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";
 
@@ -25,6 +25,6 @@ export interface IRenderSystemInCanvasOptions {
 	noDepthTexture?: boolean;
 }
 
-export interface IRenderSystemWebGPUOptions extends IRenderSystemInCanvasOptions{
+export interface IRenderSystemWebGPUOptions extends IRenderSystemInCanvasOptions {
 	multisample?: GPUMultisampleState
 }

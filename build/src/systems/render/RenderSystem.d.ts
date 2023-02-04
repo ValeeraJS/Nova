@@ -1,0 +1,37 @@
+import { ColorGPU } from "@valeera/mathx";
+import { IEntity, System, IEntityManager, ISystemManager } from "@valeera/x";
+import { ColorFormatType } from "../../utils/getColorGPU";
+import { IRenderer } from "./IRenderer";
+import { IRenderSystemInCanvas, IRenderSystemInCanvasOptions } from "./IRenderSystem";
+import IViewport from "./IViewport";
+export declare abstract class RenderSystemInCanvas extends System implements IRenderSystemInCanvas {
+    #private;
+    context: any;
+    alphaMode: string;
+    viewport: IViewport;
+    id: number;
+    cache: WeakMap<IEntity, any>;
+    entitySet: WeakMap<IEntityManager, Set<IEntity>>;
+    loopTimes: number;
+    name: string;
+    usedBy: ISystemManager[];
+    rendererMap: Map<string, IRenderer>;
+    canvas: HTMLCanvasElement;
+    options: Required<Omit<IRenderSystemInCanvasOptions, "element">>;
+    constructor(name: string, options: IRenderSystemInCanvasOptions);
+    protected clearColorGPU: ColorGPU;
+    get clearColor(): ColorFormatType;
+    set clearColor(value: ColorFormatType);
+    get resolution(): number;
+    set resolution(v: number);
+    get width(): number;
+    set width(v: number);
+    get height(): number;
+    set height(v: number);
+    get autoResize(): boolean;
+    set autoResize(v: boolean);
+    addRenderer(renderer: IRenderer): this;
+    destroy(): this;
+    resize(width: number, height: number, resolution?: number): this;
+    serialize(): any;
+}

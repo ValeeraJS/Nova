@@ -1,5 +1,4 @@
-import { ColorGPU } from "@valeera/mathx";
-import { Vector4Like } from "@valeera/mathx/src";
+import { ColorGPU, Vector4Like } from "@valeera/mathx";
 import { MaterialNodeDataType, MaterialNodeType } from "./MaterialNode";
 import { Vector4Float32MaterialNode } from "./Vector4MaterialNode";
 

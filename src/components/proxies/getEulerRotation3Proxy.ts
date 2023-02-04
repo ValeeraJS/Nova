@@ -1,5 +1,5 @@
 import { EulerAngle, EulerRotationOrders, Matrix4 } from "@valeera/mathx";
-import IEntity from "@valeera/x/src/interfaces/IEntity";
+import { IEntity } from "@valeera/x";
 import { Matrix4Component } from "..";
 import { ROTATION_3D } from "../constants";
 
@@ -25,7 +25,7 @@ export default (position: Matrix4Component | IEntity) => {
                 target.dirty = true;
                 euler.order = value as EulerRotationOrders;
                 Matrix4.fromEuler(euler, target.data);
-                return true; 
+                return true;
             } else if (property === 'dirty') {
                 target.dirty = value as boolean;
                 return true;

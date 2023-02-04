@@ -1,5 +1,5 @@
 import { Matrix3, Matrix4 } from "@valeera/mathx";
-import Component from "@valeera/x/src/Component";
+import { Component } from "@valeera/x";
 import { GEOMETRY } from "../constants";
 import { POSITION } from "./constants";
 

@@ -1,7 +1,5 @@
 import { Vector2, Vector3, Vector4 } from "@valeera/mathx";
-import System from "@valeera/x/src/System";
-import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IWorld from "@valeera/x/src/interfaces/IWorld";
+import { System, IEntity } from "@valeera/x";
 import Tween from "../../components/tween/Tween";
 
 export default class TweenSystem extends System {
@@ -35,7 +33,7 @@ export default class TweenSystem extends System {
             }
         }
         let map = tweenC.data;
-        let from= tweenC.from;
+        let from = tweenC.from;
         let rate = tweenC.time / tweenC.duration;
         if (from instanceof Float32Array) {
             let data = map.get(' ') as any;
@@ -70,5 +68,5 @@ export default class TweenSystem extends System {
 
         return this;
     }
-    
+
 }

@@ -1,0 +1,11 @@
+export { default as Anchor2 } from "./Anchor2";
+export { default as APosition2 } from "./APosition2";
+export { default as AProjection2 } from "./AProjection2";
+export { default as ARotation2 } from "./ARotation2";
+export { default as AScale2 } from "./AScale2";
+export { default as EuclidPosition2 } from "./EuclidPosition2";
+export { default as AngleRotation2 } from "./AngleRotation2";
+export { default as Matrix3Component } from "./Matrix3Component";
+export { default as PolarPosition2 } from "./PolarPosition2";
+export { default as Projection2D } from "./Projection2D";
+export { default as Vector2Scale2 } from "./Vector2Scale2";

@@ -1,5 +1,4 @@
-import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IWorld from "@valeera/x/src/interfaces/IWorld";
+import { IEntity, IWorld } from "@valeera/x";
 import { AProjection2 } from "../../components/matrix3";
 import Camera2 from "../../entities/Camera2";
 

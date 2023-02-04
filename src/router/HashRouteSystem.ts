@@ -1,8 +1,5 @@
-import System from "@valeera/x/src/System";
-import IEntity from "@valeera/x/src/interfaces/IEntity";
-import IWorld, { TWorldInjection } from "@valeera/x/src/interfaces/IWorld";
+import { IWorld, Entity, System } from "@valeera/x";
 import HashRouteComponent from "./HashRouteComponent";
-import { Entity } from "@valeera/x";
 
 export default class HashRouteSystem extends System {
 	private static listeningHashChange = false;

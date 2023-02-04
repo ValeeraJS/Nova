@@ -1,4 +1,4 @@
-import Component from "@valeera/x/src/Component";
+import { Component } from "@valeera/x";
 import { SAMPLER } from "../constants";
 
 export default class Sampler extends Component<GPUSamplerDescriptor> {
@@ -19,13 +19,13 @@ export default class Sampler extends Component<GPUSamplerDescriptor> {
 
         return this;
     }
-    
+
     setFilterMode(mag: GPUFilterMode, min: GPUFilterMode, mipmap: GPUFilterMode) {
         this.data.magFilter = mag;
         this.data.minFilter = min;
         this.data.mipmapFilter = mipmap;
         this.dirty = true;
-        
+
         return this;
     }
 

@@ -1,6 +1,5 @@
-import Component from "@valeera/x/src/Component";
 import { Matrix4 } from "@valeera/mathx";
-import { ComponentTag } from "@valeera/x/src/interfaces/IComponent";
+import { ComponentTag, Component } from "@valeera/x";
 import { IObject3 } from "../../entities/Object3";
 
 export default class Matrix4Component extends Component<Float32Array> {
