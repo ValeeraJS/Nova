@@ -5,7 +5,7 @@ import IMaterial from "../../components/material/IMatrial";
 import { Renderable } from "../../components/tag";
 import Object2 from "../../entities/Object2";
 
-export default (geometry: IComponent<any>, material: IMaterial = DEFAULT_MATERIAL3, name = MESH2, world?: IWorld): IEntity => {
+export default (geometry: IComponent<any>, material: IMaterial = DEFAULT_MATERIAL3, name = MESH2, world?: IWorld): Object2 => {
 	const entity = new Object2(name);
 	entity.addComponent(geometry)
 		.addComponent(material)
