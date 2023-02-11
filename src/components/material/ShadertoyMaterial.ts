@@ -1,5 +1,6 @@
 import { BUFFER, SAMPLER, TEXTURE_IMAGE } from "../constants";
-import ImageBitmapTexture from "../texture/ImageBitmapTexture";
+import { Texture } from "../texture";
+import type ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
 import IMaterial from "./IMatrial";
 import Material from "./Material";
@@ -25,10 +26,12 @@ const CommonData = {
     `
 }
 
+const emptyTexture = new Texture(512, 512);
+
 export default class ShadertoyMaterial extends Material implements IMaterial {
 	private dataD: Date;
 
-	public constructor(fs: string, texture: ImageBitmapTexture, sampler: Sampler = new Sampler()) {
+	public constructor(fs: string, sampler: Sampler = new Sampler()) {
 		super(CommonData.vs, fs, [
 			{
 				name: "iSampler0",
@@ -40,8 +43,29 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 			{
 				name: "iChannel0",
 				type: TEXTURE_IMAGE,
-				value: texture,
+				value: emptyTexture,
 				binding: 2,
+				dirty: true,
+			},
+			{
+				name: "iChannel1",
+				type: TEXTURE_IMAGE,
+				value: emptyTexture,
+				binding: 3,
+				dirty: true,
+			},
+			{
+				name: "iChannel2",
+				type: TEXTURE_IMAGE,
+				value: emptyTexture,
+				binding: 4,
+				dirty: true,
+			},
+			{
+				name: "iChannel3",
+				type: TEXTURE_IMAGE,
+				value: emptyTexture,
+				binding: 5,
 				dirty: true,
 			},
 			{
@@ -59,7 +83,7 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 					0, // 10
 					0, // 11
 				]),
-				binding: 3,
+				binding: 6,
 				dirty: true,
 			}
 		]);
@@ -76,31 +100,58 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 		this.data.uniforms[0].value = sampler;
 	}
 
-	public get texture(): ImageBitmapTexture {
+	public get texture0(): ImageBitmapTexture {
 		return this.data.uniforms[1].value as ImageBitmapTexture;
 	}
 
-	public set texture(texture: ImageBitmapTexture) {
+	public set texture0(texture: ImageBitmapTexture) {
 		this.data.uniforms[1].dirty = this.dirty = true;
 		this.data.uniforms[1].value = texture;
 	}
 
+	public get texture1(): ImageBitmapTexture {
+		return this.data.uniforms[2].value as ImageBitmapTexture;
+	}
+
+	public set texture1(texture: ImageBitmapTexture) {
+		this.data.uniforms[2].dirty = this.dirty = true;
+		this.data.uniforms[2].value = texture;
+	}
+
+	public get texture2(): ImageBitmapTexture {
+		return this.data.uniforms[3].value as ImageBitmapTexture;
+	}
+
+	public set texture2(texture: ImageBitmapTexture) {
+		this.data.uniforms[3].dirty = this.dirty = true;
+		this.data.uniforms[3].value = texture;
+	}
+
+	public get texture3(): ImageBitmapTexture {
+		return this.data.uniforms[4].value as ImageBitmapTexture;
+	}
+
+	public set texture3(texture: ImageBitmapTexture) {
+		this.data.uniforms[4].dirty = this.dirty = true;
+		this.data.uniforms[4].value = texture;
+	}
+
 	public get time(): number {
-		return this.data.uniforms[2].value[8] as number;
+		return this.data.uniforms[5].value[8] as number;
 	}
 
 	public set time(time: number) {
-		this.data.uniforms[2].dirty = this.dirty = true;
-		this.data.uniforms[2].value[8] = time;
+		this.data.uniforms[5].dirty = this.dirty = true;
+		this.data.uniforms[5].value[8] = time;
 	}
 
 	public get mouse(): ArrayLike<number> {
-		let u = this.data.uniforms[2];
+		let u = this.data.uniforms[5];
 		return [u.value[6], u.value[7]];
 	}
 
 	public set mouse(mouse: ArrayLike<number>) {
-		let u = this.data.uniforms[2];
+		let u = this.data.uniforms[5];
 		u.dirty = this.dirty = true;
 		u.value[6] = mouse[0];
 		u.value[7] = mouse[1];
@@ -111,7 +162,7 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 	}
 
 	public set date(d: Date) {
-		let u = this.data.uniforms[2];
+		const u = this.data.uniforms[5];
 		u.dirty = this.dirty = true;
 		u.value[0] = d.getFullYear();
 		u.value[1] = d.getMonth();
