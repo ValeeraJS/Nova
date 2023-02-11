@@ -5,7 +5,7 @@ export default class Texture extends Component<ImageBitmap | undefined | null> {
 	width: number;
 	height: number;
 
-	public constructor(width: number, height: number, img: ImageBitmap | undefined | null, name: string = "texture") {
+	public constructor(width: number, height: number, img?: ImageBitmap | undefined | null, name: string = "texture") {
 		super(name, img);
 		this.width = width;
 		this.height = height;
