@@ -155,7 +155,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 			return this;
 		}
 		// 根据不同类别进行渲染
-		this.rendererMap.get(entity.getComponent(RENDERABLE)?.data)?.render(entity, this.context);
+		this.rendererMap.get(entity.getComponent(RENDERABLE)?.data.type)?.render(entity, this.context);
 		return this;
 	}
 
