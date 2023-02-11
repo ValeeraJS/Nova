@@ -20,8 +20,7 @@
 				onParse: (texture) => {
 					console.log("Parsed:", texture);
 					const material = new Nova.TextureMaterial(texture);
-
-					mesh.addComponent(material);
+					mesh.getComponent("renderable").material = material;
 				},
 				loadParts: [
 					{
