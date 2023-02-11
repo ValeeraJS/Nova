@@ -8,7 +8,7 @@ export declare class WebGPUMesh3Renderer implements IWebGPURenderer {
     private entityCacheData;
     constructor(camera: ICamera3);
     clearCache(): this;
-    render(mesh: Object3, context: GPURendererContext): this;
+    render(entity: Object3, context: GPURendererContext): this;
     private createCacheData;
     private createPipeline;
     private parseGeometryBufferLayout;

@@ -5,6 +5,7 @@ import { IRenderSystemWebGPUOptions } from "../IRenderSystem";
 import { IEntity } from "@valeera/x";
 import { RENDERABLE } from "../../../components/constants";
 import IScissor from "../IScissor";
+import { WebGPUPostProcessingPass } from "./WebGPUPostProcessingPass";
 
 export class WebGPURenderSystem extends RenderSystemInCanvas {
 
@@ -34,10 +35,11 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 	rendererMap: Map<string, IWebGPURenderer> = new Map();
 	inited = false;
 	context: undefined | GPURendererContext = undefined;
-	public currentCommandEncoder: GPUCommandEncoder;
+	public commandEncoder: GPUCommandEncoder;
 	public swapChainTexture: GPUTexture;
 	public targetTexture: GPUTexture;
 	public msaaTexture: GPUTexture;
+	public postprocessingPasses = new Set<WebGPUPostProcessingPass>();
 	private renderPassDescriptor: GPURenderPassDescriptor;
 
 	constructor(name: string = "WebGPU Render System", options: IRenderSystemWebGPUOptions = {}) {
@@ -56,7 +58,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 			this.targetTexture = this.context.device.createTexture({
 				size: [this.canvas.width, this.canvas.height],
 				format: this.context.preferredFormat,
-				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST
 			});
 			if (options.multisample?.count > 1) {
 				this.msaaTexture = this.context.device.createTexture({
@@ -130,17 +132,18 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		passEncoder.setScissorRect(
 			this.scissor.x * w, this.scissor.y * h, this.scissor.width * w, this.scissor.height * h);
 		super.run(world, time, delta);
+		// this.postprocess();
 		this.loopEnd();
 
 		return this;
 	}
 
 	#scissor: IScissor = {
-        x: 0,
-        y: 0,
-        width: 1,
-        height: 1
-    };
+		x: 0,
+		y: 0,
+		width: 1,
+		height: 1
+	};
 
 	get scissor() {
 		return this.#scissor;
@@ -160,7 +163,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 	}
 
 	private loopStart() {
-		this.currentCommandEncoder = this.context.device.createCommandEncoder();
+		this.commandEncoder = this.context.device.createCommandEncoder();
 		this.swapChainTexture = this.context.gpu.getCurrentTexture();
 		if (this.context.multisample?.count > 1) {
 			if (!this.msaaTexture) {
@@ -176,13 +179,72 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		} else {
 			this.renderPassDescriptor.colorAttachments[0].view = this.swapChainTexture.createView();
 		}
-		this.context.passEncoder = this.currentCommandEncoder.beginRenderPass(this.renderPassDescriptor);
+		this.context.passEncoder = this.commandEncoder.beginRenderPass(this.renderPassDescriptor);
+	}
+
+	public addPostprocessingPass(pass: WebGPUPostProcessingPass) {
+		this.postprocessingPasses.add(pass);
+	}
+
+	public removePostprocessingPass(pass: WebGPUPostProcessingPass) {
+		this.postprocessingPasses.delete(pass);
+	}
+
+	private postprocess() {
+		// this.context.passEncoder.end();
+		// this.context.device.queue.submit([this.commandEncoder.finish()]);
+		// this.context.device.queue.onSubmittedWorkDone().then(() => {
+			// this.commandEncoder = this.context.device.createCommandEncoder();
+			// this.swapChainTexture = this.context.gpu.getCurrentTexture();
+			// let renderPassDescriptor: GPURenderPassDescriptor = {
+			// 	colorAttachments: [
+			// 		{
+			// 			view: null,
+			// 			loadOp: "clear",
+			// 			clearValue: this.clearColorGPU,
+			// 			storeOp: "store"
+			// 		}
+			// 	]
+			// }
+			// if (this.context.multisample?.count > 1) {
+			// 	if (!this.msaaTexture) {
+			// 		this.msaaTexture = this.context.device.createTexture({
+			// 			size: [this.canvas.width, this.canvas.height],
+			// 			format: this.context.preferredFormat,
+			// 			sampleCount: this.context.multisample ? (this.context.multisample.count ?? 1) : 1,
+			// 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+			// 		});
+			// 	}
+			// 	renderPassDescriptor.colorAttachments[0].view = this.msaaTexture.createView();
+			// 	renderPassDescriptor.colorAttachments[0].resolveTarget = this.swapChainTexture.createView();
+			// } else {
+			// 	renderPassDescriptor.colorAttachments[0].view = this.swapChainTexture.createView();
+			// }
+
+			// this.context.passEncoder = this.commandEncoder.beginRenderPass(renderPassDescriptor);
+			this.postprocessingPasses.forEach((pass) => {
+				// this.commandEncoder.copyTextureToTexture(
+				// 	{
+				// 		texture: this.swapChainTexture,
+				// 	},
+				// 	{
+				// 		texture: this.targetTexture,
+				// 	},
+				// 	[this.canvas.width, this.canvas.height]
+				// );
+				pass.render(this.context, this.targetTexture);
+				// this.context.passEncoder.end();
+				// this.context.device.queue.submit([this.commandEncoder.finish()]);
+			});
+		// });
+
+
 	}
 
 	private loopEnd() {
 		this.context.passEncoder.end();
-		this.context.device.queue.submit([this.currentCommandEncoder.finish()]);
-		while(this.endTaskQueue.length) {
+		this.context.device.queue.submit([this.commandEncoder.finish()]);
+		while (this.endTaskQueue.length) {
 			this.endTaskQueue.shift()();
 		}
 	}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+<body>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script>
+		const engine = new Nova.Engine();
+		const world = new Nova.World();
+
+		const geo = Nova.Geometry3Factory.createPlane3();
+		const material = new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512));
+		const mesh = Nova.EntityFactory.createMesh3(geo, material);
+
+		const projection = new Nova.PerspectiveProjection();
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 4;
+
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(mesh);
+
+		engine.addTask(() => {
+			world.run();
+			mesh.rotation.y -= 0.01;
+		});
+	</script>
+</body>

@@ -1,4 +1,5 @@
-import { IComponent, IEntity, IWorld } from "@valeera/x";
-import IMaterial from "../../components/material/IMatrial";
-declare const _default: (geometry: IComponent<any>, material?: IMaterial, name?: string, world?: IWorld) => IEntity;
+import { IWorld } from "@valeera/x";
+import { Geometry, IMaterial } from "../../components";
+import Object2 from "../../entities/Object2";
+declare const _default: (geometry: Geometry, material?: IMaterial, name?: string, world?: IWorld) => Object2;
 export default _default;

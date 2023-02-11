@@ -1,14 +1,20 @@
-import ImageBitmapTexture from "../texture/ImageBitmapTexture";
+import type ImageBitmapTexture from "../texture/ImageBitmapTexture";
 import Sampler from "../texture/Sampler";
 import IMaterial from "./IMatrial";
 import Material from "./Material";
 export default class ShadertoyMaterial extends Material implements IMaterial {
     private dataD;
-    constructor(fs: string, texture: ImageBitmapTexture, sampler?: Sampler);
+    constructor(fs: string, sampler?: Sampler);
     get sampler(): Sampler;
     set sampler(sampler: Sampler);
-    get texture(): ImageBitmapTexture;
-    set texture(texture: ImageBitmapTexture);
+    get texture0(): ImageBitmapTexture;
+    set texture0(texture: ImageBitmapTexture);
+    get texture1(): ImageBitmapTexture;
+    set texture1(texture: ImageBitmapTexture);
+    get texture2(): ImageBitmapTexture;
+    set texture2(texture: ImageBitmapTexture);
+    get texture3(): ImageBitmapTexture;
+    set texture3(texture: ImageBitmapTexture);
     get time(): number;
     set time(time: number);
     get mouse(): ArrayLike<number>;
