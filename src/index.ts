@@ -6,6 +6,7 @@ export * from "./engine";
 export * from "./entities";
 export * from "./resource";
 export * from "./router";
+export * from "./systems/render";
 export * from "./systems/render/webgpu";
 export * from "./systems/tween";
 export * from "@valeera/x";
