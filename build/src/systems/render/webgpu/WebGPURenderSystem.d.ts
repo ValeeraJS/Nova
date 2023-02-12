@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import type { IWorld } from "@valeera/x";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { RenderSystemInCanvas } from "../RenderSystem";

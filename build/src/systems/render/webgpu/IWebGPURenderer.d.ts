@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import type { IEntity } from "@valeera/x";
 import { IRenderer } from "./../IRenderer";
 export interface GPURendererContext {

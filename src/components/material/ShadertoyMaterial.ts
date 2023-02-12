@@ -26,7 +26,9 @@ const CommonData = {
     `
 }
 
-const emptyTexture = new Texture(512, 512);
+const emptyTexture = new Texture({
+	size: [512, 512]
+});
 
 export default class ShadertoyMaterial extends Material implements IMaterial {
 	private dataD: Date;

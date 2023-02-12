@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { ITriangle2 } from "@valeera/mathx";
 import Geometry from "../Geometry";
 import { IGeometryOptions } from "../geometryOptions";

@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 export type IGeometryOptions = {
     hasNormal?: boolean;
     hasUV?: boolean;

@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { IUniformSlot } from "./IMatrial";
 import Material from "./Material";
 export default class ShaderMaterial extends Material {

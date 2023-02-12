@@ -1,22 +1,48 @@
 import { Component } from "@valeera/x";
 
-export default class Texture extends Component<ImageBitmap | undefined | null> {
-	dirty = false;
-	width: number;
-	height: number;
+export type TextureOptions = {
+	size: number[];
+	name?: string;
+	format?: GPUTextureFormat;
+	usage?: number;
+	image?: undefined | null | ImageBitmap;
+}
 
-	public constructor(width: number, height: number, img?: ImageBitmap | undefined | null, name: string = "texture") {
-		super(name, img);
-		this.width = width;
-		this.height = height;
-		this.imageBitmap = img;
+export default class Texture extends Component<ImageBitmap | undefined | null> {
+	public descriptor: GPUTextureDescriptor = {
+		size: [0, 0],
+		format: "rgba8unorm",
+		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+	}
+
+	public constructor(options: TextureOptions) {
+		super(options.name, options.image);
+		this.descriptor.size[0] = options.size[0];
+		this.descriptor.size[1] = options.size[1];
+		this.descriptor.format = options.format ?? "rgba8unorm";
+		this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
+		this.imageBitmap = options.image;
 	}
 
 	public destroy() {
 		this.data?.close();
 		this.data = undefined;
-		this.width = 0;
-		this.height = 0;
+	}
+
+	get width() {
+		return this.descriptor.size[0];
+	}
+
+	set width(v: number) {
+		this.descriptor.size[0] = v;
+	}
+	
+	get height() {
+		return this.descriptor.size[1];
+	}
+
+	set height(v: number) {
+		this.descriptor.size[1] = v;
 	}
 
 	get imageBitmap() {

@@ -449,6 +449,7 @@
 	    entitySet = new WeakMap();
 	    usedBy = [];
 	    cache = new WeakMap();
+	    autoUpdate = true;
 	    rule;
 	    _disabled = false;
 	    get disabled() {
@@ -552,8 +553,14 @@
 	    disabled = false;
 	    name;
 	    usedBy = [];
-	    dirty = false;
 	    tags;
+	    #dirty = false;
+	    get dirty() {
+	        return this.#dirty;
+	    }
+	    set dirty(v) {
+	        this.#dirty = v;
+	    }
 	    constructor(name, data, tags = []) {
 	        this.name = name;
 	        this.data = data;
@@ -578,7 +585,7 @@
 	            id: this.id,
 	            name: this.name,
 	            tags: this.tags,
-	            type: "component"
+	            type: "component",
 	        };
 	    }
 	}
@@ -587,7 +594,7 @@
 	let elementTmp;
 	const ElementChangeEvent = {
 	    ADD: "add",
-	    REMOVE: "remove"
+	    REMOVE: "remove",
 	};
 	class Manager extends EventDispatcher {
 	    static Events = ElementChangeEvent;
@@ -609,8 +616,14 @@
 	        if (typeof name === "number") {
 	            return this.elements.get(name) || null;
 	        }
-	        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-	        for (const [_, item] of this.elements) {
+	        if (typeof name === "function" && name.prototype) {
+	            for (const [, item] of this.elements) {
+	                if (item instanceof name) {
+	                    return item;
+	                }
+	            }
+	        }
+	        for (const [, item] of this.elements) {
 	            if (item.name === name) {
 	                return item;
 	            }
@@ -672,13 +685,11 @@
 	    }
 	}
 
-	// 私有全局变量，外部无法访问
-	// let componentTmp: IComponent<any> | undefined;
-	var EComponentEvent;
+	exports.EComponentEvent = void 0;
 	(function (EComponentEvent) {
 	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
 	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
-	})(EComponentEvent || (EComponentEvent = {}));
+	})(exports.EComponentEvent || (exports.EComponentEvent = {}));
 	class ComponentManager extends Manager {
 	    isComponentManager = true;
 	    add(element) {
@@ -691,17 +702,34 @@
 	        }
 	        return this.addElementDirectly(element);
 	    }
+	    getComponentsByClass(clazz) {
+	        const result = [];
+	        this.elements.forEach((component) => {
+	            if (component instanceof clazz) {
+	                result.push(component);
+	            }
+	        });
+	        return result;
+	    }
+	    getComponentByClass(clazz) {
+	        for (const [, component] of this.elements) {
+	            if (component instanceof clazz) {
+	                return component;
+	            }
+	        }
+	        return null;
+	    }
 	    getComponentsByTagLabel(label) {
 	        const result = [];
-	        for (const [_, component] of this.elements) {
+	        this.elements.forEach((component) => {
 	            if (component.hasTagLabel(label)) {
 	                result.push(component);
 	            }
-	        }
+	        });
 	        return result;
 	    }
-	    getFirstComponentByTagLabel(label) {
-	        for (const [_, component] of this.elements) {
+	    getComponentByTagLabel(label) {
+	        for (const [, component] of this.elements) {
 	            if (component.hasTagLabel(label)) {
 	                return component;
 	            }
@@ -779,8 +807,14 @@
 	    getComponentsByTagLabel(label) {
 	        return this.componentManager?.getComponentsByTagLabel(label) || [];
 	    }
-	    getFirstComponentByTagLabel(label) {
-	        return this.componentManager?.getFirstComponentByTagLabel(label) || null;
+	    getComponentByTagLabel(label) {
+	        return this.componentManager?.getComponentByTagLabel(label) || null;
+	    }
+	    getComponentsByClass(clazz) {
+	        return this.componentManager?.getComponentsByClass(clazz) || [];
+	    }
+	    getComponentByClass(clazz) {
+	        return this.componentManager?.getComponentByClass(clazz) || null;
 	    }
 	    hasComponent(component) {
 	        return this.componentManager?.has(component) || false;
@@ -876,7 +910,7 @@
 	    ADD: "add",
 	    AFTER_RUN: "afterRun",
 	    BEFORE_RUN: "beforeRun",
-	    REMOVE: "remove"
+	    REMOVE: "remove",
 	};
 	class SystemManager extends Manager {
 	    static Events = SystemEvent;
@@ -920,7 +954,7 @@
 	        this.fire(SystemManager.Events.BEFORE_RUN, this);
 	        this.elements.forEach((item) => {
 	            item.checkUpdatedEntities(world.entityManager);
-	            if (!item.disabled) {
+	            if (!item.disabled && item.autoUpdate) {
 	                item.run(world, time, delta);
 	            }
 	        });
@@ -1060,7 +1094,7 @@
 	        return {
 	            id: this.id,
 	            name: this.name,
-	            type: "world"
+	            type: "world",
 	        };
 	    }
 	    unregisterEntityManager() {
@@ -5459,9 +5493,9 @@
 	    }
 	    toVector3(out = new Vector3()) {
 	        const rst = this[0] * Math.sin(this[2]);
-	        out[0] = rst * Math.cos(this[1]);
-	        out[1] = rst * Math.sin(this[1]);
-	        out[2] = this[0] * Math.cos(this[2]);
+	        out[2] = rst * Math.cos(this[1]);
+	        out[0] = rst * Math.sin(this[1]);
+	        out[1] = this[0] * Math.cos(this[2]);
 	        return out;
 	    }
 	}
@@ -6745,20 +6779,34 @@ struct VertexOutput {
 	}
 
 	class Texture extends Component {
-	    dirty = false;
-	    width;
-	    height;
-	    constructor(width, height, img, name = "texture") {
-	        super(name, img);
-	        this.width = width;
-	        this.height = height;
-	        this.imageBitmap = img;
+	    descriptor = {
+	        size: [0, 0],
+	        format: "rgba8unorm",
+	        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+	    };
+	    constructor(options) {
+	        super(options.name, options.image);
+	        this.descriptor.size[0] = options.size[0];
+	        this.descriptor.size[1] = options.size[1];
+	        this.descriptor.format = options.format ?? "rgba8unorm";
+	        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
+	        this.imageBitmap = options.image;
 	    }
 	    destroy() {
 	        this.data?.close();
 	        this.data = undefined;
-	        this.width = 0;
-	        this.height = 0;
+	    }
+	    get width() {
+	        return this.descriptor.size[0];
+	    }
+	    set width(v) {
+	        this.descriptor.size[0] = v;
+	    }
+	    get height() {
+	        return this.descriptor.size[1];
+	    }
+	    set height(v) {
+	        this.descriptor.size[1] = v;
 	    }
 	    get imageBitmap() {
 	        return this.data;
@@ -6774,7 +6822,10 @@ struct VertexOutput {
 	    image;
 	    framesBitmap = [];
 	    constructor(json, name = "atlas-texture") {
-	        super(json.spriteSize.w, json.spriteSize.h, null, name);
+	        super({
+	            size: [json.spriteSize.w, json.spriteSize.h],
+	            name
+	        });
 	        this.setImage(json);
 	    }
 	    async setImage(json) {
@@ -6795,7 +6846,10 @@ struct VertexOutput {
 	    sizeChanged = false;
 	    image = new Image();
 	    constructor(img, width, height, name = "image-texture") {
-	        super(width, height, null, name);
+	        super({
+	            size: [width, height],
+	            name,
+	        });
 	        this.setImage(img);
 	    }
 	    async setImage(img) {
@@ -6815,7 +6869,7 @@ struct VertexOutput {
 	        }
 	        await this.image.decode();
 	        this.data = await createImageBitmap(this.image);
-	        if (this.width !== this.data.width || this.height !== this.data.height) {
+	        if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
 	            this.sizeChanged = true;
 	            this.width = this.data.width;
 	            this.height = this.data.height;
@@ -6870,7 +6924,10 @@ struct VertexOutput {
 	    image;
 	    framesBitmap = [];
 	    constructor(json, name = "spritesheet-texture") {
-	        super(json.spriteSize.w, json.spriteSize.h, null, name);
+	        super({
+	            size: [json.spriteSize.w, json.spriteSize.h],
+	            name,
+	        });
 	        this.setImage(json);
 	    }
 	    async setImage(json) {
@@ -6917,7 +6974,9 @@ struct VertexOutput {
     }
     `
 	};
-	const emptyTexture = new Texture(512, 512);
+	const emptyTexture = new Texture({
+	    size: [512, 512]
+	});
 	class ShadertoyMaterial extends Material {
 	    dataD;
 	    constructor(fs, sampler = new Sampler()) {
@@ -9066,6 +9125,50 @@ struct VertexOutput {
 	        const caches = WebGPUCacheObjectStore.getCaches(key);
 	        return caches?.get(device);
 	    },
+	    clearCaches: (objects) => {
+	        const map = WebGPUCacheObjectStore.caches.get(objects);
+	        if (map) {
+	            map.forEach((cache) => {
+	                cache.data.destroy?.();
+	            });
+	            map.clear();
+	        }
+	        return WebGPUCacheObjectStore;
+	    },
+	    clearCache: (objects, device) => {
+	        const map = WebGPUCacheObjectStore.caches.get(objects);
+	        if (map) {
+	            const cache = map.get(device);
+	            if (cache) {
+	                cache.data.destroy?.();
+	                map.delete(device);
+	            }
+	        }
+	        return WebGPUCacheObjectStore;
+	    },
+	    createGPUTextureCache: (texture, device) => {
+	        let map = WebGPUCacheObjectStore.caches.get(texture);
+	        if (!map) {
+	            map = new Map();
+	            WebGPUCacheObjectStore.caches.set(texture, map);
+	        }
+	        let cache = map.get(device);
+	        if (cache) {
+	            if (cache.width === texture.width && cache.height === texture.height) {
+	                cache.dirty = true;
+	                return cache;
+	            }
+	            else {
+	                cache.data.destroy();
+	            }
+	        }
+	        const data = {
+	            dirty: true,
+	            data: device.createTexture(texture.descriptor)
+	        };
+	        map.set(device, data);
+	        return data;
+	    },
 	    // 一对多关系，所以原始引擎对象dirty需要和缓存对象挂钩
 	    setDirty: (key, device) => {
 	        const caches = WebGPUCacheObjectStore.getCaches(key);
@@ -9414,6 +9517,7 @@ struct VertexOutput {
 	        let mesh3 = entity.getComponent(RENDERABLE);
 	        let material = mesh3.material;
 	        let geometry = mesh3.geometry;
+	        // TODO 哪个改了更新对应cache
 	        if (!cacheData || material.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
 	            cacheData = this.createCacheData(entity, context);
 	            this.entityCacheData.set(entity, cacheData);
@@ -9502,11 +9606,12 @@ struct VertexOutput {
 	                else if (uniform.type === TEXTURE_IMAGE) {
 	                    uniform.value.dirty = true;
 	                    uniform.dirty = true;
-	                    const texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
-	                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-	                        format: 'rgba8unorm',
-	                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-	                    });
+	                    // const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
+	                    // 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
+	                    // 	format: 'rgba8unorm',
+	                    // 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+	                    // });
+	                    const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data;
 	                    uniformMap.set(texture, uniform);
 	                    groupEntries.push({
 	                        binding: uniform.binding,
@@ -10149,11 +10254,12 @@ fn main(
 	exports.DEFAULT_ENGINE_OPTIONS = DEFAULT_ENGINE_OPTIONS;
 	exports.DepthMaterial = DepthMaterial;
 	exports.Easing = index$4;
+	exports.ElementChangeEvent = ElementChangeEvent;
 	exports.Engine = Engine;
 	exports.EngineTaskChunk = EngineTaskChunk;
 	exports.Entity = Entity;
 	exports.EntityFactory = index;
-	exports.Entitymanager = EntityManager;
+	exports.EntityManager = EntityManager;
 	exports.EuclidPosition2 = EuclidPosition2;
 	exports.EuclidPosition3 = EuclidPosition3;
 	exports.EulerAngle = EulerAngle;
@@ -10199,6 +10305,7 @@ fn main(
 	exports.SphericalPosition3 = SphericalPosition3;
 	exports.SpritesheetTexture = SpritesheetTexture;
 	exports.System = System;
+	exports.SystemEvent = SystemEvent;
 	exports.SystemManager = SystemManager;
 	exports.Texture = Texture;
 	exports.TextureMaterial = TextureMaterial;

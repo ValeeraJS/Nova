@@ -6,7 +6,10 @@ export default class ImageBitmapTexture extends Texture {
 	image: HTMLImageElement = new Image();
 
 	constructor(img: HTMLImageElement | string, width: number, height: number, name: string = "image-texture") {
-		super(width, height, null, name);
+		super({
+			size: [width, height],
+			name,
+		});
 		this.setImage(img);
 	}
 
@@ -28,7 +31,7 @@ export default class ImageBitmapTexture extends Texture {
 		await this.image.decode();
 
 		this.data = await createImageBitmap(this.image);
-		if (this.width !== this.data.width || this.height !== this.data.height) {
+		if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
 			this.sizeChanged = true;
 			this.width = this.data.width;
 			this.height = this.data.height;

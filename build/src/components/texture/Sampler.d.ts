@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { Component } from "@valeera/x";
 export default class Sampler extends Component<GPUSamplerDescriptor> {
     data: GPUSamplerDescriptor;

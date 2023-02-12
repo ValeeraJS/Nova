@@ -1,16 +1,15 @@
 import { Matrix4 } from "@valeera/mathx";
 import { IEntity } from "@valeera/x";
 import Geometry, { AttributesNodeData } from "../../../components/geometry/Geometry";
-import { BUFFER, GEOMETRY, MATERIAL, MESH3, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
+import { BUFFER, MESH3, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import IMaterial, { IUniformSlot } from "../../../components/material/IMatrial";
-import Material from "../../../components/material/Material";
 import { ICamera3 } from "../../../entities/Camera3";
 import Object3 from "../../../entities/Object3";
-import { DEFAULT_MATERIAL3 } from "../../../components/material/defaultMaterial";
 import { Mesh3 } from "./Mesh3";
+import { WebGPUCacheObjectStore } from "./WebGPUCacheObjectStore";
 
 interface ICacheData {
 	mvp: Float32Array;
@@ -44,6 +43,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		let material = mesh3.material;
 		let geometry = mesh3.geometry;
 
+		// TODO 哪个改了更新对应cache
 		if (!cacheData || material.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
 			cacheData = this.createCacheData(entity, context);
 			this.entityCacheData.set(entity, cacheData);
@@ -155,11 +155,12 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 				} else if (uniform.type === TEXTURE_IMAGE) {
 					uniform.value.dirty = true;
 					uniform.dirty = true;
-					const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
-						size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-						format: 'rgba8unorm',
-						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-					});
+					// const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
+					// 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
+					// 	format: 'rgba8unorm',
+					// 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+					// });
+					const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data as GPUTexture;
 					uniformMap.set(texture, uniform);
 					groupEntries.push({
 						binding: uniform.binding,

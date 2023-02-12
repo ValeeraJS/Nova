@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { Matrix3, Matrix4 } from "@valeera/mathx";
 import { Component } from "@valeera/x";
 export type AttributePicker = {

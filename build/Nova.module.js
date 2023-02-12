@@ -443,6 +443,7 @@ class System extends EventDispatcher {
     entitySet = new WeakMap();
     usedBy = [];
     cache = new WeakMap();
+    autoUpdate = true;
     rule;
     _disabled = false;
     get disabled() {
@@ -546,8 +547,14 @@ class Component {
     disabled = false;
     name;
     usedBy = [];
-    dirty = false;
     tags;
+    #dirty = false;
+    get dirty() {
+        return this.#dirty;
+    }
+    set dirty(v) {
+        this.#dirty = v;
+    }
     constructor(name, data, tags = []) {
         this.name = name;
         this.data = data;
@@ -572,7 +579,7 @@ class Component {
             id: this.id,
             name: this.name,
             tags: this.tags,
-            type: "component"
+            type: "component",
         };
     }
 }
@@ -581,7 +588,7 @@ class Component {
 let elementTmp;
 const ElementChangeEvent = {
     ADD: "add",
-    REMOVE: "remove"
+    REMOVE: "remove",
 };
 class Manager extends EventDispatcher {
     static Events = ElementChangeEvent;
@@ -603,8 +610,14 @@ class Manager extends EventDispatcher {
         if (typeof name === "number") {
             return this.elements.get(name) || null;
         }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for (const [_, item] of this.elements) {
+        if (typeof name === "function" && name.prototype) {
+            for (const [, item] of this.elements) {
+                if (item instanceof name) {
+                    return item;
+                }
+            }
+        }
+        for (const [, item] of this.elements) {
             if (item.name === name) {
                 return item;
             }
@@ -666,8 +679,6 @@ class Manager extends EventDispatcher {
     }
 }
 
-// 私有全局变量，外部无法访问
-// let componentTmp: IComponent<any> | undefined;
 var EComponentEvent;
 (function (EComponentEvent) {
     EComponentEvent["ADD_COMPONENT"] = "addComponent";
@@ -685,17 +696,34 @@ class ComponentManager extends Manager {
         }
         return this.addElementDirectly(element);
     }
+    getComponentsByClass(clazz) {
+        const result = [];
+        this.elements.forEach((component) => {
+            if (component instanceof clazz) {
+                result.push(component);
+            }
+        });
+        return result;
+    }
+    getComponentByClass(clazz) {
+        for (const [, component] of this.elements) {
+            if (component instanceof clazz) {
+                return component;
+            }
+        }
+        return null;
+    }
     getComponentsByTagLabel(label) {
         const result = [];
-        for (const [_, component] of this.elements) {
+        this.elements.forEach((component) => {
             if (component.hasTagLabel(label)) {
                 result.push(component);
             }
-        }
+        });
         return result;
     }
-    getFirstComponentByTagLabel(label) {
-        for (const [_, component] of this.elements) {
+    getComponentByTagLabel(label) {
+        for (const [, component] of this.elements) {
             if (component.hasTagLabel(label)) {
                 return component;
             }
@@ -773,8 +801,14 @@ class Entity extends TreeNode.mixin(EventDispatcher) {
     getComponentsByTagLabel(label) {
         return this.componentManager?.getComponentsByTagLabel(label) || [];
     }
-    getFirstComponentByTagLabel(label) {
-        return this.componentManager?.getFirstComponentByTagLabel(label) || null;
+    getComponentByTagLabel(label) {
+        return this.componentManager?.getComponentByTagLabel(label) || null;
+    }
+    getComponentsByClass(clazz) {
+        return this.componentManager?.getComponentsByClass(clazz) || [];
+    }
+    getComponentByClass(clazz) {
+        return this.componentManager?.getComponentByClass(clazz) || null;
     }
     hasComponent(component) {
         return this.componentManager?.has(component) || false;
@@ -870,7 +904,7 @@ const SystemEvent = {
     ADD: "add",
     AFTER_RUN: "afterRun",
     BEFORE_RUN: "beforeRun",
-    REMOVE: "remove"
+    REMOVE: "remove",
 };
 class SystemManager extends Manager {
     static Events = SystemEvent;
@@ -914,7 +948,7 @@ class SystemManager extends Manager {
         this.fire(SystemManager.Events.BEFORE_RUN, this);
         this.elements.forEach((item) => {
             item.checkUpdatedEntities(world.entityManager);
-            if (!item.disabled) {
+            if (!item.disabled && item.autoUpdate) {
                 item.run(world, time, delta);
             }
         });
@@ -1054,7 +1088,7 @@ class World {
         return {
             id: this.id,
             name: this.name,
-            type: "world"
+            type: "world",
         };
     }
     unregisterEntityManager() {
@@ -5453,9 +5487,9 @@ class Spherical extends Float32Array {
     }
     toVector3(out = new Vector3()) {
         const rst = this[0] * Math.sin(this[2]);
-        out[0] = rst * Math.cos(this[1]);
-        out[1] = rst * Math.sin(this[1]);
-        out[2] = this[0] * Math.cos(this[2]);
+        out[2] = rst * Math.cos(this[1]);
+        out[0] = rst * Math.sin(this[1]);
+        out[1] = this[0] * Math.cos(this[2]);
         return out;
     }
 }
@@ -6739,20 +6773,34 @@ async function drawSpriteBlock(image, width, height, frame) {
 }
 
 class Texture extends Component {
-    dirty = false;
-    width;
-    height;
-    constructor(width, height, img, name = "texture") {
-        super(name, img);
-        this.width = width;
-        this.height = height;
-        this.imageBitmap = img;
+    descriptor = {
+        size: [0, 0],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    };
+    constructor(options) {
+        super(options.name, options.image);
+        this.descriptor.size[0] = options.size[0];
+        this.descriptor.size[1] = options.size[1];
+        this.descriptor.format = options.format ?? "rgba8unorm";
+        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
+        this.imageBitmap = options.image;
     }
     destroy() {
         this.data?.close();
         this.data = undefined;
-        this.width = 0;
-        this.height = 0;
+    }
+    get width() {
+        return this.descriptor.size[0];
+    }
+    set width(v) {
+        this.descriptor.size[0] = v;
+    }
+    get height() {
+        return this.descriptor.size[1];
+    }
+    set height(v) {
+        this.descriptor.size[1] = v;
     }
     get imageBitmap() {
         return this.data;
@@ -6768,7 +6816,10 @@ class AtlasTexture extends Texture {
     image;
     framesBitmap = [];
     constructor(json, name = "atlas-texture") {
-        super(json.spriteSize.w, json.spriteSize.h, null, name);
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name
+        });
         this.setImage(json);
     }
     async setImage(json) {
@@ -6789,7 +6840,10 @@ class ImageBitmapTexture extends Texture {
     sizeChanged = false;
     image = new Image();
     constructor(img, width, height, name = "image-texture") {
-        super(width, height, null, name);
+        super({
+            size: [width, height],
+            name,
+        });
         this.setImage(img);
     }
     async setImage(img) {
@@ -6809,7 +6863,7 @@ class ImageBitmapTexture extends Texture {
         }
         await this.image.decode();
         this.data = await createImageBitmap(this.image);
-        if (this.width !== this.data.width || this.height !== this.data.height) {
+        if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
             this.sizeChanged = true;
             this.width = this.data.width;
             this.height = this.data.height;
@@ -6864,7 +6918,10 @@ class SpritesheetTexture extends Texture {
     image;
     framesBitmap = [];
     constructor(json, name = "spritesheet-texture") {
-        super(json.spriteSize.w, json.spriteSize.h, null, name);
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name,
+        });
         this.setImage(json);
     }
     async setImage(json) {
@@ -6911,7 +6968,9 @@ const CommonData = {
     }
     `
 };
-const emptyTexture = new Texture(512, 512);
+const emptyTexture = new Texture({
+    size: [512, 512]
+});
 class ShadertoyMaterial extends Material {
     dataD;
     constructor(fs, sampler = new Sampler()) {
@@ -9060,6 +9119,50 @@ const WebGPUCacheObjectStore = {
         const caches = WebGPUCacheObjectStore.getCaches(key);
         return caches?.get(device);
     },
+    clearCaches: (objects) => {
+        const map = WebGPUCacheObjectStore.caches.get(objects);
+        if (map) {
+            map.forEach((cache) => {
+                cache.data.destroy?.();
+            });
+            map.clear();
+        }
+        return WebGPUCacheObjectStore;
+    },
+    clearCache: (objects, device) => {
+        const map = WebGPUCacheObjectStore.caches.get(objects);
+        if (map) {
+            const cache = map.get(device);
+            if (cache) {
+                cache.data.destroy?.();
+                map.delete(device);
+            }
+        }
+        return WebGPUCacheObjectStore;
+    },
+    createGPUTextureCache: (texture, device) => {
+        let map = WebGPUCacheObjectStore.caches.get(texture);
+        if (!map) {
+            map = new Map();
+            WebGPUCacheObjectStore.caches.set(texture, map);
+        }
+        let cache = map.get(device);
+        if (cache) {
+            if (cache.width === texture.width && cache.height === texture.height) {
+                cache.dirty = true;
+                return cache;
+            }
+            else {
+                cache.data.destroy();
+            }
+        }
+        const data = {
+            dirty: true,
+            data: device.createTexture(texture.descriptor)
+        };
+        map.set(device, data);
+        return data;
+    },
     // 一对多关系，所以原始引擎对象dirty需要和缓存对象挂钩
     setDirty: (key, device) => {
         const caches = WebGPUCacheObjectStore.getCaches(key);
@@ -9408,6 +9511,7 @@ class WebGPUMesh3Renderer {
         let mesh3 = entity.getComponent(RENDERABLE);
         let material = mesh3.material;
         let geometry = mesh3.geometry;
+        // TODO 哪个改了更新对应cache
         if (!cacheData || material.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
             cacheData = this.createCacheData(entity, context);
             this.entityCacheData.set(entity, cacheData);
@@ -9496,11 +9600,12 @@ class WebGPUMesh3Renderer {
                 else if (uniform.type === TEXTURE_IMAGE) {
                     uniform.value.dirty = true;
                     uniform.dirty = true;
-                    const texture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
-                        size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-                        format: 'rgba8unorm',
-                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-                    });
+                    // const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
+                    // 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
+                    // 	format: 'rgba8unorm',
+                    // 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+                    // });
+                    const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data;
                     uniformMap.set(texture, uniform);
                     groupEntries.push({
                         binding: uniform.binding,
@@ -10112,4 +10217,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$1 as ComponentProxy, constants as Constants, Cube, DEFAULT_ENGINE_OPTIONS, DepthMaterial, index$4 as Easing, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager as Entitymanager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemManager, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, WebGPURenderSystem as WebGPURenderSystem2, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$1 as ComponentProxy, constants as Constants, Cube, DEFAULT_ENGINE_OPTIONS, DepthMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, WebGPURenderSystem as WebGPURenderSystem2, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };

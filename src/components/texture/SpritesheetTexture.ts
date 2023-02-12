@@ -8,8 +8,10 @@ export default class SpritesheetTexture extends Texture {
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[] = [];
     constructor(json: ISpritesheet, name: string = "spritesheet-texture") {
-        super(json.spriteSize.w, json.spriteSize.h, null, name);
-
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name,
+        });
         this.setImage(json);
     }
 

@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { Component } from "@valeera/x";
 import IMaterial, { IShaderCode, IUniformSlot } from "./IMatrial";
 export default class Material extends Component<IShaderCode> implements IMaterial {

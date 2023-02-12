@@ -1,5 +1,5 @@
 import Geometry, { AttributesNodeData } from "../../../components/geometry/Geometry";
-import { BUFFER, MATERIAL, MESH2, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
+import { BUFFER, MESH2, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix3/Matrix3Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";

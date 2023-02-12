@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { ISystem } from "@valeera/x";
 import { ColorFormatType } from "../../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";

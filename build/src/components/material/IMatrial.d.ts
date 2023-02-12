@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { IComponent } from "@valeera/x";
 export interface IUniformSlot {
     name: string;

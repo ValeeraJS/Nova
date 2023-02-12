@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { GPURendererContext } from "./IWebGPURenderer";
 export declare class WebGPUPostProcessingPass {
     pipeline: GPURenderPipeline | undefined;
