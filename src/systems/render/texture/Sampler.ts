@@ -1,48 +1,55 @@
-import { Component } from "@valeera/x";
-
-export class Sampler extends Component<GPUSamplerDescriptor> {
-    data: GPUSamplerDescriptor = {
-        minFilter: 'linear',
-        magFilter: 'linear',
-    };
+export class Sampler {
+    dirty: boolean = true;
+    descriptor: GPUSamplerDescriptor = {};
     constructor(option: GPUSamplerDescriptor = {}) {
-        super('sampler', option);
-        this.dirty = true;
+        this.descriptor.minFilter = option.minFilter ?? "linear";
+        this.descriptor.magFilter = option.magFilter ?? "linear";
+        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
+        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
+        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
+        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
+        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
+        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
+        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
+        this.descriptor.compare = option.compare ?? undefined;
     }
 
-    setAddressMode(u: GPUAddressMode, v: GPUAddressMode, w: GPUAddressMode) {
-        this.data.addressModeU = u;
-        this.data.addressModeV = v;
-        this.data.addressModeW = w;
+    setAddressMode(u: GPUAddressMode, v: GPUAddressMode, w?: GPUAddressMode) {
+        this.descriptor.addressModeU = u;
+        this.descriptor.addressModeV = v;
+        this.descriptor.addressModeW = w ?? this.descriptor.addressModeW;
         this.dirty = true;
 
         return this;
     }
 
     setFilterMode(mag: GPUFilterMode, min: GPUFilterMode, mipmap: GPUFilterMode) {
-        this.data.magFilter = mag;
-        this.data.minFilter = min;
-        this.data.mipmapFilter = mipmap;
+        this.descriptor.magFilter = mag;
+        this.descriptor.minFilter = min;
+        this.descriptor.mipmapFilter = mipmap;
         this.dirty = true;
 
         return this;
     }
 
     setLodClamp(min: number, max: number) {
-        this.data.lodMaxClamp = max;
-        this.data.lodMinClamp = min;
+        this.descriptor.lodMaxClamp = max;
+        this.descriptor.lodMinClamp = min;
+        this.dirty = true;
 
         return this;
     }
 
     setMaxAnisotropy(v: number) {
-        this.data.maxAnisotropy = v;
+        this.descriptor.maxAnisotropy = v;
+        this.dirty = true;
 
         return this;
     }
 
     setCompare(v: GPUCompareFunction) {
-        this.data.compare = v;
+        this.descriptor.compare = v;
+        this.dirty = true;
 
         return this;
     }

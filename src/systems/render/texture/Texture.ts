@@ -1,5 +1,3 @@
-import { Component } from "@valeera/x";
-
 export type TextureOptions = {
 	size: number[];
 	name?: string;

@@ -146,7 +146,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 						}
 					});
 				} else if (uniform.type === SAMPLER) {
-					const sampler: GPUSampler = device.createSampler(uniform.value.data);
+					const sampler: GPUSampler = device.createSampler(uniform.value.descriptor);
 					uniformMap.set(sampler, uniform);
 					groupEntries.push({
 						binding: uniform.binding,

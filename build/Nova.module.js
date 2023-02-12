@@ -6759,40 +6759,49 @@ class ShaderMaterial extends Material {
     }
 }
 
-class Sampler extends Component {
-    data = {
-        minFilter: 'linear',
-        magFilter: 'linear',
-    };
+class Sampler {
+    dirty = true;
+    descriptor = {};
     constructor(option = {}) {
-        super('sampler', option);
-        this.dirty = true;
+        this.descriptor.minFilter = option.minFilter ?? "linear";
+        this.descriptor.magFilter = option.magFilter ?? "linear";
+        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
+        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
+        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
+        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
+        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
+        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
+        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
+        this.descriptor.compare = option.compare ?? undefined;
     }
     setAddressMode(u, v, w) {
-        this.data.addressModeU = u;
-        this.data.addressModeV = v;
-        this.data.addressModeW = w;
+        this.descriptor.addressModeU = u;
+        this.descriptor.addressModeV = v;
+        this.descriptor.addressModeW = w ?? this.descriptor.addressModeW;
         this.dirty = true;
         return this;
     }
     setFilterMode(mag, min, mipmap) {
-        this.data.magFilter = mag;
-        this.data.minFilter = min;
-        this.data.mipmapFilter = mipmap;
+        this.descriptor.magFilter = mag;
+        this.descriptor.minFilter = min;
+        this.descriptor.mipmapFilter = mipmap;
         this.dirty = true;
         return this;
     }
     setLodClamp(min, max) {
-        this.data.lodMaxClamp = max;
-        this.data.lodMinClamp = min;
+        this.descriptor.lodMaxClamp = max;
+        this.descriptor.lodMinClamp = min;
+        this.dirty = true;
         return this;
     }
     setMaxAnisotropy(v) {
-        this.data.maxAnisotropy = v;
+        this.descriptor.maxAnisotropy = v;
+        this.dirty = true;
         return this;
     }
     setCompare(v) {
-        this.data.compare = v;
+        this.descriptor.compare = v;
+        this.dirty = true;
         return this;
     }
 }
@@ -9594,7 +9603,7 @@ class WebGPUMesh3Renderer {
                     });
                 }
                 else if (uniform.type === SAMPLER) {
-                    const sampler = device.createSampler(uniform.value.data);
+                    const sampler = device.createSampler(uniform.value.descriptor);
                     uniformMap.set(sampler, uniform);
                     groupEntries.push({
                         binding: uniform.binding,
