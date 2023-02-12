@@ -9651,10 +9651,10 @@ struct VertexOutput {
 	}
 
 	const plane = new Float32Array([
+	    -1, 1, 0, 0,
+	    1, 1, 1, 0,
 	    -1, -1, 0, 1,
 	    1, -1, 1, 1,
-	    1, 1, 1, 0,
-	    -1, 1, 0, 0,
 	]);
 	const vertexShader = `
 struct VertexOutput {
@@ -9668,7 +9668,7 @@ fn main(
     @location(1) uv : vec2<f32>
 ) -> VertexOutput {
     var output : VertexOutput;
-    output.position = vec4(position, 0., 0.);
+    output.position = vec4(position, 0., 1.);
     output.uv = uv;
     return output;
 }`;
@@ -9761,6 +9761,11 @@ fn main(
 	            primitive: {
 	                topology: 'triangle-strip',
 	            },
+	            depthStencil: {
+	                depthWriteEnabled: true,
+	                depthCompare: 'less',
+	                format: 'depth24plus',
+	            },
 	        });
 	        this.dirty = false;
 	        return this;
@@ -9782,10 +9787,9 @@ fn main(
 	        });
 	        const passEncoder = context.passEncoder;
 	        passEncoder.setPipeline(this.pipeline);
-	        passEncoder.setVertexBuffer(0, this.verticesBuffer);
 	        passEncoder.setBindGroup(0, uniformBindGroup);
+	        passEncoder.setVertexBuffer(0, this.verticesBuffer);
 	        passEncoder.draw(4, 1, 0, 0);
-	        passEncoder.end();
 	    }
 	}
 
@@ -9830,7 +9834,7 @@ fn main(
 	            this.targetTexture = this.context.device.createTexture({
 	                size: [this.canvas.width, this.canvas.height],
 	                format: this.context.preferredFormat,
-	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST
+	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC
 	            });
 	            if (options.multisample?.count > 1) {
 	                this.msaaTexture = this.context.device.createTexture({
@@ -9884,7 +9888,7 @@ fn main(
 	            this.targetTexture = this.context.device.createTexture({
 	                size: [this.canvas.width, this.canvas.height],
 	                format: this.context.preferredFormat,
-	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+	                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST
 	            });
 	        }
 	        return this;
@@ -9900,7 +9904,7 @@ fn main(
 	        passEncoder.setViewport(this.viewport.x * w, this.viewport.y * h, this.viewport.width * w, this.viewport.height * h, this.viewport.minDepth, this.viewport.maxDepth);
 	        passEncoder.setScissorRect(this.scissor.x * w, this.scissor.y * h, this.scissor.width * w, this.scissor.height * h);
 	        super.run(world, time, delta);
-	        // this.postprocess();
+	        this.postprocess(world, time, delta);
 	        this.loopEnd();
 	        return this;
 	    }
@@ -9950,52 +9954,18 @@ fn main(
 	    removePostprocessingPass(pass) {
 	        this.postprocessingPasses.delete(pass);
 	    }
-	    postprocess() {
-	        // this.context.passEncoder.end();
-	        // this.context.device.queue.submit([this.commandEncoder.finish()]);
-	        // this.context.device.queue.onSubmittedWorkDone().then(() => {
-	        // this.commandEncoder = this.context.device.createCommandEncoder();
-	        // this.swapChainTexture = this.context.gpu.getCurrentTexture();
-	        // let renderPassDescriptor: GPURenderPassDescriptor = {
-	        // 	colorAttachments: [
-	        // 		{
-	        // 			view: null,
-	        // 			loadOp: "clear",
-	        // 			clearValue: this.clearColorGPU,
-	        // 			storeOp: "store"
-	        // 		}
-	        // 	]
-	        // }
-	        // if (this.context.multisample?.count > 1) {
-	        // 	if (!this.msaaTexture) {
-	        // 		this.msaaTexture = this.context.device.createTexture({
-	        // 			size: [this.canvas.width, this.canvas.height],
-	        // 			format: this.context.preferredFormat,
-	        // 			sampleCount: this.context.multisample ? (this.context.multisample.count ?? 1) : 1,
-	        // 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
-	        // 		});
-	        // 	}
-	        // 	renderPassDescriptor.colorAttachments[0].view = this.msaaTexture.createView();
-	        // 	renderPassDescriptor.colorAttachments[0].resolveTarget = this.swapChainTexture.createView();
-	        // } else {
-	        // 	renderPassDescriptor.colorAttachments[0].view = this.swapChainTexture.createView();
-	        // }
-	        // this.context.passEncoder = this.commandEncoder.beginRenderPass(renderPassDescriptor);
+	    postprocess(world, time, delta) {
 	        this.postprocessingPasses.forEach((pass) => {
-	            // this.commandEncoder.copyTextureToTexture(
-	            // 	{
-	            // 		texture: this.swapChainTexture,
-	            // 	},
-	            // 	{
-	            // 		texture: this.targetTexture,
-	            // 	},
-	            // 	[this.canvas.width, this.canvas.height]
-	            // );
+	            this.context.passEncoder.end();
+	            this.commandEncoder.copyTextureToTexture({
+	                texture: this.swapChainTexture,
+	            }, {
+	                texture: this.targetTexture,
+	            }, [this.canvas.width, this.canvas.height]);
+	            this.context.passEncoder = this.commandEncoder.beginRenderPass(this.renderPassDescriptor);
 	            pass.render(this.context, this.targetTexture);
-	            // this.context.passEncoder.end();
-	            // this.context.device.queue.submit([this.commandEncoder.finish()]);
+	            // super.run(world, time, delta);
 	        });
-	        // });
 	    }
 	    loopEnd() {
 	        this.context.passEncoder.end();

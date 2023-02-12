@@ -1,10 +1,10 @@
 import { GPURendererContext } from "./IWebGPURenderer";
 
 const plane = new Float32Array([ // pos2 uv
+    -1, 1, 0, 0,
+    1, 1, 1, 0,
     -1, -1, 0, 1,
     1, -1, 1, 1,
-    1, 1, 1, 0,
-    -1, 1, 0, 0,
 ]);
 
 const vertexShader = `
@@ -19,7 +19,7 @@ fn main(
     @location(1) uv : vec2<f32>
 ) -> VertexOutput {
     var output : VertexOutput;
-    output.position = vec4(position, 0., 0.);
+    output.position = vec4(position, 0., 1.);
     output.uv = uv;
     return output;
 }`;
@@ -52,26 +52,26 @@ export class WebGPUPostProcessingPass {
         new Float32Array(this.verticesBuffer.getMappedRange()).set(plane);
         this.verticesBuffer.unmap();
         let entries: GPUBindGroupLayoutEntry[] = [
-			{
-				binding: 0,
-				visibility: GPUShaderStage.FRAGMENT,
-				sampler: {
+            {
+                binding: 0,
+                visibility: GPUShaderStage.FRAGMENT,
+                sampler: {
                     type: 'filtering'
                 },
-			},
+            },
             {
-				binding: 1,
-				visibility: GPUShaderStage.FRAGMENT,
+                binding: 1,
+                visibility: GPUShaderStage.FRAGMENT,
                 texture: {
                     sampleType: 'float',
                 },
-			}
-		];
+            }
+        ];
         const pipelineLayout = context.device.createPipelineLayout({
-			bindGroupLayouts: [context.device.createBindGroupLayout({
+            bindGroupLayouts: [context.device.createBindGroupLayout({
                 entries,
             })],
-		});
+        });
         this.pipeline = context.device.createRenderPipeline({
             layout: pipelineLayout,
             vertex: {
@@ -113,6 +113,11 @@ export class WebGPUPostProcessingPass {
             primitive: {
                 topology: 'triangle-strip',
             },
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
+            },
         });
 
         this.dirty = false;
@@ -138,9 +143,8 @@ export class WebGPUPostProcessingPass {
 
         const passEncoder = context.passEncoder;
         passEncoder.setPipeline(this.pipeline);
-        passEncoder.setVertexBuffer(0, this.verticesBuffer);
         passEncoder.setBindGroup(0, uniformBindGroup);
+        passEncoder.setVertexBuffer(0, this.verticesBuffer);
         passEncoder.draw(4, 1, 0, 0);
-        passEncoder.end();
     }
 }
