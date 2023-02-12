@@ -1,4 +1,4 @@
-import { Texture } from "../../../components";
+import { Texture } from "../texture/Texture";
 
 export type GPUObjecthasCache = GPUTexture | GPURenderPipeline | GPUShaderModule;
 

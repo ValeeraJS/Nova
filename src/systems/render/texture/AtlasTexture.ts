@@ -1,8 +1,8 @@
-import { drawSpriteBlock } from "../../utils/drawSpriteBlock";
+import { drawSpriteBlock } from "../../../utils/drawSpriteBlock";
 import { IAltas } from "./spritesheet/ISpritesheet";
-import Texture from "./Texture";
+import { Texture } from "./Texture";
 
-export default class AtlasTexture extends Texture {
+export class AtlasTexture extends Texture {
     loaded = false;
     image?: HTMLImageElement;
     framesBitmap: ImageBitmap[] = [];

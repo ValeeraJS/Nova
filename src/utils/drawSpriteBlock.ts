@@ -1,4 +1,4 @@
-import IFrame from "../components/texture/spritesheet/IFrame";
+import { IFrame } from "../systems/render/texture/spritesheet/IFrame";
 
 const canvases: HTMLCanvasElement[] = []; // 储存多个canvas，可能存在n个图同时画
 

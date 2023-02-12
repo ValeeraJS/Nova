@@ -1,6 +1,6 @@
-import Texture from "./Texture";
+import { Texture } from "./Texture";
 
-export default class ImageBitmapTexture extends Texture {
+export class ImageBitmapTexture extends Texture {
 	loaded = false;
 	sizeChanged = false;
 	image: HTMLImageElement = new Image();

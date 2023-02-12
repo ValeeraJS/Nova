@@ -1,8 +1,8 @@
-import { drawSpriteBlock } from "../../utils/drawSpriteBlock";
-import ISpritesheet from "./spritesheet/ISpritesheet";
-import Texture from "./Texture";
+import { drawSpriteBlock } from "../../../utils/drawSpriteBlock";
+import { ISpritesheet } from "./spritesheet/ISpritesheet";
+import { Texture } from "./Texture";
 
-export default class SpritesheetTexture extends Texture {
+export class SpritesheetTexture extends Texture {
     loaded = false;
     frame = 0; // 当前帧索引
     image?: HTMLImageElement;

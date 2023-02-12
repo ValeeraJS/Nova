@@ -1,6 +1,6 @@
+import { Sampler } from "../../systems/render/texture/Sampler";
+import { Texture } from "../../systems/render/texture/Texture";
 import { SAMPLER, TEXTURE_IMAGE } from "../constants";
-import Sampler from "../texture/Sampler";
-import Texture from "../texture/Texture";
 import IMaterial from "./IMatrial";
 import Material from "./Material";
 

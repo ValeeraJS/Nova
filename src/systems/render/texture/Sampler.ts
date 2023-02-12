@@ -1,13 +1,12 @@
 import { Component } from "@valeera/x";
-import { SAMPLER } from "../constants";
 
-export default class Sampler extends Component<GPUSamplerDescriptor> {
+export class Sampler extends Component<GPUSamplerDescriptor> {
     data: GPUSamplerDescriptor = {
         minFilter: 'linear',
         magFilter: 'linear',
     };
     constructor(option: GPUSamplerDescriptor = {}) {
-        super(SAMPLER, option);
+        super('sampler', option);
         this.dirty = true;
     }
 

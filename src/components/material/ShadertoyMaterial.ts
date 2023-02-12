@@ -1,7 +1,7 @@
+import { ImageBitmapTexture } from "../../systems/render/texture/ImageBitmapTexture";
+import { Sampler } from "../../systems/render/texture/Sampler";
+import { Texture } from "../../systems/render/texture/Texture";
 import { BUFFER, SAMPLER, TEXTURE_IMAGE } from "../constants";
-import { Texture } from "../texture";
-import type ImageBitmapTexture from "../texture/ImageBitmapTexture";
-import Sampler from "../texture/Sampler";
 import IMaterial from "./IMatrial";
 import Material from "./Material";
 

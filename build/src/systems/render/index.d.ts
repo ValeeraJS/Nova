@@ -4,3 +4,4 @@ export * from "./IScissor";
 export * from "./IViewport";
 export * from "./Renderable";
 export * from "./RenderSystem";
+export * from "./texture";

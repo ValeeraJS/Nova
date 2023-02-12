@@ -1,6 +1,6 @@
-import IFrame from "./IFrame";
+import { IFrame } from "./IFrame";
 
-export default interface ISpritesheet {
+export interface ISpritesheet {
     image: string; // 图片url
     frames: IFrame[];
     spriteSize: {

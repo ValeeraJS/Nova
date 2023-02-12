@@ -1,5 +1,5 @@
-import Sampler from "../texture/Sampler";
-import Texture from "../texture/Texture";
+import { Sampler } from "../../systems/render/texture/Sampler";
+import { Texture } from "../../systems/render/texture/Texture";
 import IMaterial from "./IMatrial";
 import Material from "./Material";
 export default class TextureMaterial extends Material implements IMaterial {

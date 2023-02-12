@@ -1,5 +1,5 @@
-import type ImageBitmapTexture from "../texture/ImageBitmapTexture";
-import Sampler from "../texture/Sampler";
+import { ImageBitmapTexture } from "../../systems/render/texture/ImageBitmapTexture";
+import { Sampler } from "../../systems/render/texture/Sampler";
 import IMaterial from "./IMatrial";
 import Material from "./Material";
 export default class ShadertoyMaterial extends Material implements IMaterial {

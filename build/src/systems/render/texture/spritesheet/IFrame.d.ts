@@ -5,4 +5,5 @@ export interface IFrame {
     y: number;
     dx: number;
     dy: number;
+    rotation?: boolean;
 }

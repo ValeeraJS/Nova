@@ -8,7 +8,9 @@ export type TextureOptions = {
 	image?: undefined | null | ImageBitmap;
 }
 
-export default class Texture extends Component<ImageBitmap | undefined | null> {
+export class Texture {
+	data: ImageBitmap | null | undefined;
+	dirty: boolean = true;
 	public descriptor: GPUTextureDescriptor = {
 		size: [0, 0],
 		format: "rgba8unorm",
@@ -16,7 +18,6 @@ export default class Texture extends Component<ImageBitmap | undefined | null> {
 	}
 
 	public constructor(options: TextureOptions) {
-		super(options.name, options.image);
 		this.descriptor.size[0] = options.size[0];
 		this.descriptor.size[1] = options.size[1];
 		this.descriptor.format = options.format ?? "rgba8unorm";

@@ -6759,128 +6759,13 @@ class ShaderMaterial extends Material {
     }
 }
 
-const canvases = []; // 储存多个canvas，可能存在n个图同时画
-async function drawSpriteBlock(image, width, height, frame) {
-    let canvas = canvases.pop() || document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-    let result = await createImageBitmap(canvas);
-    canvases.push(canvas);
-    return result;
-}
-
-class Texture extends Component {
-    descriptor = {
-        size: [0, 0],
-        format: "rgba8unorm",
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-    };
-    constructor(options) {
-        super(options.name, options.image);
-        this.descriptor.size[0] = options.size[0];
-        this.descriptor.size[1] = options.size[1];
-        this.descriptor.format = options.format ?? "rgba8unorm";
-        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
-        this.imageBitmap = options.image;
-    }
-    destroy() {
-        this.data?.close();
-        this.data = undefined;
-    }
-    get width() {
-        return this.descriptor.size[0];
-    }
-    set width(v) {
-        this.descriptor.size[0] = v;
-    }
-    get height() {
-        return this.descriptor.size[1];
-    }
-    set height(v) {
-        this.descriptor.size[1] = v;
-    }
-    get imageBitmap() {
-        return this.data;
-    }
-    set imageBitmap(img) {
-        this.dirty = true;
-        this.data = img;
-    }
-}
-
-class AtlasTexture extends Texture {
-    loaded = false;
-    image;
-    framesBitmap = [];
-    constructor(json, name = "atlas-texture") {
-        super({
-            size: [json.spriteSize.w, json.spriteSize.h],
-            name
-        });
-        this.setImage(json);
-    }
-    async setImage(json) {
-        this.loaded = false;
-        this.dirty = false;
-        let img = new Image();
-        img.src = json.image;
-        this.image = img;
-        await img.decode();
-        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
-        this.loaded = true;
-        return this;
-    }
-}
-
-class ImageBitmapTexture extends Texture {
-    loaded = false;
-    sizeChanged = false;
-    image = new Image();
-    constructor(img, width, height, name = "image-texture") {
-        super({
-            size: [width, height],
-            name,
-        });
-        this.setImage(img);
-    }
-    async setImage(img) {
-        this.loaded = false;
-        this.dirty = false;
-        if (typeof img === "string") {
-            this.image.src = img;
-        }
-        else if (img instanceof ImageBitmap) {
-            this.dirty = true;
-            this.loaded = true;
-            this.data = img;
-            return this;
-        }
-        else {
-            this.image = img;
-        }
-        await this.image.decode();
-        this.data = await createImageBitmap(this.image);
-        if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
-            this.sizeChanged = true;
-            this.width = this.data.width;
-            this.height = this.data.height;
-        }
-        this.dirty = true;
-        this.loaded = true;
-        return this;
-    }
-}
-
 class Sampler extends Component {
     data = {
         minFilter: 'linear',
         magFilter: 'linear',
     };
     constructor(option = {}) {
-        super(SAMPLER, option);
+        super('sampler', option);
         this.dirty = true;
     }
     setAddressMode(u, v, w) {
@@ -6912,39 +6797,43 @@ class Sampler extends Component {
     }
 }
 
-class SpritesheetTexture extends Texture {
-    loaded = false;
-    frame = 0; // 当前帧索引
-    image;
-    framesBitmap = [];
-    constructor(json, name = "spritesheet-texture") {
-        super({
-            size: [json.spriteSize.w, json.spriteSize.h],
-            name,
-        });
-        this.setImage(json);
+class Texture {
+    data;
+    dirty = true;
+    descriptor = {
+        size: [0, 0],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    };
+    constructor(options) {
+        this.descriptor.size[0] = options.size[0];
+        this.descriptor.size[1] = options.size[1];
+        this.descriptor.format = options.format ?? "rgba8unorm";
+        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
+        this.imageBitmap = options.image;
     }
-    async setImage(json) {
-        this.loaded = false;
-        this.dirty = false;
-        let img = new Image();
-        img.src = json.image;
-        this.image = img;
-        await img.decode();
-        // canvas.width = json.spriteSize.w;
-        // canvas.height = json.spriteSize.h;
-        for (let item of json.frames) {
-            this.framesBitmap.push(await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, item));
-        }
-        this.data = this.framesBitmap[0];
-        this.dirty = true;
-        this.loaded = true;
-        return this;
+    destroy() {
+        this.data?.close();
+        this.data = undefined;
     }
-    setFrame(frame) {
-        this.frame = frame;
-        this.data = this.framesBitmap[frame];
+    get width() {
+        return this.descriptor.size[0];
+    }
+    set width(v) {
+        this.descriptor.size[0] = v;
+    }
+    get height() {
+        return this.descriptor.size[1];
+    }
+    set height(v) {
+        this.descriptor.size[1] = v;
+    }
+    get imageBitmap() {
+        return this.data;
+    }
+    set imageBitmap(img) {
         this.dirty = true;
+        this.data = img;
     }
 }
 
@@ -8612,7 +8501,10 @@ class ResourceStore extends EventDispatcher {
 
 const TextureParser = async (blob) => {
     const bitmap = await createImageBitmap(blob);
-    return new Texture(bitmap.width, bitmap.height, bitmap);
+    return new Texture({
+        size: [bitmap.width, bitmap.height],
+        image: bitmap,
+    });
 };
 
 const MeshObjParser = async (text) => {
@@ -9028,6 +8920,118 @@ class RenderSystemInCanvas extends System {
             name: this.name,
             type: "RenderSystem"
         };
+    }
+}
+
+const canvases = []; // 储存多个canvas，可能存在n个图同时画
+async function drawSpriteBlock(image, width, height, frame) {
+    let canvas = canvases.pop() || document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
+    let result = await createImageBitmap(canvas);
+    canvases.push(canvas);
+    return result;
+}
+
+class AtlasTexture extends Texture {
+    loaded = false;
+    image;
+    framesBitmap = [];
+    constructor(json, name = "atlas-texture") {
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name
+        });
+        this.setImage(json);
+    }
+    async setImage(json) {
+        this.loaded = false;
+        this.dirty = false;
+        let img = new Image();
+        img.src = json.image;
+        this.image = img;
+        await img.decode();
+        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
+        this.loaded = true;
+        return this;
+    }
+}
+
+class ImageBitmapTexture extends Texture {
+    loaded = false;
+    sizeChanged = false;
+    image = new Image();
+    constructor(img, width, height, name = "image-texture") {
+        super({
+            size: [width, height],
+            name,
+        });
+        this.setImage(img);
+    }
+    async setImage(img) {
+        this.loaded = false;
+        this.dirty = false;
+        if (typeof img === "string") {
+            this.image.src = img;
+        }
+        else if (img instanceof ImageBitmap) {
+            this.dirty = true;
+            this.loaded = true;
+            this.data = img;
+            return this;
+        }
+        else {
+            this.image = img;
+        }
+        await this.image.decode();
+        this.data = await createImageBitmap(this.image);
+        if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
+            this.sizeChanged = true;
+            this.width = this.data.width;
+            this.height = this.data.height;
+        }
+        this.dirty = true;
+        this.loaded = true;
+        return this;
+    }
+}
+
+class SpritesheetTexture extends Texture {
+    loaded = false;
+    frame = 0; // 当前帧索引
+    image;
+    framesBitmap = [];
+    constructor(json, name = "spritesheet-texture") {
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name,
+        });
+        this.setImage(json);
+    }
+    async setImage(json) {
+        this.loaded = false;
+        this.dirty = false;
+        let img = new Image();
+        img.src = json.image;
+        this.image = img;
+        await img.decode();
+        // canvas.width = json.spriteSize.w;
+        // canvas.height = json.spriteSize.h;
+        for (let item of json.frames) {
+            this.framesBitmap.push(await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, item));
+        }
+        this.data = this.framesBitmap[0];
+        this.dirty = true;
+        this.loaded = true;
+        return this;
+    }
+    setFrame(frame) {
+        this.frame = frame;
+        this.data = this.framesBitmap[frame];
+        this.dirty = true;
     }
 }
 
