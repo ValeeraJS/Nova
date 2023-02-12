@@ -146,7 +146,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 						}
 					});
 				} else if (uniform.type === SAMPLER) {
-					const sampler: GPUSampler = device.createSampler(uniform.value.descriptor);
+					const sampler = WebGPUCacheObjectStore.createGPUSamplerCache(uniform.value, device).data;
 					uniformMap.set(sampler, uniform);
 					groupEntries.push({
 						binding: uniform.binding,
@@ -160,7 +160,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 					// 	format: 'rgba8unorm',
 					// 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
 					// });
-					const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data as GPUTexture;
+					const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data;
 					uniformMap.set(texture, uniform);
 					groupEntries.push({
 						binding: uniform.binding,

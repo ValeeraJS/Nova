@@ -1,5 +1,5 @@
 export type TextureOptions = {
-	size: number[];
+	size: GPUExtent3DStrict;
 	name?: string;
 	format?: GPUTextureFormat;
 	usage?: number;
@@ -9,10 +9,15 @@ export type TextureOptions = {
 export class Texture {
 	data: ImageBitmap | null | undefined;
 	dirty: boolean = true;
-	public descriptor: GPUTextureDescriptor = {
+	public descriptor: Required<GPUTextureDescriptor> = {
 		size: [0, 0],
 		format: "rgba8unorm",
 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+		mipLevelCount: 1, 
+		sampleCount: 1, 
+		dimension: "2d", 
+		viewFormats: [], 
+		label: ""
 	}
 
 	public constructor(options: TextureOptions) {

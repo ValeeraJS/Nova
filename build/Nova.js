@@ -6768,7 +6768,8 @@ struct VertexOutput {
 	class Sampler {
 	    dirty = true;
 	    descriptor = {};
-	    constructor(option = {}) {
+	    name;
+	    constructor(option = {}, name = "sampler") {
 	        this.descriptor.minFilter = option.minFilter ?? "linear";
 	        this.descriptor.magFilter = option.magFilter ?? "linear";
 	        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
@@ -6779,6 +6780,7 @@ struct VertexOutput {
 	        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
 	        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
 	        this.descriptor.compare = option.compare ?? undefined;
+	        this.name = name;
 	    }
 	    setAddressMode(u, v, w) {
 	        this.descriptor.addressModeU = u;
@@ -6819,6 +6821,11 @@ struct VertexOutput {
 	        size: [0, 0],
 	        format: "rgba8unorm",
 	        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+	        mipLevelCount: 1,
+	        sampleCount: 1,
+	        dimension: "2d",
+	        viewFormats: [],
+	        label: ""
 	    };
 	    constructor(options) {
 	        this.descriptor.size[0] = options.size[0];
@@ -9129,6 +9136,63 @@ struct VertexOutput {
 	    }
 	}
 
+	const checkTextureCacheReuseable = (descriptor, cache) => {
+	    if (descriptor.size[0] !== cache.size[0]) {
+	        return false;
+	    }
+	    if (descriptor.size[1] !== cache.size[1]) {
+	        return false;
+	    }
+	    if (descriptor.format !== cache.format) {
+	        return false;
+	    }
+	    if (descriptor.usage !== cache.usage) {
+	        return false;
+	    }
+	    if (descriptor.dimension !== cache.dimension) {
+	        return false;
+	    }
+	    if (descriptor.sampleCount !== cache.sampleCount) {
+	        return false;
+	    }
+	    if (descriptor.mipLevelCount !== cache.mipLevelCount) {
+	        return false;
+	    }
+	    return true;
+	};
+	const checkSamplerCacheReuseable = (descriptor, cache) => {
+	    if (descriptor.addressModeU !== cache.addressModeU) {
+	        return false;
+	    }
+	    if (descriptor.addressModeV !== cache.addressModeV) {
+	        return false;
+	    }
+	    if (descriptor.addressModeW !== cache.addressModeW) {
+	        return false;
+	    }
+	    if (descriptor.minFilter !== cache.minFilter) {
+	        return false;
+	    }
+	    if (descriptor.magFilter !== cache.magFilter) {
+	        return false;
+	    }
+	    if (descriptor.mipmapFilter !== cache.mipmapFilter) {
+	        return false;
+	    }
+	    if (descriptor.maxAnisotropy !== cache.maxAnisotropy) {
+	        return false;
+	    }
+	    if (descriptor.lodMaxClamp !== cache.lodMaxClamp) {
+	        return false;
+	    }
+	    if (descriptor.lodMinClamp !== cache.lodMinClamp) {
+	        return false;
+	    }
+	    if (descriptor.compare !== cache.compare) {
+	        return false;
+	    }
+	    return true;
+	};
 	const WebGPUCacheObjectStore = {
 	    caches: new Map(),
 	    getCaches: (objects) => {
@@ -9167,7 +9231,7 @@ struct VertexOutput {
 	        }
 	        let cache = map.get(device);
 	        if (cache) {
-	            if (cache.width === texture.width && cache.height === texture.height) {
+	            if (checkTextureCacheReuseable(texture.descriptor, cache)) {
 	                cache.dirty = true;
 	                return cache;
 	            }
@@ -9175,12 +9239,35 @@ struct VertexOutput {
 	                cache.data.destroy();
 	            }
 	        }
-	        const data = {
+	        cache = {
 	            dirty: true,
-	            data: device.createTexture(texture.descriptor)
+	            data: device.createTexture(texture.descriptor),
+	            ...texture.descriptor
 	        };
-	        map.set(device, data);
-	        return data;
+	        map.set(device, cache);
+	        return cache;
+	    },
+	    createGPUSamplerCache: (sampler, device) => {
+	        let map = WebGPUCacheObjectStore.caches.get(sampler);
+	        if (!map) {
+	            map = new Map();
+	            WebGPUCacheObjectStore.caches.set(sampler, map);
+	        }
+	        let cache = map.get(device);
+	        if (cache) {
+	            if (checkSamplerCacheReuseable(sampler.descriptor, cache)) {
+	                cache.dirty = true;
+	                cache.data.label = sampler.name;
+	                return cache;
+	            }
+	        }
+	        cache = {
+	            dirty: true,
+	            data: device.createSampler(sampler.descriptor),
+	            ...sampler.descriptor,
+	        };
+	        map.set(device, cache);
+	        return cache;
 	    },
 	    // 一对多关系，所以原始引擎对象dirty需要和缓存对象挂钩
 	    setDirty: (key, device) => {
@@ -9609,7 +9696,7 @@ struct VertexOutput {
 	                    });
 	                }
 	                else if (uniform.type === SAMPLER) {
-	                    const sampler = device.createSampler(uniform.value.descriptor);
+	                    const sampler = WebGPUCacheObjectStore.createGPUSamplerCache(uniform.value, device).data;
 	                    uniformMap.set(sampler, uniform);
 	                    groupEntries.push({
 	                        binding: uniform.binding,

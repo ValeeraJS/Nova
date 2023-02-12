@@ -1,5 +1,5 @@
 export type TextureOptions = {
-    size: number[];
+    size: GPUExtent3DStrict;
     name?: string;
     format?: GPUTextureFormat;
     usage?: number;
@@ -8,7 +8,7 @@ export type TextureOptions = {
 export declare class Texture {
     data: ImageBitmap | null | undefined;
     dirty: boolean;
-    descriptor: GPUTextureDescriptor;
+    descriptor: Required<GPUTextureDescriptor>;
     constructor(options: TextureOptions);
     destroy(): void;
     get width(): number;

@@ -1,24 +1,37 @@
+import { Sampler } from "../texture/Sampler";
 import { Texture } from "../texture/Texture";
 
-export type GPUObjecthasCache = GPUTexture | GPURenderPipeline | GPUShaderModule;
+export type GPUObjecthasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler;
 
 export interface IWebGPUObjectCache<T extends GPUObjecthasCache> {
     dirty: boolean;
     data: T;
 };
 
-export interface WebGPUTextureCache extends IWebGPUObjectCache<GPUTexture> {
-    width: number;
-    height: number;
-    format: string;
+export interface WebGPUTextureCache extends IWebGPUObjectCache<GPUTexture>, GPUTextureDescriptor{
+    size: GPUExtent3DStrict;
+    format: GPUTextureFormat;
     usage: number;
 }
 
+export interface WebGPUSamplerCache extends IWebGPUObjectCache<GPUSampler>, GPUSamplerDescriptor{
+    minFilter: GPUFilterMode;
+    magFilter: GPUFilterMode;
+    mipmapFilter: GPUMipmapFilterMode;
+    addressModeU: GPUAddressMode;
+    addressModeV: GPUAddressMode;
+    addressModeW: GPUAddressMode;
+    maxAnisotropy: number;
+    lodMaxClamp: number;
+    lodMinClamp: number;
+    compare: GPUCompareFunction | undefined;
+}
+
 const checkTextureCacheReuseable = (descriptor: GPUTextureDescriptor, cache: WebGPUTextureCache): boolean => {
-    if (descriptor.size[0] !== cache.width) {
+    if (descriptor.size[0] !== cache.size[0]) {
         return false;
     }
-    if (descriptor.size[1] !== cache.height) {
+    if (descriptor.size[1] !== cache.size[1]) {
         return false;
     }
     if (descriptor.format !== cache.format) {
@@ -27,7 +40,50 @@ const checkTextureCacheReuseable = (descriptor: GPUTextureDescriptor, cache: Web
     if (descriptor.usage !== cache.usage) {
         return false;
     }
+    if (descriptor.dimension !== cache.dimension) {
+        return false;
+    }
+    if (descriptor.sampleCount !== cache.sampleCount) {
+        return false;
+    }
+    if (descriptor.mipLevelCount !== cache.mipLevelCount) {
+        return false;
+    }
 
+    return true;
+}
+
+const checkSamplerCacheReuseable = (descriptor: GPUSamplerDescriptor, cache: WebGPUSamplerCache): boolean => {
+    if (descriptor.addressModeU !== cache.addressModeU) {
+        return false;
+    }
+    if (descriptor.addressModeV !== cache.addressModeV) {
+        return false;
+    }
+    if (descriptor.addressModeW !== cache.addressModeW) {
+        return false;
+    }
+    if (descriptor.minFilter !== cache.minFilter) {
+        return false;
+    }
+    if (descriptor.magFilter !== cache.magFilter) {
+        return false;
+    }
+    if (descriptor.mipmapFilter !== cache.mipmapFilter) {
+        return false;
+    }
+    if (descriptor.maxAnisotropy !== cache.maxAnisotropy) {
+        return false;
+    }
+    if (descriptor.lodMaxClamp !== cache.lodMaxClamp) {
+        return false;
+    }
+    if (descriptor.lodMinClamp !== cache.lodMinClamp) {
+        return false;
+    }
+    if (descriptor.compare !== cache.compare) {
+        return false;
+    }
     return true;
 }
 
@@ -69,7 +125,7 @@ export const WebGPUCacheObjectStore = {
         }
         let cache = map.get(device) as WebGPUTextureCache;
         if (cache) {
-            if (cache.width === texture.width && cache.height === texture.height) {
+            if (checkTextureCacheReuseable(texture.descriptor, cache)) {
                 cache.dirty = true;
                 return cache;
             } else {
@@ -77,13 +133,38 @@ export const WebGPUCacheObjectStore = {
             }
         }
         
-        const data = {
+        cache = {
             dirty: true,
-            data: device.createTexture(texture.descriptor)
+            data: device.createTexture(texture.descriptor),
+            ...texture.descriptor
         };
-        map.set(device, data);
+        map.set(device, cache);
 
-        return data;
+        return cache;
+    },
+    createGPUSamplerCache: (sampler: Sampler, device: GPUDevice) => {
+        let map = WebGPUCacheObjectStore.caches.get(sampler);
+        if (!map) {
+            map = new Map();
+            WebGPUCacheObjectStore.caches.set(sampler, map);
+        }
+        let cache = map.get(device) as WebGPUSamplerCache;
+        if (cache) {
+            if (checkSamplerCacheReuseable(sampler.descriptor, cache)) {
+                cache.dirty = true;
+                cache.data.label = sampler.name;
+                return cache;
+            }
+        }
+        
+        cache = {
+            dirty: true,
+            data: device.createSampler(sampler.descriptor),
+            ...sampler.descriptor,
+        };
+        map.set(device, cache);
+
+        return cache;
     },
     // 一对多关系，所以原始引擎对象dirty需要和缓存对象挂钩
     setDirty: (key: any, device?: GPUDevice) => {

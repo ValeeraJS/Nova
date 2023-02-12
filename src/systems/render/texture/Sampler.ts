@@ -1,7 +1,8 @@
 export class Sampler {
     dirty: boolean = true;
-    descriptor: GPUSamplerDescriptor = {};
-    constructor(option: GPUSamplerDescriptor = {}) {
+    descriptor: Required<GPUSamplerDescriptor> = {} as any;
+    name: string;
+    constructor(option: GPUSamplerDescriptor = {}, name = "sampler") {
         this.descriptor.minFilter = option.minFilter ?? "linear";
         this.descriptor.magFilter = option.magFilter ?? "linear";
         this.descriptor.addressModeU = option.addressModeU ?? "repeat";
@@ -12,6 +13,7 @@ export class Sampler {
         this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
         this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
         this.descriptor.compare = option.compare ?? undefined;
+        this.name = name;
     }
 
     setAddressMode(u: GPUAddressMode, v: GPUAddressMode, w?: GPUAddressMode) {
