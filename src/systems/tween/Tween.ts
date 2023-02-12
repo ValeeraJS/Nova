@@ -1,4 +1,5 @@
 import { Vector2, Vector3, Vector4 } from "@valeera/mathx";
+import { Easing } from "@valeera/mathx";
 import { Component } from "@valeera/x";
 
 export enum TWEEN_STATE {
@@ -14,31 +15,32 @@ export type InterpolationType = {
 	delta: number | Float32Array | number[] | ArrayLike<number>; // to和from值的差
 }
 
-export default class Tween extends Component<Map<string, InterpolationType>> {
+export class Tween extends Component<Map<string, InterpolationType>> {
 	public static States = TWEEN_STATE;
 	public from: any;
 	public to: any;
 	public duration: number;
-	public loop: number;
+	public loopTimes: number;
 	public state: TWEEN_STATE;
 	public time: number;
 	public end = false;
-	private loopWholeTimes: number;
+	public loop: number;
+	public easing: (p: number) => number = Easing.Linear;
 
-	constructor(from: any, to: any, duration: number = 1000, loop = 0) {
+	constructor(from: any, to: any, duration = 1000, loop = 0) {
 		super("tween", new Map());
-		this.loopWholeTimes = loop;
+		this.loop = loop;
 		this.from = from;
 		this.to = to;
 		this.duration = duration;
-		this.loop = loop;
+		this.loopTimes = loop;
 		this.state = TWEEN_STATE.IDLE;
 		this.time = 0;
 		this.checkKeyAndType(from, to);
 	}
 
 	public reset() {
-		this.loop = this.loopWholeTimes;
+		this.loopTimes = this.loop;
 		this.time = 0;
 		this.state = TWEEN_STATE.IDLE;
 		this.end = false;

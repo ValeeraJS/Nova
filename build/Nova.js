@@ -7940,106 +7940,6 @@ struct VertexOutput {
 	    }
 	}
 
-	var TWEEN_STATE;
-	(function (TWEEN_STATE) {
-	    TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
-	    TWEEN_STATE[TWEEN_STATE["START"] = 1] = "START";
-	    TWEEN_STATE[TWEEN_STATE["PAUSE"] = 2] = "PAUSE";
-	    TWEEN_STATE[TWEEN_STATE["STOP"] = -1] = "STOP";
-	})(TWEEN_STATE || (TWEEN_STATE = {}));
-	class Tween extends Component {
-	    static States = TWEEN_STATE;
-	    from;
-	    to;
-	    duration;
-	    loop;
-	    state;
-	    time;
-	    end = false;
-	    loopWholeTimes;
-	    constructor(from, to, duration = 1000, loop = 0) {
-	        super("tween", new Map());
-	        this.loopWholeTimes = loop;
-	        this.from = from;
-	        this.to = to;
-	        this.duration = duration;
-	        this.loop = loop;
-	        this.state = TWEEN_STATE.IDLE;
-	        this.time = 0;
-	        this.checkKeyAndType(from, to);
-	    }
-	    reset() {
-	        this.loop = this.loopWholeTimes;
-	        this.time = 0;
-	        this.state = TWEEN_STATE.IDLE;
-	        this.end = false;
-	    }
-	    // 检查from 和 to哪些属性是可以插值的
-	    checkKeyAndType(from, to) {
-	        let map = this.data;
-	        if (from instanceof Float32Array && to instanceof Float32Array) {
-	            if (Math.min(from.length, to.length) === 2) {
-	                map.set(' ', {
-	                    type: 'vector2',
-	                    origin: new Float32Array(from),
-	                    delta: Vector2.minus(to, from)
-	                });
-	            }
-	            else if (Math.min(from.length, to.length) === 3) {
-	                map.set(' ', {
-	                    type: 'vector3',
-	                    origin: new Float32Array(from),
-	                    delta: Vector3.minus(to, from)
-	                });
-	            }
-	            else if (Math.min(from.length, to.length) === 4) {
-	                map.set(' ', {
-	                    type: 'vector4',
-	                    origin: new Float32Array(from),
-	                    delta: Vector4.minus(to, from)
-	                });
-	            }
-	            return this;
-	        }
-	        for (let key in to) {
-	            if (key in from) {
-	                // TODO 目前只支持数字和F32数组插值，后续扩展
-	                if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
-	                    map.set(key, {
-	                        type: 'number',
-	                        origin: from[key],
-	                        delta: to[key] - from[key]
-	                    });
-	                }
-	                else if (to[key] instanceof Float32Array && from[key] instanceof Float32Array) {
-	                    if (Math.min(from[key].length, to[key].length) === 2) {
-	                        map.set(key, {
-	                            type: 'vector2',
-	                            origin: new Float32Array(from[key]),
-	                            delta: Vector2.minus(to[key], from[key])
-	                        });
-	                    }
-	                    else if (Math.min(from[key].length, to[key].length) === 3) {
-	                        map.set(key, {
-	                            type: 'vector3',
-	                            origin: new Float32Array(from[key]),
-	                            delta: Vector3.minus(to[key], from[key])
-	                        });
-	                    }
-	                    else if (Math.min(from[key].length, to[key].length) === 4) {
-	                        map.set(key, {
-	                            type: 'vector4',
-	                            origin: new Float32Array(from[key]),
-	                            delta: Vector4.minus(to[key], from[key])
-	                        });
-	                    }
-	                }
-	            }
-	        }
-	        return this;
-	    }
-	}
-
 	var getEuclidPosition3Proxy = (position) => {
 	    if (position.isEntity) {
 	        position = position.getComponent(TRANSLATION_3D);
@@ -9706,11 +9606,6 @@ struct VertexOutput {
 	                else if (uniform.type === TEXTURE_IMAGE) {
 	                    uniform.value.dirty = true;
 	                    uniform.dirty = true;
-	                    // const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
-	                    // 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-	                    // 	format: 'rgba8unorm',
-	                    // 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-	                    // });
 	                    const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data;
 	                    uniformMap.set(texture, uniform);
 	                    groupEntries.push({
@@ -10213,6 +10108,107 @@ fn main(
 	    }
 	}
 
+	exports.TWEEN_STATE = void 0;
+	(function (TWEEN_STATE) {
+	    TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
+	    TWEEN_STATE[TWEEN_STATE["START"] = 1] = "START";
+	    TWEEN_STATE[TWEEN_STATE["PAUSE"] = 2] = "PAUSE";
+	    TWEEN_STATE[TWEEN_STATE["STOP"] = -1] = "STOP";
+	})(exports.TWEEN_STATE || (exports.TWEEN_STATE = {}));
+	class Tween extends Component {
+	    static States = exports.TWEEN_STATE;
+	    from;
+	    to;
+	    duration;
+	    loopTimes;
+	    state;
+	    time;
+	    end = false;
+	    loop;
+	    easing = index$4.Linear;
+	    constructor(from, to, duration = 1000, loop = 0) {
+	        super("tween", new Map());
+	        this.loop = loop;
+	        this.from = from;
+	        this.to = to;
+	        this.duration = duration;
+	        this.loopTimes = loop;
+	        this.state = exports.TWEEN_STATE.IDLE;
+	        this.time = 0;
+	        this.checkKeyAndType(from, to);
+	    }
+	    reset() {
+	        this.loopTimes = this.loop;
+	        this.time = 0;
+	        this.state = exports.TWEEN_STATE.IDLE;
+	        this.end = false;
+	    }
+	    // 检查from 和 to哪些属性是可以插值的
+	    checkKeyAndType(from, to) {
+	        let map = this.data;
+	        if (from instanceof Float32Array && to instanceof Float32Array) {
+	            if (Math.min(from.length, to.length) === 2) {
+	                map.set(' ', {
+	                    type: 'vector2',
+	                    origin: new Float32Array(from),
+	                    delta: Vector2.minus(to, from)
+	                });
+	            }
+	            else if (Math.min(from.length, to.length) === 3) {
+	                map.set(' ', {
+	                    type: 'vector3',
+	                    origin: new Float32Array(from),
+	                    delta: Vector3.minus(to, from)
+	                });
+	            }
+	            else if (Math.min(from.length, to.length) === 4) {
+	                map.set(' ', {
+	                    type: 'vector4',
+	                    origin: new Float32Array(from),
+	                    delta: Vector4.minus(to, from)
+	                });
+	            }
+	            return this;
+	        }
+	        for (let key in to) {
+	            if (key in from) {
+	                // TODO 目前只支持数字和F32数组插值，后续扩展
+	                if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
+	                    map.set(key, {
+	                        type: 'number',
+	                        origin: from[key],
+	                        delta: to[key] - from[key]
+	                    });
+	                }
+	                else if (to[key] instanceof Float32Array && from[key] instanceof Float32Array) {
+	                    if (Math.min(from[key].length, to[key].length) === 2) {
+	                        map.set(key, {
+	                            type: 'vector2',
+	                            origin: new Float32Array(from[key]),
+	                            delta: Vector2.minus(to[key], from[key])
+	                        });
+	                    }
+	                    else if (Math.min(from[key].length, to[key].length) === 3) {
+	                        map.set(key, {
+	                            type: 'vector3',
+	                            origin: new Float32Array(from[key]),
+	                            delta: Vector3.minus(to[key], from[key])
+	                        });
+	                    }
+	                    else if (Math.min(from[key].length, to[key].length) === 4) {
+	                        map.set(key, {
+	                            type: 'vector4',
+	                            origin: new Float32Array(from[key]),
+	                            delta: Vector4.minus(to[key], from[key])
+	                        });
+	                    }
+	                }
+	            }
+	        }
+	        return this;
+	    }
+	}
+
 	class TweenSystem extends System {
 	    query(entity) {
 	        let component = entity.getComponent("tween");
@@ -10225,15 +10221,15 @@ fn main(
 	    destroy() {
 	        throw new Error("Method not implemented.");
 	    }
-	    handle(entity, time, delta) {
+	    handle(entity, _time, delta) {
 	        let tweenC = entity.getComponent("tween");
 	        if (tweenC.end) {
 	            return this;
 	        }
 	        tweenC.time += delta;
 	        if (tweenC.time > tweenC.duration) {
-	            tweenC.loop--;
-	            if (tweenC.loop >= 0) {
+	            tweenC.loopTimes--;
+	            if (tweenC.loopTimes >= 0) {
 	                tweenC.time -= tweenC.duration;
 	            }
 	            else {
@@ -10243,7 +10239,7 @@ fn main(
 	        }
 	        let map = tweenC.data;
 	        let from = tweenC.from;
-	        let rate = tweenC.time / tweenC.duration;
+	        let rate = tweenC.easing(tweenC.time / tweenC.duration);
 	        if (from instanceof Float32Array) {
 	            let data = map.get(' ');
 	            if (data.type === "vector2") {

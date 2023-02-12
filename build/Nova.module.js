@@ -7934,106 +7934,6 @@ class PerspectiveProjectionX extends AProjection3 {
     }
 }
 
-var TWEEN_STATE;
-(function (TWEEN_STATE) {
-    TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
-    TWEEN_STATE[TWEEN_STATE["START"] = 1] = "START";
-    TWEEN_STATE[TWEEN_STATE["PAUSE"] = 2] = "PAUSE";
-    TWEEN_STATE[TWEEN_STATE["STOP"] = -1] = "STOP";
-})(TWEEN_STATE || (TWEEN_STATE = {}));
-class Tween extends Component {
-    static States = TWEEN_STATE;
-    from;
-    to;
-    duration;
-    loop;
-    state;
-    time;
-    end = false;
-    loopWholeTimes;
-    constructor(from, to, duration = 1000, loop = 0) {
-        super("tween", new Map());
-        this.loopWholeTimes = loop;
-        this.from = from;
-        this.to = to;
-        this.duration = duration;
-        this.loop = loop;
-        this.state = TWEEN_STATE.IDLE;
-        this.time = 0;
-        this.checkKeyAndType(from, to);
-    }
-    reset() {
-        this.loop = this.loopWholeTimes;
-        this.time = 0;
-        this.state = TWEEN_STATE.IDLE;
-        this.end = false;
-    }
-    // 检查from 和 to哪些属性是可以插值的
-    checkKeyAndType(from, to) {
-        let map = this.data;
-        if (from instanceof Float32Array && to instanceof Float32Array) {
-            if (Math.min(from.length, to.length) === 2) {
-                map.set(' ', {
-                    type: 'vector2',
-                    origin: new Float32Array(from),
-                    delta: Vector2.minus(to, from)
-                });
-            }
-            else if (Math.min(from.length, to.length) === 3) {
-                map.set(' ', {
-                    type: 'vector3',
-                    origin: new Float32Array(from),
-                    delta: Vector3.minus(to, from)
-                });
-            }
-            else if (Math.min(from.length, to.length) === 4) {
-                map.set(' ', {
-                    type: 'vector4',
-                    origin: new Float32Array(from),
-                    delta: Vector4.minus(to, from)
-                });
-            }
-            return this;
-        }
-        for (let key in to) {
-            if (key in from) {
-                // TODO 目前只支持数字和F32数组插值，后续扩展
-                if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
-                    map.set(key, {
-                        type: 'number',
-                        origin: from[key],
-                        delta: to[key] - from[key]
-                    });
-                }
-                else if (to[key] instanceof Float32Array && from[key] instanceof Float32Array) {
-                    if (Math.min(from[key].length, to[key].length) === 2) {
-                        map.set(key, {
-                            type: 'vector2',
-                            origin: new Float32Array(from[key]),
-                            delta: Vector2.minus(to[key], from[key])
-                        });
-                    }
-                    else if (Math.min(from[key].length, to[key].length) === 3) {
-                        map.set(key, {
-                            type: 'vector3',
-                            origin: new Float32Array(from[key]),
-                            delta: Vector3.minus(to[key], from[key])
-                        });
-                    }
-                    else if (Math.min(from[key].length, to[key].length) === 4) {
-                        map.set(key, {
-                            type: 'vector4',
-                            origin: new Float32Array(from[key]),
-                            delta: Vector4.minus(to[key], from[key])
-                        });
-                    }
-                }
-            }
-        }
-        return this;
-    }
-}
-
 var getEuclidPosition3Proxy = (position) => {
     if (position.isEntity) {
         position = position.getComponent(TRANSLATION_3D);
@@ -9700,11 +9600,6 @@ class WebGPUMesh3Renderer {
                 else if (uniform.type === TEXTURE_IMAGE) {
                     uniform.value.dirty = true;
                     uniform.dirty = true;
-                    // const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
-                    // 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-                    // 	format: 'rgba8unorm',
-                    // 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-                    // });
                     const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data;
                     uniformMap.set(texture, uniform);
                     groupEntries.push({
@@ -10207,6 +10102,107 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
     }
 }
 
+var TWEEN_STATE;
+(function (TWEEN_STATE) {
+    TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
+    TWEEN_STATE[TWEEN_STATE["START"] = 1] = "START";
+    TWEEN_STATE[TWEEN_STATE["PAUSE"] = 2] = "PAUSE";
+    TWEEN_STATE[TWEEN_STATE["STOP"] = -1] = "STOP";
+})(TWEEN_STATE || (TWEEN_STATE = {}));
+class Tween extends Component {
+    static States = TWEEN_STATE;
+    from;
+    to;
+    duration;
+    loopTimes;
+    state;
+    time;
+    end = false;
+    loop;
+    easing = index$4.Linear;
+    constructor(from, to, duration = 1000, loop = 0) {
+        super("tween", new Map());
+        this.loop = loop;
+        this.from = from;
+        this.to = to;
+        this.duration = duration;
+        this.loopTimes = loop;
+        this.state = TWEEN_STATE.IDLE;
+        this.time = 0;
+        this.checkKeyAndType(from, to);
+    }
+    reset() {
+        this.loopTimes = this.loop;
+        this.time = 0;
+        this.state = TWEEN_STATE.IDLE;
+        this.end = false;
+    }
+    // 检查from 和 to哪些属性是可以插值的
+    checkKeyAndType(from, to) {
+        let map = this.data;
+        if (from instanceof Float32Array && to instanceof Float32Array) {
+            if (Math.min(from.length, to.length) === 2) {
+                map.set(' ', {
+                    type: 'vector2',
+                    origin: new Float32Array(from),
+                    delta: Vector2.minus(to, from)
+                });
+            }
+            else if (Math.min(from.length, to.length) === 3) {
+                map.set(' ', {
+                    type: 'vector3',
+                    origin: new Float32Array(from),
+                    delta: Vector3.minus(to, from)
+                });
+            }
+            else if (Math.min(from.length, to.length) === 4) {
+                map.set(' ', {
+                    type: 'vector4',
+                    origin: new Float32Array(from),
+                    delta: Vector4.minus(to, from)
+                });
+            }
+            return this;
+        }
+        for (let key in to) {
+            if (key in from) {
+                // TODO 目前只支持数字和F32数组插值，后续扩展
+                if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
+                    map.set(key, {
+                        type: 'number',
+                        origin: from[key],
+                        delta: to[key] - from[key]
+                    });
+                }
+                else if (to[key] instanceof Float32Array && from[key] instanceof Float32Array) {
+                    if (Math.min(from[key].length, to[key].length) === 2) {
+                        map.set(key, {
+                            type: 'vector2',
+                            origin: new Float32Array(from[key]),
+                            delta: Vector2.minus(to[key], from[key])
+                        });
+                    }
+                    else if (Math.min(from[key].length, to[key].length) === 3) {
+                        map.set(key, {
+                            type: 'vector3',
+                            origin: new Float32Array(from[key]),
+                            delta: Vector3.minus(to[key], from[key])
+                        });
+                    }
+                    else if (Math.min(from[key].length, to[key].length) === 4) {
+                        map.set(key, {
+                            type: 'vector4',
+                            origin: new Float32Array(from[key]),
+                            delta: Vector4.minus(to[key], from[key])
+                        });
+                    }
+                }
+            }
+        }
+        return this;
+    }
+}
+
 class TweenSystem extends System {
     query(entity) {
         let component = entity.getComponent("tween");
@@ -10219,15 +10215,15 @@ class TweenSystem extends System {
     destroy() {
         throw new Error("Method not implemented.");
     }
-    handle(entity, time, delta) {
+    handle(entity, _time, delta) {
         let tweenC = entity.getComponent("tween");
         if (tweenC.end) {
             return this;
         }
         tweenC.time += delta;
         if (tweenC.time > tweenC.duration) {
-            tweenC.loop--;
-            if (tweenC.loop >= 0) {
+            tweenC.loopTimes--;
+            if (tweenC.loopTimes >= 0) {
                 tweenC.time -= tweenC.duration;
             }
             else {
@@ -10237,7 +10233,7 @@ class TweenSystem extends System {
         }
         let map = tweenC.data;
         let from = tweenC.from;
-        let rate = tweenC.time / tweenC.duration;
+        let rate = tweenC.easing(tweenC.time / tweenC.duration);
         if (from instanceof Float32Array) {
             let data = map.get(' ');
             if (data.type === "vector2") {
@@ -10317,4 +10313,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$1 as ComponentProxy, constants as Constants, Cube, DEFAULT_ENGINE_OPTIONS, DepthMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, WebGPURenderSystem as WebGPURenderSystem2, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants$1 as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$1 as ComponentProxy, constants as Constants, Cube, DEFAULT_ENGINE_OPTIONS, DepthMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, WebGPURenderSystem as WebGPURenderSystem2, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };

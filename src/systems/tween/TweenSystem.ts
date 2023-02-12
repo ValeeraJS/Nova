@@ -1,8 +1,8 @@
 import { Vector2, Vector3, Vector4 } from "@valeera/mathx";
 import { System, IEntity } from "@valeera/x";
-import Tween from "../../components/tween/Tween";
+import { Tween } from "./Tween";
 
-export default class TweenSystem extends System {
+export class TweenSystem extends System {
 
     public query(entity: IEntity): boolean {
         let component = entity.getComponent("tween") as Tween;
@@ -17,15 +17,15 @@ export default class TweenSystem extends System {
         throw new Error("Method not implemented.");
     }
 
-    public handle(entity: IEntity, time: number, delta: number): this {
+    public handle(entity: IEntity, _time: number, delta: number): this {
         let tweenC = entity.getComponent("tween") as Tween;
         if (tweenC.end) {
             return this;
         }
         tweenC.time += delta;
         if (tweenC.time > tweenC.duration) {
-            tweenC.loop--;
-            if (tweenC.loop >= 0) {
+            tweenC.loopTimes--;
+            if (tweenC.loopTimes >= 0) {
                 tweenC.time -= tweenC.duration;
             } else {
                 tweenC.end = true;
@@ -34,7 +34,7 @@ export default class TweenSystem extends System {
         }
         let map = tweenC.data;
         let from = tweenC.from;
-        let rate = tweenC.time / tweenC.duration;
+        let rate = tweenC.easing(tweenC.time / tweenC.duration);
         if (from instanceof Float32Array) {
             let data = map.get(' ') as any;
             if (data.type === "vector2") {

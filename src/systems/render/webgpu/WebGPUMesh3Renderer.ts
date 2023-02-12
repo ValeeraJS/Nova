@@ -155,11 +155,6 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 				} else if (uniform.type === TEXTURE_IMAGE) {
 					uniform.value.dirty = true;
 					uniform.dirty = true;
-					// const texture: GPUTexture = uniform.value instanceof GPUTexture ? uniform.value : device.createTexture({
-					// 	size: [uniform.value.width || uniform.value.image.naturalWidth, uniform.value.height || uniform.value.image.naturalHeight, 1],
-					// 	format: 'rgba8unorm',
-					// 	usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-					// });
 					const texture = WebGPUCacheObjectStore.createGPUTextureCache(uniform.value, device).data;
 					uniformMap.set(texture, uniform);
 					groupEntries.push({

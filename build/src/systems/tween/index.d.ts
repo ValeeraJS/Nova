@@ -1,1 +1,2 @@
-export { default as TweenSystem } from './TweenSystem';
+export * from './Tween';
+export * from './TweenSystem';

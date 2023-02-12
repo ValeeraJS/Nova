@@ -44,8 +44,17 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("tween");
+			const funcName = [];
+			const t = {
+				easing: "Linear"
+			}
+			for (let key in Nova.Easing) {
+				funcName.push(key);
+			}
 			f.add(tween, "duration", 100, 10000).step(100);
-			f.add(tween, "loop", 0, 10).step(1);
+			f.add(t, "easing", funcName).onChange((name)=>{
+				tween.easing = Nova.Easing[name];
+			});
 			f.add(tween, "reset");
 			// f.add(renderSystem.clearColor, "g", 0, 255).step(1);
 			// f.add(renderSystem.clearColor, "b", 0, 255).step(1);
