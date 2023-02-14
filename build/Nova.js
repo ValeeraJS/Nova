@@ -9763,6 +9763,57 @@ fn main(
 	    }
 	}
 
+	const wgslShaders$2 = {
+	    vertex: `
+		struct Uniforms {
+			modelViewProjectionMatrix : mat4x4<f32>
+	  	};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			return out;
+		}
+	`,
+	    fragment: `
+		struct Uniforms {
+			color : vec4<f32>
+	  	};
+	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
+
+		@fragment fn main() -> @location(0) vec4<f32> {
+			return uniforms.color;
+		}
+	`
+	};
+	let ColorMaterial$1 = class ColorMaterial extends Material {
+	    constructor(color = new Float32Array([1, 1, 1, 1])) {
+	        super(wgslShaders$2.vertex, wgslShaders$2.fragment, [{
+	                name: "color",
+	                value: color,
+	                binding: 1,
+	                dirty: true,
+	                type: BUFFER
+	            }]);
+	        this.dirty = true;
+	    }
+	    setColor(r, g, b, a) {
+	        if (this.data) {
+	            this.data.uniforms[0].value[0] = r;
+	            this.data.uniforms[0].value[1] = g;
+	            this.data.uniforms[0].value[2] = b;
+	            this.data.uniforms[0].value[3] = a;
+	            this.data.uniforms[0].dirty = true;
+	        }
+	        return this;
+	    }
+	};
+
 	const wgslShaders$1 = {
 	    vertex: `
 		struct Uniforms {
@@ -10339,7 +10390,7 @@ struct VertexOutput {
 	exports.Camera3 = Camera3;
 	exports.ColorGPU = ColorGPU;
 	exports.ColorHSL = ColorHSL;
-	exports.ColorMaterial = ColorMaterial;
+	exports.ColorMaterial = ColorMaterial$1;
 	exports.ColorRGB = ColorRGB;
 	exports.ColorRGBA = ColorRGBA;
 	exports.Component = Component;
@@ -10350,6 +10401,7 @@ struct VertexOutput {
 	exports.DEFAULT_BLEND_STATE = DEFAULT_BLEND_STATE;
 	exports.DEFAULT_ENGINE_OPTIONS = DEFAULT_ENGINE_OPTIONS;
 	exports.DepthMaterial = DepthMaterial;
+	exports.DomMaterial = ColorMaterial;
 	exports.Easing = index$4;
 	exports.ElementChangeEvent = ElementChangeEvent;
 	exports.Engine = Engine;

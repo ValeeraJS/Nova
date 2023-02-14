@@ -9757,6 +9757,57 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
     }
 }
 
+const wgslShaders$2 = {
+    vertex: `
+		struct Uniforms {
+			modelViewProjectionMatrix : mat4x4<f32>
+	  	};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			return out;
+		}
+	`,
+    fragment: `
+		struct Uniforms {
+			color : vec4<f32>
+	  	};
+	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
+
+		@fragment fn main() -> @location(0) vec4<f32> {
+			return uniforms.color;
+		}
+	`
+};
+let ColorMaterial$1 = class ColorMaterial extends Material {
+    constructor(color = new Float32Array([1, 1, 1, 1])) {
+        super(wgslShaders$2.vertex, wgslShaders$2.fragment, [{
+                name: "color",
+                value: color,
+                binding: 1,
+                dirty: true,
+                type: BUFFER
+            }]);
+        this.dirty = true;
+    }
+    setColor(r, g, b, a) {
+        if (this.data) {
+            this.data.uniforms[0].value[0] = r;
+            this.data.uniforms[0].value[1] = g;
+            this.data.uniforms[0].value[2] = b;
+            this.data.uniforms[0].value[3] = a;
+            this.data.uniforms[0].dirty = true;
+        }
+        return this;
+    }
+};
+
 const wgslShaders$1 = {
     vertex: `
 		struct Uniforms {
@@ -10313,4 +10364,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DepthMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial$1 as ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DepthMaterial, ColorMaterial as DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
