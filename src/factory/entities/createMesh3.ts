@@ -1,9 +1,9 @@
 import { IWorld } from "@valeera/x";
-import { Geometry } from "../../components";
 import { MESH3 } from "../../components/constants";
-import { DEFAULT_MATERIAL3 } from "../../components/material/defaultMaterial";
-import IMaterial from "../../components/material/IMatrial";
 import Object3 from "../../entities/Object3";
+import Geometry from "../../systems/render/geometry/Geometry";
+import { IMaterial } from "../../systems/render/webgpu/material";
+import { DEFAULT_MATERIAL3 } from "../../systems/render/webgpu/material/defaultMaterial";
 import { Mesh3 } from "../../systems/render/webgpu/Mesh3";
 
 export default (geometry: Geometry, material: IMaterial = DEFAULT_MATERIAL3, name = MESH3, world?: IWorld): Object3 => {

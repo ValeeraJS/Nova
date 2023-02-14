@@ -231,890 +231,6 @@
 	};
 	var EventDispatcher = mixin$1(Object);
 
-	// const S4 = () => {
-	// 	return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-	// };
-	/**
-	 * @class
-	 * @classdesc 数字id生成器，用于生成递增id
-	 * @param {number} [initValue = 0] 从几开始生成递增id
-	 * @implements IdGenerator.IIncreaser
-	 */
-	class IdGenerator {
-	    initValue;
-	    #value;
-	    /**
-	     * @member IdGenerator.initValue
-	     * @desc id从该值开始递增，在创建实例时进行设置。设置之后将无法修改。
-	     * @readonly
-	     * @public
-	     */
-	    constructor(initValue = 0) {
-	        this.#value = this.initValue = initValue;
-	    }
-	    /**
-	     * @method IdGenerator.prototype.current
-	     * @desc 返回当前的id
-	     * @readonly
-	     * @public
-	     * @returns {number} id
-	     */
-	    current() {
-	        return this.#value;
-	    }
-	    jumpTo(value) {
-	        if (this.#value < value) {
-	            this.#value = value;
-	            return true;
-	        }
-	        return false;
-	    }
-	    /**
-	     * @method IdGenerator.prototype.next
-	     * @desc 生成新的id
-	     * @public
-	     * @returns {number} id
-	     */
-	    next() {
-	        return ++this.#value;
-	    }
-	    /**
-	     * @method IdGenerator.prototype.skip
-	     * @desc 跳过一段值生成新的id
-	     * @public
-	     * @param {number} [value = 1] 跳过的范围，必须大于等于1
-	     * @returns {number} id
-	     */
-	    skip(value = 1) {
-	        this.#value += Math.min(1, value);
-	        return ++this.#value;
-	    }
-	    /**
-	     * @method IdGenerator.prototype.skip
-	     * @desc 生成新的32位uuid
-	     * @public
-	     * @returns {string} uuid
-	     */
-	    uuid() {
-	        // if (crypto.randomUUID) {
-	        // 	return (crypto as any).randomUUID();
-	        // } else {
-	        // 	return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
-	        // }
-	        return crypto.randomUUID();
-	    }
-	    /**
-	     * @method IdGenerator.prototype.skip
-	     * @desc 生成新的32位BigInt
-	     * @public
-	     * @returns {BigInt} uuid
-	     */
-	    uuidBigInt() {
-	        // return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
-	        const arr = crypto.getRandomValues(new Uint16Array(8));
-	        return (BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n +
-	            BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n +
-	            BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n +
-	            BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n +
-	            BigInt(arr[4]) * 65536n * 65536n * 65536n +
-	            BigInt(arr[5]) * 65536n * 65536n +
-	            BigInt(arr[6]) * 65536n +
-	            BigInt(arr[6]));
-	    }
-	}
-
-	const FIND_LEAVES_VISITOR = {
-	    enter: (node, result) => {
-	        if (!node.children.length) {
-	            result.push(node);
-	        }
-	    }
-	};
-	const ARRAY_VISITOR = {
-	    enter: (node, result) => {
-	        result.push(node);
-	    }
-	};
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base = Object) => {
-	    return class TreeNode extends Base {
-	        static mixin = mixin;
-	        static addChild(node, child) {
-	            if (TreeNode.hasAncestor(node, child)) {
-	                throw new Error("The node added is one of the ancestors of current one.");
-	            }
-	            node.children.push(child);
-	            child.parent = node;
-	            return node;
-	        }
-	        static depth(node) {
-	            if (!node.children.length) {
-	                return 1;
-	            }
-	            else {
-	                const childrenDepth = [];
-	                for (const item of node.children) {
-	                    item && childrenDepth.push(this.depth(item));
-	                }
-	                let max = 0;
-	                for (const item of childrenDepth) {
-	                    max = Math.max(max, item);
-	                }
-	                return 1 + max;
-	            }
-	        }
-	        static findLeaves(node) {
-	            const result = [];
-	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
-	            return result;
-	        }
-	        static findRoot(node) {
-	            if (node.parent) {
-	                return this.findRoot(node.parent);
-	            }
-	            return node;
-	        }
-	        static hasAncestor(node, ancestor) {
-	            if (!node.parent) {
-	                return false;
-	            }
-	            else {
-	                if (node.parent === ancestor) {
-	                    return true;
-	                }
-	                else {
-	                    return TreeNode.hasAncestor(node.parent, ancestor);
-	                }
-	            }
-	        }
-	        static removeChild(node, child) {
-	            if (node.children.includes(child)) {
-	                node.children.splice(node.children.indexOf(child), 1);
-	                child.parent = null;
-	            }
-	            return node;
-	        }
-	        static toArray(node) {
-	            const result = [];
-	            TreeNode.traverse(node, ARRAY_VISITOR, result);
-	            return result;
-	        }
-	        static traverse(node, visitor, rest) {
-	            visitor.enter?.(node, rest);
-	            visitor.visit?.(node, rest);
-	            for (const item of node.children) {
-	                item && TreeNode.traverse(item, visitor, rest);
-	            }
-	            visitor.leave?.(node, rest);
-	            return node;
-	        }
-	        parent = null;
-	        children = [];
-	        addChild(node) {
-	            return TreeNode.addChild(this, node);
-	        }
-	        depth() {
-	            return TreeNode.depth(this);
-	        }
-	        findLeaves() {
-	            return TreeNode.findLeaves(this);
-	        }
-	        findRoot() {
-	            return TreeNode.findRoot(this);
-	        }
-	        hasAncestor(ancestor) {
-	            return TreeNode.hasAncestor(this, ancestor);
-	        }
-	        removeChild(child) {
-	            return TreeNode.removeChild(this, child);
-	        }
-	        toArray() {
-	            return TreeNode.toArray(this);
-	        }
-	        traverse(visitor, rest) {
-	            return TreeNode.traverse(this, visitor, rest);
-	        }
-	    };
-	};
-	var TreeNode = mixin(Object);
-
-	const IdGeneratorInstance = new IdGenerator();
-
-	let weakMapTmp;
-	class System extends EventDispatcher {
-	    id = IdGeneratorInstance.next();
-	    isSystem = true;
-	    name = "";
-	    loopTimes = 0;
-	    entitySet = new WeakMap();
-	    usedBy = [];
-	    cache = new WeakMap();
-	    autoUpdate = true;
-	    rule;
-	    _disabled = false;
-	    get disabled() {
-	        return this._disabled;
-	    }
-	    set disabled(value) {
-	        this._disabled = value;
-	    }
-	    constructor(name = "", fitRule) {
-	        super();
-	        this.name = name;
-	        this.disabled = false;
-	        this.rule = fitRule;
-	    }
-	    checkUpdatedEntities(manager) {
-	        if (manager) {
-	            weakMapTmp = this.entitySet.get(manager);
-	            if (!weakMapTmp) {
-	                weakMapTmp = new Set();
-	                this.entitySet.set(manager, weakMapTmp);
-	            }
-	            manager.updatedEntities.forEach((item) => {
-	                if (this.query(item)) {
-	                    weakMapTmp.add(item);
-	                }
-	                else {
-	                    weakMapTmp.delete(item);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    checkEntityManager(manager) {
-	        if (manager) {
-	            weakMapTmp = this.entitySet.get(manager);
-	            if (!weakMapTmp) {
-	                weakMapTmp = new Set();
-	                this.entitySet.set(manager, weakMapTmp);
-	            }
-	            else {
-	                weakMapTmp.clear();
-	            }
-	            manager.elements.forEach((item) => {
-	                if (this.query(item)) {
-	                    weakMapTmp.add(item);
-	                }
-	                else {
-	                    weakMapTmp.delete(item);
-	                }
-	            });
-	        }
-	        return this;
-	    }
-	    query(entity) {
-	        return this.rule(entity);
-	    }
-	    run(world, time, delta) {
-	        if (this.disabled) {
-	            return this;
-	        }
-	        if (world.entityManager) {
-	            this.entitySet.get(world.entityManager)?.forEach((item) => {
-	                // 此处不应该校验disabled。这个交给各自系统自行判断
-	                this.handle(item, time, delta);
-	            });
-	        }
-	        return this;
-	    }
-	    serialize() {
-	        return {};
-	    }
-	    destroy() {
-	        for (let i = this.usedBy.length - 1; i > -1; i--) {
-	            this.usedBy[i].remove(this);
-	        }
-	        return this;
-	    }
-	}
-
-	class PureSystem extends System {
-	    handler;
-	    constructor(name = "", fitRule, handler) {
-	        super(name, fitRule);
-	        this.handler = handler;
-	    }
-	    handle(entity, time, delta) {
-	        this.handler(entity, time, delta);
-	        return this;
-	    }
-	}
-
-	class Component {
-	    static unserialize(json) {
-	        const component = new Component(json.name, json.data);
-	        component.disabled = json.disabled;
-	        return component;
-	    }
-	    isComponent = true;
-	    id = IdGeneratorInstance.next();
-	    data;
-	    disabled = false;
-	    name;
-	    usedBy = [];
-	    tags;
-	    #dirty = false;
-	    get dirty() {
-	        return this.#dirty;
-	    }
-	    set dirty(v) {
-	        this.#dirty = v;
-	    }
-	    constructor(name, data, tags = []) {
-	        this.name = name;
-	        this.data = data;
-	        this.tags = tags;
-	    }
-	    clone() {
-	        return new Component(this.name, this.data, this.tags);
-	    }
-	    // 此处为只要tag标签相同就是同一类
-	    hasTagLabel(label) {
-	        for (let i = this.tags.length - 1; i > -1; i--) {
-	            if (this.tags[i].label === label) {
-	                return true;
-	            }
-	        }
-	        return false;
-	    }
-	    serialize() {
-	        return {
-	            data: this.data,
-	            disabled: this.disabled,
-	            id: this.id,
-	            name: this.name,
-	            tags: this.tags,
-	            type: "component",
-	        };
-	    }
-	}
-
-	// 私有全局变量，外部无法访问
-	let elementTmp;
-	const ElementChangeEvent = {
-	    ADD: "add",
-	    REMOVE: "remove",
-	};
-	class Manager extends EventDispatcher {
-	    static Events = ElementChangeEvent;
-	    elements = new Map();
-	    disabled = false;
-	    usedBy = [];
-	    isManager = true;
-	    add(element) {
-	        if (this.has(element)) {
-	            return this;
-	        }
-	        return this.addElementDirectly(element);
-	    }
-	    clear() {
-	        this.elements.clear();
-	        return this;
-	    }
-	    get(name) {
-	        if (typeof name === "number") {
-	            return this.elements.get(name) || null;
-	        }
-	        if (typeof name === "function" && name.prototype) {
-	            for (const [, item] of this.elements) {
-	                if (item instanceof name) {
-	                    return item;
-	                }
-	            }
-	        }
-	        for (const [, item] of this.elements) {
-	            if (item.name === name) {
-	                return item;
-	            }
-	        }
-	        return null;
-	    }
-	    has(element) {
-	        if (typeof element === "number") {
-	            return this.elements.has(element);
-	        }
-	        else if (typeof element === "string") {
-	            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-	            for (const [_, item] of this.elements) {
-	                if (item.name === element) {
-	                    return true;
-	                }
-	            }
-	            return false;
-	        }
-	        else {
-	            return this.elements.has(element.id);
-	        }
-	    }
-	    remove(element) {
-	        if (typeof element === "number" || typeof element === "string") {
-	            elementTmp = this.get(element);
-	            if (elementTmp) {
-	                this.removeInstanceDirectly(elementTmp);
-	            }
-	            return this;
-	        }
-	        if (this.elements.has(element.id)) {
-	            return this.removeInstanceDirectly(element);
-	        }
-	        return this;
-	    }
-	    addElementDirectly(element) {
-	        this.elements.set(element.id, element);
-	        element.usedBy.push(this);
-	        this.elementChangedFireEvent(Manager.Events.ADD, this);
-	        return this;
-	    }
-	    // 必定有element情况
-	    removeInstanceDirectly(element) {
-	        this.elements.delete(element.id);
-	        element.usedBy.splice(element.usedBy.indexOf(this), 1);
-	        this.elementChangedFireEvent(Manager.Events.REMOVE, this);
-	        return this;
-	    }
-	    elementChangedFireEvent(type, eventObject) {
-	        for (const entity of this.usedBy) {
-	            entity.fire?.(type, eventObject);
-	            if (entity.usedBy) {
-	                for (const manager of entity.usedBy) {
-	                    manager.updatedEntities.add(entity);
-	                }
-	            }
-	        }
-	    }
-	}
-
-	exports.EComponentEvent = void 0;
-	(function (EComponentEvent) {
-	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
-	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
-	})(exports.EComponentEvent || (exports.EComponentEvent = {}));
-	class ComponentManager extends Manager {
-	    isComponentManager = true;
-	    add(element) {
-	        if (this.has(element)) {
-	            return this;
-	        }
-	        const componentSet = this.checkedComponentsWithTargetTags(element);
-	        for (const item of componentSet) {
-	            this.removeInstanceDirectly(item);
-	        }
-	        return this.addElementDirectly(element);
-	    }
-	    getComponentsByClass(clazz) {
-	        const result = [];
-	        this.elements.forEach((component) => {
-	            if (component instanceof clazz) {
-	                result.push(component);
-	            }
-	        });
-	        return result;
-	    }
-	    getComponentByClass(clazz) {
-	        for (const [, component] of this.elements) {
-	            if (component instanceof clazz) {
-	                return component;
-	            }
-	        }
-	        return null;
-	    }
-	    getComponentsByTagLabel(label) {
-	        const result = [];
-	        this.elements.forEach((component) => {
-	            if (component.hasTagLabel(label)) {
-	                result.push(component);
-	            }
-	        });
-	        return result;
-	    }
-	    getComponentByTagLabel(label) {
-	        for (const [, component] of this.elements) {
-	            if (component.hasTagLabel(label)) {
-	                return component;
-	            }
-	        }
-	        return null;
-	    }
-	    // 找到所有含目标组件唯一标签一致的组件。只要有任意1个标签符合就行。此处规定名称一致的tag，unique也必须是一致的。且不可修改
-	    checkedComponentsWithTargetTags(component) {
-	        const result = new Set();
-	        let arr;
-	        for (let i = component.tags.length - 1; i > -1; i--) {
-	            if (component.tags[i].unique) {
-	                arr = this.getComponentsByTagLabel(component.tags[i].label);
-	                if (arr.length) {
-	                    for (let j = arr.length - 1; j > -1; j--) {
-	                        result.add(arr[j]);
-	                    }
-	                }
-	            }
-	        }
-	        return result;
-	    }
-	}
-
-	let arr$1;
-	class Entity extends TreeNode.mixin(EventDispatcher) {
-	    id = IdGeneratorInstance.next();
-	    isEntity = true;
-	    componentManager = null;
-	    disabled = false;
-	    name = "";
-	    usedBy = [];
-	    constructor(name = "", componentManager) {
-	        super();
-	        this.name = name;
-	        this.registerComponentManager(componentManager);
-	    }
-	    addComponent(component) {
-	        if (this.componentManager) {
-	            this.componentManager.add(component);
-	        }
-	        else {
-	            throw new Error("Current entity hasn't registered a component manager yet.");
-	        }
-	        return this;
-	    }
-	    addChild(entity) {
-	        super.addChild(entity);
-	        if (this.usedBy) {
-	            for (const manager of this.usedBy) {
-	                manager.add(entity);
-	            }
-	        }
-	        return this;
-	    }
-	    addTo(manager) {
-	        manager.add(this);
-	        return this;
-	    }
-	    addToWorld(world) {
-	        if (world.entityManager) {
-	            world.entityManager.add(this);
-	        }
-	        return this;
-	    }
-	    destroy() {
-	        for (const manager of this.usedBy) {
-	            manager.remove(this);
-	        }
-	        this.unregisterComponentManager();
-	    }
-	    getComponent(nameOrId) {
-	        return this.componentManager?.get(nameOrId) || null;
-	    }
-	    getComponentsByTagLabel(label) {
-	        return this.componentManager?.getComponentsByTagLabel(label) || [];
-	    }
-	    getComponentByTagLabel(label) {
-	        return this.componentManager?.getComponentByTagLabel(label) || null;
-	    }
-	    getComponentsByClass(clazz) {
-	        return this.componentManager?.getComponentsByClass(clazz) || [];
-	    }
-	    getComponentByClass(clazz) {
-	        return this.componentManager?.getComponentByClass(clazz) || null;
-	    }
-	    hasComponent(component) {
-	        return this.componentManager?.has(component) || false;
-	    }
-	    registerComponentManager(manager = new ComponentManager()) {
-	        this.unregisterComponentManager();
-	        this.componentManager = manager;
-	        if (!this.componentManager.usedBy.includes(this)) {
-	            this.componentManager.usedBy.push(this);
-	        }
-	        return this;
-	    }
-	    removeChild(entity) {
-	        super.removeChild(entity);
-	        if (this.usedBy) {
-	            for (const manager of this.usedBy) {
-	                manager.remove(entity);
-	            }
-	        }
-	        return this;
-	    }
-	    removeComponent(component) {
-	        if (this.componentManager) {
-	            this.componentManager.remove(component);
-	        }
-	        return this;
-	    }
-	    serialize() {
-	        return {};
-	    }
-	    unregisterComponentManager() {
-	        if (this.componentManager) {
-	            arr$1 = this.componentManager.usedBy;
-	            arr$1.splice(arr$1.indexOf(this) - 1, 1);
-	            this.componentManager = null;
-	        }
-	        return this;
-	    }
-	}
-
-	class EntityManager extends Manager {
-	    // public elements: Map<string, IEntity> = new Map();
-	    data = null;
-	    updatedEntities = new Set();
-	    isEntityManager = true;
-	    constructor(world) {
-	        super();
-	        if (world) {
-	            this.usedBy.push(world);
-	        }
-	    }
-	    createEntity(name) {
-	        const entity = new Entity(name);
-	        this.add(entity);
-	        return entity;
-	    }
-	    addElementDirectly(entity) {
-	        super.addElementDirectly(entity);
-	        this.updatedEntities.add(entity);
-	        for (const child of entity.children) {
-	            if (child) {
-	                this.add(child);
-	            }
-	        }
-	        return this;
-	    }
-	    removeInstanceDirectly(entity) {
-	        super.removeInstanceDirectly(entity);
-	        this.deleteEntityFromSystemSet(entity);
-	        for (const child of entity.children) {
-	            if (child) {
-	                this.remove(child);
-	            }
-	        }
-	        return this;
-	    }
-	    deleteEntityFromSystemSet(entity) {
-	        entity.usedBy.splice(entity.usedBy.indexOf(this), 1);
-	        for (const world of this.usedBy) {
-	            if (world.systemManager) {
-	                world.systemManager.elements.forEach((system) => {
-	                    if (system.entitySet.get(this)) {
-	                        system.entitySet.get(this).delete(entity);
-	                    }
-	                });
-	            }
-	        }
-	    }
-	}
-
-	let systemTmp;
-	const SystemEvent = {
-	    ADD: "add",
-	    AFTER_RUN: "afterRun",
-	    BEFORE_RUN: "beforeRun",
-	    REMOVE: "remove",
-	};
-	class SystemManager extends Manager {
-	    static Events = SystemEvent;
-	    disabled = false;
-	    elements = new Map();
-	    loopTimes = 0;
-	    usedBy = [];
-	    constructor(world) {
-	        super();
-	        if (world) {
-	            this.usedBy.push(world);
-	        }
-	    }
-	    add(system) {
-	        super.add(system);
-	        this.updateSystemEntitySetByAddFromManager(system);
-	        return this;
-	    }
-	    clear() {
-	        this.elements.clear();
-	        return this;
-	    }
-	    remove(element) {
-	        if (typeof element === "number" || typeof element === "string") {
-	            systemTmp = this.get(element);
-	            if (systemTmp) {
-	                this.removeInstanceDirectly(systemTmp);
-	                this.updateSystemEntitySetByRemovedFromManager(systemTmp);
-	                systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
-	            }
-	            return this;
-	        }
-	        if (this.elements.has(element.id)) {
-	            this.removeInstanceDirectly(element);
-	            this.updateSystemEntitySetByRemovedFromManager(element);
-	            element.usedBy.splice(element.usedBy.indexOf(this), 1);
-	        }
-	        return this;
-	    }
-	    run(world, time, delta) {
-	        this.fire(SystemManager.Events.BEFORE_RUN, this);
-	        this.elements.forEach((item) => {
-	            item.checkUpdatedEntities(world.entityManager);
-	            if (!item.disabled && item.autoUpdate) {
-	                item.run(world, time, delta);
-	            }
-	        });
-	        if (world.entityManager) {
-	            world.entityManager.updatedEntities.clear();
-	        }
-	        this.loopTimes++;
-	        this.fire(SystemManager.Events.BEFORE_RUN, this);
-	        return this;
-	    }
-	    updateSystemEntitySetByRemovedFromManager(system) {
-	        for (const item of this.usedBy) {
-	            if (item.entityManager) {
-	                system.entitySet.delete(item.entityManager);
-	            }
-	        }
-	        return this;
-	    }
-	    updateSystemEntitySetByAddFromManager(system) {
-	        for (const item of this.usedBy) {
-	            if (item.entityManager) {
-	                system.checkEntityManager(item.entityManager);
-	            }
-	        }
-	        return this;
-	    }
-	}
-
-	let arr;
-	class World {
-	    disabled = false;
-	    name;
-	    entityManager = null;
-	    systemManager = null;
-	    store = new Map();
-	    usedBy = [];
-	    id = IdGeneratorInstance.next();
-	    isWorld = true;
-	    constructor(name = "", entityManager, systemManager) {
-	        this.name = name;
-	        this.registerEntityManager(entityManager);
-	        this.registerSystemManager(systemManager);
-	    }
-	    add(element) {
-	        if (element.isEntity) {
-	            return this.addEntity(element);
-	        }
-	        else {
-	            return this.addSystem(element);
-	        }
-	    }
-	    addEntity(entity) {
-	        if (this.entityManager) {
-	            this.entityManager.add(entity);
-	        }
-	        else {
-	            throw new Error("The world doesn't have an entityManager yet.");
-	        }
-	        return this;
-	    }
-	    addSystem(system) {
-	        if (this.systemManager) {
-	            this.systemManager.add(system);
-	        }
-	        else {
-	            throw new Error("The world doesn't have a systemManager yet.");
-	        }
-	        return this;
-	    }
-	    clearAllEntities() {
-	        if (this.entityManager) {
-	            this.entityManager.clear();
-	        }
-	        return this;
-	    }
-	    createEntity(name) {
-	        return this.entityManager?.createEntity(name) || null;
-	    }
-	    hasEntity(entity) {
-	        if (this.entityManager) {
-	            return this.entityManager.has(entity);
-	        }
-	        return false;
-	    }
-	    hasSystem(system) {
-	        if (this.systemManager) {
-	            return this.systemManager.has(system);
-	        }
-	        return false;
-	    }
-	    registerEntityManager(manager) {
-	        this.unregisterEntityManager();
-	        this.entityManager = manager || new EntityManager(this);
-	        if (!this.entityManager.usedBy.includes(this)) {
-	            this.entityManager.usedBy.push(this);
-	        }
-	        return this;
-	    }
-	    registerSystemManager(manager) {
-	        this.unregisterSystemManager();
-	        this.systemManager = manager || new SystemManager(this);
-	        if (!this.systemManager.usedBy.includes(this)) {
-	            this.systemManager.usedBy.push(this);
-	        }
-	        return this;
-	    }
-	    remove(element) {
-	        if (element.isEntity) {
-	            return this.removeEntity(element);
-	        }
-	        else {
-	            return this.removeSystem(element);
-	        }
-	    }
-	    removeEntity(entity) {
-	        if (this.entityManager) {
-	            this.entityManager.remove(entity);
-	        }
-	        return this;
-	    }
-	    removeSystem(system) {
-	        if (this.systemManager) {
-	            this.systemManager.remove(system);
-	        }
-	        return this;
-	    }
-	    run(time, delta) {
-	        if (this.disabled) {
-	            return this;
-	        }
-	        if (this.systemManager) {
-	            this.systemManager.run(this, time, delta);
-	        }
-	        return this;
-	    }
-	    serialize() {
-	        return {
-	            id: this.id,
-	            name: this.name,
-	            type: "world",
-	        };
-	    }
-	    unregisterEntityManager() {
-	        if (this.entityManager) {
-	            arr = this.entityManager.usedBy;
-	            arr.splice(arr.indexOf(this) - 1, 1);
-	            this.entityManager = null;
-	        }
-	        return this;
-	    }
-	    unregisterSystemManager() {
-	        if (this.systemManager) {
-	            arr = this.systemManager.usedBy;
-	            arr.splice(arr.indexOf(this) - 1, 1);
-	            this.entityManager = null;
-	        }
-	        return this;
-	    }
-	}
-
 	// component type
 	const ANCHOR_2D = "anchor2";
 	const ANCHOR_3D = "anchor3";
@@ -1170,114 +286,6 @@
 		WORLD_MATRIX4: WORLD_MATRIX4
 	});
 
-	const POSITION = "position";
-	const VERTICES = "vertices";
-	const VERTICES_COLOR = "vertices_color";
-	const NORMAL = "normal";
-	const INDEX = "index";
-	const UV = "uv";
-
-	var constants$1 = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		INDEX: INDEX,
-		NORMAL: NORMAL,
-		POSITION: POSITION,
-		UV: UV,
-		VERTICES: VERTICES,
-		VERTICES_COLOR: VERTICES_COLOR
-	});
-
-	// 既可以是2d几何体也可以是3D几何体
-	class Geometry extends Component {
-	    /**
-	     * 顶点数量
-	     */
-	    count;
-	    /**
-	     * 拓扑类型
-	     */
-	    dimension;
-	    topology;
-	    /**
-	     * 剔除方式
-	     */
-	    cullMode;
-	    frontFace;
-	    data = [];
-	    tags = [{
-	            label: GEOMETRY,
-	            unique: true
-	        }];
-	    constructor(dimension, count = 0, topology = "triangle-list", cullMode = "none", data = []) {
-	        super(GEOMETRY, data);
-	        this.count = count;
-	        this.cullMode = cullMode;
-	        this.dimension = dimension;
-	        this.topology = topology;
-	        this.frontFace = "ccw";
-	    }
-	    addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
-	        stride = Math.floor(stride);
-	        if (stride * this.count < arr.length) {
-	            throw new Error('not fit the geometry');
-	        }
-	        if (!attributes.length) {
-	            attributes.push({
-	                name,
-	                offset: 0,
-	                length: stride
-	            });
-	        }
-	        this.data.push({
-	            name,
-	            data: arr,
-	            stride,
-	            attributes
-	        });
-	        this.dirty = true;
-	    }
-	    transform(matrix) {
-	        for (let data of this.data) {
-	            for (let attr of data.attributes) {
-	                if (attr.name === POSITION) {
-	                    if (this.dimension === 3) {
-	                        for (let i = 0; i < data.data.length; i += data.stride) {
-	                            transformMatrix4(data.data, matrix, i + attr.offset);
-	                        }
-	                    }
-	                    else {
-	                        for (let i = 0; i < data.data.length; i += data.stride) {
-	                            transformMatrix3(data.data, matrix, i + attr.offset);
-	                        }
-	                    }
-	                    this.dirty = true;
-	                    return this;
-	                }
-	            }
-	        }
-	        return this;
-	    }
-	}
-	let x$5, y$5;
-	const transformMatrix3 = (a, m, offset) => {
-	    x$5 = a[offset];
-	    y$5 = a[1 + offset];
-	    a[offset] = m[0] * x$5 + m[3] * y$5 + m[6];
-	    a[offset + 1] = m[1] * x$5 + m[4] * y$5 + m[7];
-	    return a;
-	};
-	const transformMatrix4 = (a, m, offset) => {
-	    let ax = a[0 + offset];
-	    let ay = a[1 + offset];
-	    let az = a[2 + offset];
-	    let ag = m[3 + offset] * ax + m[7] * ay + m[11] * az + m[15];
-	    ag = ag || 1.0;
-	    a[0 + offset] = (m[0] * ax + m[4] * ay + m[8] * az + m[12]) / ag;
-	    a[1 + offset] = (m[1] * ax + m[5] * ay + m[9] * az + m[13]) / ag;
-	    a[2 + offset] = (m[2] * ax + m[6] * ay + m[10] * az + m[14]) / ag;
-	    return a;
-	};
-
 	const ArraybufferDataType = {
 	    COLOR_GPU: "col",
 	    COLOR_RGB: "col_rgb",
@@ -1308,7 +316,7 @@
 	const WEIGHT_GRAY_GREEN = 0.587;
 	const WEIGHT_GRAY_BLUE = 0.114;
 
-	var constants = /*#__PURE__*/Object.freeze({
+	var constants$1 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		DEG_30_RAD: DEG_30_RAD,
 		DEG_360_RAD: DEG_360_RAD,
@@ -4744,8 +3752,8 @@
 	    return true;
 	}
 
-	let x = 0;
-	let y = 0;
+	let x$5 = 0;
+	let y$5 = 0;
 	let c = 0;
 	let s = 0;
 	class Vector2 extends Float32Array {
@@ -4816,17 +3824,17 @@
 	        return out;
 	    };
 	    static distanceTo = (a, b) => {
-	        x = b[0] - a[0];
-	        y = b[1] - a[1];
-	        return Math.hypot(x, y);
+	        x$5 = b[0] - a[0];
+	        y$5 = b[1] - a[1];
+	        return Math.hypot(x$5, y$5);
 	    };
 	    static distanceToManhattan = (a, b) => {
 	        return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 	    };
 	    static distanceToSquared = (a, b) => {
-	        x = a[0] - b[0];
-	        y = a[1] - b[1];
-	        return x * x + y * y;
+	        x$5 = a[0] - b[0];
+	        y$5 = a[1] - b[1];
+	        return x$5 * x$5 + y$5 * y$5;
 	    };
 	    static divide = (a, b, out = new Vector2()) => {
 	        out[0] = a[0] / b[0];
@@ -4929,18 +3937,18 @@
 	        return Vector2.divideScalar(a, Vector2.norm(a) || 1, out);
 	    };
 	    static random = (norm = 1, out = new Vector2()) => {
-	        x = Math.random() * DEG_360_RAD;
-	        out[0] = Math.cos(x) * norm;
-	        out[1] = Math.sin(x) * norm;
+	        x$5 = Math.random() * DEG_360_RAD;
+	        out[0] = Math.cos(x$5) * norm;
+	        out[1] = Math.sin(x$5) * norm;
 	        return out;
 	    };
 	    static rotate = (a, angle, center = Vector2.VECTOR2_ZERO, out = new Vector2(2)) => {
 	        c = Math.cos(angle);
 	        s = Math.sin(angle);
-	        x = a[0] - center[0];
-	        y = a[1] - center[1];
-	        out[0] = x * c - y * s + center[0];
-	        out[1] = x * s + y * c + center[1];
+	        x$5 = a[0] - center[0];
+	        y$5 = a[1] - center[1];
+	        out[0] = x$5 * c - y$5 * s + center[0];
+	        out[1] = x$5 * s + y$5 * c + center[1];
 	        return out;
 	    };
 	    static round = (a, out = new Vector2()) => {
@@ -4972,10 +3980,10 @@
 	        return `(${a[0]}, ${a[1]})`;
 	    };
 	    static transformMatrix3 = (a, m, out = new Vector2()) => {
-	        x = a[0];
-	        y = a[1];
-	        out[0] = m[0] * x + m[3] * y + m[6];
-	        out[1] = m[1] * x + m[4] * y + m[7];
+	        x$5 = a[0];
+	        y$5 = a[1];
+	        out[0] = m[0] * x$5 + m[3] * y$5 + m[6];
+	        out[1] = m[1] * x$5 + m[4] * y$5 + m[7];
 	        return out;
 	    };
 	    dataType = ArraybufferDataType.VECTOR2;
@@ -5500,1581 +4508,885 @@
 	    }
 	}
 
-	const DEFAULT_OPTIONS = {
-	    hasNormal: true,
-	    hasUV: true,
-	    hasIndices: false,
-	    combine: true,
-	    topology: "triangle-list",
-	    cullMode: "none"
-	};
-
-	const DEFAULT_BOX_OPTIONS = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    width: 1,
-	    height: 1,
-	    depth: 1,
-	    widthSegments: 1,
-	    heightSegments: 1,
-	    depthSegments: 1,
-	    cullMode: "back"
-	};
-	var createBox3 = (options = {}) => {
-	    let stride = 3;
-	    const indices = [];
-	    const vertices = [];
-	    const normals = [];
-	    const uvs = [];
-	    const { depth, height, width, depthSegments, heightSegments, widthSegments, topology, cullMode, hasUV, hasNormal, combine } = {
-	        ...DEFAULT_BOX_OPTIONS,
-	        ...options
-	    };
-	    let numberOfVertices = 0;
-	    buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
-	    buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
-	    buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
-	    buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
-	    buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
-	    buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
-	    function buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
-	        const segmentWidth = width / gridX;
-	        const segmentHeight = height / gridY;
-	        const widthHalf = width / 2;
-	        const heightHalf = height / 2;
-	        const depthHalf = depth / 2;
-	        const gridX1 = gridX + 1;
-	        const gridY1 = gridY + 1;
-	        let vertexCounter = 0;
-	        const vector = new Vector3();
-	        // generate vertices, normals and uvs
-	        for (let iy = 0; iy < gridY1; iy++) {
-	            const y = iy * segmentHeight - heightHalf;
-	            for (let ix = 0; ix < gridX1; ix++) {
-	                const x = ix * segmentWidth - widthHalf;
-	                // set values to correct vector component
-	                vector[u] = x * udir;
-	                vector[v] = y * vdir;
-	                vector[w] = depthHalf;
-	                // now apply vector to vertex buffer
-	                vertices.push(vector.x, vector.y, vector.z);
-	                // set values to correct vector component
-	                vector[u] = 0;
-	                vector[v] = 0;
-	                vector[w] = depth > 0 ? 1 : -1;
-	                // now apply vector to normal buffer
-	                normals.push(vector.x, vector.y, vector.z);
-	                // uvs
-	                uvs.push(ix / gridX);
-	                uvs.push(iy / gridY);
-	                // counters
-	                vertexCounter += 1;
-	            }
-	        }
-	        // indices
-	        for (let iy = 0; iy < gridY; iy++) {
-	            for (let ix = 0; ix < gridX; ix++) {
-	                const a = numberOfVertices + ix + gridX1 * iy;
-	                const b = numberOfVertices + ix + gridX1 * (iy + 1);
-	                const c = numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
-	                const d = numberOfVertices + (ix + 1) + gridX1 * iy;
-	                // faces
-	                indices.push(a, b, d);
-	                indices.push(b, c, d);
-	            }
-	        }
-	        // update total number of vertices
-	        numberOfVertices += vertexCounter;
+	// const S4 = () => {
+	// 	return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+	// };
+	/**
+	 * @class
+	 * @classdesc 数字id生成器，用于生成递增id
+	 * @param {number} [initValue = 0] 从几开始生成递增id
+	 * @implements IdGenerator.IIncreaser
+	 */
+	class IdGenerator {
+	    initValue;
+	    #value;
+	    /**
+	     * @member IdGenerator.initValue
+	     * @desc id从该值开始递增，在创建实例时进行设置。设置之后将无法修改。
+	     * @readonly
+	     * @public
+	     */
+	    constructor(initValue = 0) {
+	        this.#value = this.initValue = initValue;
 	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    // let count = len / 3;
-	    let geo = new Geometry(3, len, topology, cullMode);
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (hasNormal && hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: NORMAL,
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: UV,
-	                offset: 6,
-	                length: 2,
-	            });
-	        }
-	        else if (hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        else if (hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = vertices[i3];
-	            result[1 + strideI] = vertices[i3 + 1];
-	            result[2 + strideI] = vertices[i3 + 2];
-	            if (hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
-	                }
-	            }
-	            else if (hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
+	    /**
+	     * @method IdGenerator.prototype.current
+	     * @desc 返回当前的id
+	     * @readonly
+	     * @public
+	     * @returns {number} id
+	     */
+	    current() {
+	        return this.#value;
 	    }
-	    else {
-	        return geo;
-	    }
-	};
-
-	const DEFAULT_CIRCLE_OPTIONS$1 = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    segments: 32,
-	    angleStart: 0,
-	    angle: Math.PI * 2,
-	    radius: 1,
-	};
-	var createCircle3 = (options = {}) => {
-	    let stride = 3;
-	    const indices = [];
-	    const positions = [0, 0, 0];
-	    const normals = [0, 0, 1];
-	    const uvs = [0.5, 0.5];
-	    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, hasNormal, combine } = {
-	        ...DEFAULT_CIRCLE_OPTIONS$1,
-	        ...options
-	    };
-	    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
-	        const segment = angleStart + s / segments * angle;
-	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
-	        normals.push(0, 0, 1);
-	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
-	    }
-	    // indices
-	    for (let i = 1; i <= segments; i++) {
-	        indices.push(i, i + 1, 0);
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    // let count = len / 3;
-	    let geo = new Geometry(3, len, topology, cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (hasNormal && hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: NORMAL,
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: UV,
-	                offset: 6,
-	                length: 2,
-	            });
+	    jumpTo(value) {
+	        if (this.#value < value) {
+	            this.#value = value;
+	            return true;
 	        }
-	        else if (hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: NORMAL,
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        else if (hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: UV,
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            result[2 + strideI] = positions[i3 + 2];
-	            if (hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
-	                }
-	            }
-	            else if (hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
+	        return false;
 	    }
-	    else {
-	        // let result = new Float32Array(9);
-	        // result.set(t.a);
-	        // result.set(t.b, 3);
-	        // result.set(t.c, 6);
-	        // geo.addAttribute(POSITION, result, 3);
-	        // if (options.hasNormal) {
-	        //     result = new Float32Array(9);
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 0);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, 6);
-	        //     geo.addAttribute(NORMAL, result, 3);
+	    /**
+	     * @method IdGenerator.prototype.next
+	     * @desc 生成新的id
+	     * @public
+	     * @returns {number} id
+	     */
+	    next() {
+	        return ++this.#value;
+	    }
+	    /**
+	     * @method IdGenerator.prototype.skip
+	     * @desc 跳过一段值生成新的id
+	     * @public
+	     * @param {number} [value = 1] 跳过的范围，必须大于等于1
+	     * @returns {number} id
+	     */
+	    skip(value = 1) {
+	        this.#value += Math.min(1, value);
+	        return ++this.#value;
+	    }
+	    /**
+	     * @method IdGenerator.prototype.skip
+	     * @desc 生成新的32位uuid
+	     * @public
+	     * @returns {string} uuid
+	     */
+	    uuid() {
+	        // if (crypto.randomUUID) {
+	        // 	return (crypto as any).randomUUID();
+	        // } else {
+	        // 	return S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4();
 	        // }
-	        // if (options.hasUV) {
-	        //     result = new Float32Array(6);
-	        //     result.set([0, 0], 0);
-	        //     result.set([1, 0], 2);
-	        //     result.set([0.5, 1], 4);
-	        //     geo.addAttribute(UV, result, 2);
-	        // }
-	        return geo;
+	        return crypto.randomUUID();
 	    }
-	};
+	    /**
+	     * @method IdGenerator.prototype.skip
+	     * @desc 生成新的32位BigInt
+	     * @public
+	     * @returns {BigInt} uuid
+	     */
+	    uuidBigInt() {
+	        // return bi4(7) + bi4(6) + bi4(5) + bi4(4) + bi4(3) + bi4(2) + bi4(1) + bi4(0);
+	        const arr = crypto.getRandomValues(new Uint16Array(8));
+	        return (BigInt(arr[0]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n +
+	            BigInt(arr[1]) * 65536n * 65536n * 65536n * 65536n * 65536n * 65536n +
+	            BigInt(arr[2]) * 65536n * 65536n * 65536n * 65536n * 65536n +
+	            BigInt(arr[3]) * 65536n * 65536n * 65536n * 65536n +
+	            BigInt(arr[4]) * 65536n * 65536n * 65536n +
+	            BigInt(arr[5]) * 65536n * 65536n +
+	            BigInt(arr[6]) * 65536n +
+	            BigInt(arr[6]));
+	    }
+	}
 
-	const DEFAULT_SPHERE_OPTIONS$1 = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    radiusTop: 1,
-	    radiusBottom: 1,
-	    height: 1,
-	    radialSegments: 32,
-	    heightSegments: 1,
-	    openEnded: false,
-	    thetaStart: 0,
-	    thetaLength: constants.DEG_360_RAD,
-	    cullMode: "back"
+	const FIND_LEAVES_VISITOR = {
+	    enter: (node, result) => {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
 	};
-	var createCylinder3 = (options = {}) => {
-	    let stride = 3;
-	    const indices = [];
-	    const vertices = [];
-	    const normals = [];
-	    const uvs = [];
-	    const { height, radialSegments, radiusTop, radiusBottom, heightSegments, openEnded, thetaStart, thetaLength, topology, cullMode, hasUV, hasNormal, combine } = {
-	        ...DEFAULT_SPHERE_OPTIONS$1,
-	        ...options
-	    };
-	    let index = 0;
-	    const indexArray = [];
-	    const halfHeight = height / 2;
-	    // generate geometry
-	    generateTorso();
-	    if (openEnded === false) {
-	        if (radiusTop > 0)
-	            generateCap(true);
-	        if (radiusBottom > 0)
-	            generateCap(false);
+	const ARRAY_VISITOR = {
+	    enter: (node, result) => {
+	        result.push(node);
 	    }
-	    function generateTorso() {
-	        const normal = new Vector3();
-	        const vertex = new Float32Array(3);
-	        // this will be used to calculate the normal
-	        const slope = (radiusBottom - radiusTop) / height;
-	        // generate vertices, normals and uvs
-	        for (let y = 0; y <= heightSegments; y++) {
-	            const indexRow = [];
-	            const v = y / heightSegments;
-	            // calculate the radius of the current row
-	            const radius = v * (radiusBottom - radiusTop) + radiusTop;
-	            for (let x = 0; x <= radialSegments; x++) {
-	                const u = x / radialSegments;
-	                const theta = u * thetaLength + thetaStart;
-	                const sinTheta = Math.sin(theta);
-	                const cosTheta = Math.cos(theta);
-	                // vertex
-	                vertex[0] = radius * sinTheta;
-	                vertex[1] = -v * height + halfHeight;
-	                vertex[2] = radius * cosTheta;
-	                vertices.push(vertex[0], vertex[1], vertex[2]);
-	                // normal
-	                normal[0] = sinTheta;
-	                normal[1] = slope;
-	                normal[2] = cosTheta;
-	                Vector3.normalize(normal, normal);
-	                normals.push(normal[0], normal[1], normal[2]);
-	                // uv
-	                uvs.push(u, 1 - v);
-	                // save index of vertex in respective row
-	                indexRow.push(index++);
+	};
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin = (Base = Object) => {
+	    return class TreeNode extends Base {
+	        static mixin = mixin;
+	        static addChild(node, child) {
+	            if (TreeNode.hasAncestor(node, child)) {
+	                throw new Error("The node added is one of the ancestors of current one.");
 	            }
-	            // now save vertices of the row in our index array
-	            indexArray.push(indexRow);
+	            node.children.push(child);
+	            child.parent = node;
+	            return node;
 	        }
-	        // generate indices
-	        for (let x = 0; x < radialSegments; x++) {
-	            for (let y = 0; y < heightSegments; y++) {
-	                // we use the index array to access the correct indices
-	                const a = indexArray[y][x];
-	                const b = indexArray[y + 1][x];
-	                const c = indexArray[y + 1][x + 1];
-	                const d = indexArray[y][x + 1];
-	                // faces
-	                indices.push(a, b, d);
-	                indices.push(b, c, d);
-	                // update group counter
-	            }
-	        }
-	    }
-	    function generateCap(top) {
-	        // save the index of the first center vertex
-	        const centerIndexStart = index;
-	        const uv = new Float32Array(2);
-	        const vertex = new Float32Array(3);
-	        const radius = (top === true) ? radiusTop : radiusBottom;
-	        const sign = (top === true) ? 1 : -1;
-	        // first we generate the center vertex data of the cap.
-	        // because the geometry needs one set of uvs per face,
-	        // we must generate a center vertex per face/segment
-	        for (let x = 1; x <= radialSegments; x++) {
-	            // vertex
-	            vertices.push(0, halfHeight * sign, 0);
-	            // normal
-	            normals.push(0, sign, 0);
-	            // uv
-	            uvs.push(0.5, 0.5);
-	            // increase index
-	            index++;
-	        }
-	        // save the index of the last center vertex
-	        const centerIndexEnd = index;
-	        // now we generate the surrounding vertices, normals and uvs
-	        for (let x = 0; x <= radialSegments; x++) {
-	            const u = x / radialSegments;
-	            const theta = u * thetaLength + thetaStart;
-	            const cosTheta = Math.cos(theta);
-	            const sinTheta = Math.sin(theta);
-	            // vertex
-	            vertex[0] = radius * sinTheta;
-	            vertex[1] = halfHeight * sign;
-	            vertex[2] = radius * cosTheta;
-	            vertices.push(vertex[0], vertex[1], vertex[2]);
-	            // normal
-	            normals.push(0, sign, 0);
-	            // uv
-	            uv[0] = (cosTheta * 0.5) + 0.5;
-	            uv[1] = (sinTheta * 0.5 * sign) + 0.5;
-	            uvs.push(uv[0], uv[1]);
-	            // increase index
-	            index++;
-	        }
-	        // generate indices
-	        for (let x = 0; x < radialSegments; x++) {
-	            const c = centerIndexStart + x;
-	            const i = centerIndexEnd + x;
-	            if (top === true) {
-	                // face top
-	                indices.push(i, i + 1, c);
+	        static depth(node) {
+	            if (!node.children.length) {
+	                return 1;
 	            }
 	            else {
-	                // face bottom
-	                indices.push(i + 1, i, c);
+	                const childrenDepth = [];
+	                for (const item of node.children) {
+	                    item && childrenDepth.push(this.depth(item));
+	                }
+	                let max = 0;
+	                for (const item of childrenDepth) {
+	                    max = Math.max(max, item);
+	                }
+	                return 1 + max;
 	            }
 	        }
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    let geo = new Geometry(3, len, topology, cullMode);
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (hasNormal && hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: 'uv',
-	                offset: 6,
-	                length: 2,
-	            });
+	        static findLeaves(node) {
+	            const result = [];
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            return result;
 	        }
-	        else if (hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
+	        static findRoot(node) {
+	            if (node.parent) {
+	                return this.findRoot(node.parent);
+	            }
+	            return node;
 	        }
-	        else if (hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = vertices[i3];
-	            result[1 + strideI] = vertices[i3 + 1];
-	            result[2 + strideI] = vertices[i3 + 2];
-	            if (hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
+	        static hasAncestor(node, ancestor) {
+	            if (!node.parent) {
+	                return false;
+	            }
+	            else {
+	                if (node.parent === ancestor) {
+	                    return true;
+	                }
+	                else {
+	                    return TreeNode.hasAncestor(node.parent, ancestor);
 	                }
 	            }
-	            else if (hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
 	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    return geo;
-	};
-
-	const DEFAULT_PLANE_OPTIONS$1 = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    width: 1,
-	    height: 1,
-	    segmentX: 1,
-	    segmentY: 1,
-	};
-	var createPlane3 = (options = {}) => {
-	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine } = {
-	        ...DEFAULT_PLANE_OPTIONS$1,
-	        ...options
+	        static removeChild(node, child) {
+	            if (node.children.includes(child)) {
+	                node.children.splice(node.children.indexOf(child), 1);
+	                child.parent = null;
+	            }
+	            return node;
+	        }
+	        static toArray(node) {
+	            const result = [];
+	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            return result;
+	        }
+	        static traverse(node, visitor, rest) {
+	            visitor.enter?.(node, rest);
+	            visitor.visit?.(node, rest);
+	            for (const item of node.children) {
+	                item && TreeNode.traverse(item, visitor, rest);
+	            }
+	            visitor.leave?.(node, rest);
+	            return node;
+	        }
+	        parent = null;
+	        children = [];
+	        addChild(node) {
+	            return TreeNode.addChild(this, node);
+	        }
+	        depth() {
+	            return TreeNode.depth(this);
+	        }
+	        findLeaves() {
+	            return TreeNode.findLeaves(this);
+	        }
+	        findRoot() {
+	            return TreeNode.findRoot(this);
+	        }
+	        hasAncestor(ancestor) {
+	            return TreeNode.hasAncestor(this, ancestor);
+	        }
+	        removeChild(child) {
+	            return TreeNode.removeChild(this, child);
+	        }
+	        toArray() {
+	            return TreeNode.toArray(this);
+	        }
+	        traverse(visitor, rest) {
+	            return TreeNode.traverse(this, visitor, rest);
+	        }
 	    };
-	    let stride = 3;
-	    const halfX = width * 0.5;
-	    const halfY = height * 0.5;
-	    const gridX = Math.max(1, Math.round(segmentX));
-	    const gridY = Math.max(1, Math.round(segmentY));
-	    const gridX1 = gridX + 1;
-	    const gridY1 = gridY + 1;
-	    const segmentWidth = width / gridX;
-	    const segmentHeight = height / gridY;
-	    const indices = [];
-	    const positions = [];
-	    const normals = [];
-	    const uvs = [];
-	    for (let iy = 0; iy < gridY1; iy++) {
-	        const y = iy * segmentHeight - halfY;
-	        for (let ix = 0; ix < gridX1; ix++) {
-	            const x = ix * segmentWidth - halfX;
-	            positions.push(x, -y, 0);
-	            normals.push(0, 0, 1);
-	            uvs.push(ix / gridX);
-	            uvs.push(iy / gridY);
-	        }
-	    }
-	    for (let iy = 0; iy < gridY; iy++) {
-	        for (let ix = 0; ix < gridX; ix++) {
-	            const a = ix + gridX1 * iy;
-	            const b = ix + gridX1 * (iy + 1);
-	            const c = (ix + 1) + gridX1 * (iy + 1);
-	            const d = (ix + 1) + gridX1 * iy;
-	            indices.push(a, b, d);
-	            indices.push(b, c, d);
-	        }
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    // let count = len / 3;
-	    let geo = new Geometry(3, len, topology, cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (hasNormal && hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: 'uv',
-	                offset: 6,
-	                length: 2,
-	            });
-	        }
-	        else if (hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        else if (hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            result[2 + strideI] = positions[i3 + 2];
-	            if (hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
-	                }
-	            }
-	            else if (hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        // result.set(t.a);
-	        // result.set(t.b, stride);
-	        // result.set(t.c, stride + stride);
-	        // if (options.hasNormal) {
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, stride + 3);
-	        //     result.set(normal, stride + stride + 3);
-	        //     pickers.push({
-	        //         name: 'normal',
-	        //         offset: 3,
-	        //         length: 3,
-	        //     });
-	        // }
-	        // if (options.hasUV) {
-	        //     let offset = options.hasNormal ? 6 : 3;
-	        //     result.set([0, 1], offset);
-	        //     result.set([1, 1], stride + offset);
-	        //     result.set([0.5, 0], stride + stride + offset);
-	        //     pickers.push({
-	        //         name: UV,
-	        //         offset,
-	        //         length: 2,
-	        //     });
-	        // }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        // let result = new Float32Array(9);
-	        // result.set(t.a);
-	        // result.set(t.b, 3);
-	        // result.set(t.c, 6);
-	        // geo.addAttribute(POSITION, result, 3);
-	        // if (options.hasNormal) {
-	        //     result = new Float32Array(9);
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 0);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, 6);
-	        //     geo.addAttribute(NORMAL, result, 3);
-	        // }
-	        // if (options.hasUV) {
-	        //     result = new Float32Array(6);
-	        //     result.set([0, 0], 0);
-	        //     result.set([1, 0], 2);
-	        //     result.set([0.5, 1], 4);
-	        //     geo.addAttribute(UV, result, 2);
-	        // }
-	        return geo;
-	    }
 	};
+	var TreeNode = mixin(Object);
 
-	var createTriangle3 = (t = Triangle3.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
-	    let geo = new Geometry(3, 3, topology, cullMode);
-	    let stride = 3;
-	    if (options.combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (options.hasNormal && options.hasUV) {
-	            stride = 8;
-	        }
-	        else if (options.hasNormal) {
-	            stride = 6;
-	        }
-	        else if (options.hasUV) {
-	            stride = 5;
-	        }
-	        let result = new Float32Array(stride * 3);
-	        result.set(t.a);
-	        result.set(t.b, stride);
-	        result.set(t.c, stride + stride);
-	        if (options.hasNormal) {
-	            let normal = Triangle3.normal(t);
-	            result.set(normal, 3);
-	            result.set(normal, stride + 3);
-	            result.set(normal, stride + stride + 3);
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        if (options.hasUV) {
-	            let offset = options.hasNormal ? 6 : 3;
-	            result.set([0, 1], offset);
-	            result.set([1, 1], stride + offset);
-	            result.set([0.5, 0], stride + stride + offset);
-	            pickers.push({
-	                name: UV,
-	                offset,
-	                length: 2,
-	            });
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        let result = new Float32Array(9);
-	        result.set(t.a);
-	        result.set(t.b, 3);
-	        result.set(t.c, 6);
-	        geo.addAttribute(POSITION, result, 3);
-	        if (options.hasNormal) {
-	            result = new Float32Array(9);
-	            let normal = Triangle3.normal(t);
-	            result.set(normal, 0);
-	            result.set(normal, 3);
-	            result.set(normal, 6);
-	            geo.addAttribute(NORMAL, result, 3);
-	        }
-	        if (options.hasUV) {
-	            result = new Float32Array(6);
-	            result.set([0, 0], 0);
-	            result.set([1, 0], 2);
-	            result.set([0.5, 1], 4);
-	            geo.addAttribute(UV, result, 2);
-	        }
-	        return geo;
-	    }
-	};
+	const IdGeneratorInstance = new IdGenerator();
 
-	const DEFAULT_SPHERE_OPTIONS = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    radius: 1,
-	    phiStart: 0,
-	    phiLength: Math.PI * 2,
-	    thetaStart: 0,
-	    thetaLength: Math.PI,
-	    widthSegments: 32,
-	    heightSegments: 32,
-	    cullMode: "back"
-	};
-	var createSphere3 = (options = {}) => {
-	    let stride = 3;
-	    const { radius, phiStart, phiLength, thetaStart, thetaLength, widthSegments, heightSegments, topology, cullMode, hasUV, hasNormal, combine } = {
-	        ...DEFAULT_SPHERE_OPTIONS,
-	        ...options,
-	    };
-	    const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
-	    let index = 0;
-	    const grid = [];
-	    const vertex = new Float32Array(3);
-	    const normal = new Float32Array(3);
-	    // buffers
-	    const indices = [];
-	    const vertices = [];
-	    const normals = [];
-	    const uvs = [];
-	    for (let iy = 0; iy <= heightSegments; iy++) {
-	        const verticesRow = [];
-	        const v = iy / heightSegments;
-	        // special case for the poles
-	        let uOffset = 0;
-	        if (iy === 0 && thetaStart === 0) {
-	            uOffset = 0.5 / widthSegments;
-	        }
-	        else if (iy === heightSegments && thetaEnd === Math.PI) {
-	            uOffset = -0.5 / widthSegments;
-	        }
-	        for (let ix = 0; ix <= widthSegments; ix++) {
-	            const u = ix / widthSegments;
-	            // vertex
-	            vertex[0] = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
-	            vertex[1] = radius * Math.cos(thetaStart + v * thetaLength);
-	            vertex[2] = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
-	            vertices.push(vertex[0], vertex[1], vertex[2]);
-	            // normal
-	            normal.set(Vector3.normalize(vertex));
-	            normals.push(normal[0], normal[1], normal[2]);
-	            // uv
-	            uvs.push(u + uOffset, v);
-	            verticesRow.push(index++);
-	        }
-	        grid.push(verticesRow);
+	let weakMapTmp;
+	class System extends EventDispatcher {
+	    id = IdGeneratorInstance.next();
+	    isSystem = true;
+	    name = "";
+	    loopTimes = 0;
+	    entitySet = new WeakMap();
+	    usedBy = [];
+	    cache = new WeakMap();
+	    autoUpdate = true;
+	    rule;
+	    _disabled = false;
+	    get disabled() {
+	        return this._disabled;
 	    }
-	    for (let iy = 0; iy < heightSegments; iy++) {
-	        for (let ix = 0; ix < widthSegments; ix++) {
-	            const a = grid[iy][ix + 1];
-	            const b = grid[iy][ix];
-	            const c = grid[iy + 1][ix];
-	            const d = grid[iy + 1][ix + 1];
-	            if (iy !== 0 || thetaStart > 0)
-	                indices.push(a, b, d);
-	            if (iy !== heightSegments - 1 || thetaEnd < Math.PI)
-	                indices.push(b, c, d);
-	        }
+	    set disabled(value) {
+	        this._disabled = value;
 	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    let geo = new Geometry(3, len, topology, cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 3,
-	            }];
-	        if (hasNormal && hasUV) {
-	            stride = 8;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	            pickers.push({
-	                name: 'uv',
-	                offset: 6,
-	                length: 2,
-	            });
-	        }
-	        else if (hasNormal) {
-	            stride = 6;
-	            pickers.push({
-	                name: 'normal',
-	                offset: 3,
-	                length: 3,
-	            });
-	        }
-	        else if (hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 3,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 3;
-	            strideI = i * stride;
-	            result[0 + strideI] = vertices[i3];
-	            result[1 + strideI] = vertices[i3 + 1];
-	            result[2 + strideI] = vertices[i3 + 2];
-	            if (hasNormal) {
-	                result[3 + strideI] = normals[i3];
-	                result[4 + strideI] = normals[i3 + 1];
-	                result[5 + strideI] = normals[i3 + 2];
-	                if (hasUV) {
-	                    result[6 + strideI] = uvs[i2];
-	                    result[7 + strideI] = uvs[i2 + 1];
-	                }
-	            }
-	            else if (hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    return geo;
-	};
-
-	var index$3 = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		createBox3: createBox3,
-		createCircle3: createCircle3,
-		createCylinder3: createCylinder3,
-		createPlane3: createPlane3,
-		createSphere3: createSphere3,
-		createTriangle3: createTriangle3
-	});
-
-	const DEFAULT_CIRCLE_OPTIONS = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    segments: 32,
-	    angleStart: 0,
-	    angle: Math.PI * 2,
-	    radius: 1,
-	    cullMode: "back"
-	};
-	var createCircle2 = (options = {}) => {
-	    let stride = 3;
-	    const indices = [];
-	    const positions = [0, 0];
-	    const uvs = [0.5, 0.5];
-	    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, combine } = {
-	        ...DEFAULT_CIRCLE_OPTIONS,
-	        ...options
-	    };
-	    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
-	        const segment = angleStart + s / segments * angle;
-	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment));
-	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
-	    }
-	    // indices
-	    for (let i = 1; i <= segments; i++) {
-	        indices.push(i, i + 1, 0);
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    // let count = len / 3;
-	    let geo = new Geometry(2, len, topology, cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 2,
-	            }];
-	        if (hasUV) {
-	            stride = 4;
-	            pickers.push({
-	                name: UV,
-	                offset: 2,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 2;
-	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            if (hasUV) {
-	                result[2 + strideI] = uvs[i2];
-	                result[3 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        // let result = new Float32Array(9);
-	        // result.set(t.a);
-	        // result.set(t.b, 3);
-	        // result.set(t.c, 6);
-	        // geo.addAttribute(POSITION, result, 3);
-	        // if (options.hasNormal) {
-	        //     result = new Float32Array(9);
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 0);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, 6);
-	        //     geo.addAttribute(NORMAL, result, 3);
-	        // }
-	        // if (options.hasUV) {
-	        //     result = new Float32Array(6);
-	        //     result.set([0, 0], 0);
-	        //     result.set([1, 0], 2);
-	        //     result.set([0.5, 1], 4);
-	        //     geo.addAttribute(UV, result, 2);
-	        // }
-	        return geo;
-	    }
-	};
-
-	const DEFAULT_PLANE_OPTIONS = {
-	    ...DEFAULT_OPTIONS,
-	    hasIndices: true,
-	    combine: true,
-	    width: 1,
-	    height: 1,
-	    segmentX: 1,
-	    segmentY: 1,
-	    cullMode: "back"
-	};
-	var createPlane2 = (options = {}) => {
-	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, combine } = {
-	        ...DEFAULT_PLANE_OPTIONS,
-	        ...options
-	    };
-	    let stride = 3;
-	    const halfX = width * 0.5;
-	    const halfY = height * 0.5;
-	    const gridX = Math.max(1, Math.round(segmentX));
-	    const gridY = Math.max(1, Math.round(segmentY));
-	    const gridX1 = gridX + 1;
-	    const gridY1 = gridY + 1;
-	    const segmentWidth = width / gridX;
-	    const segmentHeight = height / gridY;
-	    const indices = [];
-	    const positions = [];
-	    const uvs = [];
-	    for (let iy = 0; iy < gridY1; iy++) {
-	        const y = iy * segmentHeight - halfY;
-	        for (let ix = 0; ix < gridX1; ix++) {
-	            const x = ix * segmentWidth - halfX;
-	            positions.push(x, -y);
-	            uvs.push(ix / gridX);
-	            uvs.push(iy / gridY);
-	        }
-	    }
-	    for (let iy = 0; iy < gridY; iy++) {
-	        for (let ix = 0; ix < gridX; ix++) {
-	            const a = ix + gridX1 * iy;
-	            const b = ix + gridX1 * (iy + 1);
-	            const c = (ix + 1) + gridX1 * (iy + 1);
-	            const d = (ix + 1) + gridX1 * iy;
-	            indices.push(a, b, d);
-	            indices.push(b, c, d);
-	        }
-	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
-	    let geo = new Geometry(2, len, topology, cullMode);
-	    // TODO indices 现在都是非索引版本
-	    if (combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 2,
-	            }];
-	        if (hasUV) {
-	            stride = 5;
-	            pickers.push({
-	                name: 'uv',
-	                offset: 2,
-	                length: 2,
-	            });
-	        }
-	        let result = new Float32Array(stride * len);
-	        for (let i = 0; i < len; i++) {
-	            i2 = indices[i] << 1;
-	            i3 = indices[i] * 2;
-	            strideI = i * stride;
-	            result[0 + strideI] = positions[i3];
-	            result[1 + strideI] = positions[i3 + 1];
-	            if (hasUV) {
-	                result[3 + strideI] = uvs[i2];
-	                result[4 + strideI] = uvs[i2 + 1];
-	            }
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        // let result = new Float32Array(9);
-	        // result.set(t.a);
-	        // result.set(t.b, 3);
-	        // result.set(t.c, 6);
-	        // geo.addAttribute(POSITION, result, 3);
-	        // if (options.hasNormal) {
-	        //     result = new Float32Array(9);
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 0);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, 6);
-	        //     geo.addAttribute(NORMAL, result, 3);
-	        // }
-	        // if (options.hasUV) {
-	        //     result = new Float32Array(6);
-	        //     result.set([0, 0], 0);
-	        //     result.set([1, 0], 2);
-	        //     result.set([0.5, 1], 4);
-	        //     geo.addAttribute(UV, result, 2);
-	        // }
-	        return geo;
-	    }
-	};
-
-	var createTriangle2 = (t = Triangle2.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
-	    let geo = new Geometry(2, 3, topology, cullMode);
-	    let stride = 3;
-	    if (options.combine) {
-	        let pickers = [{
-	                name: POSITION,
-	                offset: 0,
-	                length: 2,
-	            }];
-	        if (options.hasUV) {
-	            stride = 4;
-	        }
-	        let result = new Float32Array(stride * 3);
-	        result.set(t.a);
-	        result.set(t.b, stride);
-	        result.set(t.c, stride + stride);
-	        if (options.hasUV) {
-	            let offset = 2;
-	            result.set([0, 1], offset);
-	            result.set([1, 1], stride + offset);
-	            result.set([0.5, 0], stride + stride + offset);
-	            pickers.push({
-	                name: UV,
-	                offset,
-	                length: 2,
-	            });
-	        }
-	        geo.addAttribute(VERTICES, result, stride, pickers);
-	        return geo;
-	    }
-	    else {
-	        let result = new Float32Array(6);
-	        result.set(t.a);
-	        result.set(t.b, 2);
-	        result.set(t.c, 4);
-	        geo.addAttribute(POSITION, result, 2);
-	        if (options.hasUV) {
-	            result = new Float32Array(6);
-	            result.set([0, 0], 0);
-	            result.set([1, 0], 2);
-	            result.set([0.5, 1], 4);
-	            geo.addAttribute(UV, result, 2);
-	        }
-	        return geo;
-	    }
-	};
-
-	var index$2 = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		createCircle2: createCircle2,
-		createPlane2: createPlane2,
-		createTriangle2: createTriangle2
-	});
-
-	const DEFAULT_BLEND_STATE = {
-	    color: {
-	        srcFactor: 'src-alpha',
-	        dstFactor: 'one-minus-src-alpha',
-	        operation: 'add',
-	    },
-	    alpha: {
-	        srcFactor: 'zero',
-	        dstFactor: 'one',
-	        operation: 'add',
-	    }
-	};
-
-	class Material extends Component {
-	    tags = [{
-	            label: MATERIAL,
-	            unique: true
-	        }];
-	    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
-	        super("material", { vertex, fragment, uniforms, blend });
-	        this.dirty = true;
-	    }
-	    get blend() {
-	        return this.data.blend;
-	    }
-	    set blend(blend) {
-	        this.data.blend = blend;
-	    }
-	    get vertexShader() {
-	        return this.data.vertex;
-	    }
-	    set vertexShader(code) {
-	        this.data.vertex = code;
-	    }
-	    get fragmentShader() {
-	        return this.data.fragment;
-	    }
-	    set fragmentShader(code) {
-	        this.data.fragment = code;
-	    }
-	}
-
-	const wgslShaders$1 = {
-	    vertex: `
-		struct Uniforms {
-			modelViewProjectionMatrix : mat4x4<f32>
-	  	};
-	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-		struct VertexOutput {
-			@builtin(position) position : vec4<f32>
-		};
-
-		@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-			var out: VertexOutput;
-			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-			return out;
-		}
-	`,
-	    fragment: `
-		struct Uniforms {
-			color : vec4<f32>
-	  	};
-	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
-
-		@fragment fn main() -> @location(0) vec4<f32> {
-			return uniforms.color;
-		}
-	`
-	};
-	class ColorMaterial extends Material {
-	    constructor(color = new Float32Array([1, 1, 1, 1])) {
-	        super(wgslShaders$1.vertex, wgslShaders$1.fragment, [{
-	                name: "color",
-	                value: color,
-	                binding: 1,
-	                dirty: true,
-	                type: BUFFER
-	            }]);
-	        this.dirty = true;
-	    }
-	    setColor(r, g, b, a) {
-	        if (this.data) {
-	            this.data.uniforms[0].value[0] = r;
-	            this.data.uniforms[0].value[1] = g;
-	            this.data.uniforms[0].value[2] = b;
-	            this.data.uniforms[0].value[3] = a;
-	            this.data.uniforms[0].dirty = true;
-	        }
-	        return this;
-	    }
-	}
-
-	const vertexShader$2 = `
-struct Uniforms {
-	modelViewProjectionMatrix : mat4x4<f32>
-};
-
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-struct VertexOutput {
-	@builtin(position) position : vec4<f32>,
-	@location(0) depth : vec4<f32>
-};
-
-@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-	var out: VertexOutput;
-	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	out.depth = out.position;
-	return out;
-}`;
-	const fragmentShader$1 = `
-// let PackUpscale: f32 = 1.003921568627451;
-// let PackFactors: vec3<f32> = vec3<f32>( 256., 256., 256. );
-// let ShiftRight8: f32 = 0.00390625;
-// fn packDepthToRGBA(v: f32 ) -> vec4<f32> {
-// 	var r: vec4<f32> = vec4<f32>( fract( v * PackFactors ), v );
-// 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
-// 	return r * PackUpscale;
-// }
-@fragment fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
-	var fragCoordZ: f32 = depth.z / depth.w;
-	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
-}`;
-	class DepthMaterial extends Material {
-	    constructor() {
-	        super(vertexShader$2, fragmentShader$1, []);
-	        this.dirty = true;
-	    }
-	}
-
-	const vertexShader$1 = `
-struct Uniforms {
-	modelViewProjectionMatrix : mat4x4<f32>
-};
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-struct VertexOutput {
-	@builtin(position) position : vec4<f32>,
-	@location(0) normal : vec4<f32>
-};
-
-@vertex fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
-	var out: VertexOutput;
-	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	out.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));
-	return out;
-}`;
-	const fragmentShader = `
-@fragment fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
-	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
-}`;
-	class NormalMaterial extends Material {
-	    constructor() {
-	        super(vertexShader$1, fragmentShader, []);
-	        this.dirty = true;
-	    }
-	}
-
-	class ShaderMaterial extends Material {
-	    constructor(vertex, fragment, uniforms = [], blend) {
-	        super(vertex, fragment, uniforms, blend);
-	        this.dirty = true;
-	    }
-	}
-
-	class Sampler {
-	    dirty = true;
-	    descriptor = {};
-	    name;
-	    constructor(option = {}, name = "sampler") {
-	        this.descriptor.minFilter = option.minFilter ?? "linear";
-	        this.descriptor.magFilter = option.magFilter ?? "linear";
-	        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
-	        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
-	        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
-	        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
-	        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
-	        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
-	        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
-	        this.descriptor.compare = option.compare ?? undefined;
+	    constructor(name = "", fitRule) {
+	        super();
 	        this.name = name;
+	        this.disabled = false;
+	        this.rule = fitRule;
 	    }
-	    setAddressMode(u, v, w) {
-	        this.descriptor.addressModeU = u;
-	        this.descriptor.addressModeV = v;
-	        this.descriptor.addressModeW = w ?? this.descriptor.addressModeW;
-	        this.dirty = true;
+	    checkUpdatedEntities(manager) {
+	        if (manager) {
+	            weakMapTmp = this.entitySet.get(manager);
+	            if (!weakMapTmp) {
+	                weakMapTmp = new Set();
+	                this.entitySet.set(manager, weakMapTmp);
+	            }
+	            manager.updatedEntities.forEach((item) => {
+	                if (this.query(item)) {
+	                    weakMapTmp.add(item);
+	                }
+	                else {
+	                    weakMapTmp.delete(item);
+	                }
+	            });
+	        }
 	        return this;
 	    }
-	    setFilterMode(mag, min, mipmap) {
-	        this.descriptor.magFilter = mag;
-	        this.descriptor.minFilter = min;
-	        this.descriptor.mipmapFilter = mipmap;
-	        this.dirty = true;
+	    checkEntityManager(manager) {
+	        if (manager) {
+	            weakMapTmp = this.entitySet.get(manager);
+	            if (!weakMapTmp) {
+	                weakMapTmp = new Set();
+	                this.entitySet.set(manager, weakMapTmp);
+	            }
+	            else {
+	                weakMapTmp.clear();
+	            }
+	            manager.elements.forEach((item) => {
+	                if (this.query(item)) {
+	                    weakMapTmp.add(item);
+	                }
+	                else {
+	                    weakMapTmp.delete(item);
+	                }
+	            });
+	        }
 	        return this;
 	    }
-	    setLodClamp(min, max) {
-	        this.descriptor.lodMaxClamp = max;
-	        this.descriptor.lodMinClamp = min;
-	        this.dirty = true;
+	    query(entity) {
+	        return this.rule(entity);
+	    }
+	    run(world, time, delta) {
+	        if (this.disabled) {
+	            return this;
+	        }
+	        if (world.entityManager) {
+	            this.entitySet.get(world.entityManager)?.forEach((item) => {
+	                // 此处不应该校验disabled。这个交给各自系统自行判断
+	                this.handle(item, time, delta);
+	            });
+	        }
 	        return this;
 	    }
-	    setMaxAnisotropy(v) {
-	        this.descriptor.maxAnisotropy = v;
-	        this.dirty = true;
-	        return this;
-	    }
-	    setCompare(v) {
-	        this.descriptor.compare = v;
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class Texture {
-	    data;
-	    dirty = true;
-	    descriptor = {
-	        size: [0, 0],
-	        format: "rgba8unorm",
-	        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-	        mipLevelCount: 1,
-	        sampleCount: 1,
-	        dimension: "2d",
-	        viewFormats: [],
-	        label: ""
-	    };
-	    constructor(options) {
-	        this.descriptor.size[0] = options.size[0];
-	        this.descriptor.size[1] = options.size[1];
-	        this.descriptor.format = options.format ?? "rgba8unorm";
-	        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
-	        this.imageBitmap = options.image;
+	    serialize() {
+	        return {};
 	    }
 	    destroy() {
-	        this.data?.close();
-	        this.data = undefined;
-	    }
-	    get width() {
-	        return this.descriptor.size[0];
-	    }
-	    set width(v) {
-	        this.descriptor.size[0] = v;
-	    }
-	    get height() {
-	        return this.descriptor.size[1];
-	    }
-	    set height(v) {
-	        this.descriptor.size[1] = v;
-	    }
-	    get imageBitmap() {
-	        return this.data;
-	    }
-	    set imageBitmap(img) {
-	        this.dirty = true;
-	        this.data = img;
+	        for (let i = this.usedBy.length - 1; i > -1; i--) {
+	            this.usedBy[i].remove(this);
+	        }
+	        return this;
 	    }
 	}
 
-	const CommonData = {
-	    date: new Date(),
-	    vs: `struct Uniforms {
-        matrix: mat4x4<f32>
-    }
-    @binding(0) @group(0) var<uniform> uniforms: Uniforms;
-
-    struct VertexOutput {
-        @builtin(position) position: vec4<f32>,
-        @location(0) uv: vec2<f32>
-    }
-
-    @vertex fn main(@location(0) position: vec3<f32>, @location(2) uv: vec2<f32>) -> VertexOutput {
-        var out: VertexOutput;
-        out.position = uniforms.matrix * vec4<f32>(position, 1.0);
-        out.uv = uv;
-        return out;
-    }
-    `
-	};
-	const emptyTexture = new Texture({
-	    size: [512, 512]
-	});
-	class ShadertoyMaterial extends Material {
-	    dataD;
-	    constructor(fs, sampler = new Sampler()) {
-	        super(CommonData.vs, fs, [
-	            {
-	                name: "iSampler0",
-	                type: SAMPLER,
-	                value: sampler,
-	                binding: 1,
-	                dirty: true,
-	            },
-	            {
-	                name: "iChannel0",
-	                type: TEXTURE_IMAGE,
-	                value: emptyTexture,
-	                binding: 2,
-	                dirty: true,
-	            },
-	            {
-	                name: "iChannel1",
-	                type: TEXTURE_IMAGE,
-	                value: emptyTexture,
-	                binding: 3,
-	                dirty: true,
-	            },
-	            {
-	                name: "iChannel2",
-	                type: TEXTURE_IMAGE,
-	                value: emptyTexture,
-	                binding: 4,
-	                dirty: true,
-	            },
-	            {
-	                name: "iChannel3",
-	                type: TEXTURE_IMAGE,
-	                value: emptyTexture,
-	                binding: 5,
-	                dirty: true,
-	            },
-	            {
-	                name: "uniforms",
-	                type: BUFFER,
-	                value: new Float32Array([
-	                    CommonData.date.getFullYear(),
-	                    CommonData.date.getMonth(),
-	                    CommonData.date.getDate(),
-	                    CommonData.date.getSeconds() + CommonData.date.getMinutes() * 60 + CommonData.date.getHours() + 3600,
-	                    1024, 1024,
-	                    0, 0,
-	                    0,
-	                    0,
-	                    0,
-	                    0, // 11
-	                ]),
-	                binding: 6,
-	                dirty: true,
-	            }
-	        ]);
-	        this.dataD = CommonData.date;
-	        this.dirty = true;
+	class PureSystem extends System {
+	    handler;
+	    constructor(name = "", fitRule, handler) {
+	        super(name, fitRule);
+	        this.handler = handler;
 	    }
-	    get sampler() {
-	        return this.data.uniforms[0].value;
-	    }
-	    set sampler(sampler) {
-	        this.data.uniforms[0].dirty = this.dirty = true;
-	        this.data.uniforms[0].value = sampler;
-	    }
-	    get texture0() {
-	        return this.data.uniforms[1].value;
-	    }
-	    set texture0(texture) {
-	        this.data.uniforms[1].dirty = this.dirty = true;
-	        this.data.uniforms[1].value = texture;
-	    }
-	    get texture1() {
-	        return this.data.uniforms[2].value;
-	    }
-	    set texture1(texture) {
-	        this.data.uniforms[2].dirty = this.dirty = true;
-	        this.data.uniforms[2].value = texture;
-	    }
-	    get texture2() {
-	        return this.data.uniforms[3].value;
-	    }
-	    set texture2(texture) {
-	        this.data.uniforms[3].dirty = this.dirty = true;
-	        this.data.uniforms[3].value = texture;
-	    }
-	    get texture3() {
-	        return this.data.uniforms[4].value;
-	    }
-	    set texture3(texture) {
-	        this.data.uniforms[4].dirty = this.dirty = true;
-	        this.data.uniforms[4].value = texture;
-	    }
-	    get time() {
-	        return this.data.uniforms[5].value[8];
-	    }
-	    set time(time) {
-	        this.data.uniforms[5].dirty = this.dirty = true;
-	        this.data.uniforms[5].value[8] = time;
-	    }
-	    get mouse() {
-	        let u = this.data.uniforms[5];
-	        return [u.value[6], u.value[7]];
-	    }
-	    set mouse(mouse) {
-	        let u = this.data.uniforms[5];
-	        u.dirty = this.dirty = true;
-	        u.value[6] = mouse[0];
-	        u.value[7] = mouse[1];
-	    }
-	    get date() {
-	        return this.dataD;
-	    }
-	    set date(d) {
-	        const u = this.data.uniforms[5];
-	        u.dirty = this.dirty = true;
-	        u.value[0] = d.getFullYear();
-	        u.value[1] = d.getMonth();
-	        u.value[2] = d.getDate();
-	        u.value[3] = d.getSeconds() + d.getMinutes() * 60 + d.getHours() * 3600;
-	        this.dataD = d;
+	    handle(entity, time, delta) {
+	        this.handler(entity, time, delta);
+	        return this;
 	    }
 	}
 
-	const wgslShaders = {
-	    vertex: `
-		struct Uniforms {
-			 matrix : mat4x4<f32>
-	  	};
-	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-		struct VertexOutput {
-			@builtin(position) position : vec4<f32>,
-			@location(0) uv : vec2<f32>
-		};
-
-		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
-			var out: VertexOutput;
-			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
-			out.uv = uv;
-			return out;
-		}
-	`,
-	    fragment: `
-		@binding(1) @group(0) var mySampler: sampler;
-		@binding(2) @group(0) var myTexture: texture_2d<f32>;
-
-		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-			return textureSample(myTexture, mySampler, uv);
-		}
-	`
-	};
-	class TextureMaterial extends Material {
-	    constructor(texture, sampler = new Sampler()) {
-	        super(wgslShaders.vertex, wgslShaders.fragment, [
-	            {
-	                binding: 1,
-	                name: "mySampler",
-	                type: SAMPLER,
-	                value: sampler,
-	                dirty: true
-	            },
-	            {
-	                binding: 2,
-	                name: "myTexture",
-	                type: TEXTURE_IMAGE,
-	                value: texture,
-	                dirty: true
+	class Component {
+	    static unserialize(json) {
+	        const component = new Component(json.name, json.data);
+	        component.disabled = json.disabled;
+	        return component;
+	    }
+	    isComponent = true;
+	    id = IdGeneratorInstance.next();
+	    data;
+	    disabled = false;
+	    name;
+	    usedBy = [];
+	    tags;
+	    #dirty = false;
+	    get dirty() {
+	        return this.#dirty;
+	    }
+	    set dirty(v) {
+	        this.#dirty = v;
+	    }
+	    constructor(name, data, tags = []) {
+	        this.name = name;
+	        this.data = data;
+	        this.tags = tags;
+	    }
+	    clone() {
+	        return new Component(this.name, this.data, this.tags);
+	    }
+	    // 此处为只要tag标签相同就是同一类
+	    hasTagLabel(label) {
+	        for (let i = this.tags.length - 1; i > -1; i--) {
+	            if (this.tags[i].label === label) {
+	                return true;
 	            }
-	        ]);
-	        this.dirty = true;
+	        }
+	        return false;
 	    }
-	    get sampler() {
-	        return this.data.uniforms[0].value;
+	    serialize() {
+	        return {
+	            data: this.data,
+	            disabled: this.disabled,
+	            id: this.id,
+	            name: this.name,
+	            tags: this.tags,
+	            type: "component",
+	        };
 	    }
-	    set sampler(sampler) {
-	        this.data.uniforms[0].dirty = this.dirty = true;
-	        this.data.uniforms[0].value = sampler;
+	}
+
+	// 私有全局变量，外部无法访问
+	let elementTmp;
+	const ElementChangeEvent = {
+	    ADD: "add",
+	    REMOVE: "remove",
+	};
+	class Manager extends EventDispatcher {
+	    static Events = ElementChangeEvent;
+	    elements = new Map();
+	    disabled = false;
+	    usedBy = [];
+	    isManager = true;
+	    add(element) {
+	        if (this.has(element)) {
+	            return this;
+	        }
+	        return this.addElementDirectly(element);
 	    }
-	    get texture() {
-	        return this.data.uniforms[1].value;
+	    clear() {
+	        this.elements.clear();
+	        return this;
 	    }
-	    set texture(texture) {
-	        this.data.uniforms[1].dirty = this.dirty = true;
-	        this.data.uniforms[1].value = texture;
+	    get(name) {
+	        if (typeof name === "number") {
+	            return this.elements.get(name) || null;
+	        }
+	        if (typeof name === "function" && name.prototype) {
+	            for (const [, item] of this.elements) {
+	                if (item instanceof name) {
+	                    return item;
+	                }
+	            }
+	        }
+	        for (const [, item] of this.elements) {
+	            if (item.name === name) {
+	                return item;
+	            }
+	        }
+	        return null;
 	    }
-	    setTextureAndSampler(texture, sampler) {
-	        this.texture = texture;
-	        if (sampler) {
-	            this.sampler = sampler;
+	    has(element) {
+	        if (typeof element === "number") {
+	            return this.elements.has(element);
+	        }
+	        else if (typeof element === "string") {
+	            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+	            for (const [_, item] of this.elements) {
+	                if (item.name === element) {
+	                    return true;
+	                }
+	            }
+	            return false;
+	        }
+	        else {
+	            return this.elements.has(element.id);
+	        }
+	    }
+	    remove(element) {
+	        if (typeof element === "number" || typeof element === "string") {
+	            elementTmp = this.get(element);
+	            if (elementTmp) {
+	                this.removeInstanceDirectly(elementTmp);
+	            }
+	            return this;
+	        }
+	        if (this.elements.has(element.id)) {
+	            return this.removeInstanceDirectly(element);
+	        }
+	        return this;
+	    }
+	    addElementDirectly(element) {
+	        this.elements.set(element.id, element);
+	        element.usedBy.push(this);
+	        this.elementChangedFireEvent(Manager.Events.ADD, this);
+	        return this;
+	    }
+	    // 必定有element情况
+	    removeInstanceDirectly(element) {
+	        this.elements.delete(element.id);
+	        element.usedBy.splice(element.usedBy.indexOf(this), 1);
+	        this.elementChangedFireEvent(Manager.Events.REMOVE, this);
+	        return this;
+	    }
+	    elementChangedFireEvent(type, eventObject) {
+	        for (const entity of this.usedBy) {
+	            entity.fire?.(type, eventObject);
+	            if (entity.usedBy) {
+	                for (const manager of entity.usedBy) {
+	                    manager.updatedEntities.add(entity);
+	                }
+	            }
+	        }
+	    }
+	}
+
+	exports.EComponentEvent = void 0;
+	(function (EComponentEvent) {
+	    EComponentEvent["ADD_COMPONENT"] = "addComponent";
+	    EComponentEvent["REMOVE_COMPONENT"] = "removeComponent";
+	})(exports.EComponentEvent || (exports.EComponentEvent = {}));
+	class ComponentManager extends Manager {
+	    isComponentManager = true;
+	    add(element) {
+	        if (this.has(element)) {
+	            return this;
+	        }
+	        const componentSet = this.checkedComponentsWithTargetTags(element);
+	        for (const item of componentSet) {
+	            this.removeInstanceDirectly(item);
+	        }
+	        return this.addElementDirectly(element);
+	    }
+	    getComponentsByClass(clazz) {
+	        const result = [];
+	        this.elements.forEach((component) => {
+	            if (component instanceof clazz) {
+	                result.push(component);
+	            }
+	        });
+	        return result;
+	    }
+	    getComponentByClass(clazz) {
+	        for (const [, component] of this.elements) {
+	            if (component instanceof clazz) {
+	                return component;
+	            }
+	        }
+	        return null;
+	    }
+	    getComponentsByTagLabel(label) {
+	        const result = [];
+	        this.elements.forEach((component) => {
+	            if (component.hasTagLabel(label)) {
+	                result.push(component);
+	            }
+	        });
+	        return result;
+	    }
+	    getComponentByTagLabel(label) {
+	        for (const [, component] of this.elements) {
+	            if (component.hasTagLabel(label)) {
+	                return component;
+	            }
+	        }
+	        return null;
+	    }
+	    // 找到所有含目标组件唯一标签一致的组件。只要有任意1个标签符合就行。此处规定名称一致的tag，unique也必须是一致的。且不可修改
+	    checkedComponentsWithTargetTags(component) {
+	        const result = new Set();
+	        let arr;
+	        for (let i = component.tags.length - 1; i > -1; i--) {
+	            if (component.tags[i].unique) {
+	                arr = this.getComponentsByTagLabel(component.tags[i].label);
+	                if (arr.length) {
+	                    for (let j = arr.length - 1; j > -1; j--) {
+	                        result.add(arr[j]);
+	                    }
+	                }
+	            }
+	        }
+	        return result;
+	    }
+	}
+
+	let arr$1;
+	class Entity extends TreeNode.mixin(EventDispatcher) {
+	    id = IdGeneratorInstance.next();
+	    isEntity = true;
+	    componentManager = null;
+	    disabled = false;
+	    name = "";
+	    usedBy = [];
+	    constructor(name = "", componentManager) {
+	        super();
+	        this.name = name;
+	        this.registerComponentManager(componentManager);
+	    }
+	    addComponent(component) {
+	        if (this.componentManager) {
+	            this.componentManager.add(component);
+	        }
+	        else {
+	            throw new Error("Current entity hasn't registered a component manager yet.");
+	        }
+	        return this;
+	    }
+	    addChild(entity) {
+	        super.addChild(entity);
+	        if (this.usedBy) {
+	            for (const manager of this.usedBy) {
+	                manager.add(entity);
+	            }
+	        }
+	        return this;
+	    }
+	    addTo(manager) {
+	        manager.add(this);
+	        return this;
+	    }
+	    addToWorld(world) {
+	        if (world.entityManager) {
+	            world.entityManager.add(this);
+	        }
+	        return this;
+	    }
+	    destroy() {
+	        for (const manager of this.usedBy) {
+	            manager.remove(this);
+	        }
+	        this.unregisterComponentManager();
+	    }
+	    getComponent(nameOrId) {
+	        return this.componentManager?.get(nameOrId) || null;
+	    }
+	    getComponentsByTagLabel(label) {
+	        return this.componentManager?.getComponentsByTagLabel(label) || [];
+	    }
+	    getComponentByTagLabel(label) {
+	        return this.componentManager?.getComponentByTagLabel(label) || null;
+	    }
+	    getComponentsByClass(clazz) {
+	        return this.componentManager?.getComponentsByClass(clazz) || [];
+	    }
+	    getComponentByClass(clazz) {
+	        return this.componentManager?.getComponentByClass(clazz) || null;
+	    }
+	    hasComponent(component) {
+	        return this.componentManager?.has(component) || false;
+	    }
+	    registerComponentManager(manager = new ComponentManager()) {
+	        this.unregisterComponentManager();
+	        this.componentManager = manager;
+	        if (!this.componentManager.usedBy.includes(this)) {
+	            this.componentManager.usedBy.push(this);
+	        }
+	        return this;
+	    }
+	    removeChild(entity) {
+	        super.removeChild(entity);
+	        if (this.usedBy) {
+	            for (const manager of this.usedBy) {
+	                manager.remove(entity);
+	            }
+	        }
+	        return this;
+	    }
+	    removeComponent(component) {
+	        if (this.componentManager) {
+	            this.componentManager.remove(component);
+	        }
+	        return this;
+	    }
+	    serialize() {
+	        return {};
+	    }
+	    unregisterComponentManager() {
+	        if (this.componentManager) {
+	            arr$1 = this.componentManager.usedBy;
+	            arr$1.splice(arr$1.indexOf(this) - 1, 1);
+	            this.componentManager = null;
+	        }
+	        return this;
+	    }
+	}
+
+	class EntityManager extends Manager {
+	    // public elements: Map<string, IEntity> = new Map();
+	    data = null;
+	    updatedEntities = new Set();
+	    isEntityManager = true;
+	    constructor(world) {
+	        super();
+	        if (world) {
+	            this.usedBy.push(world);
+	        }
+	    }
+	    createEntity(name) {
+	        const entity = new Entity(name);
+	        this.add(entity);
+	        return entity;
+	    }
+	    addElementDirectly(entity) {
+	        super.addElementDirectly(entity);
+	        this.updatedEntities.add(entity);
+	        for (const child of entity.children) {
+	            if (child) {
+	                this.add(child);
+	            }
+	        }
+	        return this;
+	    }
+	    removeInstanceDirectly(entity) {
+	        super.removeInstanceDirectly(entity);
+	        this.deleteEntityFromSystemSet(entity);
+	        for (const child of entity.children) {
+	            if (child) {
+	                this.remove(child);
+	            }
+	        }
+	        return this;
+	    }
+	    deleteEntityFromSystemSet(entity) {
+	        entity.usedBy.splice(entity.usedBy.indexOf(this), 1);
+	        for (const world of this.usedBy) {
+	            if (world.systemManager) {
+	                world.systemManager.elements.forEach((system) => {
+	                    if (system.entitySet.get(this)) {
+	                        system.entitySet.get(this).delete(entity);
+	                    }
+	                });
+	            }
+	        }
+	    }
+	}
+
+	let systemTmp;
+	const SystemEvent = {
+	    ADD: "add",
+	    AFTER_RUN: "afterRun",
+	    BEFORE_RUN: "beforeRun",
+	    REMOVE: "remove",
+	};
+	class SystemManager extends Manager {
+	    static Events = SystemEvent;
+	    disabled = false;
+	    elements = new Map();
+	    loopTimes = 0;
+	    usedBy = [];
+	    constructor(world) {
+	        super();
+	        if (world) {
+	            this.usedBy.push(world);
+	        }
+	    }
+	    add(system) {
+	        super.add(system);
+	        this.updateSystemEntitySetByAddFromManager(system);
+	        return this;
+	    }
+	    clear() {
+	        this.elements.clear();
+	        return this;
+	    }
+	    remove(element) {
+	        if (typeof element === "number" || typeof element === "string") {
+	            systemTmp = this.get(element);
+	            if (systemTmp) {
+	                this.removeInstanceDirectly(systemTmp);
+	                this.updateSystemEntitySetByRemovedFromManager(systemTmp);
+	                systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
+	            }
+	            return this;
+	        }
+	        if (this.elements.has(element.id)) {
+	            this.removeInstanceDirectly(element);
+	            this.updateSystemEntitySetByRemovedFromManager(element);
+	            element.usedBy.splice(element.usedBy.indexOf(this), 1);
+	        }
+	        return this;
+	    }
+	    run(world, time, delta) {
+	        this.fire(SystemManager.Events.BEFORE_RUN, this);
+	        this.elements.forEach((item) => {
+	            item.checkUpdatedEntities(world.entityManager);
+	            if (!item.disabled && item.autoUpdate) {
+	                item.run(world, time, delta);
+	            }
+	        });
+	        if (world.entityManager) {
+	            world.entityManager.updatedEntities.clear();
+	        }
+	        this.loopTimes++;
+	        this.fire(SystemManager.Events.BEFORE_RUN, this);
+	        return this;
+	    }
+	    updateSystemEntitySetByRemovedFromManager(system) {
+	        for (const item of this.usedBy) {
+	            if (item.entityManager) {
+	                system.entitySet.delete(item.entityManager);
+	            }
+	        }
+	        return this;
+	    }
+	    updateSystemEntitySetByAddFromManager(system) {
+	        for (const item of this.usedBy) {
+	            if (item.entityManager) {
+	                system.checkEntityManager(item.entityManager);
+	            }
+	        }
+	        return this;
+	    }
+	}
+
+	let arr;
+	class World {
+	    disabled = false;
+	    name;
+	    entityManager = null;
+	    systemManager = null;
+	    store = new Map();
+	    usedBy = [];
+	    id = IdGeneratorInstance.next();
+	    isWorld = true;
+	    constructor(name = "", entityManager, systemManager) {
+	        this.name = name;
+	        this.registerEntityManager(entityManager);
+	        this.registerSystemManager(systemManager);
+	    }
+	    add(element) {
+	        if (element.isEntity) {
+	            return this.addEntity(element);
+	        }
+	        else {
+	            return this.addSystem(element);
+	        }
+	    }
+	    addEntity(entity) {
+	        if (this.entityManager) {
+	            this.entityManager.add(entity);
+	        }
+	        else {
+	            throw new Error("The world doesn't have an entityManager yet.");
+	        }
+	        return this;
+	    }
+	    addSystem(system) {
+	        if (this.systemManager) {
+	            this.systemManager.add(system);
+	        }
+	        else {
+	            throw new Error("The world doesn't have a systemManager yet.");
+	        }
+	        return this;
+	    }
+	    clearAllEntities() {
+	        if (this.entityManager) {
+	            this.entityManager.clear();
+	        }
+	        return this;
+	    }
+	    createEntity(name) {
+	        return this.entityManager?.createEntity(name) || null;
+	    }
+	    hasEntity(entity) {
+	        if (this.entityManager) {
+	            return this.entityManager.has(entity);
+	        }
+	        return false;
+	    }
+	    hasSystem(system) {
+	        if (this.systemManager) {
+	            return this.systemManager.has(system);
+	        }
+	        return false;
+	    }
+	    registerEntityManager(manager) {
+	        this.unregisterEntityManager();
+	        this.entityManager = manager || new EntityManager(this);
+	        if (!this.entityManager.usedBy.includes(this)) {
+	            this.entityManager.usedBy.push(this);
+	        }
+	        return this;
+	    }
+	    registerSystemManager(manager) {
+	        this.unregisterSystemManager();
+	        this.systemManager = manager || new SystemManager(this);
+	        if (!this.systemManager.usedBy.includes(this)) {
+	            this.systemManager.usedBy.push(this);
+	        }
+	        return this;
+	    }
+	    remove(element) {
+	        if (element.isEntity) {
+	            return this.removeEntity(element);
+	        }
+	        else {
+	            return this.removeSystem(element);
+	        }
+	    }
+	    removeEntity(entity) {
+	        if (this.entityManager) {
+	            this.entityManager.remove(entity);
+	        }
+	        return this;
+	    }
+	    removeSystem(system) {
+	        if (this.systemManager) {
+	            this.systemManager.remove(system);
+	        }
+	        return this;
+	    }
+	    run(time, delta) {
+	        if (this.disabled) {
+	            return this;
+	        }
+	        if (this.systemManager) {
+	            this.systemManager.run(this, time, delta);
+	        }
+	        return this;
+	    }
+	    serialize() {
+	        return {
+	            id: this.id,
+	            name: this.name,
+	            type: "world",
+	        };
+	    }
+	    unregisterEntityManager() {
+	        if (this.entityManager) {
+	            arr = this.entityManager.usedBy;
+	            arr.splice(arr.indexOf(this) - 1, 1);
+	            this.entityManager = null;
+	        }
+	        return this;
+	    }
+	    unregisterSystemManager() {
+	        if (this.systemManager) {
+	            arr = this.systemManager.usedBy;
+	            arr.splice(arr.indexOf(this) - 1, 1);
+	            this.entityManager = null;
 	        }
 	        return this;
 	    }
@@ -8016,7 +6328,7 @@ struct VertexOutput {
 	    });
 	};
 
-	var index$1 = /*#__PURE__*/Object.freeze({
+	var index$3 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		getEuclidPosition3Proxy: getEuclidPosition3Proxy,
 		getEulerRotation3Proxy: getEulerRotation3Proxy
@@ -8421,6 +6733,51 @@ struct VertexOutput {
 	    }
 	}
 
+	class Texture {
+	    data;
+	    dirty = true;
+	    descriptor = {
+	        size: [0, 0],
+	        format: "rgba8unorm",
+	        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+	        mipLevelCount: 1,
+	        sampleCount: 1,
+	        dimension: "2d",
+	        viewFormats: [],
+	        label: ""
+	    };
+	    constructor(options) {
+	        this.descriptor.size[0] = options.size[0];
+	        this.descriptor.size[1] = options.size[1];
+	        this.descriptor.format = options.format ?? "rgba8unorm";
+	        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
+	        this.imageBitmap = options.image;
+	    }
+	    destroy() {
+	        this.data?.close();
+	        this.data = undefined;
+	    }
+	    get width() {
+	        return this.descriptor.size[0];
+	    }
+	    set width(v) {
+	        this.descriptor.size[0] = v;
+	    }
+	    get height() {
+	        return this.descriptor.size[1];
+	    }
+	    set height(v) {
+	        this.descriptor.size[1] = v;
+	    }
+	    get imageBitmap() {
+	        return this.data;
+	    }
+	    set imageBitmap(img) {
+	        this.dirty = true;
+	        this.data = img;
+	    }
+	}
+
 	const TextureParser = async (blob) => {
 	    const bitmap = await createImageBitmap(blob);
 	    return new Texture({
@@ -8429,193 +6786,18 @@ struct VertexOutput {
 	    });
 	};
 
-	const MeshObjParser = async (text) => {
-	    const texts = text.split('\n');
-	    const positionArr = [];
-	    const normalArr = [];
-	    const uvArr = [];
-	    const positionIndicesArr = [];
-	    const normalIndicesArr = [];
-	    const uvIndicesArr = [];
-	    let t, ts;
-	    for (let i = 0, len = texts.length; i < len; i++) {
-	        t = texts[i];
-	        ts = t.split(' ');
-	        if (t.startsWith('v ')) {
-	            positionArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
-	        }
-	        else if (t.startsWith('vn ')) {
-	            normalArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
-	        }
-	        else if (t.startsWith('vt ')) {
-	            uvArr.push(parseFloat(ts[1]), parseFloat(ts[2]));
-	        }
-	        else if (t.startsWith('f ')) {
-	            if (ts[1].includes('/')) {
-	                let a = ts[1].split('/');
-	                let b = ts[2].split('/');
-	                let c = ts[3].split('/');
-	                positionIndicesArr.push(parseInt(a[0], 10), parseInt(b[0], 10), parseInt(c[0], 10));
-	                if (a.length === 2) {
-	                    uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
-	                }
-	                else {
-	                    if (a[1]) {
-	                        uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
-	                    }
-	                    normalIndicesArr.push(parseInt(a[2], 10), parseInt(b[2], 10), parseInt(c[2], 10));
-	                }
-	            }
-	            else {
-	                positionIndicesArr.push(parseInt(ts[1], 10), parseInt(ts[2], 10), parseInt(ts[3], 10));
-	            }
-	        }
+	const DEFAULT_BLEND_STATE = {
+	    color: {
+	        srcFactor: 'src-alpha',
+	        dstFactor: 'one-minus-src-alpha',
+	        operation: 'add',
+	    },
+	    alpha: {
+	        srcFactor: 'zero',
+	        dstFactor: 'one',
+	        operation: 'add',
 	    }
-	    const indicesLength = positionIndicesArr.length;
-	    const wholeLen = indicesLength * 3;
-	    const positionF32 = new Float32Array(wholeLen);
-	    for (let i = 0; i < indicesLength; i++) {
-	        let index = (positionIndicesArr[i] - 1) * 3;
-	        positionF32[i * 3] = positionArr[index];
-	        positionF32[i * 3 + 1] = positionArr[index + 1];
-	        positionF32[i * 3 + 2] = positionArr[index + 2];
-	    }
-	    const geo = new Geometry(3, positionIndicesArr.length, "triangle-list", "none");
-	    geo.addAttribute(POSITION, positionF32, 3, [
-	        {
-	            name: POSITION,
-	            offset: 0,
-	            length: 3,
-	        }
-	    ]);
-	    const normalLength = uvIndicesArr.length;
-	    if (normalLength) {
-	        const wholeLen = normalLength * 3;
-	        const positionF32 = new Float32Array(wholeLen);
-	        for (let i = 0; i < normalLength; i++) {
-	            let index = (normalIndicesArr[i] - 1) * 3;
-	            positionF32[i * 3] = normalArr[index];
-	            positionF32[i * 3 + 1] = normalArr[index + 1];
-	            positionF32[i * 3 + 2] = normalArr[index + 2];
-	        }
-	        geo.addAttribute(NORMAL, positionF32, 3, [
-	            {
-	                name: NORMAL,
-	                offset: 0,
-	                length: 3,
-	            }
-	        ]);
-	    }
-	    const uvLength = uvIndicesArr.length;
-	    if (uvLength) {
-	        const wholeLen = uvLength * 2;
-	        const positionF32 = new Float32Array(wholeLen);
-	        for (let i = 0; i < uvLength; i++) {
-	            let index = (uvIndicesArr[i] - 1) * 2;
-	            positionF32[i * 2] = uvArr[index];
-	            positionF32[i * 2 + 1] = uvArr[index + 1];
-	        }
-	        geo.addAttribute(UV, positionF32, 2, [
-	            {
-	                name: UV,
-	                offset: 0,
-	                length: 2,
-	            }
-	        ]);
-	    }
-	    return geo;
 	};
-
-	class HashRouteSystem extends System {
-	    static listeningHashChange = false;
-	    static count = 0; // 计数
-	    static listener = () => {
-	        HashRouteSystem.currentPath = location.hash.slice(1) || "/";
-	    };
-	    static currentPath = location.hash.slice(1) || "/";
-	    currentPath = "";
-	    constructor() {
-	        super("HashRouteSystem", (entity) => {
-	            return entity.getFirstComponentByTagLabel("HashRoute");
-	        });
-	        HashRouteSystem.count++;
-	        if (!HashRouteSystem.listeningHashChange) {
-	            HashRouteSystem.listeningHashChange = true;
-	            window.addEventListener("load", HashRouteSystem.listener, false);
-	            window.addEventListener("hashchange", HashRouteSystem.listener, false);
-	        }
-	    }
-	    destroy() {
-	        HashRouteSystem.count--;
-	        if (HashRouteSystem.count < 1) {
-	            window.removeEventListener("load", HashRouteSystem.listener, false);
-	            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
-	        }
-	        return this;
-	    }
-	    handle(entity) {
-	        let routeComponents = entity.getComponentsByTagLabel("HashRoute");
-	        for (let i = routeComponents.length - 1; i > -1; i--) {
-	            routeComponents[i].route(this.currentPath, entity);
-	        }
-	        return this;
-	    }
-	    run(world, time, delta) {
-	        if (HashRouteSystem.currentPath === this.currentPath) {
-	            return this;
-	        }
-	        this.currentPath = HashRouteSystem.currentPath;
-	        super.run(world, time, delta);
-	        return this;
-	    }
-	}
-
-	function fixData(data) {
-	    if (!data.path.startsWith("/")) {
-	        data.path = "/" + data.path;
-	    }
-	    return data;
-	}
-	class HashRouteComponent extends TreeNode.mixin(Component) {
-	    children = [];
-	    constructor(name, data) {
-	        super(name, fixData(data), [{
-	                label: "HashRoute",
-	                unique: false
-	            }]);
-	    }
-	    route(path, entity) {
-	        let p = this.data.path;
-	        if (path === p) {
-	            this.data.action(entity, true);
-	            for (let i = this.children.length - 1; i > -1; i--) {
-	                this.children[i].route("", entity);
-	            }
-	        }
-	        else if (path.startsWith(p)) {
-	            let str = path.substring(p.length);
-	            if (str.startsWith("/")) {
-	                this.data.action(entity, true);
-	                for (let i = this.children.length - 1; i > -1; i--) {
-	                    this.children[i].route(str, entity);
-	                }
-	            }
-	            else {
-	                this.data.action(entity, false);
-	                for (let i = this.children.length - 1; i > -1; i--) {
-	                    this.children[i].route("", entity);
-	                }
-	            }
-	        }
-	        else {
-	            this.data.action(entity, false);
-	            for (let i = this.children.length - 1; i > -1; i--) {
-	                this.children[i].route("", entity);
-	            }
-	        }
-	        return this;
-	    }
-	}
 
 	class Renderable extends Component {
 	    tags = [{
@@ -8921,6 +7103,55 @@ struct VertexOutput {
 	    }
 	}
 
+	class Sampler {
+	    dirty = true;
+	    descriptor = {};
+	    name;
+	    constructor(option = {}, name = "sampler") {
+	        this.descriptor.minFilter = option.minFilter ?? "linear";
+	        this.descriptor.magFilter = option.magFilter ?? "linear";
+	        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
+	        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
+	        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
+	        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
+	        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
+	        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
+	        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
+	        this.descriptor.compare = option.compare ?? undefined;
+	        this.name = name;
+	    }
+	    setAddressMode(u, v, w) {
+	        this.descriptor.addressModeU = u;
+	        this.descriptor.addressModeV = v;
+	        this.descriptor.addressModeW = w ?? this.descriptor.addressModeW;
+	        this.dirty = true;
+	        return this;
+	    }
+	    setFilterMode(mag, min, mipmap) {
+	        this.descriptor.magFilter = mag;
+	        this.descriptor.minFilter = min;
+	        this.descriptor.mipmapFilter = mipmap;
+	        this.dirty = true;
+	        return this;
+	    }
+	    setLodClamp(min, max) {
+	        this.descriptor.lodMaxClamp = max;
+	        this.descriptor.lodMinClamp = min;
+	        this.dirty = true;
+	        return this;
+	    }
+	    setMaxAnisotropy(v) {
+	        this.descriptor.maxAnisotropy = v;
+	        this.dirty = true;
+	        return this;
+	    }
+	    setCompare(v) {
+	        this.descriptor.compare = v;
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
 	class SpritesheetTexture extends Texture {
 	    loaded = false;
 	    frame = 0; // 当前帧索引
@@ -8954,6 +7185,1430 @@ struct VertexOutput {
 	        this.frame = frame;
 	        this.data = this.framesBitmap[frame];
 	        this.dirty = true;
+	    }
+	}
+
+	const POSITION = "position";
+	const VERTICES = "vertices";
+	const VERTICES_COLOR = "vertices_color";
+	const NORMAL = "normal";
+	const INDEX = "index";
+	const UV = "uv";
+
+	var constants = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		INDEX: INDEX,
+		NORMAL: NORMAL,
+		POSITION: POSITION,
+		UV: UV,
+		VERTICES: VERTICES,
+		VERTICES_COLOR: VERTICES_COLOR
+	});
+
+	// 既可以是2d几何体也可以是3D几何体
+	class Geometry extends Component {
+	    /**
+	     * 顶点数量
+	     */
+	    count;
+	    /**
+	     * 拓扑类型
+	     */
+	    dimension;
+	    topology;
+	    /**
+	     * 剔除方式
+	     */
+	    cullMode;
+	    frontFace;
+	    data = [];
+	    tags = [{
+	            label: GEOMETRY,
+	            unique: true
+	        }];
+	    constructor(dimension, count = 0, topology = "triangle-list", cullMode = "none", data = []) {
+	        super(GEOMETRY, data);
+	        this.count = count;
+	        this.cullMode = cullMode;
+	        this.dimension = dimension;
+	        this.topology = topology;
+	        this.frontFace = "ccw";
+	    }
+	    addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
+	        stride = Math.floor(stride);
+	        if (stride * this.count < arr.length) {
+	            throw new Error('not fit the geometry');
+	        }
+	        if (!attributes.length) {
+	            attributes.push({
+	                name,
+	                offset: 0,
+	                length: stride
+	            });
+	        }
+	        this.data.push({
+	            name,
+	            data: arr,
+	            stride,
+	            attributes
+	        });
+	        this.dirty = true;
+	    }
+	    transform(matrix) {
+	        for (let data of this.data) {
+	            for (let attr of data.attributes) {
+	                if (attr.name === POSITION) {
+	                    if (this.dimension === 3) {
+	                        for (let i = 0; i < data.data.length; i += data.stride) {
+	                            transformMatrix4(data.data, matrix, i + attr.offset);
+	                        }
+	                    }
+	                    else {
+	                        for (let i = 0; i < data.data.length; i += data.stride) {
+	                            transformMatrix3(data.data, matrix, i + attr.offset);
+	                        }
+	                    }
+	                    this.dirty = true;
+	                    return this;
+	                }
+	            }
+	        }
+	        return this;
+	    }
+	}
+	let x, y;
+	const transformMatrix3 = (a, m, offset) => {
+	    x = a[offset];
+	    y = a[1 + offset];
+	    a[offset] = m[0] * x + m[3] * y + m[6];
+	    a[offset + 1] = m[1] * x + m[4] * y + m[7];
+	    return a;
+	};
+	const transformMatrix4 = (a, m, offset) => {
+	    let ax = a[0 + offset];
+	    let ay = a[1 + offset];
+	    let az = a[2 + offset];
+	    let ag = m[3 + offset] * ax + m[7] * ay + m[11] * az + m[15];
+	    ag = ag || 1.0;
+	    a[0 + offset] = (m[0] * ax + m[4] * ay + m[8] * az + m[12]) / ag;
+	    a[1 + offset] = (m[1] * ax + m[5] * ay + m[9] * az + m[13]) / ag;
+	    a[2 + offset] = (m[2] * ax + m[6] * ay + m[10] * az + m[14]) / ag;
+	    return a;
+	};
+
+	const DEFAULT_OPTIONS = {
+	    hasNormal: true,
+	    hasUV: true,
+	    hasIndices: false,
+	    combine: true,
+	    topology: "triangle-list",
+	    cullMode: "none"
+	};
+
+	const DEFAULT_BOX_OPTIONS = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    width: 1,
+	    height: 1,
+	    depth: 1,
+	    widthSegments: 1,
+	    heightSegments: 1,
+	    depthSegments: 1,
+	    cullMode: "back"
+	};
+	var createBox3 = (options = {}) => {
+	    let stride = 3;
+	    const indices = [];
+	    const vertices = [];
+	    const normals = [];
+	    const uvs = [];
+	    const { depth, height, width, depthSegments, heightSegments, widthSegments, topology, cullMode, hasUV, hasNormal, combine } = {
+	        ...DEFAULT_BOX_OPTIONS,
+	        ...options
+	    };
+	    let numberOfVertices = 0;
+	    buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
+	    buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
+	    buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
+	    buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
+	    buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
+	    buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
+	    function buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
+	        const segmentWidth = width / gridX;
+	        const segmentHeight = height / gridY;
+	        const widthHalf = width / 2;
+	        const heightHalf = height / 2;
+	        const depthHalf = depth / 2;
+	        const gridX1 = gridX + 1;
+	        const gridY1 = gridY + 1;
+	        let vertexCounter = 0;
+	        const vector = new Vector3();
+	        // generate vertices, normals and uvs
+	        for (let iy = 0; iy < gridY1; iy++) {
+	            const y = iy * segmentHeight - heightHalf;
+	            for (let ix = 0; ix < gridX1; ix++) {
+	                const x = ix * segmentWidth - widthHalf;
+	                // set values to correct vector component
+	                vector[u] = x * udir;
+	                vector[v] = y * vdir;
+	                vector[w] = depthHalf;
+	                // now apply vector to vertex buffer
+	                vertices.push(vector.x, vector.y, vector.z);
+	                // set values to correct vector component
+	                vector[u] = 0;
+	                vector[v] = 0;
+	                vector[w] = depth > 0 ? 1 : -1;
+	                // now apply vector to normal buffer
+	                normals.push(vector.x, vector.y, vector.z);
+	                // uvs
+	                uvs.push(ix / gridX);
+	                uvs.push(iy / gridY);
+	                // counters
+	                vertexCounter += 1;
+	            }
+	        }
+	        // indices
+	        for (let iy = 0; iy < gridY; iy++) {
+	            for (let ix = 0; ix < gridX; ix++) {
+	                const a = numberOfVertices + ix + gridX1 * iy;
+	                const b = numberOfVertices + ix + gridX1 * (iy + 1);
+	                const c = numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
+	                const d = numberOfVertices + (ix + 1) + gridX1 * iy;
+	                // faces
+	                indices.push(a, b, d);
+	                indices.push(b, c, d);
+	            }
+	        }
+	        // update total number of vertices
+	        numberOfVertices += vertexCounter;
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry(3, len, topology, cullMode);
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (hasNormal && hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: UV,
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = vertices[i3];
+	            result[1 + strideI] = vertices[i3 + 1];
+	            result[2 + strideI] = vertices[i3 + 2];
+	            if (hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        return geo;
+	    }
+	};
+
+	const DEFAULT_CIRCLE_OPTIONS$1 = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    segments: 32,
+	    angleStart: 0,
+	    angle: Math.PI * 2,
+	    radius: 1,
+	};
+	var createCircle3 = (options = {}) => {
+	    let stride = 3;
+	    const indices = [];
+	    const positions = [0, 0, 0];
+	    const normals = [0, 0, 1];
+	    const uvs = [0.5, 0.5];
+	    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, hasNormal, combine } = {
+	        ...DEFAULT_CIRCLE_OPTIONS$1,
+	        ...options
+	    };
+	    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
+	        const segment = angleStart + s / segments * angle;
+	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment), 0);
+	        normals.push(0, 0, 1);
+	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
+	    }
+	    // indices
+	    for (let i = 1; i <= segments; i++) {
+	        indices.push(i, i + 1, 0);
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry(3, len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (hasNormal && hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: UV,
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: NORMAL,
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: UV,
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            result[2 + strideI] = positions[i3 + 2];
+	            if (hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
+	const DEFAULT_SPHERE_OPTIONS$1 = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    radiusTop: 1,
+	    radiusBottom: 1,
+	    height: 1,
+	    radialSegments: 32,
+	    heightSegments: 1,
+	    openEnded: false,
+	    thetaStart: 0,
+	    thetaLength: constants$1.DEG_360_RAD,
+	    cullMode: "back"
+	};
+	var createCylinder3 = (options = {}) => {
+	    let stride = 3;
+	    const indices = [];
+	    const vertices = [];
+	    const normals = [];
+	    const uvs = [];
+	    const { height, radialSegments, radiusTop, radiusBottom, heightSegments, openEnded, thetaStart, thetaLength, topology, cullMode, hasUV, hasNormal, combine } = {
+	        ...DEFAULT_SPHERE_OPTIONS$1,
+	        ...options
+	    };
+	    let index = 0;
+	    const indexArray = [];
+	    const halfHeight = height / 2;
+	    // generate geometry
+	    generateTorso();
+	    if (openEnded === false) {
+	        if (radiusTop > 0)
+	            generateCap(true);
+	        if (radiusBottom > 0)
+	            generateCap(false);
+	    }
+	    function generateTorso() {
+	        const normal = new Vector3();
+	        const vertex = new Float32Array(3);
+	        // this will be used to calculate the normal
+	        const slope = (radiusBottom - radiusTop) / height;
+	        // generate vertices, normals and uvs
+	        for (let y = 0; y <= heightSegments; y++) {
+	            const indexRow = [];
+	            const v = y / heightSegments;
+	            // calculate the radius of the current row
+	            const radius = v * (radiusBottom - radiusTop) + radiusTop;
+	            for (let x = 0; x <= radialSegments; x++) {
+	                const u = x / radialSegments;
+	                const theta = u * thetaLength + thetaStart;
+	                const sinTheta = Math.sin(theta);
+	                const cosTheta = Math.cos(theta);
+	                // vertex
+	                vertex[0] = radius * sinTheta;
+	                vertex[1] = -v * height + halfHeight;
+	                vertex[2] = radius * cosTheta;
+	                vertices.push(vertex[0], vertex[1], vertex[2]);
+	                // normal
+	                normal[0] = sinTheta;
+	                normal[1] = slope;
+	                normal[2] = cosTheta;
+	                Vector3.normalize(normal, normal);
+	                normals.push(normal[0], normal[1], normal[2]);
+	                // uv
+	                uvs.push(u, 1 - v);
+	                // save index of vertex in respective row
+	                indexRow.push(index++);
+	            }
+	            // now save vertices of the row in our index array
+	            indexArray.push(indexRow);
+	        }
+	        // generate indices
+	        for (let x = 0; x < radialSegments; x++) {
+	            for (let y = 0; y < heightSegments; y++) {
+	                // we use the index array to access the correct indices
+	                const a = indexArray[y][x];
+	                const b = indexArray[y + 1][x];
+	                const c = indexArray[y + 1][x + 1];
+	                const d = indexArray[y][x + 1];
+	                // faces
+	                indices.push(a, b, d);
+	                indices.push(b, c, d);
+	                // update group counter
+	            }
+	        }
+	    }
+	    function generateCap(top) {
+	        // save the index of the first center vertex
+	        const centerIndexStart = index;
+	        const uv = new Float32Array(2);
+	        const vertex = new Float32Array(3);
+	        const radius = (top === true) ? radiusTop : radiusBottom;
+	        const sign = (top === true) ? 1 : -1;
+	        // first we generate the center vertex data of the cap.
+	        // because the geometry needs one set of uvs per face,
+	        // we must generate a center vertex per face/segment
+	        for (let x = 1; x <= radialSegments; x++) {
+	            // vertex
+	            vertices.push(0, halfHeight * sign, 0);
+	            // normal
+	            normals.push(0, sign, 0);
+	            // uv
+	            uvs.push(0.5, 0.5);
+	            // increase index
+	            index++;
+	        }
+	        // save the index of the last center vertex
+	        const centerIndexEnd = index;
+	        // now we generate the surrounding vertices, normals and uvs
+	        for (let x = 0; x <= radialSegments; x++) {
+	            const u = x / radialSegments;
+	            const theta = u * thetaLength + thetaStart;
+	            const cosTheta = Math.cos(theta);
+	            const sinTheta = Math.sin(theta);
+	            // vertex
+	            vertex[0] = radius * sinTheta;
+	            vertex[1] = halfHeight * sign;
+	            vertex[2] = radius * cosTheta;
+	            vertices.push(vertex[0], vertex[1], vertex[2]);
+	            // normal
+	            normals.push(0, sign, 0);
+	            // uv
+	            uv[0] = (cosTheta * 0.5) + 0.5;
+	            uv[1] = (sinTheta * 0.5 * sign) + 0.5;
+	            uvs.push(uv[0], uv[1]);
+	            // increase index
+	            index++;
+	        }
+	        // generate indices
+	        for (let x = 0; x < radialSegments; x++) {
+	            const c = centerIndexStart + x;
+	            const i = centerIndexEnd + x;
+	            if (top === true) {
+	                // face top
+	                indices.push(i, i + 1, c);
+	            }
+	            else {
+	                // face bottom
+	                indices.push(i + 1, i, c);
+	            }
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let geo = new Geometry(3, len, topology, cullMode);
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (hasNormal && hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: 'uv',
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = vertices[i3];
+	            result[1 + strideI] = vertices[i3 + 1];
+	            result[2 + strideI] = vertices[i3 + 2];
+	            if (hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    return geo;
+	};
+
+	const DEFAULT_PLANE_OPTIONS$1 = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    width: 1,
+	    height: 1,
+	    segmentX: 1,
+	    segmentY: 1,
+	};
+	var createPlane3 = (options = {}) => {
+	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine } = {
+	        ...DEFAULT_PLANE_OPTIONS$1,
+	        ...options
+	    };
+	    let stride = 3;
+	    const halfX = width * 0.5;
+	    const halfY = height * 0.5;
+	    const gridX = Math.max(1, Math.round(segmentX));
+	    const gridY = Math.max(1, Math.round(segmentY));
+	    const gridX1 = gridX + 1;
+	    const gridY1 = gridY + 1;
+	    const segmentWidth = width / gridX;
+	    const segmentHeight = height / gridY;
+	    const indices = [];
+	    const positions = [];
+	    const normals = [];
+	    const uvs = [];
+	    for (let iy = 0; iy < gridY1; iy++) {
+	        const y = iy * segmentHeight - halfY;
+	        for (let ix = 0; ix < gridX1; ix++) {
+	            const x = ix * segmentWidth - halfX;
+	            positions.push(x, -y, 0);
+	            normals.push(0, 0, 1);
+	            uvs.push(ix / gridX);
+	            uvs.push(iy / gridY);
+	        }
+	    }
+	    for (let iy = 0; iy < gridY; iy++) {
+	        for (let ix = 0; ix < gridX; ix++) {
+	            const a = ix + gridX1 * iy;
+	            const b = ix + gridX1 * (iy + 1);
+	            const c = (ix + 1) + gridX1 * (iy + 1);
+	            const d = (ix + 1) + gridX1 * iy;
+	            indices.push(a, b, d);
+	            indices.push(b, c, d);
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry(3, len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (hasNormal && hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: 'uv',
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            result[2 + strideI] = positions[i3 + 2];
+	            if (hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        // result.set(t.a);
+	        // result.set(t.b, stride);
+	        // result.set(t.c, stride + stride);
+	        // if (options.hasNormal) {
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, stride + 3);
+	        //     result.set(normal, stride + stride + 3);
+	        //     pickers.push({
+	        //         name: 'normal',
+	        //         offset: 3,
+	        //         length: 3,
+	        //     });
+	        // }
+	        // if (options.hasUV) {
+	        //     let offset = options.hasNormal ? 6 : 3;
+	        //     result.set([0, 1], offset);
+	        //     result.set([1, 1], stride + offset);
+	        //     result.set([0.5, 0], stride + stride + offset);
+	        //     pickers.push({
+	        //         name: UV,
+	        //         offset,
+	        //         length: 2,
+	        //     });
+	        // }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
+	var createTriangle3 = (t = Triangle3.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+	    let geo = new Geometry(3, 3, topology, cullMode);
+	    let stride = 3;
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (options.hasNormal && options.hasUV) {
+	            stride = 8;
+	        }
+	        else if (options.hasNormal) {
+	            stride = 6;
+	        }
+	        else if (options.hasUV) {
+	            stride = 5;
+	        }
+	        let result = new Float32Array(stride * 3);
+	        result.set(t.a);
+	        result.set(t.b, stride);
+	        result.set(t.c, stride + stride);
+	        if (options.hasNormal) {
+	            let normal = Triangle3.normal(t);
+	            result.set(normal, 3);
+	            result.set(normal, stride + 3);
+	            result.set(normal, stride + stride + 3);
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        if (options.hasUV) {
+	            let offset = options.hasNormal ? 6 : 3;
+	            result.set([0, 1], offset);
+	            result.set([1, 1], stride + offset);
+	            result.set([0.5, 0], stride + stride + offset);
+	            pickers.push({
+	                name: UV,
+	                offset,
+	                length: 2,
+	            });
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        let result = new Float32Array(9);
+	        result.set(t.a);
+	        result.set(t.b, 3);
+	        result.set(t.c, 6);
+	        geo.addAttribute(POSITION, result, 3);
+	        if (options.hasNormal) {
+	            result = new Float32Array(9);
+	            let normal = Triangle3.normal(t);
+	            result.set(normal, 0);
+	            result.set(normal, 3);
+	            result.set(normal, 6);
+	            geo.addAttribute(NORMAL, result, 3);
+	        }
+	        if (options.hasUV) {
+	            result = new Float32Array(6);
+	            result.set([0, 0], 0);
+	            result.set([1, 0], 2);
+	            result.set([0.5, 1], 4);
+	            geo.addAttribute(UV, result, 2);
+	        }
+	        return geo;
+	    }
+	};
+
+	const DEFAULT_SPHERE_OPTIONS = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    radius: 1,
+	    phiStart: 0,
+	    phiLength: Math.PI * 2,
+	    thetaStart: 0,
+	    thetaLength: Math.PI,
+	    widthSegments: 32,
+	    heightSegments: 32,
+	    cullMode: "back"
+	};
+	var createSphere3 = (options = {}) => {
+	    let stride = 3;
+	    const { radius, phiStart, phiLength, thetaStart, thetaLength, widthSegments, heightSegments, topology, cullMode, hasUV, hasNormal, combine } = {
+	        ...DEFAULT_SPHERE_OPTIONS,
+	        ...options,
+	    };
+	    const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+	    let index = 0;
+	    const grid = [];
+	    const vertex = new Float32Array(3);
+	    const normal = new Float32Array(3);
+	    // buffers
+	    const indices = [];
+	    const vertices = [];
+	    const normals = [];
+	    const uvs = [];
+	    for (let iy = 0; iy <= heightSegments; iy++) {
+	        const verticesRow = [];
+	        const v = iy / heightSegments;
+	        // special case for the poles
+	        let uOffset = 0;
+	        if (iy === 0 && thetaStart === 0) {
+	            uOffset = 0.5 / widthSegments;
+	        }
+	        else if (iy === heightSegments && thetaEnd === Math.PI) {
+	            uOffset = -0.5 / widthSegments;
+	        }
+	        for (let ix = 0; ix <= widthSegments; ix++) {
+	            const u = ix / widthSegments;
+	            // vertex
+	            vertex[0] = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+	            vertex[1] = radius * Math.cos(thetaStart + v * thetaLength);
+	            vertex[2] = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+	            vertices.push(vertex[0], vertex[1], vertex[2]);
+	            // normal
+	            normal.set(Vector3.normalize(vertex));
+	            normals.push(normal[0], normal[1], normal[2]);
+	            // uv
+	            uvs.push(u + uOffset, v);
+	            verticesRow.push(index++);
+	        }
+	        grid.push(verticesRow);
+	    }
+	    for (let iy = 0; iy < heightSegments; iy++) {
+	        for (let ix = 0; ix < widthSegments; ix++) {
+	            const a = grid[iy][ix + 1];
+	            const b = grid[iy][ix];
+	            const c = grid[iy + 1][ix];
+	            const d = grid[iy + 1][ix + 1];
+	            if (iy !== 0 || thetaStart > 0)
+	                indices.push(a, b, d);
+	            if (iy !== heightSegments - 1 || thetaEnd < Math.PI)
+	                indices.push(b, c, d);
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let geo = new Geometry(3, len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 3,
+	            }];
+	        if (hasNormal && hasUV) {
+	            stride = 8;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	            pickers.push({
+	                name: 'uv',
+	                offset: 6,
+	                length: 2,
+	            });
+	        }
+	        else if (hasNormal) {
+	            stride = 6;
+	            pickers.push({
+	                name: 'normal',
+	                offset: 3,
+	                length: 3,
+	            });
+	        }
+	        else if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 3,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 3;
+	            strideI = i * stride;
+	            result[0 + strideI] = vertices[i3];
+	            result[1 + strideI] = vertices[i3 + 1];
+	            result[2 + strideI] = vertices[i3 + 2];
+	            if (hasNormal) {
+	                result[3 + strideI] = normals[i3];
+	                result[4 + strideI] = normals[i3 + 1];
+	                result[5 + strideI] = normals[i3 + 2];
+	                if (hasUV) {
+	                    result[6 + strideI] = uvs[i2];
+	                    result[7 + strideI] = uvs[i2 + 1];
+	                }
+	            }
+	            else if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    return geo;
+	};
+
+	var index$2 = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		createBox3: createBox3,
+		createCircle3: createCircle3,
+		createCylinder3: createCylinder3,
+		createPlane3: createPlane3,
+		createSphere3: createSphere3,
+		createTriangle3: createTriangle3
+	});
+
+	const DEFAULT_CIRCLE_OPTIONS = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    segments: 32,
+	    angleStart: 0,
+	    angle: Math.PI * 2,
+	    radius: 1,
+	    cullMode: "back"
+	};
+	var createCircle2 = (options = {}) => {
+	    let stride = 3;
+	    const indices = [];
+	    const positions = [0, 0];
+	    const uvs = [0.5, 0.5];
+	    const { segments, angleStart, angle, radius, topology, cullMode, hasUV, combine } = {
+	        ...DEFAULT_CIRCLE_OPTIONS,
+	        ...options
+	    };
+	    for (let s = 0, i = 3; s <= segments; s++, i += 3) {
+	        const segment = angleStart + s / segments * angle;
+	        positions.push(radius * Math.cos(segment), radius * Math.sin(segment));
+	        uvs.push((positions[i] / radius + 1) / 2, (positions[i + 1] / radius + 1) / 2);
+	    }
+	    // indices
+	    for (let i = 1; i <= segments; i++) {
+	        indices.push(i, i + 1, 0);
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    // let count = len / 3;
+	    let geo = new Geometry(2, len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 2,
+	            }];
+	        if (hasUV) {
+	            stride = 4;
+	            pickers.push({
+	                name: UV,
+	                offset: 2,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 2;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            if (hasUV) {
+	                result[2 + strideI] = uvs[i2];
+	                result[3 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
+	const DEFAULT_PLANE_OPTIONS = {
+	    ...DEFAULT_OPTIONS,
+	    hasIndices: true,
+	    combine: true,
+	    width: 1,
+	    height: 1,
+	    segmentX: 1,
+	    segmentY: 1,
+	    cullMode: "back"
+	};
+	var createPlane2 = (options = {}) => {
+	    const { width, height, segmentX, segmentY, topology, cullMode, hasUV, combine } = {
+	        ...DEFAULT_PLANE_OPTIONS,
+	        ...options
+	    };
+	    let stride = 3;
+	    const halfX = width * 0.5;
+	    const halfY = height * 0.5;
+	    const gridX = Math.max(1, Math.round(segmentX));
+	    const gridY = Math.max(1, Math.round(segmentY));
+	    const gridX1 = gridX + 1;
+	    const gridY1 = gridY + 1;
+	    const segmentWidth = width / gridX;
+	    const segmentHeight = height / gridY;
+	    const indices = [];
+	    const positions = [];
+	    const uvs = [];
+	    for (let iy = 0; iy < gridY1; iy++) {
+	        const y = iy * segmentHeight - halfY;
+	        for (let ix = 0; ix < gridX1; ix++) {
+	            const x = ix * segmentWidth - halfX;
+	            positions.push(x, -y);
+	            uvs.push(ix / gridX);
+	            uvs.push(iy / gridY);
+	        }
+	    }
+	    for (let iy = 0; iy < gridY; iy++) {
+	        for (let ix = 0; ix < gridX; ix++) {
+	            const a = ix + gridX1 * iy;
+	            const b = ix + gridX1 * (iy + 1);
+	            const c = (ix + 1) + gridX1 * (iy + 1);
+	            const d = (ix + 1) + gridX1 * iy;
+	            indices.push(a, b, d);
+	            indices.push(b, c, d);
+	        }
+	    }
+	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let geo = new Geometry(2, len, topology, cullMode);
+	    // TODO indices 现在都是非索引版本
+	    if (combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 2,
+	            }];
+	        if (hasUV) {
+	            stride = 5;
+	            pickers.push({
+	                name: 'uv',
+	                offset: 2,
+	                length: 2,
+	            });
+	        }
+	        let result = new Float32Array(stride * len);
+	        for (let i = 0; i < len; i++) {
+	            i2 = indices[i] << 1;
+	            i3 = indices[i] * 2;
+	            strideI = i * stride;
+	            result[0 + strideI] = positions[i3];
+	            result[1 + strideI] = positions[i3 + 1];
+	            if (hasUV) {
+	                result[3 + strideI] = uvs[i2];
+	                result[4 + strideI] = uvs[i2 + 1];
+	            }
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        // let result = new Float32Array(9);
+	        // result.set(t.a);
+	        // result.set(t.b, 3);
+	        // result.set(t.c, 6);
+	        // geo.addAttribute(POSITION, result, 3);
+	        // if (options.hasNormal) {
+	        //     result = new Float32Array(9);
+	        //     let normal = Triangle3.normal(t);
+	        //     result.set(normal, 0);
+	        //     result.set(normal, 3);
+	        //     result.set(normal, 6);
+	        //     geo.addAttribute(NORMAL, result, 3);
+	        // }
+	        // if (options.hasUV) {
+	        //     result = new Float32Array(6);
+	        //     result.set([0, 0], 0);
+	        //     result.set([1, 0], 2);
+	        //     result.set([0.5, 1], 4);
+	        //     geo.addAttribute(UV, result, 2);
+	        // }
+	        return geo;
+	    }
+	};
+
+	var createTriangle2 = (t = Triangle2.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+	    let geo = new Geometry(2, 3, topology, cullMode);
+	    let stride = 3;
+	    if (options.combine) {
+	        let pickers = [{
+	                name: POSITION,
+	                offset: 0,
+	                length: 2,
+	            }];
+	        if (options.hasUV) {
+	            stride = 4;
+	        }
+	        let result = new Float32Array(stride * 3);
+	        result.set(t.a);
+	        result.set(t.b, stride);
+	        result.set(t.c, stride + stride);
+	        if (options.hasUV) {
+	            let offset = 2;
+	            result.set([0, 1], offset);
+	            result.set([1, 1], stride + offset);
+	            result.set([0.5, 0], stride + stride + offset);
+	            pickers.push({
+	                name: UV,
+	                offset,
+	                length: 2,
+	            });
+	        }
+	        geo.addAttribute(VERTICES, result, stride, pickers);
+	        return geo;
+	    }
+	    else {
+	        let result = new Float32Array(6);
+	        result.set(t.a);
+	        result.set(t.b, 2);
+	        result.set(t.c, 4);
+	        geo.addAttribute(POSITION, result, 2);
+	        if (options.hasUV) {
+	            result = new Float32Array(6);
+	            result.set([0, 0], 0);
+	            result.set([1, 0], 2);
+	            result.set([0.5, 1], 4);
+	            geo.addAttribute(UV, result, 2);
+	        }
+	        return geo;
+	    }
+	};
+
+	var index$1 = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		createCircle2: createCircle2,
+		createPlane2: createPlane2,
+		createTriangle2: createTriangle2
+	});
+
+	const MeshObjParser = async (text) => {
+	    const texts = text.split('\n');
+	    const positionArr = [];
+	    const normalArr = [];
+	    const uvArr = [];
+	    const positionIndicesArr = [];
+	    const normalIndicesArr = [];
+	    const uvIndicesArr = [];
+	    let t, ts;
+	    for (let i = 0, len = texts.length; i < len; i++) {
+	        t = texts[i];
+	        ts = t.split(' ');
+	        if (t.startsWith('v ')) {
+	            positionArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
+	        }
+	        else if (t.startsWith('vn ')) {
+	            normalArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
+	        }
+	        else if (t.startsWith('vt ')) {
+	            uvArr.push(parseFloat(ts[1]), parseFloat(ts[2]));
+	        }
+	        else if (t.startsWith('f ')) {
+	            if (ts[1].includes('/')) {
+	                let a = ts[1].split('/');
+	                let b = ts[2].split('/');
+	                let c = ts[3].split('/');
+	                positionIndicesArr.push(parseInt(a[0], 10), parseInt(b[0], 10), parseInt(c[0], 10));
+	                if (a.length === 2) {
+	                    uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
+	                }
+	                else {
+	                    if (a[1]) {
+	                        uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
+	                    }
+	                    normalIndicesArr.push(parseInt(a[2], 10), parseInt(b[2], 10), parseInt(c[2], 10));
+	                }
+	            }
+	            else {
+	                positionIndicesArr.push(parseInt(ts[1], 10), parseInt(ts[2], 10), parseInt(ts[3], 10));
+	            }
+	        }
+	    }
+	    const indicesLength = positionIndicesArr.length;
+	    const wholeLen = indicesLength * 3;
+	    const positionF32 = new Float32Array(wholeLen);
+	    for (let i = 0; i < indicesLength; i++) {
+	        let index = (positionIndicesArr[i] - 1) * 3;
+	        positionF32[i * 3] = positionArr[index];
+	        positionF32[i * 3 + 1] = positionArr[index + 1];
+	        positionF32[i * 3 + 2] = positionArr[index + 2];
+	    }
+	    const geo = new Geometry(3, positionIndicesArr.length, "triangle-list", "none");
+	    geo.addAttribute(POSITION, positionF32, 3, [
+	        {
+	            name: POSITION,
+	            offset: 0,
+	            length: 3,
+	        }
+	    ]);
+	    const normalLength = uvIndicesArr.length;
+	    if (normalLength) {
+	        const wholeLen = normalLength * 3;
+	        const positionF32 = new Float32Array(wholeLen);
+	        for (let i = 0; i < normalLength; i++) {
+	            let index = (normalIndicesArr[i] - 1) * 3;
+	            positionF32[i * 3] = normalArr[index];
+	            positionF32[i * 3 + 1] = normalArr[index + 1];
+	            positionF32[i * 3 + 2] = normalArr[index + 2];
+	        }
+	        geo.addAttribute(NORMAL, positionF32, 3, [
+	            {
+	                name: NORMAL,
+	                offset: 0,
+	                length: 3,
+	            }
+	        ]);
+	    }
+	    const uvLength = uvIndicesArr.length;
+	    if (uvLength) {
+	        const wholeLen = uvLength * 2;
+	        const positionF32 = new Float32Array(wholeLen);
+	        for (let i = 0; i < uvLength; i++) {
+	            let index = (uvIndicesArr[i] - 1) * 2;
+	            positionF32[i * 2] = uvArr[index];
+	            positionF32[i * 2 + 1] = uvArr[index + 1];
+	        }
+	        geo.addAttribute(UV, positionF32, 2, [
+	            {
+	                name: UV,
+	                offset: 0,
+	                length: 2,
+	            }
+	        ]);
+	    }
+	    return geo;
+	};
+
+	class HashRouteSystem extends System {
+	    static listeningHashChange = false;
+	    static count = 0; // 计数
+	    static listener = () => {
+	        HashRouteSystem.currentPath = location.hash.slice(1) || "/";
+	    };
+	    static currentPath = location.hash.slice(1) || "/";
+	    currentPath = "";
+	    constructor() {
+	        super("HashRouteSystem", (entity) => {
+	            return entity.getFirstComponentByTagLabel("HashRoute");
+	        });
+	        HashRouteSystem.count++;
+	        if (!HashRouteSystem.listeningHashChange) {
+	            HashRouteSystem.listeningHashChange = true;
+	            window.addEventListener("load", HashRouteSystem.listener, false);
+	            window.addEventListener("hashchange", HashRouteSystem.listener, false);
+	        }
+	    }
+	    destroy() {
+	        HashRouteSystem.count--;
+	        if (HashRouteSystem.count < 1) {
+	            window.removeEventListener("load", HashRouteSystem.listener, false);
+	            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
+	        }
+	        return this;
+	    }
+	    handle(entity) {
+	        let routeComponents = entity.getComponentsByTagLabel("HashRoute");
+	        for (let i = routeComponents.length - 1; i > -1; i--) {
+	            routeComponents[i].route(this.currentPath, entity);
+	        }
+	        return this;
+	    }
+	    run(world, time, delta) {
+	        if (HashRouteSystem.currentPath === this.currentPath) {
+	            return this;
+	        }
+	        this.currentPath = HashRouteSystem.currentPath;
+	        super.run(world, time, delta);
+	        return this;
+	    }
+	}
+
+	function fixData(data) {
+	    if (!data.path.startsWith("/")) {
+	        data.path = "/" + data.path;
+	    }
+	    return data;
+	}
+	class HashRouteComponent extends TreeNode.mixin(Component) {
+	    children = [];
+	    constructor(name, data) {
+	        super(name, fixData(data), [{
+	                label: "HashRoute",
+	                unique: false
+	            }]);
+	    }
+	    route(path, entity) {
+	        let p = this.data.path;
+	        if (path === p) {
+	            this.data.action(entity, true);
+	            for (let i = this.children.length - 1; i > -1; i--) {
+	                this.children[i].route("", entity);
+	            }
+	        }
+	        else if (path.startsWith(p)) {
+	            let str = path.substring(p.length);
+	            if (str.startsWith("/")) {
+	                this.data.action(entity, true);
+	                for (let i = this.children.length - 1; i > -1; i--) {
+	                    this.children[i].route(str, entity);
+	                }
+	            }
+	            else {
+	                this.data.action(entity, false);
+	                for (let i = this.children.length - 1; i > -1; i--) {
+	                    this.children[i].route("", entity);
+	                }
+	            }
+	        }
+	        else {
+	            this.data.action(entity, false);
+	            for (let i = this.children.length - 1; i > -1; i--) {
+	                this.children[i].route("", entity);
+	            }
+	        }
+	        return this;
+	    }
+	}
+
+	class Material extends Component {
+	    tags = [{
+	            label: MATERIAL,
+	            unique: true
+	        }];
+	    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
+	        super("material", { vertex, fragment, uniforms, blend });
+	        this.dirty = true;
+	    }
+	    get blend() {
+	        return this.data.blend;
+	    }
+	    set blend(blend) {
+	        this.data.blend = blend;
+	    }
+	    get vertexShader() {
+	        return this.data.vertex;
+	    }
+	    set vertexShader(code) {
+	        this.data.vertex = code;
+	    }
+	    get fragmentShader() {
+	        return this.data.fragment;
+	    }
+	    set fragmentShader(code) {
+	        this.data.fragment = code;
 	    }
 	}
 
@@ -9756,7 +9411,7 @@ struct VertexOutput {
 	    -1, -1, 0, 1,
 	    1, -1, 1, 1,
 	]);
-	const vertexShader = `
+	const vertexShader$2 = `
 struct VertexOutput {
     @builtin(position) position : vec4<f32>,
     @location(0) uv : vec2<f32>
@@ -9824,7 +9479,7 @@ fn main(
 	            layout: pipelineLayout,
 	            vertex: {
 	                module: context.device.createShaderModule({
-	                    code: vertexShader,
+	                    code: vertexShader$2,
 	                }),
 	                entryPoint: 'main',
 	                buffers: [
@@ -10108,6 +9763,351 @@ fn main(
 	    }
 	}
 
+	const wgslShaders$1 = {
+	    vertex: `
+		struct Uniforms {
+			modelViewProjectionMatrix : mat4x4<f32>
+	  	};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+			return out;
+		}
+	`,
+	    fragment: `
+		struct Uniforms {
+			color : vec4<f32>
+	  	};
+	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
+
+		@fragment fn main() -> @location(0) vec4<f32> {
+			return uniforms.color;
+		}
+	`
+	};
+	class ColorMaterial extends Material {
+	    constructor(color = new Float32Array([1, 1, 1, 1])) {
+	        super(wgslShaders$1.vertex, wgslShaders$1.fragment, [{
+	                name: "color",
+	                value: color,
+	                binding: 1,
+	                dirty: true,
+	                type: BUFFER
+	            }]);
+	        this.dirty = true;
+	    }
+	    setColor(r, g, b, a) {
+	        if (this.data) {
+	            this.data.uniforms[0].value[0] = r;
+	            this.data.uniforms[0].value[1] = g;
+	            this.data.uniforms[0].value[2] = b;
+	            this.data.uniforms[0].value[3] = a;
+	            this.data.uniforms[0].dirty = true;
+	        }
+	        return this;
+	    }
+	}
+
+	const vertexShader$1 = `
+struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>
+};
+
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	@builtin(position) position : vec4<f32>,
+	@location(0) depth : vec4<f32>
+};
+
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+	var out: VertexOutput;
+	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	out.depth = out.position;
+	return out;
+}`;
+	const fragmentShader$1 = `
+// let PackUpscale: f32 = 1.003921568627451;
+// let PackFactors: vec3<f32> = vec3<f32>( 256., 256., 256. );
+// let ShiftRight8: f32 = 0.00390625;
+// fn packDepthToRGBA(v: f32 ) -> vec4<f32> {
+// 	var r: vec4<f32> = vec4<f32>( fract( v * PackFactors ), v );
+// 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
+// 	return r * PackUpscale;
+// }
+@fragment fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
+	var fragCoordZ: f32 = depth.z / depth.w;
+	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
+}`;
+	class DepthMaterial extends Material {
+	    constructor() {
+	        super(vertexShader$1, fragmentShader$1, []);
+	        this.dirty = true;
+	    }
+	}
+
+	const vertexShader = `
+struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>
+};
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	@builtin(position) position : vec4<f32>,
+	@location(0) normal : vec4<f32>
+};
+
+@vertex fn main(@location(0) position : vec3<f32>, @location(1) normal : vec3<f32>) -> VertexOutput {
+	var out: VertexOutput;
+	out.position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	out.normal = abs(normalize(uniforms.modelViewProjectionMatrix * vec4<f32>(normal, 0.0)));
+	return out;
+}`;
+	const fragmentShader = `
+@fragment fn main(@location(0) normal : vec4<f32>) -> @location(0) vec4<f32> {
+	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
+}`;
+	class NormalMaterial extends Material {
+	    constructor() {
+	        super(vertexShader, fragmentShader, []);
+	        this.dirty = true;
+	    }
+	}
+
+	class ShaderMaterial extends Material {
+	    constructor(vertex, fragment, uniforms = [], blend) {
+	        super(vertex, fragment, uniforms, blend);
+	        this.dirty = true;
+	    }
+	}
+
+	const CommonData = {
+	    date: new Date(),
+	    vs: `struct Uniforms {
+        matrix: mat4x4<f32>
+    }
+    @binding(0) @group(0) var<uniform> uniforms: Uniforms;
+
+    struct VertexOutput {
+        @builtin(position) position: vec4<f32>,
+        @location(0) uv: vec2<f32>
+    }
+
+    @vertex fn main(@location(0) position: vec3<f32>, @location(2) uv: vec2<f32>) -> VertexOutput {
+        var out: VertexOutput;
+        out.position = uniforms.matrix * vec4<f32>(position, 1.0);
+        out.uv = uv;
+        return out;
+    }
+    `
+	};
+	const emptyTexture = new Texture({
+	    size: [512, 512]
+	});
+	class ShadertoyMaterial extends Material {
+	    dataD;
+	    constructor(fs, sampler = new Sampler()) {
+	        super(CommonData.vs, fs, [
+	            {
+	                name: "iSampler0",
+	                type: SAMPLER,
+	                value: sampler,
+	                binding: 1,
+	                dirty: true,
+	            },
+	            {
+	                name: "iChannel0",
+	                type: TEXTURE_IMAGE,
+	                value: emptyTexture,
+	                binding: 2,
+	                dirty: true,
+	            },
+	            {
+	                name: "iChannel1",
+	                type: TEXTURE_IMAGE,
+	                value: emptyTexture,
+	                binding: 3,
+	                dirty: true,
+	            },
+	            {
+	                name: "iChannel2",
+	                type: TEXTURE_IMAGE,
+	                value: emptyTexture,
+	                binding: 4,
+	                dirty: true,
+	            },
+	            {
+	                name: "iChannel3",
+	                type: TEXTURE_IMAGE,
+	                value: emptyTexture,
+	                binding: 5,
+	                dirty: true,
+	            },
+	            {
+	                name: "uniforms",
+	                type: BUFFER,
+	                value: new Float32Array([
+	                    CommonData.date.getFullYear(),
+	                    CommonData.date.getMonth(),
+	                    CommonData.date.getDate(),
+	                    CommonData.date.getSeconds() + CommonData.date.getMinutes() * 60 + CommonData.date.getHours() + 3600,
+	                    1024, 1024,
+	                    0, 0,
+	                    0,
+	                    0,
+	                    0,
+	                    0, // 11
+	                ]),
+	                binding: 6,
+	                dirty: true,
+	            }
+	        ]);
+	        this.dataD = CommonData.date;
+	        this.dirty = true;
+	    }
+	    get sampler() {
+	        return this.data.uniforms[0].value;
+	    }
+	    set sampler(sampler) {
+	        this.data.uniforms[0].dirty = this.dirty = true;
+	        this.data.uniforms[0].value = sampler;
+	    }
+	    get texture0() {
+	        return this.data.uniforms[1].value;
+	    }
+	    set texture0(texture) {
+	        this.data.uniforms[1].dirty = this.dirty = true;
+	        this.data.uniforms[1].value = texture;
+	    }
+	    get texture1() {
+	        return this.data.uniforms[2].value;
+	    }
+	    set texture1(texture) {
+	        this.data.uniforms[2].dirty = this.dirty = true;
+	        this.data.uniforms[2].value = texture;
+	    }
+	    get texture2() {
+	        return this.data.uniforms[3].value;
+	    }
+	    set texture2(texture) {
+	        this.data.uniforms[3].dirty = this.dirty = true;
+	        this.data.uniforms[3].value = texture;
+	    }
+	    get texture3() {
+	        return this.data.uniforms[4].value;
+	    }
+	    set texture3(texture) {
+	        this.data.uniforms[4].dirty = this.dirty = true;
+	        this.data.uniforms[4].value = texture;
+	    }
+	    get time() {
+	        return this.data.uniforms[5].value[8];
+	    }
+	    set time(time) {
+	        this.data.uniforms[5].dirty = this.dirty = true;
+	        this.data.uniforms[5].value[8] = time;
+	    }
+	    get mouse() {
+	        let u = this.data.uniforms[5];
+	        return [u.value[6], u.value[7]];
+	    }
+	    set mouse(mouse) {
+	        let u = this.data.uniforms[5];
+	        u.dirty = this.dirty = true;
+	        u.value[6] = mouse[0];
+	        u.value[7] = mouse[1];
+	    }
+	    get date() {
+	        return this.dataD;
+	    }
+	    set date(d) {
+	        const u = this.data.uniforms[5];
+	        u.dirty = this.dirty = true;
+	        u.value[0] = d.getFullYear();
+	        u.value[1] = d.getMonth();
+	        u.value[2] = d.getDate();
+	        u.value[3] = d.getSeconds() + d.getMinutes() * 60 + d.getHours() * 3600;
+	        this.dataD = d;
+	    }
+	}
+
+	const wgslShaders = {
+	    vertex: `
+		struct Uniforms {
+			 matrix : mat4x4<f32>
+	  	};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>,
+			@location(0) uv : vec2<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
+			out.uv = uv;
+			return out;
+		}
+	`,
+	    fragment: `
+		@binding(1) @group(0) var mySampler: sampler;
+		@binding(2) @group(0) var myTexture: texture_2d<f32>;
+
+		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+			return textureSample(myTexture, mySampler, uv);
+		}
+	`
+	};
+	class TextureMaterial extends Material {
+	    constructor(texture, sampler = new Sampler()) {
+	        super(wgslShaders.vertex, wgslShaders.fragment, [
+	            {
+	                binding: 1,
+	                name: "mySampler",
+	                type: SAMPLER,
+	                value: sampler,
+	                dirty: true
+	            },
+	            {
+	                binding: 2,
+	                name: "myTexture",
+	                type: TEXTURE_IMAGE,
+	                value: texture,
+	                dirty: true
+	            }
+	        ]);
+	        this.dirty = true;
+	    }
+	    get sampler() {
+	        return this.data.uniforms[0].value;
+	    }
+	    set sampler(sampler) {
+	        this.data.uniforms[0].dirty = this.dirty = true;
+	        this.data.uniforms[0].value = sampler;
+	    }
+	    get texture() {
+	        return this.data.uniforms[1].value;
+	    }
+	    set texture(texture) {
+	        this.data.uniforms[1].dirty = this.dirty = true;
+	        this.data.uniforms[1].value = texture;
+	    }
+	    setTextureAndSampler(texture, sampler) {
+	        this.texture = texture;
+	        if (sampler) {
+	            this.sampler = sampler;
+	        }
+	        return this;
+	    }
+	}
+
 	exports.TWEEN_STATE = void 0;
 	(function (TWEEN_STATE) {
 	    TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
@@ -10327,7 +10327,7 @@ fn main(
 	exports.ARotation3 = ARotation3;
 	exports.AScale2 = AScale2;
 	exports.AScale3 = AScale3;
-	exports.ATTRIBUTE_NAME = constants$1;
+	exports.ATTRIBUTE_NAME = constants;
 	exports.Anchor2 = Anchor2;
 	exports.Anchor3 = Anchor3;
 	exports.AngleRotation2 = AngleRotation2;
@@ -10344,9 +10344,10 @@ fn main(
 	exports.ColorRGBA = ColorRGBA;
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
-	exports.ComponentProxy = index$1;
-	exports.Constants = constants;
+	exports.ComponentProxy = index$3;
+	exports.Constants = constants$1;
 	exports.Cube = Cube;
+	exports.DEFAULT_BLEND_STATE = DEFAULT_BLEND_STATE;
 	exports.DEFAULT_ENGINE_OPTIONS = DEFAULT_ENGINE_OPTIONS;
 	exports.DepthMaterial = DepthMaterial;
 	exports.Easing = index$4;
@@ -10362,8 +10363,8 @@ fn main(
 	exports.EulerRotation3 = EulerRotation3;
 	exports.EventFire = EventDispatcher;
 	exports.Geometry = Geometry;
-	exports.Geometry2Factory = index$2;
-	exports.Geometry3Factory = index$3;
+	exports.Geometry2Factory = index$1;
+	exports.Geometry3Factory = index$2;
 	exports.HashRouteComponent = HashRouteComponent;
 	exports.HashRouteSystem = HashRouteSystem;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
@@ -10421,7 +10422,6 @@ fn main(
 	exports.WebGPUMesh3Renderer = WebGPUMesh3Renderer;
 	exports.WebGPUPostProcessingPass = WebGPUPostProcessingPass;
 	exports.WebGPURenderSystem = WebGPURenderSystem;
-	exports.WebGPURenderSystem2 = WebGPURenderSystem;
 	exports.World = World;
 	exports.ceilPowerOfTwo = ceilPowerOfTwo;
 	exports.clamp = clamp;

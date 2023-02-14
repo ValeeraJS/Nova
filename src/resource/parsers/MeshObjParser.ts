@@ -1,5 +1,5 @@
-import { Geometry } from "../../components/geometry";
-import { NORMAL, POSITION, UV } from "../../components/geometry/constants";
+import { Geometry } from "../../systems/render";
+import { POSITION, NORMAL, UV } from "../../systems/render/geometry/constants";
 import { IParser } from "../IResourceItem";
 
 export const MeshObjParser: IParser<Geometry> = async (text: string) => {

@@ -1,11 +1,11 @@
 import { Matrix4 } from "@valeera/mathx";
 import { IEntity } from "@valeera/x";
-import Geometry, { AttributesNodeData } from "../../../components/geometry/Geometry";
+import Geometry, { AttributesNodeData } from "../geometry/Geometry";
 import { BUFFER, MESH3, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
-import IMaterial, { IUniformSlot } from "../../../components/material/IMatrial";
+import { IMaterial, IUniformSlot } from "./material/IMatrial";
 import { ICamera3 } from "../../../entities/Camera3";
 import Object3 from "../../../entities/Object3";
 import { Mesh3 } from "./Mesh3";

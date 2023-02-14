@@ -16,4 +16,4 @@ export interface IShaderCode {
     blend: GPUBlendState
 }
 
-export default interface IMaterial extends IComponent<IShaderCode> { }
+export interface IMaterial extends IComponent<IShaderCode> {}

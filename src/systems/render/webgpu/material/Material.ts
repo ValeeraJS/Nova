@@ -1,7 +1,7 @@
 import { Component } from "@valeera/x";
-import { MATERIAL } from "../constants";
-import { DEFAULT_BLEND_STATE } from "./Blend";
-import IMaterial, { IShaderCode, IUniformSlot } from "./IMatrial";
+import { MATERIAL } from "../../../../components/constants";
+import { DEFAULT_BLEND_STATE } from "../../Blend";
+import { IMaterial, IShaderCode, IUniformSlot } from "./IMatrial";
 
 export default class Material extends Component<IShaderCode> implements IMaterial {
 	tags = [{
@@ -16,7 +16,7 @@ export default class Material extends Component<IShaderCode> implements IMateria
 	public get blend(): GPUBlendState {
 		return this.data.blend;
 	}
-	
+
 	public set blend(blend: GPUBlendState) {
 		this.data.blend = blend;
 	}
@@ -24,15 +24,15 @@ export default class Material extends Component<IShaderCode> implements IMateria
 	public get vertexShader(): string {
 		return this.data.vertex;
 	}
-	
+
 	public set vertexShader(code: string) {
 		this.data.vertex = code;
 	}
-	
+
 	public get fragmentShader(): string {
 		return this.data.fragment;
 	}
-	
+
 	public set fragmentShader(code: string) {
 		this.data.fragment = code;
 	}

@@ -1,4 +1,4 @@
-export { default as IMaterial, IShaderCode, IUniformSlot } from "./IMatrial";
+export * from "./IMatrial";
 export { default as Material } from "./Material";
 export { default as ColorMaterial } from "./ColorMaterial";
 export { default as DepthMaterial } from "./DepthMaterial";

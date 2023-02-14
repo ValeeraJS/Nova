@@ -1,8 +1,7 @@
-import { ImageBitmapTexture } from "../../systems/render/texture/ImageBitmapTexture";
-import { Sampler } from "../../systems/render/texture/Sampler";
-import { Texture } from "../../systems/render/texture/Texture";
-import { BUFFER, SAMPLER, TEXTURE_IMAGE } from "../constants";
-import IMaterial from "./IMatrial";
+
+import { SAMPLER, TEXTURE_IMAGE, BUFFER } from "../../../../components/constants";
+import { Texture, Sampler, ImageBitmapTexture } from "../../texture";
+import { IMaterial } from "./IMatrial";
 import Material from "./Material";
 
 const CommonData = {

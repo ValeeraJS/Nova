@@ -1,9 +1,9 @@
-import Geometry, { AttributesNodeData } from "../../../components/geometry/Geometry";
+import Geometry, { AttributesNodeData } from "..//geometry/Geometry";
 import { BUFFER, MESH2, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix3/Matrix3Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
-import IMaterial, { IUniformSlot } from "../../../components/material/IMatrial";
+import { IMaterial, IUniformSlot } from "./material/IMatrial";
 import { ICamera2 } from "../../../entities/Camera2";
 import Object2 from "../../../entities/Object2";
 import { Matrix3, Matrix4 } from "@valeera/mathx";

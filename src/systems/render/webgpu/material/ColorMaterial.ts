@@ -1,4 +1,5 @@
-import { BUFFER } from "../constants";
+
+import { BUFFER } from "../../../../components/constants";
 import Material from "./Material";
 
 const wgslShaders = {

@@ -1,5 +1,6 @@
-import { Geometry, IMaterial } from "../../../components";
+import { Geometry } from "../geometry";
 import { Renderable, RenderableData } from "../Renderable";
+import { IMaterial } from "./material";
 export interface Mesh3Data extends RenderableData<Geometry, IMaterial> {
     geometry: Geometry;
     material: IMaterial;

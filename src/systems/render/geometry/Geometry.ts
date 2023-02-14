@@ -1,6 +1,6 @@
 import { Matrix3, Matrix4 } from "@valeera/mathx";
 import { Component } from "@valeera/x";
-import { GEOMETRY } from "../constants";
+import { GEOMETRY } from "../../../components/constants";
 import { POSITION } from "./constants";
 
 // 顶点多种数据（位置，uv，法线等）合并为一个类型数组，每个顶点各个数据如何取数据的方式
