@@ -1,4 +1,5 @@
-import { IMaterial, IShaderProgram, IUniformSlot } from "../../IMatrial";
+import { IMaterial, IUniformSlot } from "../../IMatrial";
+import { IShaderProgram } from "../../ShaderProgram";
 export default class Material implements IMaterial {
     dirty: boolean;
     vertex: string;

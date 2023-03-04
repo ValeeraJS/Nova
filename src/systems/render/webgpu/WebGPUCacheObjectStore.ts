@@ -1,5 +1,5 @@
-import { IShaderProgram } from "../IMatrial";
-import { Sampler } from "../texture/Sampler";
+import { IShaderProgram } from "../ShaderProgram";
+import { Sampler } from "../Sampler";
 import { Texture } from "../texture/Texture";
 
 export type GPUObjectHasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler;

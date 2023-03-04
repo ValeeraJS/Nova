@@ -9395,12 +9395,12 @@ class WebGPUMesh3Renderer {
     createStages(material, vertexBuffers, context) {
         let vertex = {
             module: WebGPUCacheObjectStore.createGPUShaderModuleCache(material.vertexShader, context.device).data,
-            entryPoint: "main",
+            entryPoint: material.vertexShader.entryPoint ?? "main",
             buffers: vertexBuffers
         };
         let fragment = {
             module: WebGPUCacheObjectStore.createGPUShaderModuleCache(material.fragmentShader, context.device).data,
-            entryPoint: "main",
+            entryPoint: material.fragmentShader.entryPoint ?? "main",
             targets: [
                 {
                     format: context.preferredFormat,

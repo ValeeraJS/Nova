@@ -1,3 +1,4 @@
+import { IShaderProgram } from "./ShaderProgram";
 export interface IUniformSlot {
     name: string;
     value: any;
@@ -5,11 +6,6 @@ export interface IUniformSlot {
     dirty: boolean;
     type: string;
     buffer?: any;
-}
-export interface IShaderProgram {
-    descriptor: GPUShaderModuleDescriptor;
-    name?: string;
-    dirty: boolean;
 }
 export interface IMaterial {
     vertexShader: IShaderProgram;
