@@ -5,7 +5,7 @@ import { BUFFER, MESH3, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../comp
 import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
-import { IMaterial, IUniformSlot } from "./material/IMatrial";
+import { IMaterial, IUniformSlot } from "../IMatrial";
 import { ICamera3 } from "../../../entities/Camera3";
 import Object3 from "../../../entities/Object3";
 import { Mesh3 } from "./Mesh3";
@@ -128,7 +128,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 			},
 		}];
 
-		let uniforms: IUniformSlot[] = material.data?.uniforms;
+		let uniforms: IUniformSlot[] = material.uniforms;
 		let uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
@@ -232,7 +232,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 	}
 
 	private createBindGroupLayout(material: IMaterial, context: GPURendererContext) {
-		let uniforms: IUniformSlot[] = material.data.uniforms;
+		let uniforms: IUniformSlot[] = material.uniforms;
 		let entries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,
@@ -262,7 +262,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 					});
 				} else {
 					entries.push({
-						visibility: GPUShaderStage.FRAGMENT,
+						visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
 						binding: uniforms[i].binding,
 						buffer: {
 							type: 'uniform',
@@ -283,20 +283,20 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 	} {
 		let vertex = {
 			module: context.device.createShaderModule({
-				code: material.data.vertex,
+				code: material.vertexShader.code,
 			}),
 			entryPoint: "main",
 			buffers: vertexBuffers
 		};
 		let fragment = {
 			module: context.device.createShaderModule({
-				code: material.data.fragment,
+				code: material.fragmentShader.code,
 			}),
 			entryPoint: "main",
 			targets: [
 				{
 					format: context.preferredFormat,
-					blend: material?.data.blend
+					blend: material.blend
 				}
 			]
 		};

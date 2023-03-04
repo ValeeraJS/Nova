@@ -1,4 +1,4 @@
-export * from "./IMatrial";
+export * from "../../IMatrial";
 export { default as Material } from "./Material";
 export { default as ColorMaterial } from "./ColorMaterial";
 export { default as DomMaterial } from "./DomMaterial";

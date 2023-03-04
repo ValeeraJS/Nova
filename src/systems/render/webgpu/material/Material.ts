@@ -1,39 +1,38 @@
-import { Component } from "@valeera/x";
-import { MATERIAL } from "../../../../components/constants";
 import { DEFAULT_BLEND_STATE } from "../../Blend";
-import { IMaterial, IShaderCode, IUniformSlot } from "./IMatrial";
+import { IMaterial, IShaderProgram, IUniformSlot } from "../../IMatrial";
 
-export default class Material extends Component<IShaderCode> implements IMaterial {
-	tags = [{
-		label: MATERIAL,
-		unique: true
-	}];
-	constructor(vertex: string, fragment: string, uniforms: IUniformSlot[] = [], blend: GPUBlendState = DEFAULT_BLEND_STATE) {
-		super("material", { vertex, fragment, uniforms, blend });
+export default class Material implements IMaterial {
+	dirty: boolean;
+	vertex: string;
+	vertexShader: IShaderProgram;
+	fragmentShader: IShaderProgram;
+	blend: GPUBlendState;
+	uniforms: IUniformSlot[];
+	constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms: IUniformSlot[] = [], blend: GPUBlendState = DEFAULT_BLEND_STATE) {
+		this.dirty = true;
+		this.vertexShader = vertex;
+		this.fragmentShader = fragment;
+		this.blend = blend;
+		this.uniforms = uniforms;
+	}
+
+	public get vertexCode(): string {
+		return this.vertexShader.code;
+	}
+
+	public set vertexCode(code: string) {
+		this.vertexShader.code = code;
+		this.vertexShader.dirty = true;
 		this.dirty = true;
 	}
 
-	public get blend(): GPUBlendState {
-		return this.data.blend;
+	public get fragmentCode(): string {
+		return this.vertexShader.code;
 	}
 
-	public set blend(blend: GPUBlendState) {
-		this.data.blend = blend;
-	}
-
-	public get vertexShader(): string {
-		return this.data.vertex;
-	}
-
-	public set vertexShader(code: string) {
-		this.data.vertex = code;
-	}
-
-	public get fragmentShader(): string {
-		return this.data.fragment;
-	}
-
-	public set fragmentShader(code: string) {
-		this.data.fragment = code;
+	public set fragmentCode(code: string) {
+		this.fragmentShader.code = code;
+		this.fragmentShader.dirty = true;
+		this.dirty = true;
 	}
 }

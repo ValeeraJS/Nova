@@ -1,15 +1,14 @@
-import { Component } from "@valeera/x";
-import { IMaterial, IShaderCode, IUniformSlot } from "./IMatrial";
-export default class Material extends Component<IShaderCode> implements IMaterial {
-    tags: {
-        label: string;
-        unique: boolean;
-    }[];
-    constructor(vertex: string, fragment: string, uniforms?: IUniformSlot[], blend?: GPUBlendState);
-    get blend(): GPUBlendState;
-    set blend(blend: GPUBlendState);
-    get vertexShader(): string;
-    set vertexShader(code: string);
-    get fragmentShader(): string;
-    set fragmentShader(code: string);
+import { IMaterial, IShaderProgram, IUniformSlot } from "../../IMatrial";
+export default class Material implements IMaterial {
+    dirty: boolean;
+    vertex: string;
+    vertexShader: IShaderProgram;
+    fragmentShader: IShaderProgram;
+    blend: GPUBlendState;
+    uniforms: IUniformSlot[];
+    constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms?: IUniformSlot[], blend?: GPUBlendState);
+    get vertexCode(): string;
+    set vertexCode(code: string);
+    get fragmentCode(): string;
+    set fragmentCode(code: string);
 }

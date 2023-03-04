@@ -25,7 +25,15 @@ const fragmentShader = `
 
 export default class NormalMaterial extends Material {	
 	constructor() {
-		super(vertexShader, fragmentShader, []);
+		super({
+			code: vertexShader,
+			dirty: true,
+			entry: "main"
+		}, {
+			code: fragmentShader,
+			dirty: true,
+			entry: "main"
+		}, []);
 		this.dirty = true;
 	}
 }

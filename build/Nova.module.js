@@ -8577,36 +8577,39 @@ class HashRouteComponent extends TreeNode.mixin(Component) {
     }
 }
 
-class Material extends Component {
-    tags = [{
-            label: MATERIAL,
-            unique: true
-        }];
+class Material {
+    dirty;
+    vertex;
+    vertexShader;
+    fragmentShader;
+    blend;
+    uniforms;
     constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
-        super("material", { vertex, fragment, uniforms, blend });
+        this.dirty = true;
+        this.vertexShader = vertex;
+        this.fragmentShader = fragment;
+        this.blend = blend;
+        this.uniforms = uniforms;
+    }
+    get vertexCode() {
+        return this.vertexShader.code;
+    }
+    set vertexCode(code) {
+        this.vertexShader.code = code;
+        this.vertexShader.dirty = true;
         this.dirty = true;
     }
-    get blend() {
-        return this.data.blend;
+    get fragmentCode() {
+        return this.vertexShader.code;
     }
-    set blend(blend) {
-        this.data.blend = blend;
-    }
-    get vertexShader() {
-        return this.data.vertex;
-    }
-    set vertexShader(code) {
-        this.data.vertex = code;
-    }
-    get fragmentShader() {
-        return this.data.fragment;
-    }
-    set fragmentShader(code) {
-        this.data.fragment = code;
+    set fragmentCode(code) {
+        this.fragmentShader.code = code;
+        this.fragmentShader.dirty = true;
+        this.dirty = true;
     }
 }
 
-const DEFAULT_MATERIAL3 = new Material(`
+const fs = `
 struct Uniforms {
 	modelViewProjectionMatrix : mat4x4<f32>
 };
@@ -8635,33 +8638,19 @@ fn mapRange(
 	}
 	return output;
 }
-`, `
+`;
+const vs = `
 @fragment fn main() -> @location(0) vec4<f32> {
 	return vec4<f32>(1., 1., 1., 1.0);
 }
-`);
-new Material(`
-struct Uniforms {
-	modelViewProjectionMatrix : mat3x3<f32>
-};
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-struct VertexOutput {
-	@builtin(position) Position : vec4<f32>
-};
-
-@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-	var output : VertexOutput;
-	var p: vec3<f32> = uniforms.modelViewProjectionMatrix * position;
-	output.Position = vec4<f32>(p.x, p.y, p.z, 1.);
-
-	return output;
-}
-`, `
-@fragment fn main() -> @location(0) vec4<f32> {
-	return vec4<f32>(1., 1., 1., 1.0);
-}
-`);
+`;
+const DEFAULT_MATERIAL3 = new Material({
+    code: vs,
+    dirty: true
+}, {
+    code: fs,
+    dirty: true
+});
 
 class Mesh2 extends Renderable {
     static RenderType = "mesh2";
@@ -8956,7 +8945,7 @@ class WebGPUMesh2Renderer {
                     buffer: uniformBuffer,
                 },
             }];
-        let uniforms = material.data?.uniforms;
+        let uniforms = material.uniforms;
         let uniformMap = new Map();
         if (uniforms) {
             for (let i = 0; i < uniforms.length; i++) {
@@ -9056,7 +9045,7 @@ class WebGPUMesh2Renderer {
         return vertexBuffers;
     }
     createBindGroupLayout(material, context) {
-        let uniforms = material.data.uniforms;
+        let uniforms = material.uniforms;
         let entries = [
             {
                 binding: 0,
@@ -9104,20 +9093,20 @@ class WebGPUMesh2Renderer {
     createStages(material, vertexBuffers, context) {
         let vertex = {
             module: context.device.createShaderModule({
-                code: material.data.vertex,
+                code: material.vertexShader.code,
             }),
-            entryPoint: "main",
+            entryPoint: material.vertexShader.entry ?? "main",
             buffers: vertexBuffers
         };
         let fragment = {
             module: context.device.createShaderModule({
-                code: material.data.fragment,
+                code: material.fragmentShader.code,
             }),
-            entryPoint: "main",
+            entryPoint: material.fragmentShader.entry ?? "main",
             targets: [
                 {
                     format: context.preferredFormat,
-                    blend: material?.data.blend
+                    blend: material.blend
                 }
             ]
         };
@@ -9226,7 +9215,7 @@ class WebGPUMesh3Renderer {
                     buffer: uniformBuffer,
                 },
             }];
-        let uniforms = material.data?.uniforms;
+        let uniforms = material.uniforms;
         let uniformMap = new Map();
         if (uniforms) {
             for (let i = 0; i < uniforms.length; i++) {
@@ -9326,7 +9315,7 @@ class WebGPUMesh3Renderer {
         return vertexBuffers;
     }
     createBindGroupLayout(material, context) {
-        let uniforms = material.data.uniforms;
+        let uniforms = material.uniforms;
         let entries = [
             {
                 binding: 0,
@@ -9358,7 +9347,7 @@ class WebGPUMesh3Renderer {
                 }
                 else {
                     entries.push({
-                        visibility: GPUShaderStage.FRAGMENT,
+                        visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
                         binding: uniforms[i].binding,
                         buffer: {
                             type: 'uniform',
@@ -9374,20 +9363,20 @@ class WebGPUMesh3Renderer {
     createStages(material, vertexBuffers, context) {
         let vertex = {
             module: context.device.createShaderModule({
-                code: material.data.vertex,
+                code: material.vertexShader.code,
             }),
             entryPoint: "main",
             buffers: vertexBuffers
         };
         let fragment = {
             module: context.device.createShaderModule({
-                code: material.data.fragment,
+                code: material.fragmentShader.code,
             }),
             entryPoint: "main",
             targets: [
                 {
                     format: context.preferredFormat,
-                    blend: material?.data.blend
+                    blend: material.blend
                 }
             ]
         };
@@ -9775,19 +9764,24 @@ const wgslShaders$2 = {
 		}
 	`,
     fragment: `
-		struct Uniforms {
-			color : vec4<f32>
-	  	};
-	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
+	  	@binding(1) @group(0) var<uniform> color : vec4<f32>;
 
 		@fragment fn main() -> @location(0) vec4<f32> {
-			return uniforms.color;
+			return color;
 		}
 	`
 };
-let ColorMaterial$1 = class ColorMaterial extends Material {
+class ColorMaterial extends Material {
     constructor(color = new Float32Array([1, 1, 1, 1])) {
-        super(wgslShaders$2.vertex, wgslShaders$2.fragment, [{
+        super({
+            code: wgslShaders$2.vertex,
+            entry: "main",
+            dirty: true
+        }, {
+            code: wgslShaders$2.fragment,
+            entry: "main",
+            dirty: true
+        }, [{
                 name: "color",
                 value: color,
                 binding: 1,
@@ -9797,16 +9791,14 @@ let ColorMaterial$1 = class ColorMaterial extends Material {
         this.dirty = true;
     }
     setColor(r, g, b, a) {
-        if (this.data) {
-            this.data.uniforms[0].value[0] = r;
-            this.data.uniforms[0].value[1] = g;
-            this.data.uniforms[0].value[2] = b;
-            this.data.uniforms[0].value[3] = a;
-            this.data.uniforms[0].dirty = true;
-        }
+        this.uniforms[0].value[0] = r;
+        this.uniforms[0].value[1] = g;
+        this.uniforms[0].value[2] = b;
+        this.uniforms[0].value[3] = a;
+        this.uniforms[0].dirty = true;
         return this;
     }
-};
+}
 
 const wgslShaders$1 = {
     vertex: `
@@ -9826,36 +9818,87 @@ const wgslShaders$1 = {
 		}
 	`,
     fragment: `
-		struct Uniforms {
-			color : vec4<f32>
-	  	};
-	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
+	  	@binding(1) @group(0) var<uniform> color : vec4<f32>;
 
 		@fragment fn main() -> @location(0) vec4<f32> {
-			return uniforms.color;
+			return color;
 		}
 	`
 };
-class ColorMaterial extends Material {
-    constructor(color = new Float32Array([1, 1, 1, 1])) {
-        super(wgslShaders$1.vertex, wgslShaders$1.fragment, [{
-                name: "color",
-                value: color,
+class DomMaterial extends Material {
+    constructor() {
+        super({
+            code: wgslShaders$1.vertex,
+            dirty: true,
+            entry: "main"
+        }, {
+            code: wgslShaders$1.fragment,
+            dirty: true,
+            entry: "main"
+        }, [{
+                name: "backgroundColor",
+                value: new ColorGPU(),
                 binding: 1,
+                dirty: true,
+                type: BUFFER
+            }, {
+                name: "borderColor",
+                value: new ColorGPU(1, 1, 1, 1),
+                binding: 2,
+                dirty: true,
+                type: BUFFER
+            }, {
+                name: "size",
+                value: new Vector4(128, 32, 0, 0),
+                binding: 3,
+                dirty: true,
+                type: BUFFER
+            }, {
+                name: "borderWidth",
+                value: new Vector4(2, 2, 2, 2),
+                binding: 4,
+                dirty: true,
+                type: BUFFER
+            }, {
+                name: "borderRadius",
+                value: new Vector4(10, 10, 10, 10),
+                binding: 5,
                 dirty: true,
                 type: BUFFER
             }]);
         this.dirty = true;
     }
-    setColor(r, g, b, a) {
-        if (this.data) {
-            this.data.uniforms[0].value[0] = r;
-            this.data.uniforms[0].value[1] = g;
-            this.data.uniforms[0].value[2] = b;
-            this.data.uniforms[0].value[3] = a;
-            this.data.uniforms[0].dirty = true;
-        }
-        return this;
+    get backgroundColor() {
+        return this.uniforms[0].value;
+    }
+    set backgroundColor(c) {
+        this.uniforms[0].value = c;
+        this.uniforms[0].dirty = true;
+        this.dirty = true;
+    }
+    get borderColor() {
+        return this.uniforms[1].value;
+    }
+    set borderColor(c) {
+        this.uniforms[1].value = c;
+        this.uniforms[1].dirty = true;
+        this.dirty = true;
+    }
+    get height() {
+        return this.uniforms[2].value[1];
+    }
+    set height(c) {
+        this.uniforms[2].value[1] = c;
+        this.uniforms[2].dirty = true;
+        this.dirty = true;
+    }
+    get width() {
+        return this.uniforms[2].value[0];
+    }
+    set width(c) {
+        this.uniforms[2].value[0] = c;
+        this.uniforms[2].dirty = true;
+        this.dirty = true;
     }
 }
 
@@ -9892,7 +9935,15 @@ const fragmentShader$1 = `
 }`;
 class DepthMaterial extends Material {
     constructor() {
-        super(vertexShader$1, fragmentShader$1, []);
+        super({
+            code: vertexShader$1,
+            entry: "main",
+            dirty: true
+        }, {
+            code: fragmentShader$1,
+            entry: "main",
+            dirty: true
+        }, []);
         this.dirty = true;
     }
 }
@@ -9920,14 +9971,30 @@ const fragmentShader = `
 }`;
 class NormalMaterial extends Material {
     constructor() {
-        super(vertexShader, fragmentShader, []);
+        super({
+            code: vertexShader,
+            dirty: true,
+            entry: "main"
+        }, {
+            code: fragmentShader,
+            dirty: true,
+            entry: "main"
+        }, []);
         this.dirty = true;
     }
 }
 
 class ShaderMaterial extends Material {
     constructor(vertex, fragment, uniforms = [], blend) {
-        super(vertex, fragment, uniforms, blend);
+        super({
+            code: vertex,
+            dirty: true,
+            entry: "main"
+        }, {
+            code: fragment,
+            dirty: true,
+            entry: "main"
+        }, uniforms, blend);
         this.dirty = true;
     }
 }
@@ -9958,7 +10025,13 @@ const emptyTexture = new Texture({
 class ShadertoyMaterial extends Material {
     dataD;
     constructor(fs, sampler = new Sampler()) {
-        super(CommonData.vs, fs, [
+        super({
+            code: CommonData.vs,
+            dirty: true,
+        }, {
+            code: fs,
+            dirty: true,
+        }, [
             {
                 name: "iSampler0",
                 type: SAMPLER,
@@ -10017,53 +10090,53 @@ class ShadertoyMaterial extends Material {
         this.dirty = true;
     }
     get sampler() {
-        return this.data.uniforms[0].value;
+        return this.uniforms[0].value;
     }
     set sampler(sampler) {
-        this.data.uniforms[0].dirty = this.dirty = true;
-        this.data.uniforms[0].value = sampler;
+        this.uniforms[0].dirty = this.dirty = true;
+        this.uniforms[0].value = sampler;
     }
     get texture0() {
-        return this.data.uniforms[1].value;
+        return this.uniforms[1].value;
     }
     set texture0(texture) {
-        this.data.uniforms[1].dirty = this.dirty = true;
-        this.data.uniforms[1].value = texture;
+        this.uniforms[1].dirty = this.dirty = true;
+        this.uniforms[1].value = texture;
     }
     get texture1() {
-        return this.data.uniforms[2].value;
+        return this.uniforms[2].value;
     }
     set texture1(texture) {
-        this.data.uniforms[2].dirty = this.dirty = true;
-        this.data.uniforms[2].value = texture;
+        this.uniforms[2].dirty = this.dirty = true;
+        this.uniforms[2].value = texture;
     }
     get texture2() {
-        return this.data.uniforms[3].value;
+        return this.uniforms[3].value;
     }
     set texture2(texture) {
-        this.data.uniforms[3].dirty = this.dirty = true;
-        this.data.uniforms[3].value = texture;
+        this.uniforms[3].dirty = this.dirty = true;
+        this.uniforms[3].value = texture;
     }
     get texture3() {
-        return this.data.uniforms[4].value;
+        return this.uniforms[4].value;
     }
     set texture3(texture) {
-        this.data.uniforms[4].dirty = this.dirty = true;
-        this.data.uniforms[4].value = texture;
+        this.uniforms[4].dirty = this.dirty = true;
+        this.uniforms[4].value = texture;
     }
     get time() {
-        return this.data.uniforms[5].value[8];
+        return this.uniforms[5].value[8];
     }
     set time(time) {
-        this.data.uniforms[5].dirty = this.dirty = true;
-        this.data.uniforms[5].value[8] = time;
+        this.uniforms[5].dirty = this.dirty = true;
+        this.uniforms[5].value[8] = time;
     }
     get mouse() {
-        let u = this.data.uniforms[5];
+        let u = this.uniforms[5];
         return [u.value[6], u.value[7]];
     }
     set mouse(mouse) {
-        let u = this.data.uniforms[5];
+        let u = this.uniforms[5];
         u.dirty = this.dirty = true;
         u.value[6] = mouse[0];
         u.value[7] = mouse[1];
@@ -10072,7 +10145,7 @@ class ShadertoyMaterial extends Material {
         return this.dataD;
     }
     set date(d) {
-        const u = this.data.uniforms[5];
+        const u = this.uniforms[5];
         u.dirty = this.dirty = true;
         u.value[0] = d.getFullYear();
         u.value[1] = d.getMonth();
@@ -10112,7 +10185,13 @@ const wgslShaders = {
 };
 class TextureMaterial extends Material {
     constructor(texture, sampler = new Sampler()) {
-        super(wgslShaders.vertex, wgslShaders.fragment, [
+        super({
+            code: wgslShaders.vertex,
+            dirty: true,
+        }, {
+            code: wgslShaders.fragment,
+            dirty: true,
+        }, [
             {
                 binding: 1,
                 name: "mySampler",
@@ -10131,18 +10210,18 @@ class TextureMaterial extends Material {
         this.dirty = true;
     }
     get sampler() {
-        return this.data.uniforms[0].value;
+        return this.uniforms[0].value;
     }
     set sampler(sampler) {
-        this.data.uniforms[0].dirty = this.dirty = true;
-        this.data.uniforms[0].value = sampler;
+        this.uniforms[0].dirty = this.dirty = true;
+        this.uniforms[0].value = sampler;
     }
     get texture() {
-        return this.data.uniforms[1].value;
+        return this.uniforms[1].value;
     }
     set texture(texture) {
-        this.data.uniforms[1].dirty = this.dirty = true;
-        this.data.uniforms[1].value = texture;
+        this.uniforms[1].dirty = this.dirty = true;
+        this.uniforms[1].value = texture;
     }
     setTextureAndSampler(texture, sampler) {
         this.texture = texture;
@@ -10364,4 +10443,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial$1 as ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DepthMaterial, ColorMaterial as DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };

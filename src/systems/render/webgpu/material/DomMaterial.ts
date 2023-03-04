@@ -1,4 +1,5 @@
 
+import { ColorGPU, Vector4 } from "@valeera/mathx";
 import { BUFFER } from "../../../../components/constants";
 import Material from "./Material";
 
@@ -20,45 +21,95 @@ const wgslShaders = {
 		}
 	`,
 	fragment: `
-		struct Uniforms {
-			color : vec4<f32>
-	  	};
-	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
-
-float sdRoundBox( in vec2 p, in vec2 b, in vec4 r ) 
-{
-    r.xy = (p.x>0.0)?r.xy : r.zw;
-    r.x  = (p.y>0.0)?r.x  : r.y;
-    vec2 q = abs(p)-b+r.x;
-    return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;
-}
+	  	@binding(1) @group(0) var<uniform> color : vec4<f32>;
 
 		@fragment fn main() -> @location(0) vec4<f32> {
-			return uniforms.color;
+			return color;
 		}
 	`
 };
 
 export default class DomMaterial extends Material {
-	constructor(color: Float32Array = new Float32Array([1, 1, 1, 1])) {
-		super(wgslShaders.vertex, wgslShaders.fragment, [{
-			name: "color",
-			value: color,
+	constructor() {
+		super({
+			code: wgslShaders.vertex,
+			dirty: true,
+			entry: "main"
+		}, {
+			code: wgslShaders.fragment,
+			dirty: true,
+			entry: "main"
+		}, [{
+			name: "backgroundColor",
+			value: new ColorGPU(),
 			binding: 1,
+			dirty: true,
+			type: BUFFER
+		}, {
+			name: "borderColor",
+			value: new ColorGPU(1,1,1,1),
+			binding: 2,
+			dirty: true,
+			type: BUFFER
+		}, {
+			name: "size",
+			value: new Vector4(128, 32, 0, 0),
+			binding: 3,
+			dirty: true,
+			type: BUFFER
+		}, {
+			name: "borderWidth",
+			value: new Vector4(2, 2, 2, 2),
+			binding: 4,
+			dirty: true,
+			type: BUFFER
+		}, {
+			name: "borderRadius",
+			value: new Vector4(10, 10, 10, 10),
+			binding: 5,
 			dirty: true,
 			type: BUFFER
 		}]);
 		this.dirty = true;
 	}
 
-	setColor(r: number, g: number, b: number, a: number): this {
-		if (this.data) {
-			this.data.uniforms[0].value[0] = r;
-			this.data.uniforms[0].value[1] = g;
-			this.data.uniforms[0].value[2] = b;
-			this.data.uniforms[0].value[3] = a;
-			this.data.uniforms[0].dirty = true;
-		}
-		return this;
+	get backgroundColor() {
+		return this.uniforms[0].value as ColorGPU;
+	}
+	
+	set backgroundColor(c: ColorGPU) {
+		this.uniforms[0].value = c;
+		this.uniforms[0].dirty = true;
+		this.dirty = true;
+	}
+	
+	get borderColor() {
+		return this.uniforms[1].value as ColorGPU;
+	}
+	
+	set borderColor(c: ColorGPU) {
+		this.uniforms[1].value = c;
+		this.uniforms[1].dirty = true;
+		this.dirty = true;
+	}
+
+	get height() {
+		return this.uniforms[2].value[1] as number;
+	}
+	
+	set height(c: number) {
+		this.uniforms[2].value[1] = c;
+		this.uniforms[2].dirty = true;
+		this.dirty = true;
+	}
+	
+	get width() {
+		return this.uniforms[2].value[0] as number;
+	}
+	
+	set width(c: number) {
+		this.uniforms[2].value[0] = c;
+		this.uniforms[2].dirty = true;
+		this.dirty = true;
 	}
 }

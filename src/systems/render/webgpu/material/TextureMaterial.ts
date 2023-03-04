@@ -1,7 +1,7 @@
 
 import { SAMPLER, TEXTURE_IMAGE } from "../../../../components/constants";
 import { Texture, Sampler } from "../../texture";
-import { IMaterial } from "./IMatrial";
+import { IMaterial } from "../../IMatrial";
 import Material from "./Material";
 
 const wgslShaders = {
@@ -35,7 +35,13 @@ const wgslShaders = {
 
 export default class TextureMaterial extends Material implements IMaterial {
 	public constructor(texture: Texture, sampler: Sampler = new Sampler()) {
-		super(wgslShaders.vertex, wgslShaders.fragment, [
+		super({
+			code: wgslShaders.vertex,
+			dirty: true,
+		}, {
+			code: wgslShaders.fragment,
+			dirty: true,
+		}, [
 			{
 				binding: 1,
 				name: "mySampler",
@@ -55,21 +61,21 @@ export default class TextureMaterial extends Material implements IMaterial {
 	}
 
 	public get sampler(): Sampler {
-		return this.data.uniforms[0].value as Sampler;
+		return this.uniforms[0].value as Sampler;
 	}
 
 	public set sampler(sampler: Sampler) {
-		this.data.uniforms[0].dirty = this.dirty = true;
-		this.data.uniforms[0].value = sampler;
+		this.uniforms[0].dirty = this.dirty = true;
+		this.uniforms[0].value = sampler;
 	}
 
 	public get texture(): Texture {
-		return this.data.uniforms[1].value as Texture;
+		return this.uniforms[1].value as Texture;
 	}
 
 	public set texture(texture: Texture) {
-		this.data.uniforms[1].dirty = this.dirty = true;
-		this.data.uniforms[1].value = texture;
+		this.uniforms[1].dirty = this.dirty = true;
+		this.uniforms[1].value = texture;
 	}
 
 	public setTextureAndSampler(texture: Texture, sampler?: Sampler): this {

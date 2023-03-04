@@ -1,5 +1,13 @@
+import { ColorGPU } from "@valeera/mathx";
 import Material from "./Material";
-export default class ColorMaterial extends Material {
-    constructor(color?: Float32Array);
-    setColor(r: number, g: number, b: number, a: number): this;
+export default class DomMaterial extends Material {
+    constructor();
+    get backgroundColor(): ColorGPU;
+    set backgroundColor(c: ColorGPU);
+    get borderColor(): ColorGPU;
+    set borderColor(c: ColorGPU);
+    get height(): number;
+    set height(c: number);
+    get width(): number;
+    set width(c: number);
 }

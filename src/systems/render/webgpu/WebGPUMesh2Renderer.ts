@@ -3,7 +3,7 @@ import { BUFFER, MESH2, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../comp
 import { updateModelMatrixComponent } from "../../../components/matrix3/Matrix3Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
-import { IMaterial, IUniformSlot } from "./material/IMatrial";
+import { IMaterial, IUniformSlot } from "../IMatrial";
 import { ICamera2 } from "../../../entities/Camera2";
 import Object2 from "../../../entities/Object2";
 import { Matrix3, Matrix4 } from "@valeera/mathx";
@@ -130,7 +130,7 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 			},
 		}];
 
-		let uniforms: IUniformSlot[] = material.data?.uniforms;
+		let uniforms: IUniformSlot[] = material.uniforms;
 		let uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
@@ -237,7 +237,7 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	}
 
 	private createBindGroupLayout(material: IMaterial, context: GPURendererContext) {
-		let uniforms: IUniformSlot[] = material.data.uniforms;
+		let uniforms: IUniformSlot[] = material.uniforms;
 		let entries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,
@@ -288,20 +288,20 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	} {
 		let vertex = {
 			module: context.device.createShaderModule({
-				code: material.data.vertex,
+				code: material.vertexShader.code,
 			}),
-			entryPoint: "main",
+			entryPoint: material.vertexShader.entry ?? "main",
 			buffers: vertexBuffers
 		};
 		let fragment = {
 			module: context.device.createShaderModule({
-				code: material.data.fragment,
+				code: material.fragmentShader.code,
 			}),
-			entryPoint: "main",
+			entryPoint: material.fragmentShader.entry ?? "main",
 			targets: [
 				{
 					format: context.preferredFormat,
-					blend: material?.data.blend
+					blend: material.blend
 				}
 			]
 		};

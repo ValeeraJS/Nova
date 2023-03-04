@@ -35,7 +35,15 @@ const fragmentShader = `
 
 export default class DepthMaterial extends Material {
 	constructor() {
-		super(vertexShader, fragmentShader, []);
+		super({
+			code: vertexShader,
+			entry: "main",
+			dirty: true
+		}, {
+			code: fragmentShader,
+			entry: "main",
+			dirty: true
+		}, []);
 		this.dirty = true;
 	}
 }

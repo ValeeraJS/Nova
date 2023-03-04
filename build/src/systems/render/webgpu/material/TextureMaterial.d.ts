@@ -1,5 +1,5 @@
 import { Texture, Sampler } from "../../texture";
-import { IMaterial } from "./IMatrial";
+import { IMaterial } from "../../IMatrial";
 import Material from "./Material";
 export default class TextureMaterial extends Material implements IMaterial {
     constructor(texture: Texture, sampler?: Sampler);

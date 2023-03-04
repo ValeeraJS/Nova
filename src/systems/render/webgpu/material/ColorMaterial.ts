@@ -20,20 +20,25 @@ const wgslShaders = {
 		}
 	`,
 	fragment: `
-		struct Uniforms {
-			color : vec4<f32>
-	  	};
-	  	@binding(1) @group(0) var<uniform> uniforms : Uniforms;
+	  	@binding(1) @group(0) var<uniform> color : vec4<f32>;
 
 		@fragment fn main() -> @location(0) vec4<f32> {
-			return uniforms.color;
+			return color;
 		}
 	`
 };
 
 export default class ColorMaterial extends Material {
 	constructor(color: Float32Array = new Float32Array([1, 1, 1, 1])) {
-		super(wgslShaders.vertex, wgslShaders.fragment, [{
+		super({
+			code: wgslShaders.vertex,
+			entry: "main",
+			dirty: true
+		}, {
+			code: wgslShaders.fragment,
+			entry: "main",
+			dirty: true
+		}, [{
 			name: "color",
 			value: color,
 			binding: 1,
@@ -44,13 +49,12 @@ export default class ColorMaterial extends Material {
 	}
 
 	setColor(r: number, g: number, b: number, a: number): this {
-		if (this.data) {
-			this.data.uniforms[0].value[0] = r;
-			this.data.uniforms[0].value[1] = g;
-			this.data.uniforms[0].value[2] = b;
-			this.data.uniforms[0].value[3] = a;
-			this.data.uniforms[0].dirty = true;
-		}
+		this.uniforms[0].value[0] = r;
+		this.uniforms[0].value[1] = g;
+		this.uniforms[0].value[2] = b;
+		this.uniforms[0].value[3] = a;
+		this.uniforms[0].dirty = true;
+
 		return this;
 	}
 }
