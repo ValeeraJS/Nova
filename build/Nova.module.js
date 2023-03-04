@@ -9234,7 +9234,7 @@ class WebGPUMesh3Renderer {
         const buffers = [];
         const mesh3 = entity.getComponent(RENDERABLE);
         const geometry = mesh3.geometry;
-        geometry.dirty = true;
+        geometry.dirty = false;
         let material = mesh3.material;
         let nodes = geometry.data;
         for (let i = 0; i < nodes.length; i++) {

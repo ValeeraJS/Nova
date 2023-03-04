@@ -113,7 +113,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		const buffers = [];
 		const mesh3 = entity.getComponent(RENDERABLE) as Mesh3;
 		const geometry = mesh3.geometry;
-		geometry.dirty = true;
+		geometry.dirty = false;
 		let material = mesh3.material;
 		let nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
