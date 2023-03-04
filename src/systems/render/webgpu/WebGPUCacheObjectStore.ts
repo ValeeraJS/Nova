@@ -1,9 +1,10 @@
+import { IShaderProgram } from "../IMatrial";
 import { Sampler } from "../texture/Sampler";
 import { Texture } from "../texture/Texture";
 
-export type GPUObjecthasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler;
+export type GPUObjectHasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler;
 
-export interface IWebGPUObjectCache<T extends GPUObjecthasCache> {
+export interface IWebGPUObjectCache<T extends GPUObjectHasCache> {
     dirty: boolean;
     data: T;
 };
@@ -13,6 +14,8 @@ export interface WebGPUTextureCache extends IWebGPUObjectCache<GPUTexture>, GPUT
     format: GPUTextureFormat;
     usage: number;
 }
+
+export interface WebGPUShaderModuleCache extends IWebGPUObjectCache<GPUShaderModule>, GPUShaderModuleDescriptor{}
 
 export interface WebGPUSamplerCache extends IWebGPUObjectCache<GPUSampler>, GPUSamplerDescriptor{
     minFilter: GPUFilterMode;
@@ -47,6 +50,14 @@ const checkTextureCacheReuseable = (descriptor: GPUTextureDescriptor, cache: Web
         return false;
     }
     if (descriptor.mipLevelCount !== cache.mipLevelCount) {
+        return false;
+    }
+
+    return true;
+}
+
+const checkShaderModuleCacheReuseable = (descriptor: GPUShaderModuleDescriptor , cache: WebGPUShaderModuleCache) => {
+    if (descriptor.code !== cache.code) {
         return false;
     }
 
@@ -88,7 +99,7 @@ const checkSamplerCacheReuseable = (descriptor: GPUSamplerDescriptor, cache: Web
 }
 
 export const WebGPUCacheObjectStore = {
-    caches: new Map<any, Map<GPUDevice, IWebGPUObjectCache<GPUObjecthasCache>>>(),
+    caches: new Map<any, Map<GPUDevice, IWebGPUObjectCache<GPUObjectHasCache>>>(),
     getCaches: (objects: any) => {
         return WebGPUCacheObjectStore.caches.get(objects);
     },
@@ -161,6 +172,30 @@ export const WebGPUCacheObjectStore = {
             dirty: true,
             data: device.createSampler(sampler.descriptor),
             ...sampler.descriptor,
+        };
+        map.set(device, cache);
+
+        return cache;
+    },
+    createGPUShaderModuleCache: (shaderProgram: IShaderProgram, device: GPUDevice) => {
+        let map = WebGPUCacheObjectStore.caches.get(shaderProgram);
+        if (!map) {
+            map = new Map();
+            WebGPUCacheObjectStore.caches.set(shaderProgram, map);
+        }
+        let cache = map.get(device) as WebGPUShaderModuleCache;
+        if (cache) {
+            if (checkShaderModuleCacheReuseable(shaderProgram.descriptor, cache)) {
+                cache.dirty = true;
+                cache.data.label = shaderProgram.name;
+                return cache;
+            }
+        }
+        
+        cache = {
+            dirty: true,
+            data: device.createShaderModule(shaderProgram.descriptor),
+            ...shaderProgram.descriptor,
         };
         map.set(device, cache);
 

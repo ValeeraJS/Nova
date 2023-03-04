@@ -34,10 +34,14 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 
 	public constructor(fs: string, sampler: Sampler = new Sampler()) {
 		super({
-			code: CommonData.vs,
+			descriptor: {
+				code: CommonData.vs,
+			},
 			dirty: true,
 		}, {
-			code: fs,
+			descriptor: {
+				code: fs,
+			},
 			dirty: true,
 		}, [
 			{

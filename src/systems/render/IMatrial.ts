@@ -8,8 +8,8 @@ export interface IUniformSlot {
 }
 
 export interface IShaderProgram {
-    code: string;
-    entry?: string;
+    descriptor: GPUShaderModuleDescriptor ;
+    name?: string;
     dirty: boolean;
 }
 

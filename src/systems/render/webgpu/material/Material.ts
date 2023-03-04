@@ -17,21 +17,21 @@ export default class Material implements IMaterial {
 	}
 
 	public get vertexCode(): string {
-		return this.vertexShader.code;
+		return this.vertexShader.descriptor.code;
 	}
 
 	public set vertexCode(code: string) {
-		this.vertexShader.code = code;
+		this.vertexShader.descriptor.code = code;
 		this.vertexShader.dirty = true;
 		this.dirty = true;
 	}
 
 	public get fragmentCode(): string {
-		return this.vertexShader.code;
+		return this.vertexShader.descriptor.code;
 	}
 
 	public set fragmentCode(code: string) {
-		this.fragmentShader.code = code;
+		this.fragmentShader.descriptor.code = code;
 		this.fragmentShader.dirty = true;
 		this.dirty = true;
 	}

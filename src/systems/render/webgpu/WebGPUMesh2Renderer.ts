@@ -288,16 +288,16 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	} {
 		let vertex = {
 			module: context.device.createShaderModule({
-				code: material.vertexShader.code,
+				code: material.vertexShader.descriptor.code,
 			}),
-			entryPoint: material.vertexShader.entry ?? "main",
+			entryPoint: "main",
 			buffers: vertexBuffers
 		};
 		let fragment = {
 			module: context.device.createShaderModule({
-				code: material.fragmentShader.code,
+				code: material.fragmentShader.descriptor.code,
 			}),
-			entryPoint: material.fragmentShader.entry ?? "main",
+			entryPoint: "main",
 			targets: [
 				{
 					format: context.preferredFormat,

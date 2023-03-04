@@ -32,13 +32,15 @@ const wgslShaders = {
 export default class DomMaterial extends Material {
 	constructor() {
 		super({
-			code: wgslShaders.vertex,
-			dirty: true,
-			entry: "main"
+			descriptor: {
+				code: wgslShaders.vertex,
+			},
+			dirty: true
 		}, {
-			code: wgslShaders.fragment,
+			descriptor: {
+				code: wgslShaders.fragment,
+			},
 			dirty: true,
-			entry: "main"
 		}, [{
 			name: "backgroundColor",
 			value: new ColorGPU(),

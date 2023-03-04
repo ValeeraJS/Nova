@@ -1,13 +1,11 @@
 import { IShaderProgram } from "./IMatrial";
 export declare class ShaderProgram implements IShaderProgram {
-    data: {
+    descriptor: {
         code: string;
-        entry: string;
     };
+    name: string;
     dirty: boolean;
-    constructor(code: string, entry?: string);
+    constructor(code: string, name?: string);
     get code(): string;
     set code(value: string);
-    get entry(): string;
-    set entry(value: string);
 }

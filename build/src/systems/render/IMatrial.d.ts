@@ -7,8 +7,8 @@ export interface IUniformSlot {
     buffer?: any;
 }
 export interface IShaderProgram {
-    code: string;
-    entry?: string;
+    descriptor: GPUShaderModuleDescriptor;
+    name?: string;
     dirty: boolean;
 }
 export interface IMaterial {

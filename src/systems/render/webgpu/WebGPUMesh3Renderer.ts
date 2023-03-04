@@ -282,16 +282,12 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		fragment: GPUFragmentState
 	} {
 		let vertex = {
-			module: context.device.createShaderModule({
-				code: material.vertexShader.code,
-			}),
+			module: WebGPUCacheObjectStore.createGPUShaderModuleCache(material.vertexShader, context.device).data,
 			entryPoint: "main",
 			buffers: vertexBuffers
 		};
 		let fragment = {
-			module: context.device.createShaderModule({
-				code: material.fragmentShader.code,
-			}),
+			module: WebGPUCacheObjectStore.createGPUShaderModuleCache(material.fragmentShader, context.device).data,
 			entryPoint: "main",
 			targets: [
 				{

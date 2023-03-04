@@ -36,10 +36,14 @@ const wgslShaders = {
 export default class TextureMaterial extends Material implements IMaterial {
 	public constructor(texture: Texture, sampler: Sampler = new Sampler()) {
 		super({
-			code: wgslShaders.vertex,
+			descriptor: {
+				code: wgslShaders.vertex,
+			},
 			dirty: true,
 		}, {
-			code: wgslShaders.fragment,
+			descriptor: {
+				code: wgslShaders.fragment,
+			},
 			dirty: true,
 		}, [
 			{

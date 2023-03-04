@@ -8592,18 +8592,18 @@ class Material {
         this.uniforms = uniforms;
     }
     get vertexCode() {
-        return this.vertexShader.code;
+        return this.vertexShader.descriptor.code;
     }
     set vertexCode(code) {
-        this.vertexShader.code = code;
+        this.vertexShader.descriptor.code = code;
         this.vertexShader.dirty = true;
         this.dirty = true;
     }
     get fragmentCode() {
-        return this.vertexShader.code;
+        return this.vertexShader.descriptor.code;
     }
     set fragmentCode(code) {
-        this.fragmentShader.code = code;
+        this.fragmentShader.descriptor.code = code;
         this.fragmentShader.dirty = true;
         this.dirty = true;
     }
@@ -8645,10 +8645,14 @@ const vs = `
 }
 `;
 const DEFAULT_MATERIAL3 = new Material({
-    code: vs,
+    descriptor: {
+        code: vs,
+    },
     dirty: true
 }, {
-    code: fs,
+    descriptor: {
+        code: fs,
+    },
     dirty: true
 });
 
@@ -8694,6 +8698,12 @@ const checkTextureCacheReuseable = (descriptor, cache) => {
         return false;
     }
     if (descriptor.mipLevelCount !== cache.mipLevelCount) {
+        return false;
+    }
+    return true;
+};
+const checkShaderModuleCacheReuseable = (descriptor, cache) => {
+    if (descriptor.code !== cache.code) {
         return false;
     }
     return true;
@@ -8803,6 +8813,28 @@ const WebGPUCacheObjectStore = {
             dirty: true,
             data: device.createSampler(sampler.descriptor),
             ...sampler.descriptor,
+        };
+        map.set(device, cache);
+        return cache;
+    },
+    createGPUShaderModuleCache: (shaderProgram, device) => {
+        let map = WebGPUCacheObjectStore.caches.get(shaderProgram);
+        if (!map) {
+            map = new Map();
+            WebGPUCacheObjectStore.caches.set(shaderProgram, map);
+        }
+        let cache = map.get(device);
+        if (cache) {
+            if (checkShaderModuleCacheReuseable(shaderProgram.descriptor, cache)) {
+                cache.dirty = true;
+                cache.data.label = shaderProgram.name;
+                return cache;
+            }
+        }
+        cache = {
+            dirty: true,
+            data: device.createShaderModule(shaderProgram.descriptor),
+            ...shaderProgram.descriptor,
         };
         map.set(device, cache);
         return cache;
@@ -9093,16 +9125,16 @@ class WebGPUMesh2Renderer {
     createStages(material, vertexBuffers, context) {
         let vertex = {
             module: context.device.createShaderModule({
-                code: material.vertexShader.code,
+                code: material.vertexShader.descriptor.code,
             }),
-            entryPoint: material.vertexShader.entry ?? "main",
+            entryPoint: "main",
             buffers: vertexBuffers
         };
         let fragment = {
             module: context.device.createShaderModule({
-                code: material.fragmentShader.code,
+                code: material.fragmentShader.descriptor.code,
             }),
-            entryPoint: material.fragmentShader.entry ?? "main",
+            entryPoint: "main",
             targets: [
                 {
                     format: context.preferredFormat,
@@ -9362,16 +9394,12 @@ class WebGPUMesh3Renderer {
     }
     createStages(material, vertexBuffers, context) {
         let vertex = {
-            module: context.device.createShaderModule({
-                code: material.vertexShader.code,
-            }),
+            module: WebGPUCacheObjectStore.createGPUShaderModuleCache(material.vertexShader, context.device).data,
             entryPoint: "main",
             buffers: vertexBuffers
         };
         let fragment = {
-            module: context.device.createShaderModule({
-                code: material.fragmentShader.code,
-            }),
+            module: WebGPUCacheObjectStore.createGPUShaderModuleCache(material.fragmentShader, context.device).data,
             entryPoint: "main",
             targets: [
                 {
@@ -9774,12 +9802,14 @@ const wgslShaders$2 = {
 class ColorMaterial extends Material {
     constructor(color = new Float32Array([1, 1, 1, 1])) {
         super({
-            code: wgslShaders$2.vertex,
-            entry: "main",
+            descriptor: {
+                code: wgslShaders$2.vertex,
+            },
             dirty: true
         }, {
-            code: wgslShaders$2.fragment,
-            entry: "main",
+            descriptor: {
+                code: wgslShaders$2.fragment,
+            },
             dirty: true
         }, [{
                 name: "color",
@@ -9828,13 +9858,15 @@ const wgslShaders$1 = {
 class DomMaterial extends Material {
     constructor() {
         super({
-            code: wgslShaders$1.vertex,
-            dirty: true,
-            entry: "main"
+            descriptor: {
+                code: wgslShaders$1.vertex,
+            },
+            dirty: true
         }, {
-            code: wgslShaders$1.fragment,
+            descriptor: {
+                code: wgslShaders$1.fragment,
+            },
             dirty: true,
-            entry: "main"
         }, [{
                 name: "backgroundColor",
                 value: new ColorGPU(),
@@ -9936,12 +9968,14 @@ const fragmentShader$1 = `
 class DepthMaterial extends Material {
     constructor() {
         super({
-            code: vertexShader$1,
-            entry: "main",
+            descriptor: {
+                code: vertexShader$1,
+            },
             dirty: true
         }, {
-            code: fragmentShader$1,
-            entry: "main",
+            descriptor: {
+                code: fragmentShader$1,
+            },
             dirty: true
         }, []);
         this.dirty = true;
@@ -9972,13 +10006,15 @@ const fragmentShader = `
 class NormalMaterial extends Material {
     constructor() {
         super({
-            code: vertexShader,
+            descriptor: {
+                code: vertexShader,
+            },
             dirty: true,
-            entry: "main"
         }, {
-            code: fragmentShader,
+            descriptor: {
+                code: fragmentShader,
+            },
             dirty: true,
-            entry: "main"
         }, []);
         this.dirty = true;
     }
@@ -9987,13 +10023,15 @@ class NormalMaterial extends Material {
 class ShaderMaterial extends Material {
     constructor(vertex, fragment, uniforms = [], blend) {
         super({
-            code: vertex,
+            descriptor: {
+                code: vertex,
+            },
             dirty: true,
-            entry: "main"
         }, {
-            code: fragment,
+            descriptor: {
+                code: fragment,
+            },
             dirty: true,
-            entry: "main"
         }, uniforms, blend);
         this.dirty = true;
     }
@@ -10026,10 +10064,14 @@ class ShadertoyMaterial extends Material {
     dataD;
     constructor(fs, sampler = new Sampler()) {
         super({
-            code: CommonData.vs,
+            descriptor: {
+                code: CommonData.vs,
+            },
             dirty: true,
         }, {
-            code: fs,
+            descriptor: {
+                code: fs,
+            },
             dirty: true,
         }, [
             {
@@ -10186,10 +10228,14 @@ const wgslShaders = {
 class TextureMaterial extends Material {
     constructor(texture, sampler = new Sampler()) {
         super({
-            code: wgslShaders.vertex,
+            descriptor: {
+                code: wgslShaders.vertex,
+            },
             dirty: true,
         }, {
-            code: wgslShaders.fragment,
+            descriptor: {
+                code: wgslShaders.fragment,
+            },
             dirty: true,
         }, [
             {

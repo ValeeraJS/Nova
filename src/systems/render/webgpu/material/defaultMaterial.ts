@@ -38,9 +38,13 @@ const vs = `
 `
 
 export const DEFAULT_MATERIAL3 = new Material({
-	code: vs,
+	descriptor: {
+		code: vs,
+	},
 	dirty: true
 }, {
-	code: fs,
+	descriptor: {
+		code: fs,
+	},
 	dirty: true
 });

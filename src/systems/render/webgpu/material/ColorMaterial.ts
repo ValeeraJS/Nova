@@ -31,12 +31,14 @@ const wgslShaders = {
 export default class ColorMaterial extends Material {
 	constructor(color: Float32Array = new Float32Array([1, 1, 1, 1])) {
 		super({
-			code: wgslShaders.vertex,
-			entry: "main",
+			descriptor: {
+				code: wgslShaders.vertex,
+			},
 			dirty: true
 		}, {
-			code: wgslShaders.fragment,
-			entry: "main",
+			descriptor: {
+				code: wgslShaders.fragment,
+			},
 			dirty: true
 		}, [{
 			name: "color",
