@@ -10,7 +10,7 @@
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3();
+		const geo = Nova.Geometry3Factory.createPlane();
 		const material = new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/test.png", 512, 512));
 		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 

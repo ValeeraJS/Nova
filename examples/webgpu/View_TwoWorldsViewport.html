@@ -4,35 +4,26 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas);
+		const engine = new Nova.Engine();
 
 		function createWorld(engine, viewport, type) {
 			const world = new Nova.World();
 			const geo =
-				type === "triangle"
-					? Nova.Geometry3Factory.createTriangle3()
-					: Nova.Geometry3Factory.createBox3();
+				type === "triangle" ? Nova.Geometry3Factory.createTriangle() : Nova.Geometry3Factory.createBox();
 			const mesh = Nova.EntityFactory.createMesh3(geo);
 			mesh.position.z = -5;
 
-			const projection = new Nova.PerspectiveProjection(
-				Math.PI / 3,
-				canvas.width / canvas.height / 2,
-				0.01,
-				10
-			);
-			const camera = new Nova.Camera3("test-camera", projection);
+			const camera = new Nova.Camera3("", new Nova.PerspectiveProjection());
 
-			let renderSystem = new Nova.WebGPURenderSystem(engine, viewport);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
+			let renderSystem = new Nova.WebGPURenderSystem(viewport);
+			let renderer = new Nova.WebGPUMesh3Renderer(camera);
 			renderSystem.addRenderer(renderer);
 			world.addSystem(renderSystem).add(mesh);
 
+			// TODO
 			engine.addTask(() => {
 				world.run();
 				mesh.rotation.y += 0.01;
@@ -41,31 +32,29 @@
 			return renderSystem;
 		}
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			createWorld(
-				engine,
-				{
-					x: 0,
-					y: 0,
-					width: 0.5,
-					height: 1,
-					minDepth: 0,
-					maxDepth: 1
-				},
-				"cube"
-			);
-			createWorld(
-				engine,
-				{
-					x: 0.5,
-					y: 0,
-					width: 0.5,
-					height: 1,
-					minDepth: 0,
-					maxDepth: 1
-				},
-				"triangle"
-			);
-		});
+		createWorld(
+			engine,
+			{
+				x: 0,
+				y: 0,
+				width: 0.5,
+				height: 1,
+				minDepth: 0,
+				maxDepth: 1,
+			},
+			"cube",
+		);
+		createWorld(
+			engine,
+			{
+				x: 0.5,
+				y: 0,
+				width: 0.5,
+				height: 1,
+				minDepth: 0,
+				maxDepth: 1,
+			},
+			"triangle",
+		);
 	</script>
 </body>

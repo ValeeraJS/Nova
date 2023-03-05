@@ -16,12 +16,13 @@
 
 		function createWorld(engine, scissors, material) {
 			const world = new Nova.World();
-			const geo = Nova.Geometry3Factory.createBox3();
+			const geo = Nova.Geometry3Factory.createBox();
 			const mesh = Nova.EntityFactory.createMesh3(geo, material);
 			mesh.position.z = -5;
 
 			world.addSystem(renderSystem).add(mesh);
 
+			// TODO
 			engine.addTask(() => {
 				renderSystem.scissor = scissors;
 				world.run();

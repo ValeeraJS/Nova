@@ -4,35 +4,30 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<canvas id="gpucanvas"></canvas>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script>
-		const canvas = document.getElementById("gpucanvas");
-		const engine = new Nova.WebGPUEngine(canvas, {
-			width: 800,
-			height: 450
-		});
+		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geometry = Nova.Geometry3Factory.createPlane3({
+		const geometry = Nova.Geometry3Factory.createPlane({
 			width: 3,
-			height: 3
+			height: 3,
 		});
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
 		mesh.position.z = -5;
 
-		const perspectiveProjection = new Nova.PerspectiveProjection(Math.PI / 3, canvas.width / canvas.height, 0.01, 10);
-		
+		const perspectiveProjection = new Nova.PerspectiveProjection();
+
 		const camera = new Nova.Camera3("test-camera", perspectiveProjection);
 
-		engine.once(Nova.EngineEvents.INITED, (e) => {
-			let renderSystem = new Nova.WebGPURenderSystem(engine);
-			let renderer = new Nova.WebGPUMesh3Renderer(engine, camera);
-			renderSystem.addRenderer(renderer);
-			world.addSystem(renderSystem).add(mesh);
-			createGUI();
-		}).addTask(()=>{
+		let renderSystem = new Nova.WebGPURenderSystem();
+		let renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(mesh);
+		createGUI();
+
+		engine.addTask(() => {
 			world.run();
 			mesh.rotation.y -= 0.01;
 		});
@@ -40,11 +35,11 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("canvas size");
-			f.add(engine, "width", 400, 1600).step(1).onChange(onChange);
-			f.add(engine, "height", 225, 900).step(1).onChange(onChange);
+			f.add(renderSystem, "width", 400, 1600).step(1).onChange(onChange);
+			f.add(renderSystem, "height", 225, 900).step(1).onChange(onChange);
 
 			function onChange(val) {
-				perspectiveProjection.aspect = engine.width / engine.height;
+				perspectiveProjection.aspect = renderSystem.width / renderSystem.height;
 			}
 		}
 	</script>
