@@ -25,10 +25,10 @@ export class Sampler {
         return this;
     }
 
-    setFilterMode(mag: GPUFilterMode, min: GPUFilterMode, mipmap: GPUFilterMode) {
+    setFilterMode(mag: GPUFilterMode, min: GPUFilterMode, mipmap?: GPUFilterMode) {
         this.descriptor.magFilter = mag;
         this.descriptor.minFilter = min;
-        this.descriptor.mipmapFilter = mipmap;
+        this.descriptor.mipmapFilter = mipmap ?? this.descriptor.mipmapFilter;
         this.dirty = true;
 
         return this;

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+<body>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script>
+		const engine = new Nova.Engine();
+		const world = new Nova.World();
+
+		const geo = new Nova.Geometry(3, 6);
+		const material = new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/uv.jpg", 512, 512));
+		
+		geo.addAttribute("position", new Float32Array([
+			-1, -1, 0,
+			1, -1, 0,
+			1, 1, 0,
+			-1, -1, 0,
+			1, 1, 0,
+			-1, 1, 0,
+		]), 3);
+		geo.addAttribute("normal", new Float32Array(18), 3);
+		geo.addAttribute("uv", new Float32Array([
+			-1, 2,
+			2, 2,
+			2, -1,
+			-1, 2,
+			2, -1,
+			-1, -1,
+		]), 2);
+		const mesh = Nova.EntityFactory.createMesh3(geo, material);
+
+		const projection = new Nova.PerspectiveProjection();
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 3;
+
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(mesh);
+
+
+		engine.addTask(() => {
+			world.run();
+		});
+
+		createGUI();
+
+		function createGUI() {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("filter");
+
+			f.add(material.sampler.descriptor, "addressModeU", ["repeat", "clamp-to-edge", "mirror-repeat"]).onChange(onChange);
+			f.add(material.sampler.descriptor, "addressModeV", ["repeat", "clamp-to-edge", "mirror-repeat"]).onChange(onChange);
+
+			function onChange() {
+				material.dirty = true;
+			}
+		}
+	</script>
+</body>
