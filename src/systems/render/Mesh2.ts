@@ -1,8 +1,8 @@
 
-import { Geometry } from "../geometry";
-import { Renderable, RenderableData } from "../Renderable";
-import { IMaterial } from "./material";
-import { DEFAULT_MATERIAL3 } from "./material/defaultMaterial";
+import { Geometry } from "./geometry";
+import { Renderable, RenderableData } from "./Renderable";
+import { IMaterial } from "./IMatrial";
+import { DEFAULT_MATERIAL3 } from "./webgpu/material/defaultMaterial";
 
 export interface Mesh2Data extends RenderableData<Geometry, IMaterial> {
     geometry: Geometry;

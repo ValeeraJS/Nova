@@ -1,6 +1,4 @@
 export * from "./IWebGPURenderer";
-export * from "./Mesh2";
-export * from "./Mesh3";
 export * from "./WebGPUCacheObjectStore";
 export * from "./WebGPUMesh2Renderer";
 export * from "./WebGPUMesh3Renderer";

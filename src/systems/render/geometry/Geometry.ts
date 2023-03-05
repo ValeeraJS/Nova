@@ -22,7 +22,7 @@ export type AttributesNodeData = {
 }
 
 // 既可以是2d几何体也可以是3D几何体
-export default class Geometry extends Component<AttributesNodeData[]> {
+export class Geometry extends Component<AttributesNodeData[]> {
     /**
      * 顶点数量
      */

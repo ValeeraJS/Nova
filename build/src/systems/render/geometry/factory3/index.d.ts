@@ -1,6 +1,6 @@
-export { default as createBox3 } from "./createBox3";
-export { default as createCircle3 } from "./createCircle3";
-export { default as createCylinder3 } from "./createCylinder3";
-export { default as createPlane3 } from "./createPlane3";
-export { default as createTriangle3 } from "./createTriangle3";
-export { default as createSphere3 } from "./createSphere3";
+export * from "./createBox";
+export * from "./createCircle";
+export * from "./createCylinder";
+export * from "./createPlane";
+export * from "./createTriangle";
+export * from "./createSphere";

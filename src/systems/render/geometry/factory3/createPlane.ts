@@ -1,5 +1,5 @@
 import { POSITION, VERTICES } from "../constants";
-import Geometry, { AttributePicker } from "../Geometry";
+import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
 export type IPlaneGeometryOptions = {
@@ -22,7 +22,7 @@ export const DEFAULT_PLANE_OPTIONS: IPlaneGeometryOptions = {
 };
 
 
-export default (options: IPlaneGeometryOptionsInput = {}): Geometry => {
+export const createPlane = (options: IPlaneGeometryOptionsInput = {}): Geometry => {
 
     const {width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine} = {
         ...DEFAULT_PLANE_OPTIONS,

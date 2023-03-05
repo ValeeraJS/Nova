@@ -6439,7 +6439,7 @@ class Engine extends EventDispatcher.mixin(Timeline) {
     }
 }
 
-let Object3$1 = class Object3 extends Entity {
+class Object2 extends Entity {
     anchor;
     position;
     rotation;
@@ -6461,15 +6461,15 @@ let Object3$1 = class Object3 extends Entity {
                 unique: true
             }]);
     }
-};
+}
 
-let Camera3$1 = class Camera3 extends Object3$1 {
+class Camera2 extends Object2 {
     projection;
     constructor(name = "Camera2", projection) {
         super(name);
         this.projection = projection;
     }
-};
+}
 
 class Object3 extends Entity {
     anchor;
@@ -6793,395 +6793,6 @@ const DEFAULT_BLEND_STATE = {
     }
 };
 
-class Renderable extends Component {
-    tags = [{
-            label: RENDERABLE,
-            unique: false
-        }];
-    constructor(data) {
-        super(RENDERABLE, data);
-    }
-    get geometry() {
-        return this.data.geometry;
-    }
-    set geometry(v) {
-        this.data.geometry = v;
-        this.dirty = true;
-    }
-    get material() {
-        return this.data.material;
-    }
-    set material(v) {
-        this.data.material = v;
-        this.dirty = true;
-    }
-}
-
-var getColorGPU = (color, result = new ColorGPU()) => {
-    if (color instanceof ColorGPU) {
-        result.set(color);
-    }
-    else if (typeof color === "string") {
-        ColorGPU.fromString(color, result);
-    }
-    else if (typeof color === "number") {
-        ColorGPU.fromHex(color, 1, result);
-    }
-    else if (color instanceof ColorRGB) {
-        ColorGPU.fromColorRGB(color, result);
-    }
-    else if (color instanceof ColorRGBA) {
-        ColorGPU.fromColorRGBA(color, result);
-    }
-    else if (color instanceof ColorHSL) {
-        ColorGPU.fromColorHSL(color.h, color.s, color.l, result);
-    }
-    else if (color instanceof Float32Array || color instanceof Array) {
-        ColorGPU.fromArray(color, result);
-    }
-    else if (color instanceof Float32Array || color instanceof Array) {
-        ColorGPU.fromArray(color, result);
-    }
-    else {
-        if ("a" in color) {
-            ColorGPU.fromJson(color, result);
-        }
-        else {
-            ColorGPU.fromJson({
-                ...color,
-                a: 1
-            }, result);
-        }
-    }
-    return result;
-};
-
-class RenderSystemInCanvas extends System {
-    context;
-    alphaMode;
-    viewport = {
-        x: 0,
-        y: 0,
-        width: 1,
-        height: 1,
-        minDepth: 0,
-        maxDepth: 1
-    };
-    id = 0;
-    cache = new WeakMap();
-    entitySet = new WeakMap();
-    loopTimes = 0;
-    name = "";
-    usedBy = [];
-    rendererMap = new Map();
-    canvas;
-    options = {
-        width: 0,
-        height: 0,
-        resolution: 1,
-        alphaMode: "",
-        autoResize: false,
-        clearColor: new ColorGPU(),
-        noDepthTexture: false
-    };
-    constructor(name, options) {
-        super(name, (entity) => {
-            return entity.getComponent(RENDERABLE)?.data;
-        });
-        const element = options.element ?? document.body;
-        const w = element.offsetWidth;
-        const h = element.offsetHeight;
-        if (element instanceof HTMLCanvasElement) {
-            this.canvas = element;
-        }
-        else {
-            this.canvas = document.createElement("canvas");
-            element.appendChild(this.canvas);
-        }
-        this.width = options.width ?? w;
-        this.height = options.height ?? h;
-        this.resolution = options.resolution ?? window.devicePixelRatio;
-        this.alphaMode = options.alphaMode ?? "premultiplied";
-        this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
-        this.autoResize = options.autoResize ?? false;
-        this.options.noDepthTexture = options.noDepthTexture ?? false;
-    }
-    clearColorGPU = new ColorGPU(0, 0, 0, 1);
-    get clearColor() {
-        return this.options.clearColor;
-    }
-    set clearColor(value) {
-        getColorGPU(value, this.clearColorGPU);
-        if (value instanceof Object) {
-            this.options.clearColor = new Proxy(value, {
-                get: (target, property, receiver) => {
-                    const res = Reflect.get(target, property, receiver);
-                    this.clearColor = target;
-                    return res;
-                },
-            });
-        }
-        else {
-            this.options.clearColor = value;
-        }
-    }
-    get resolution() {
-        return this.options.resolution;
-    }
-    set resolution(v) {
-        this.options.resolution = v;
-        this.resize(this.options.width, this.options.height, v);
-    }
-    get width() {
-        return this.options.width;
-    }
-    set width(v) {
-        this.options.width = v;
-        this.resize(v, this.options.height, this.options.resolution);
-    }
-    get height() {
-        return this.options.height;
-    }
-    set height(v) {
-        this.options.height = v;
-        this.resize(this.options.width, v, this.options.resolution);
-    }
-    get autoResize() {
-        return this.options.autoResize;
-    }
-    set autoResize(v) {
-        this.options.autoResize = v;
-        if (v) {
-            this.#turnOnAutoResize();
-        }
-        else {
-            this.#turnOffAutoResize();
-        }
-    }
-    #isResizeObserverConnect = false;
-    #resizeObserver = new ResizeObserver((parent) => {
-        if (parent[0]) {
-            const div = parent[0].target;
-            this.resize(div.offsetWidth, div.offsetHeight);
-        }
-    });
-    #turnOnAutoResize = () => {
-        if (this.#isResizeObserverConnect) {
-            return this;
-        }
-        let parent = this.canvas.parentElement;
-        if (parent) {
-            this.#resizeObserver.observe(parent);
-            this.#isResizeObserverConnect = true;
-        }
-        return this;
-    };
-    #turnOffAutoResize = () => {
-        if (!this.#isResizeObserverConnect) {
-            return this;
-        }
-        let parent = this.canvas.parentElement;
-        if (parent) {
-            this.#resizeObserver.unobserve(parent);
-            this.#isResizeObserverConnect = false;
-        }
-        return this;
-    };
-    addRenderer(renderer) {
-        if (typeof renderer.renderTypes === "string") {
-            this.rendererMap.set(renderer.renderTypes, renderer);
-        }
-        else {
-            for (let item of renderer.renderTypes) {
-                this.rendererMap.set(item, renderer);
-            }
-        }
-        return this;
-    }
-    destroy() {
-        this.rendererMap.clear();
-        return this;
-    }
-    resize(width, height, resolution = this.resolution) {
-        this.options.width = width;
-        this.options.height = height;
-        this.options.resolution = resolution;
-        this.canvas.style.width = width + 'px';
-        this.canvas.style.height = height + 'px';
-        this.canvas.width = width * resolution;
-        this.canvas.height = height * resolution;
-        return this;
-    }
-    serialize() {
-        return {
-            id: this.id,
-            name: this.name,
-            type: "RenderSystem"
-        };
-    }
-}
-
-const canvases = []; // 储存多个canvas，可能存在n个图同时画
-async function drawSpriteBlock(image, width, height, frame) {
-    let canvas = canvases.pop() || document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-    let result = await createImageBitmap(canvas);
-    canvases.push(canvas);
-    return result;
-}
-
-class AtlasTexture extends Texture {
-    loaded = false;
-    image;
-    framesBitmap = [];
-    constructor(json, name = "atlas-texture") {
-        super({
-            size: [json.spriteSize.w, json.spriteSize.h],
-            name
-        });
-        this.setImage(json);
-    }
-    async setImage(json) {
-        this.loaded = false;
-        this.dirty = false;
-        let img = new Image();
-        img.src = json.image;
-        this.image = img;
-        await img.decode();
-        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
-        this.loaded = true;
-        return this;
-    }
-}
-
-class ImageBitmapTexture extends Texture {
-    loaded = false;
-    sizeChanged = false;
-    image = new Image();
-    constructor(img, width, height, name = "image-texture") {
-        super({
-            size: [width, height],
-            name,
-        });
-        this.setImage(img);
-    }
-    async setImage(img) {
-        this.loaded = false;
-        this.dirty = false;
-        if (typeof img === "string") {
-            this.image.src = img;
-        }
-        else if (img instanceof ImageBitmap) {
-            this.dirty = true;
-            this.loaded = true;
-            this.data = img;
-            return this;
-        }
-        else {
-            this.image = img;
-        }
-        await this.image.decode();
-        this.data = await createImageBitmap(this.image);
-        if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
-            this.sizeChanged = true;
-            this.width = this.data.width;
-            this.height = this.data.height;
-        }
-        this.dirty = true;
-        this.loaded = true;
-        return this;
-    }
-}
-
-class Sampler {
-    dirty = true;
-    descriptor = {};
-    name;
-    constructor(option = {}, name = "sampler") {
-        this.descriptor.minFilter = option.minFilter ?? "linear";
-        this.descriptor.magFilter = option.magFilter ?? "linear";
-        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
-        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
-        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
-        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
-        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
-        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
-        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
-        this.descriptor.compare = option.compare ?? undefined;
-        this.name = name;
-    }
-    setAddressMode(u, v, w) {
-        this.descriptor.addressModeU = u;
-        this.descriptor.addressModeV = v;
-        this.descriptor.addressModeW = w ?? this.descriptor.addressModeW;
-        this.dirty = true;
-        return this;
-    }
-    setFilterMode(mag, min, mipmap) {
-        this.descriptor.magFilter = mag;
-        this.descriptor.minFilter = min;
-        this.descriptor.mipmapFilter = mipmap;
-        this.dirty = true;
-        return this;
-    }
-    setLodClamp(min, max) {
-        this.descriptor.lodMaxClamp = max;
-        this.descriptor.lodMinClamp = min;
-        this.dirty = true;
-        return this;
-    }
-    setMaxAnisotropy(v) {
-        this.descriptor.maxAnisotropy = v;
-        this.dirty = true;
-        return this;
-    }
-    setCompare(v) {
-        this.descriptor.compare = v;
-        this.dirty = true;
-        return this;
-    }
-}
-
-class SpritesheetTexture extends Texture {
-    loaded = false;
-    frame = 0; // 当前帧索引
-    image;
-    framesBitmap = [];
-    constructor(json, name = "spritesheet-texture") {
-        super({
-            size: [json.spriteSize.w, json.spriteSize.h],
-            name,
-        });
-        this.setImage(json);
-    }
-    async setImage(json) {
-        this.loaded = false;
-        this.dirty = false;
-        let img = new Image();
-        img.src = json.image;
-        this.image = img;
-        await img.decode();
-        // canvas.width = json.spriteSize.w;
-        // canvas.height = json.spriteSize.h;
-        for (let item of json.frames) {
-            this.framesBitmap.push(await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, item));
-        }
-        this.data = this.framesBitmap[0];
-        this.dirty = true;
-        this.loaded = true;
-        return this;
-    }
-    setFrame(frame) {
-        this.frame = frame;
-        this.data = this.framesBitmap[frame];
-        this.dirty = true;
-    }
-}
-
 const POSITION = "position";
 const VERTICES = "vertices";
 const VERTICES_COLOR = "vertices_color";
@@ -7311,7 +6922,7 @@ const DEFAULT_BOX_OPTIONS = {
     depthSegments: 1,
     cullMode: "back"
 };
-var createBox3 = (options = {}) => {
+const createBox = (options = {}) => {
     let stride = 3;
     const indices = [];
     const vertices = [];
@@ -7454,7 +7065,7 @@ const DEFAULT_CIRCLE_OPTIONS$1 = {
     angle: Math.PI * 2,
     radius: 1,
 };
-var createCircle3 = (options = {}) => {
+const createCircle = (options = {}) => {
     let stride = 3;
     const indices = [];
     const positions = [0, 0, 0];
@@ -7563,7 +7174,7 @@ var createCircle3 = (options = {}) => {
     }
 };
 
-const DEFAULT_SPHERE_OPTIONS$1 = {
+const DEFAULT_CYLINDER_OPTIONS = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
     combine: true,
@@ -7577,14 +7188,14 @@ const DEFAULT_SPHERE_OPTIONS$1 = {
     thetaLength: constants$1.DEG_360_RAD,
     cullMode: "back"
 };
-var createCylinder3 = (options = {}) => {
+const createCylinder = (options = {}) => {
     let stride = 3;
     const indices = [];
     const vertices = [];
     const normals = [];
     const uvs = [];
     const { height, radialSegments, radiusTop, radiusBottom, heightSegments, openEnded, thetaStart, thetaLength, topology, cullMode, hasUV, hasNormal, combine } = {
-        ...DEFAULT_SPHERE_OPTIONS$1,
+        ...DEFAULT_CYLINDER_OPTIONS,
         ...options
     };
     let index = 0;
@@ -7778,7 +7389,7 @@ const DEFAULT_PLANE_OPTIONS$1 = {
     segmentX: 1,
     segmentY: 1,
 };
-var createPlane3 = (options = {}) => {
+const createPlane = (options = {}) => {
     const { width, height, segmentX, segmentY, topology, cullMode, hasUV, hasNormal, combine } = {
         ...DEFAULT_PLANE_OPTIONS$1,
         ...options
@@ -7930,7 +7541,7 @@ var createPlane3 = (options = {}) => {
     }
 };
 
-var createTriangle3 = (t = Triangle3.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
+const createTriangle = (t = Triangle3.create(), options = DEFAULT_OPTIONS, topology = "triangle-list", cullMode = "none") => {
     let geo = new Geometry(3, 3, topology, cullMode);
     let stride = 3;
     if (options.combine) {
@@ -8015,7 +7626,7 @@ const DEFAULT_SPHERE_OPTIONS = {
     heightSegments: 32,
     cullMode: "back"
 };
-var createSphere3 = (options = {}) => {
+const createSphere = (options = {}) => {
     let stride = 3;
     const { radius, phiStart, phiLength, thetaStart, thetaLength, widthSegments, heightSegments, topology, cullMode, hasUV, hasNormal, combine } = {
         ...DEFAULT_SPHERE_OPTIONS,
@@ -8138,12 +7749,17 @@ var createSphere3 = (options = {}) => {
 
 var index$2 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
-	createBox3: createBox3,
-	createCircle3: createCircle3,
-	createCylinder3: createCylinder3,
-	createPlane3: createPlane3,
-	createSphere3: createSphere3,
-	createTriangle3: createTriangle3
+	DEFAULT_BOX_OPTIONS: DEFAULT_BOX_OPTIONS,
+	DEFAULT_CIRCLE_OPTIONS: DEFAULT_CIRCLE_OPTIONS$1,
+	DEFAULT_CYLINDER_OPTIONS: DEFAULT_CYLINDER_OPTIONS,
+	DEFAULT_PLANE_OPTIONS: DEFAULT_PLANE_OPTIONS$1,
+	DEFAULT_SPHERE_OPTIONS: DEFAULT_SPHERE_OPTIONS,
+	createBox: createBox,
+	createCircle: createCircle,
+	createCylinder: createCylinder,
+	createPlane: createPlane,
+	createSphere: createSphere,
+	createTriangle: createTriangle
 });
 
 const DEFAULT_CIRCLE_OPTIONS = {
@@ -8389,6 +8005,416 @@ var index$1 = /*#__PURE__*/Object.freeze({
 	createTriangle2: createTriangle2
 });
 
+class Renderable extends Component {
+    tags = [{
+            label: RENDERABLE,
+            unique: false
+        }];
+    constructor(data) {
+        super(RENDERABLE, data);
+    }
+    get geometry() {
+        return this.data.geometry;
+    }
+    set geometry(v) {
+        this.data.geometry = v;
+        this.dirty = true;
+    }
+    get material() {
+        return this.data.material;
+    }
+    set material(v) {
+        this.data.material = v;
+        this.dirty = true;
+    }
+}
+
+var getColorGPU = (color, result = new ColorGPU()) => {
+    if (color instanceof ColorGPU) {
+        result.set(color);
+    }
+    else if (typeof color === "string") {
+        ColorGPU.fromString(color, result);
+    }
+    else if (typeof color === "number") {
+        ColorGPU.fromHex(color, 1, result);
+    }
+    else if (color instanceof ColorRGB) {
+        ColorGPU.fromColorRGB(color, result);
+    }
+    else if (color instanceof ColorRGBA) {
+        ColorGPU.fromColorRGBA(color, result);
+    }
+    else if (color instanceof ColorHSL) {
+        ColorGPU.fromColorHSL(color.h, color.s, color.l, result);
+    }
+    else if (color instanceof Float32Array || color instanceof Array) {
+        ColorGPU.fromArray(color, result);
+    }
+    else if (color instanceof Float32Array || color instanceof Array) {
+        ColorGPU.fromArray(color, result);
+    }
+    else {
+        if ("a" in color) {
+            ColorGPU.fromJson(color, result);
+        }
+        else {
+            ColorGPU.fromJson({
+                ...color,
+                a: 1
+            }, result);
+        }
+    }
+    return result;
+};
+
+class RenderSystemInCanvas extends System {
+    context;
+    alphaMode;
+    viewport = {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        minDepth: 0,
+        maxDepth: 1
+    };
+    id = 0;
+    cache = new WeakMap();
+    entitySet = new WeakMap();
+    loopTimes = 0;
+    name = "";
+    usedBy = [];
+    rendererMap = new Map();
+    canvas;
+    options = {
+        width: 0,
+        height: 0,
+        resolution: 1,
+        alphaMode: "",
+        autoResize: false,
+        clearColor: new ColorGPU(),
+        noDepthTexture: false
+    };
+    constructor(name, options) {
+        super(name, (entity) => {
+            return entity.getComponent(RENDERABLE)?.data;
+        });
+        const element = options.element ?? document.body;
+        const w = element.offsetWidth;
+        const h = element.offsetHeight;
+        if (element instanceof HTMLCanvasElement) {
+            this.canvas = element;
+        }
+        else {
+            this.canvas = document.createElement("canvas");
+            element.appendChild(this.canvas);
+        }
+        this.width = options.width ?? w;
+        this.height = options.height ?? h;
+        this.resolution = options.resolution ?? window.devicePixelRatio;
+        this.alphaMode = options.alphaMode ?? "premultiplied";
+        this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
+        this.autoResize = options.autoResize ?? false;
+        this.options.noDepthTexture = options.noDepthTexture ?? false;
+    }
+    clearColorGPU = new ColorGPU(0, 0, 0, 1);
+    get clearColor() {
+        return this.options.clearColor;
+    }
+    set clearColor(value) {
+        getColorGPU(value, this.clearColorGPU);
+        if (value instanceof Object) {
+            this.options.clearColor = new Proxy(value, {
+                get: (target, property, receiver) => {
+                    const res = Reflect.get(target, property, receiver);
+                    this.clearColor = target;
+                    return res;
+                },
+            });
+        }
+        else {
+            this.options.clearColor = value;
+        }
+    }
+    get resolution() {
+        return this.options.resolution;
+    }
+    set resolution(v) {
+        this.options.resolution = v;
+        this.resize(this.options.width, this.options.height, v);
+    }
+    get width() {
+        return this.options.width;
+    }
+    set width(v) {
+        this.options.width = v;
+        this.resize(v, this.options.height, this.options.resolution);
+    }
+    get height() {
+        return this.options.height;
+    }
+    set height(v) {
+        this.options.height = v;
+        this.resize(this.options.width, v, this.options.resolution);
+    }
+    get autoResize() {
+        return this.options.autoResize;
+    }
+    set autoResize(v) {
+        this.options.autoResize = v;
+        if (v) {
+            this.#turnOnAutoResize();
+        }
+        else {
+            this.#turnOffAutoResize();
+        }
+    }
+    #isResizeObserverConnect = false;
+    #resizeObserver = new ResizeObserver((parent) => {
+        if (parent[0]) {
+            const div = parent[0].target;
+            this.resize(div.offsetWidth, div.offsetHeight);
+        }
+    });
+    #turnOnAutoResize = () => {
+        if (this.#isResizeObserverConnect) {
+            return this;
+        }
+        let parent = this.canvas.parentElement;
+        if (parent) {
+            this.#resizeObserver.observe(parent);
+            this.#isResizeObserverConnect = true;
+        }
+        return this;
+    };
+    #turnOffAutoResize = () => {
+        if (!this.#isResizeObserverConnect) {
+            return this;
+        }
+        let parent = this.canvas.parentElement;
+        if (parent) {
+            this.#resizeObserver.unobserve(parent);
+            this.#isResizeObserverConnect = false;
+        }
+        return this;
+    };
+    addRenderer(renderer) {
+        if (typeof renderer.renderTypes === "string") {
+            this.rendererMap.set(renderer.renderTypes, renderer);
+        }
+        else {
+            for (let item of renderer.renderTypes) {
+                this.rendererMap.set(item, renderer);
+            }
+        }
+        return this;
+    }
+    destroy() {
+        this.rendererMap.clear();
+        return this;
+    }
+    resize(width, height, resolution = this.resolution) {
+        this.options.width = width;
+        this.options.height = height;
+        this.options.resolution = resolution;
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
+        this.canvas.width = width * resolution;
+        this.canvas.height = height * resolution;
+        return this;
+    }
+    serialize() {
+        return {
+            id: this.id,
+            name: this.name,
+            type: "RenderSystem"
+        };
+    }
+}
+
+class Sampler {
+    dirty = true;
+    descriptor = {};
+    name;
+    constructor(option = {}, name = "sampler") {
+        this.descriptor.minFilter = option.minFilter ?? "linear";
+        this.descriptor.magFilter = option.magFilter ?? "linear";
+        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
+        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
+        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
+        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
+        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
+        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
+        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
+        this.descriptor.compare = option.compare ?? undefined;
+        this.name = name;
+    }
+    setAddressMode(u, v, w) {
+        this.descriptor.addressModeU = u;
+        this.descriptor.addressModeV = v;
+        this.descriptor.addressModeW = w ?? this.descriptor.addressModeW;
+        this.dirty = true;
+        return this;
+    }
+    setFilterMode(mag, min, mipmap) {
+        this.descriptor.magFilter = mag;
+        this.descriptor.minFilter = min;
+        this.descriptor.mipmapFilter = mipmap ?? this.descriptor.mipmapFilter;
+        this.dirty = true;
+        return this;
+    }
+    setLodClamp(min, max) {
+        this.descriptor.lodMaxClamp = max;
+        this.descriptor.lodMinClamp = min;
+        this.dirty = true;
+        return this;
+    }
+    setMaxAnisotropy(v) {
+        this.descriptor.maxAnisotropy = v;
+        this.dirty = true;
+        return this;
+    }
+    setCompare(v) {
+        this.descriptor.compare = v;
+        this.dirty = true;
+        return this;
+    }
+}
+
+class ShaderProgram {
+    descriptor = {
+        code: "",
+    };
+    name;
+    dirty;
+    entryPoint = "main";
+    constructor(code, name = "program") {
+        this.descriptor.code = code;
+        this.name = name;
+        this.dirty = true;
+    }
+    get code() {
+        return this.descriptor.code;
+    }
+    set code(value) {
+        this.descriptor.code = value;
+        this.dirty = true;
+    }
+}
+
+const canvases = []; // 储存多个canvas，可能存在n个图同时画
+async function drawSpriteBlock(image, width, height, frame) {
+    let canvas = canvases.pop() || document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
+    let result = await createImageBitmap(canvas);
+    canvases.push(canvas);
+    return result;
+}
+
+class AtlasTexture extends Texture {
+    loaded = false;
+    image;
+    framesBitmap = [];
+    constructor(json, name = "atlas-texture") {
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name
+        });
+        this.setImage(json);
+    }
+    async setImage(json) {
+        this.loaded = false;
+        this.dirty = false;
+        let img = new Image();
+        img.src = json.image;
+        this.image = img;
+        await img.decode();
+        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
+        this.loaded = true;
+        return this;
+    }
+}
+
+class ImageBitmapTexture extends Texture {
+    loaded = false;
+    sizeChanged = false;
+    image = new Image();
+    constructor(img, width, height, name = "image-texture") {
+        super({
+            size: [width, height],
+            name,
+        });
+        this.setImage(img);
+    }
+    async setImage(img) {
+        this.loaded = false;
+        this.dirty = false;
+        if (typeof img === "string") {
+            this.image.src = img;
+        }
+        else if (img instanceof ImageBitmap) {
+            this.dirty = true;
+            this.loaded = true;
+            this.data = img;
+            return this;
+        }
+        else {
+            this.image = img;
+        }
+        await this.image.decode();
+        this.data = await createImageBitmap(this.image);
+        if (this.descriptor.size[0] !== this.data.width || this.descriptor.size[1] !== this.data.height) {
+            this.sizeChanged = true;
+            this.width = this.data.width;
+            this.height = this.data.height;
+        }
+        this.dirty = true;
+        this.loaded = true;
+        return this;
+    }
+}
+
+class SpritesheetTexture extends Texture {
+    loaded = false;
+    frame = 0; // 当前帧索引
+    image;
+    framesBitmap = [];
+    constructor(json, name = "spritesheet-texture") {
+        super({
+            size: [json.spriteSize.w, json.spriteSize.h],
+            name,
+        });
+        this.setImage(json);
+    }
+    async setImage(json) {
+        this.loaded = false;
+        this.dirty = false;
+        let img = new Image();
+        img.src = json.image;
+        this.image = img;
+        await img.decode();
+        // canvas.width = json.spriteSize.w;
+        // canvas.height = json.spriteSize.h;
+        for (let item of json.frames) {
+            this.framesBitmap.push(await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, item));
+        }
+        this.data = this.framesBitmap[0];
+        this.dirty = true;
+        this.loaded = true;
+        return this;
+    }
+    setFrame(frame) {
+        this.frame = frame;
+        this.data = this.framesBitmap[frame];
+        this.dirty = true;
+    }
+}
+
 const MeshObjParser = async (text) => {
     const texts = text.split('\n');
     const positionArr = [];
@@ -8574,107 +8600,6 @@ class HashRouteComponent extends TreeNode.mixin(Component) {
             }
         }
         return this;
-    }
-}
-
-class Material {
-    dirty;
-    vertex;
-    vertexShader;
-    fragmentShader;
-    blend;
-    uniforms;
-    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
-        this.dirty = true;
-        this.vertexShader = vertex;
-        this.fragmentShader = fragment;
-        this.blend = blend;
-        this.uniforms = uniforms;
-    }
-    get vertexCode() {
-        return this.vertexShader.descriptor.code;
-    }
-    set vertexCode(code) {
-        this.vertexShader.descriptor.code = code;
-        this.vertexShader.dirty = true;
-        this.dirty = true;
-    }
-    get fragmentCode() {
-        return this.vertexShader.descriptor.code;
-    }
-    set fragmentCode(code) {
-        this.fragmentShader.descriptor.code = code;
-        this.fragmentShader.dirty = true;
-        this.dirty = true;
-    }
-}
-
-const fs = `
-struct Uniforms {
-	modelViewProjectionMatrix : mat4x4<f32>
-};
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-struct VertexOutput {
-	@builtin(position) Position : vec4<f32>
-};
-
-fn mapRange(
-	value: f32,
-	range1: vec2<f32>,
-	range2: vec2<f32>,
-) -> f32 {
-	var d1: f32 = range1.y - range1.x;
-	var d2: f32 = range2.y - range2.x;
-
-	return (value - d1 * 0.5) / d2 / d1;
-};
-
-@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
-	var output : VertexOutput;
-	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
-	if (output.Position.w == 1.0) {
-		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
-	}
-	return output;
-}
-`;
-const vs = `
-@fragment fn main() -> @location(0) vec4<f32> {
-	return vec4<f32>(1., 1., 1., 1.0);
-}
-`;
-const DEFAULT_MATERIAL3 = new Material({
-    descriptor: {
-        code: vs,
-    },
-    dirty: true
-}, {
-    descriptor: {
-        code: fs,
-    },
-    dirty: true
-});
-
-class Mesh2 extends Renderable {
-    static RenderType = "mesh2";
-    constructor(geometry, material = DEFAULT_MATERIAL3) {
-        super({
-            type: Mesh2.RenderType,
-            geometry,
-            material
-        });
-    }
-}
-
-class Mesh3 extends Renderable {
-    static RenderType = "mesh3";
-    constructor(geometry, material = DEFAULT_MATERIAL3) {
-        super({
-            type: Mesh3.RenderType,
-            geometry,
-            material
-        });
     }
 }
 
@@ -9774,6 +9699,38 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
     }
 }
 
+class Material {
+    dirty;
+    vertex;
+    vertexShader;
+    fragmentShader;
+    blend;
+    uniforms;
+    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
+        this.dirty = true;
+        this.vertexShader = vertex;
+        this.fragmentShader = fragment;
+        this.blend = blend;
+        this.uniforms = uniforms;
+    }
+    get vertexCode() {
+        return this.vertexShader.descriptor.code;
+    }
+    set vertexCode(code) {
+        this.vertexShader.descriptor.code = code;
+        this.vertexShader.dirty = true;
+        this.dirty = true;
+    }
+    get fragmentCode() {
+        return this.vertexShader.descriptor.code;
+    }
+    set fragmentCode(code) {
+        this.fragmentShader.descriptor.code = code;
+        this.fragmentShader.dirty = true;
+        this.dirty = true;
+    }
+}
+
 const wgslShaders$2 = {
     vertex: `
 		struct Uniforms {
@@ -10447,15 +10404,15 @@ class TweenSystem extends System {
     }
 }
 
-var createCamera2 = (projection, name = "camera", world) => {
-    const entity = new Camera3$1(name, projection);
+const createCamera2 = (projection, name = "camera", world) => {
+    const entity = new Camera2(name, projection);
     if (world) {
         world.addEntity(entity);
     }
     return entity;
 };
 
-var createCamera3 = (projection, name = "camera", world) => {
+const createCamera3 = (projection, name = "camera", world) => {
     const entity = new Camera3(name, projection);
     if (world) {
         world.addEntity(entity);
@@ -10463,8 +10420,66 @@ var createCamera3 = (projection, name = "camera", world) => {
     return entity;
 };
 
-var createMesh2 = (geometry, material = DEFAULT_MATERIAL3, name = MESH2, world) => {
-    const entity = new Object3$1(name);
+const fs = `
+struct Uniforms {
+	modelViewProjectionMatrix : mat4x4<f32>
+};
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+struct VertexOutput {
+	@builtin(position) Position : vec4<f32>
+};
+
+fn mapRange(
+	value: f32,
+	range1: vec2<f32>,
+	range2: vec2<f32>,
+) -> f32 {
+	var d1: f32 = range1.y - range1.x;
+	var d2: f32 = range2.y - range2.x;
+
+	return (value - d1 * 0.5) / d2 / d1;
+};
+
+@vertex fn main(@location(0) position : vec3<f32>) -> VertexOutput {
+	var output : VertexOutput;
+	output.Position = uniforms.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+	if (output.Position.w == 1.0) {
+		output.Position.z = mapRange(output.Position.z, vec2<f32>(-1.0, 1.0), vec2<f32>(1.0, 0.0));
+	}
+	return output;
+}
+`;
+const vs = `
+@fragment fn main() -> @location(0) vec4<f32> {
+	return vec4<f32>(1., 1., 1., 1.0);
+}
+`;
+const DEFAULT_MATERIAL3 = new Material({
+    descriptor: {
+        code: vs,
+    },
+    dirty: true
+}, {
+    descriptor: {
+        code: fs,
+    },
+    dirty: true
+});
+
+class Mesh2 extends Renderable {
+    static RenderType = "mesh2";
+    constructor(geometry, material = DEFAULT_MATERIAL3) {
+        super({
+            type: Mesh2.RenderType,
+            geometry,
+            material
+        });
+    }
+}
+
+const createMesh2 = (geometry, material = DEFAULT_MATERIAL3, name = MESH2, world) => {
+    const entity = new Object2(name);
     entity.addComponent(new Mesh2(geometry, material));
     if (world) {
         world.addEntity(entity);
@@ -10472,7 +10487,18 @@ var createMesh2 = (geometry, material = DEFAULT_MATERIAL3, name = MESH2, world) 
     return entity;
 };
 
-var createMesh3 = (geometry, material = DEFAULT_MATERIAL3, name = MESH3, world) => {
+class Mesh3 extends Renderable {
+    static RenderType = "mesh3";
+    constructor(geometry, material = DEFAULT_MATERIAL3) {
+        super({
+            type: Mesh3.RenderType,
+            geometry,
+            material
+        });
+    }
+}
+
+const createMesh3 = (geometry, material = DEFAULT_MATERIAL3, name = MESH3, world) => {
     const entity = new Object3(name);
     entity.addComponent(new Mesh3(geometry, material));
     if (world) {
@@ -10489,4 +10515,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createMesh3: createMesh3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera3$1 as Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, Mesh2, Mesh3, MeshObjParser, NormalMaterial, Object3$1 as Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, transformMatrix3, transformMatrix4 };

@@ -1,5 +1,5 @@
 import { NORMAL, POSITION, UV, VERTICES } from "../constants";
-import Geometry, { AttributePicker } from "../Geometry";
+import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
 export type ICircleGeometryOptions = {
@@ -22,7 +22,7 @@ export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
 };
 
 
-export default (options: ICircleGeometryOptionsInput = {}): Geometry => {
+export const createCircle = (options: ICircleGeometryOptionsInput = {}): Geometry => {
     let stride = 3;
 
     const indices: number[] = [];

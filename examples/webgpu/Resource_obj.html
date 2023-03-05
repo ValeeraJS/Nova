@@ -15,6 +15,7 @@
 				name: "tree.obj",
 				onParse: (geometry) => {
 					mesh.addComponent(geometry);
+					console.log(geometry)
 				},
 				loadParts: [
 					{
@@ -31,7 +32,7 @@
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3();
+		const geo = Nova.Geometry3Factory.createPlane();
 		const mesh = Nova.EntityFactory.createMesh3(geo, new Nova.NormalMaterial());
 
 		const projection = new Nova.PerspectiveProjection();

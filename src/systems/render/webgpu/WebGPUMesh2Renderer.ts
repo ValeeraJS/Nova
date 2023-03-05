@@ -1,14 +1,14 @@
-import Geometry, { AttributesNodeData } from "..//geometry/Geometry";
+import { Geometry, AttributesNodeData } from "..//geometry/Geometry";
 import { BUFFER, MESH2, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix3/Matrix3Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { IMaterial, IUniformSlot } from "../IMatrial";
 import { ICamera2 } from "../../../entities/Camera2";
-import Object2 from "../../../entities/Object2";
+import { Object2 } from "../../../entities/Object2";
 import { Matrix3, Matrix4 } from "@valeera/mathx";
 import { IEntity } from "@valeera/x";
-import { Mesh2 } from "./Mesh2";
+import { Mesh2 } from "../Mesh2";
 
 interface ICacheData {
 	mvpExt: Float32Array;

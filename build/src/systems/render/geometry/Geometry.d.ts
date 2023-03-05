@@ -11,7 +11,7 @@ export type AttributesNodeData = {
     stride: number;
     attributes: AttributePicker[];
 };
-export default class Geometry extends Component<AttributesNodeData[]> {
+export declare class Geometry extends Component<AttributesNodeData[]> {
     /**
      * 顶点数量
      */

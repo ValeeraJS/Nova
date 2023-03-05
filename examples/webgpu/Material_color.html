@@ -10,7 +10,7 @@
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createTriangle3();
+		const geo = Nova.Geometry3Factory.createTriangle();
 		const material = new Nova.ColorMaterial(new Float32Array([1, 1, 0, 1]));
 		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 
@@ -26,6 +26,7 @@
 		engine.addTask(() => {
 			world.run();
 			mesh.rotation.y -= 0.01;
+			// TODO 不应该需要这个
 			material.setColor(options.color.r / 255, options.color.g / 255, options.color.b / 255, options.alpha);
 		});
 

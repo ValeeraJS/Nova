@@ -8,5 +8,4 @@ export type ICircleGeometryOptions = {
 } & IGeometryOptions;
 export type ICircleGeometryOptionsInput = Partial<ICircleGeometryOptions>;
 export declare const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions;
-declare const _default: (options?: ICircleGeometryOptionsInput) => Geometry;
-export default _default;
+export declare const createCircle: (options?: ICircleGeometryOptionsInput) => Geometry;

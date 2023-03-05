@@ -1,6 +1,6 @@
 import { Triangle2, ITriangle2 } from "@valeera/mathx";
 import { POSITION, UV, VERTICES } from "../constants";
-import Geometry, { AttributePicker } from "../Geometry";
+import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
 export default (t: ITriangle2 = Triangle2.create(), options: IGeometryOptions = DEFAULT_OPTIONS, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none"): Geometry => {

@@ -16,7 +16,7 @@ export interface IObject3 extends IEntity {
     worldMatrix: Matrix4Component;
 }
 
-export default class Object3 extends Entity implements IObject3 {
+export class Object3 extends Entity implements IObject3 {
     anchor: Matrix4Component;
     position: Matrix4Component;
     rotation: Matrix4Component;

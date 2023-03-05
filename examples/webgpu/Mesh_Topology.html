@@ -12,7 +12,7 @@
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geometry = Nova.Geometry3Factory.createSphere3();
+		const geometry = Nova.Geometry3Factory.createSphere();
 
 		const mesh = Nova.EntityFactory.createMesh3(geometry, new Nova.NormalMaterial());
 		mesh.position.z = -5;
@@ -34,6 +34,7 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("Topology type");
+			// TODO 没自动更新管线
 			f.add(geometry, "topology", ["point-list", "line-list", "line-strip", "triangle-list", "triangle-strip"]);
 		}
 	</script>

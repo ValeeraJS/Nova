@@ -8,5 +8,4 @@ export type IPlaneGeometryOptions = {
 } & IGeometryOptions;
 export type IPlaneGeometryOptionsInput = Partial<IPlaneGeometryOptions>;
 export declare const DEFAULT_PLANE_OPTIONS: IPlaneGeometryOptions;
-declare const _default: (options?: IPlaneGeometryOptionsInput) => Geometry;
-export default _default;
+export declare const createPlane: (options?: IPlaneGeometryOptionsInput) => Geometry;

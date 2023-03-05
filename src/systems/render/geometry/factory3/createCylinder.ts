@@ -1,6 +1,6 @@
 import { Constants, Vector3 } from "@valeera/mathx";
 import { POSITION, VERTICES } from "../constants";
-import Geometry, { AttributePicker } from "../Geometry";
+import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
 export type ICylinderGeometryOptions = {
@@ -16,7 +16,7 @@ export type ICylinderGeometryOptions = {
 
 export type ICylinderGeometryOptionsInput = Partial<ICylinderGeometryOptions>;
 
-export const DEFAULT_SPHERE_OPTIONS: ICylinderGeometryOptions = {
+export const DEFAULT_CYLINDER_OPTIONS: ICylinderGeometryOptions = {
     ...DEFAULT_OPTIONS,
     hasIndices: true,
     combine: true,
@@ -32,7 +32,7 @@ export const DEFAULT_SPHERE_OPTIONS: ICylinderGeometryOptions = {
 };
 
 
-export default (options: ICylinderGeometryOptionsInput = {}): Geometry => {
+export const createCylinder = (options: ICylinderGeometryOptionsInput = {}): Geometry => {
     let stride = 3;
 
     const indices: number[] = [];
@@ -41,7 +41,7 @@ export default (options: ICylinderGeometryOptionsInput = {}): Geometry => {
     const uvs: number[] = [];
 
     const {height, radialSegments, radiusTop, radiusBottom, heightSegments, openEnded, thetaStart, thetaLength, topology, cullMode, hasUV, hasNormal, combine} = {
-        ...DEFAULT_SPHERE_OPTIONS,
+        ...DEFAULT_CYLINDER_OPTIONS,
         ...options
     };
 

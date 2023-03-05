@@ -1,6 +1,6 @@
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { ICamera3 } from "../../../entities/Camera3";
-import Object3 from "../../../entities/Object3";
+import { Object3 } from "../../../entities/Object3";
 export declare class WebGPUMesh3Renderer implements IWebGPURenderer {
     static readonly renderTypes = "mesh3";
     readonly renderTypes = "mesh3";

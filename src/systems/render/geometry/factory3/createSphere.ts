@@ -1,6 +1,6 @@
 import { Vector3 } from "@valeera/mathx";
 import { POSITION, VERTICES } from "../constants";
-import Geometry, { AttributePicker } from "../Geometry";
+import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
 
 export type ISphereGeometryOptions = {
@@ -30,7 +30,7 @@ export const DEFAULT_SPHERE_OPTIONS: ISphereGeometryOptions = {
 };
 
 
-export default (options: ISphereGeometryOptionsInput = {}): Geometry => {
+export const createSphere = (options: ISphereGeometryOptionsInput = {}): Geometry => {
     let stride = 3;
 
     const {radius, phiStart, phiLength, thetaStart, thetaLength, widthSegments, heightSegments, topology, cullMode, hasUV, hasNormal, combine } = {
