@@ -12,7 +12,7 @@
 		const engine = new Nova.WebGPUEngine(canvas);
 		const world = new Nova.World();
 
-		const geo = Nova.Geometry3Factory.createPlane3({
+		const geo = Nova.Geometry3Factory.createPlane({
 			width: 3,
 			height: 3
 		});
@@ -22,7 +22,7 @@
 		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 		mesh.position.z = -1
 
-		const geo2 = Nova.Geometry3Factory.createPlane3({
+		const geo2 = Nova.Geometry3Factory.createPlane({
 			width: 2,
 			height: 2
 		});

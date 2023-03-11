@@ -14,7 +14,7 @@
 
 		const geo1 = Nova.Geometry3Factory.createTriangle3();
 		const geo2 = Nova.Geometry3Factory.createBox3();
-		const geo3 = Nova.Geometry3Factory.createPlane3();
+		const geo3 = Nova.Geometry3Factory.createPlane();
 		const mesh = Nova.EntityFactory.createMesh3(geo1);
 		const materialNormal = new Nova.NormalMaterial();
 		mesh.addComponent(materialNormal);

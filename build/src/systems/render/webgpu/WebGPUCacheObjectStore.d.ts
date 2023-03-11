@@ -1,15 +1,15 @@
 import { IShaderProgram } from "../ShaderProgram";
 import { Sampler } from "../Sampler";
 import { Texture } from "../texture/Texture";
-export type GPUObjectHasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler;
+import { BufferFloat32 } from "../Buffer";
+export type GPUObjectHasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler | GPUBuffer;
 export interface IWebGPUObjectCache<T extends GPUObjectHasCache> {
     dirty: boolean;
     data: T;
 }
 export interface WebGPUTextureCache extends IWebGPUObjectCache<GPUTexture>, GPUTextureDescriptor {
-    size: GPUExtent3DStrict;
-    format: GPUTextureFormat;
-    usage: number;
+}
+export interface WebGPUBufferCache extends IWebGPUObjectCache<GPUBuffer>, GPUBufferDescriptor {
 }
 export interface WebGPUShaderModuleCache extends IWebGPUObjectCache<GPUShaderModule>, GPUShaderModuleDescriptor {
 }
@@ -32,6 +32,7 @@ export declare const WebGPUCacheObjectStore: {
     clearCaches: (objects: any) => any;
     clearCache: (objects: any, device: GPUDevice) => any;
     createGPUTextureCache: (texture: Texture, device: GPUDevice) => WebGPUTextureCache;
+    createGPUBufferCache: (buffer: BufferFloat32, device: GPUDevice) => WebGPUBufferCache;
     createGPUSamplerCache: (sampler: Sampler, device: GPUDevice) => WebGPUSamplerCache;
     createGPUShaderModuleCache: (shaderProgram: IShaderProgram, device: GPUDevice) => WebGPUShaderModuleCache;
     setDirty: (key: any, device?: GPUDevice) => any;

@@ -8,8 +8,8 @@ export default class Material implements IMaterial {
 	vertexShader: IShaderProgram;
 	fragmentShader: IShaderProgram;
 	blend: GPUBlendState;
-	uniforms: IUniformSlot[];
-	constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms: IUniformSlot[] = [], blend: GPUBlendState = DEFAULT_BLEND_STATE) {
+	uniforms: IUniformSlot<any>[];
+	constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms: IUniformSlot<any>[] = [], blend: GPUBlendState = DEFAULT_BLEND_STATE) {
 		this.dirty = true;
 		this.vertexShader = vertex;
 		this.fragmentShader = fragment;

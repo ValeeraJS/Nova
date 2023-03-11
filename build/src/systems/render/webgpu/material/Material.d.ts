@@ -6,8 +6,8 @@ export default class Material implements IMaterial {
     vertexShader: IShaderProgram;
     fragmentShader: IShaderProgram;
     blend: GPUBlendState;
-    uniforms: IUniformSlot[];
-    constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms?: IUniformSlot[], blend?: GPUBlendState);
+    uniforms: IUniformSlot<any>[];
+    constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms?: IUniformSlot<any>[], blend?: GPUBlendState);
     get vertexCode(): string;
     set vertexCode(code: string);
     get fragmentCode(): string;

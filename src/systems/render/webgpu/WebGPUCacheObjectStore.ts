@@ -1,19 +1,18 @@
 import { IShaderProgram } from "../ShaderProgram";
 import { Sampler } from "../Sampler";
 import { Texture } from "../texture/Texture";
+import { BufferFloat32 } from "../Buffer";
 
-export type GPUObjectHasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler;
+export type GPUObjectHasCache = GPUTexture | GPURenderPipeline | GPUShaderModule | GPUSampler | GPUBuffer;
 
 export interface IWebGPUObjectCache<T extends GPUObjectHasCache> {
     dirty: boolean;
     data: T;
 };
 
-export interface WebGPUTextureCache extends IWebGPUObjectCache<GPUTexture>, GPUTextureDescriptor{
-    size: GPUExtent3DStrict;
-    format: GPUTextureFormat;
-    usage: number;
-}
+export interface WebGPUTextureCache extends IWebGPUObjectCache<GPUTexture>, GPUTextureDescriptor{}
+
+export interface WebGPUBufferCache extends IWebGPUObjectCache<GPUBuffer>, GPUBufferDescriptor{}
 
 export interface WebGPUShaderModuleCache extends IWebGPUObjectCache<GPUShaderModule>, GPUShaderModuleDescriptor{}
 
@@ -61,6 +60,16 @@ const checkShaderModuleCacheReuseable = (descriptor: GPUShaderModuleDescriptor ,
         return false;
     }
 
+    return true;
+}
+
+const checkBufferCacheReuseable = (descriptor: GPUBufferDescriptor, cache: WebGPUBufferCache): boolean => {
+    if (descriptor.size !== cache.data.size) {
+        return false;
+    }
+    if (descriptor.usage !== cache.data.usage) {
+        return false;
+    }
     return true;
 }
 
@@ -148,6 +157,32 @@ export const WebGPUCacheObjectStore = {
             dirty: true,
             data: device.createTexture(texture.descriptor),
             ...texture.descriptor
+        };
+        map.set(device, cache);
+
+        return cache;
+    },
+    createGPUBufferCache: (buffer: BufferFloat32, device: GPUDevice) => {
+        let map = WebGPUCacheObjectStore.caches.get(buffer);
+        if (!map) {
+            map = new Map();
+            WebGPUCacheObjectStore.caches.set(buffer, map);
+        }
+        let cache = map.get(device) as WebGPUBufferCache;
+        if (cache) {
+            if (checkBufferCacheReuseable(buffer.descriptor, cache)) {
+                cache.dirty = true;
+                cache.data.label = buffer.name;
+                return cache;
+            } else {
+                cache.data.destroy();
+            }
+        }
+        
+        cache = {
+            dirty: true,
+            data: device.createBuffer(buffer.descriptor),
+            ...buffer.descriptor,
         };
         map.set(device, cache);
 

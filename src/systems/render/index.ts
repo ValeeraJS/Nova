@@ -1,4 +1,5 @@
 export * from "./Blend";
+export * from "./Buffer";
 export * from "./geometry";
 export * from "./IRenderer";
 export * from "./IRenderSystem";
@@ -8,4 +9,5 @@ export * from "./Renderable";
 export * from "./RenderSystem";
 export * from "./Sampler";
 export * from "./ShaderProgram";
+export * from "./Sprite3";
 export * from "./texture";

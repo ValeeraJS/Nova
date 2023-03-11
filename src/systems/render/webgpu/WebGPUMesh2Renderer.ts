@@ -17,7 +17,7 @@ interface ICacheData {
 	uniformBuffer: GPUBuffer;
 	attributesBuffers: GPUBuffer[];
 	uniformBindGroup: GPUBindGroup;
-	uniformMap: Map<any, IUniformSlot>;
+	uniformMap: Map<any, IUniformSlot<any>>;
 	geometry: Geometry;
 	material: IMaterial;
 }
@@ -130,7 +130,7 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 			},
 		}];
 
-		let uniforms: IUniformSlot[] = material.uniforms;
+		let uniforms: IUniformSlot<any>[] = material.uniforms;
 		let uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
@@ -237,7 +237,7 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	}
 
 	private createBindGroupLayout(material: IMaterial, context: GPURendererContext) {
-		let uniforms: IUniformSlot[] = material.uniforms;
+		let uniforms: IUniformSlot<any>[] = material.uniforms;
 		let entries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,

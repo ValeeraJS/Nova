@@ -4,6 +4,7 @@ export declare const GEOMETRY = "geometry";
 export declare const MATERIAL = "material";
 export declare const MESH2 = "mesh2";
 export declare const MESH3 = "mesh3";
+export declare const SPRITE3 = "sprite3";
 export declare const MODEL_2D = "model2";
 export declare const MODEL_3D = "model3";
 export declare const PROJECTION_2D = "projection2";

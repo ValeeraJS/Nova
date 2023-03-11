@@ -232,6 +232,7 @@ const GEOMETRY = "geometry";
 const MATERIAL = "material";
 const MESH2 = "mesh2";
 const MESH3 = "mesh3";
+const SPRITE3 = "sprite3";
 const MODEL_2D = "model2";
 const MODEL_3D = "model3";
 const PROJECTION_2D = "projection2";
@@ -271,6 +272,7 @@ var constants$2 = /*#__PURE__*/Object.freeze({
 	SAMPLER: SAMPLER,
 	SCALING_2D: SCALING_2D,
 	SCALING_3D: SCALING_3D,
+	SPRITE3: SPRITE3,
 	TEXTURE_GPU: TEXTURE_GPU,
 	TEXTURE_IMAGE: TEXTURE_IMAGE,
 	TRANSLATION_2D: TRANSLATION_2D,
@@ -6145,7 +6147,7 @@ class Vector3Scale3 extends AScale3 {
     vec3;
     constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
         super();
-        this.vec3 = vec3;
+        this.vec3 = Vector3.fromArray(vec3);
         this.update();
     }
     get x() {
@@ -6173,7 +6175,12 @@ class Vector3Scale3 extends AScale3 {
         this.dirty = true;
     }
     set(arr) {
-        this.vec3.set(arr);
+        if (typeof arr === 'number') {
+            Vector3.fromScalar(arr, this.vec3);
+        }
+        else {
+            this.vec3.set(arr);
+        }
         return this.update();
     }
     setXYZ(x, y, z) {
@@ -6792,6 +6799,22 @@ const DEFAULT_BLEND_STATE = {
         operation: 'add',
     }
 };
+
+class BufferFloat32 extends Float32Array {
+    dirty = true;
+    name;
+    descriptor = {};
+    constructor(option, name = "buffer") {
+        super((option.size ?? 16) >> 2);
+        this.name = name;
+        this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+        this.descriptor.size = option.size ?? 16;
+    }
+    set(arr, offset) {
+        super.set(arr, offset);
+        this.dirty = true;
+    }
+}
 
 const POSITION = "position";
 const VERTICES = "vertices";
@@ -8415,6 +8438,133 @@ class SpritesheetTexture extends Texture {
     }
 }
 
+class Material {
+    dirty;
+    vertex;
+    vertexShader;
+    fragmentShader;
+    blend;
+    uniforms;
+    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
+        this.dirty = true;
+        this.vertexShader = vertex;
+        this.fragmentShader = fragment;
+        this.blend = blend;
+        this.uniforms = uniforms;
+    }
+    get vertexCode() {
+        return this.vertexShader.descriptor.code;
+    }
+    set vertexCode(code) {
+        this.vertexShader.descriptor.code = code;
+        this.vertexShader.dirty = true;
+        this.dirty = true;
+    }
+    get fragmentCode() {
+        return this.vertexShader.descriptor.code;
+    }
+    set fragmentCode(code) {
+        this.fragmentShader.descriptor.code = code;
+        this.fragmentShader.dirty = true;
+        this.dirty = true;
+    }
+}
+
+const wgslShaders$2 = {
+    vertex: `
+		struct Uniforms {
+			 matrix : mat4x4<f32>
+	  	};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>,
+			@location(0) uv : vec2<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
+			out.uv = uv;
+			return out;
+		}
+	`,
+    fragment: `
+		@binding(1) @group(0) var mySampler: sampler;
+		@binding(2) @group(0) var myTexture: texture_2d<f32>;
+
+		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+			return textureSample(myTexture, mySampler, uv);
+		}
+	`
+};
+class TextureMaterial extends Material {
+    constructor(texture, sampler = new Sampler()) {
+        super({
+            descriptor: {
+                code: wgslShaders$2.vertex,
+            },
+            dirty: true,
+        }, {
+            descriptor: {
+                code: wgslShaders$2.fragment,
+            },
+            dirty: true,
+        }, [
+            {
+                binding: 1,
+                name: "mySampler",
+                type: SAMPLER,
+                value: sampler,
+                dirty: true
+            },
+            {
+                binding: 2,
+                name: "myTexture",
+                type: TEXTURE_IMAGE,
+                value: texture,
+                dirty: true
+            }
+        ]);
+        this.dirty = true;
+    }
+    get sampler() {
+        return this.uniforms[0].value;
+    }
+    set sampler(sampler) {
+        this.uniforms[0].dirty = this.dirty = true;
+        this.uniforms[0].value = sampler;
+    }
+    get texture() {
+        return this.uniforms[1].value;
+    }
+    set texture(texture) {
+        this.uniforms[1].dirty = this.dirty = true;
+        this.uniforms[1].value = texture;
+    }
+    setTextureAndSampler(texture, sampler) {
+        this.texture = texture;
+        if (sampler) {
+            this.sampler = sampler;
+        }
+        return this;
+    }
+}
+
+class Sprite3 extends Renderable {
+    static RenderType = "mesh3";
+    constructor(texture, width, height) {
+        super({
+            type: Sprite3.RenderType,
+            geometry: createPlane({
+                width: width ?? texture.width,
+                height: height ?? texture.height,
+            }),
+            material: new TextureMaterial(texture)
+        });
+    }
+}
+
 const MeshObjParser = async (text) => {
     const texts = text.split('\n');
     const positionArr = [];
@@ -8633,6 +8783,15 @@ const checkShaderModuleCacheReuseable = (descriptor, cache) => {
     }
     return true;
 };
+const checkBufferCacheReuseable = (descriptor, cache) => {
+    if (descriptor.size !== cache.data.size) {
+        return false;
+    }
+    if (descriptor.usage !== cache.data.usage) {
+        return false;
+    }
+    return true;
+};
 const checkSamplerCacheReuseable = (descriptor, cache) => {
     if (descriptor.addressModeU !== cache.addressModeU) {
         return false;
@@ -8716,6 +8875,31 @@ const WebGPUCacheObjectStore = {
             dirty: true,
             data: device.createTexture(texture.descriptor),
             ...texture.descriptor
+        };
+        map.set(device, cache);
+        return cache;
+    },
+    createGPUBufferCache: (buffer, device) => {
+        let map = WebGPUCacheObjectStore.caches.get(buffer);
+        if (!map) {
+            map = new Map();
+            WebGPUCacheObjectStore.caches.set(buffer, map);
+        }
+        let cache = map.get(device);
+        if (cache) {
+            if (checkBufferCacheReuseable(buffer.descriptor, cache)) {
+                cache.dirty = true;
+                cache.data.label = buffer.name;
+                return cache;
+            }
+            else {
+                cache.data.destroy();
+            }
+        }
+        cache = {
+            dirty: true,
+            data: device.createBuffer(buffer.descriptor),
+            ...buffer.descriptor,
         };
         map.set(device, cache);
         return cache;
@@ -9178,10 +9362,7 @@ class WebGPUMesh3Renderer {
             for (let i = 0; i < uniforms.length; i++) {
                 const uniform = uniforms[i];
                 if (uniform.type === BUFFER) {
-                    const buffer = device.createBuffer({
-                        size: uniform.value.length * 4,
-                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-                    });
+                    const buffer = WebGPUCacheObjectStore.createGPUBufferCache(uniform.value, device).data;
                     uniformMap.set(buffer, uniform);
                     groupEntries.push({
                         binding: uniform.binding,
@@ -9699,39 +9880,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
     }
 }
 
-class Material {
-    dirty;
-    vertex;
-    vertexShader;
-    fragmentShader;
-    blend;
-    uniforms;
-    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
-        this.dirty = true;
-        this.vertexShader = vertex;
-        this.fragmentShader = fragment;
-        this.blend = blend;
-        this.uniforms = uniforms;
-    }
-    get vertexCode() {
-        return this.vertexShader.descriptor.code;
-    }
-    set vertexCode(code) {
-        this.vertexShader.descriptor.code = code;
-        this.vertexShader.dirty = true;
-        this.dirty = true;
-    }
-    get fragmentCode() {
-        return this.vertexShader.descriptor.code;
-    }
-    set fragmentCode(code) {
-        this.fragmentShader.descriptor.code = code;
-        this.fragmentShader.dirty = true;
-        this.dirty = true;
-    }
-}
-
-const wgslShaders$2 = {
+const wgslShaders$1 = {
     vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -9760,12 +9909,12 @@ class ColorMaterial extends Material {
     constructor(color = new Float32Array([1, 1, 1, 1])) {
         super({
             descriptor: {
-                code: wgslShaders$2.vertex,
+                code: wgslShaders$1.vertex,
             },
             dirty: true
         }, {
             descriptor: {
-                code: wgslShaders$2.fragment,
+                code: wgslShaders$1.fragment,
             },
             dirty: true
         }, [{
@@ -9787,7 +9936,7 @@ class ColorMaterial extends Material {
     }
 }
 
-const wgslShaders$1 = {
+const wgslShaders = {
     vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -9816,12 +9965,12 @@ class DomMaterial extends Material {
     constructor() {
         super({
             descriptor: {
-                code: wgslShaders$1.vertex,
+                code: wgslShaders.vertex,
             },
             dirty: true
         }, {
             descriptor: {
-                code: wgslShaders$1.fragment,
+                code: wgslShaders.fragment,
             },
             dirty: true,
         }, [{
@@ -10154,87 +10303,6 @@ class ShadertoyMaterial extends Material {
     }
 }
 
-const wgslShaders = {
-    vertex: `
-		struct Uniforms {
-			 matrix : mat4x4<f32>
-	  	};
-	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-		struct VertexOutput {
-			@builtin(position) position : vec4<f32>,
-			@location(0) uv : vec2<f32>
-		};
-
-		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
-			var out: VertexOutput;
-			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
-			out.uv = uv;
-			return out;
-		}
-	`,
-    fragment: `
-		@binding(1) @group(0) var mySampler: sampler;
-		@binding(2) @group(0) var myTexture: texture_2d<f32>;
-
-		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-			return textureSample(myTexture, mySampler, uv);
-		}
-	`
-};
-class TextureMaterial extends Material {
-    constructor(texture, sampler = new Sampler()) {
-        super({
-            descriptor: {
-                code: wgslShaders.vertex,
-            },
-            dirty: true,
-        }, {
-            descriptor: {
-                code: wgslShaders.fragment,
-            },
-            dirty: true,
-        }, [
-            {
-                binding: 1,
-                name: "mySampler",
-                type: SAMPLER,
-                value: sampler,
-                dirty: true
-            },
-            {
-                binding: 2,
-                name: "myTexture",
-                type: TEXTURE_IMAGE,
-                value: texture,
-                dirty: true
-            }
-        ]);
-        this.dirty = true;
-    }
-    get sampler() {
-        return this.uniforms[0].value;
-    }
-    set sampler(sampler) {
-        this.uniforms[0].dirty = this.dirty = true;
-        this.uniforms[0].value = sampler;
-    }
-    get texture() {
-        return this.uniforms[1].value;
-    }
-    set texture(texture) {
-        this.uniforms[1].dirty = this.dirty = true;
-        this.uniforms[1].value = texture;
-    }
-    setTextureAndSampler(texture, sampler) {
-        this.texture = texture;
-        if (sampler) {
-            this.sampler = sampler;
-        }
-        return this;
-    }
-}
-
 var TWEEN_STATE;
 (function (TWEEN_STATE) {
     TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
@@ -10493,12 +10561,22 @@ const createMesh3 = (geometry, material = DEFAULT_MATERIAL3, name = MESH3, world
     return entity;
 };
 
+const createSprite3 = (texture, name = SPRITE3, world) => {
+    const entity = new Object3(name);
+    entity.addComponent(new Sprite3(texture));
+    if (world) {
+        world.addEntity(entity);
+    }
+    return entity;
+};
+
 var index = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	createCamera2: createCamera2,
 	createCamera3: createCamera3,
 	createMesh2: createMesh2,
-	createMesh3: createMesh3
+	createMesh3: createMesh3,
+	createSprite3: createSprite3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, transformMatrix3, transformMatrix4 };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, BufferFloat32, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, transformMatrix3, transformMatrix4 };

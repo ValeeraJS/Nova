@@ -1,14 +1,14 @@
-import { Matrix4 } from "@valeera/mathx";
+import { Matrix4, Vector3, Vector3Like } from "@valeera/mathx";
 import AScale3 from "./AScale3";
 
 const DEFAULT_SCALE = [1, 1, 1];
 
 export default class Vector3Scale3 extends AScale3 {
-    vec3: Float32Array;
+    vec3: Vector3;
 
-    constructor(vec3: Float32Array = new Float32Array(DEFAULT_SCALE)) {
+    constructor(vec3: Vector3Like = new Float32Array(DEFAULT_SCALE)) {
         super();
-        this.vec3 = vec3;
+        this.vec3 = Vector3.fromArray(vec3);
         this.update();
     }
 
@@ -42,8 +42,12 @@ export default class Vector3Scale3 extends AScale3 {
         this.dirty = true;
     }
 
-    set(arr: Float32Array | number[]) {
-        this.vec3.set(arr);
+    set(arr: Float32Array | number[] | number) {
+        if (typeof arr === 'number') {
+            Vector3.fromScalar(arr, this.vec3);
+        } else {
+            this.vec3.set(arr);
+        }
 
         return this.update();
     }

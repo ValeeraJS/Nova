@@ -17,7 +17,7 @@ interface ICacheData {
 	uniformBuffer: GPUBuffer;
 	attributesBuffers: GPUBuffer[];
 	uniformBindGroup: GPUBindGroup;
-	uniformMap: Map<any, IUniformSlot>;
+	uniformMap: Map<any, IUniformSlot<any>>;
 	geometry: Geometry;
 	material: IMaterial;
 }
@@ -128,16 +128,13 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 			},
 		}];
 
-		let uniforms: IUniformSlot[] = material.uniforms;
+		let uniforms: IUniformSlot<any>[] = material.uniforms;
 		let uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
 				const uniform = uniforms[i];
 				if (uniform.type === BUFFER) {
-					const buffer: GPUBuffer = device.createBuffer({
-						size: uniform.value.length * 4,
-						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-					});
+					const buffer: GPUBuffer = WebGPUCacheObjectStore.createGPUBufferCache(uniform.value, device).data;
 					uniformMap.set(buffer, uniform);
 					groupEntries.push({
 						binding: uniform.binding,
@@ -232,7 +229,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 	}
 
 	private createBindGroupLayout(material: IMaterial, context: GPURendererContext) {
-		let uniforms: IUniformSlot[] = material.uniforms;
+		let uniforms: IUniformSlot<any>[] = material.uniforms;
 		let entries: GPUBindGroupLayoutEntry[] = [
 			{
 				binding: 0,

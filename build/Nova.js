@@ -238,6 +238,7 @@
 	const MATERIAL = "material";
 	const MESH2 = "mesh2";
 	const MESH3 = "mesh3";
+	const SPRITE3 = "sprite3";
 	const MODEL_2D = "model2";
 	const MODEL_3D = "model3";
 	const PROJECTION_2D = "projection2";
@@ -277,6 +278,7 @@
 		SAMPLER: SAMPLER,
 		SCALING_2D: SCALING_2D,
 		SCALING_3D: SCALING_3D,
+		SPRITE3: SPRITE3,
 		TEXTURE_GPU: TEXTURE_GPU,
 		TEXTURE_IMAGE: TEXTURE_IMAGE,
 		TRANSLATION_2D: TRANSLATION_2D,
@@ -6151,7 +6153,7 @@
 	    vec3;
 	    constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
 	        super();
-	        this.vec3 = vec3;
+	        this.vec3 = Vector3.fromArray(vec3);
 	        this.update();
 	    }
 	    get x() {
@@ -6179,7 +6181,12 @@
 	        this.dirty = true;
 	    }
 	    set(arr) {
-	        this.vec3.set(arr);
+	        if (typeof arr === 'number') {
+	            Vector3.fromScalar(arr, this.vec3);
+	        }
+	        else {
+	            this.vec3.set(arr);
+	        }
 	        return this.update();
 	    }
 	    setXYZ(x, y, z) {
@@ -6798,6 +6805,22 @@
 	        operation: 'add',
 	    }
 	};
+
+	class BufferFloat32 extends Float32Array {
+	    dirty = true;
+	    name;
+	    descriptor = {};
+	    constructor(option, name = "buffer") {
+	        super((option.size ?? 16) >> 2);
+	        this.name = name;
+	        this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+	        this.descriptor.size = option.size ?? 16;
+	    }
+	    set(arr, offset) {
+	        super.set(arr, offset);
+	        this.dirty = true;
+	    }
+	}
 
 	const POSITION = "position";
 	const VERTICES = "vertices";
@@ -8421,6 +8444,133 @@
 	    }
 	}
 
+	class Material {
+	    dirty;
+	    vertex;
+	    vertexShader;
+	    fragmentShader;
+	    blend;
+	    uniforms;
+	    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
+	        this.dirty = true;
+	        this.vertexShader = vertex;
+	        this.fragmentShader = fragment;
+	        this.blend = blend;
+	        this.uniforms = uniforms;
+	    }
+	    get vertexCode() {
+	        return this.vertexShader.descriptor.code;
+	    }
+	    set vertexCode(code) {
+	        this.vertexShader.descriptor.code = code;
+	        this.vertexShader.dirty = true;
+	        this.dirty = true;
+	    }
+	    get fragmentCode() {
+	        return this.vertexShader.descriptor.code;
+	    }
+	    set fragmentCode(code) {
+	        this.fragmentShader.descriptor.code = code;
+	        this.fragmentShader.dirty = true;
+	        this.dirty = true;
+	    }
+	}
+
+	const wgslShaders$2 = {
+	    vertex: `
+		struct Uniforms {
+			 matrix : mat4x4<f32>
+	  	};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>,
+			@location(0) uv : vec2<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
+			out.uv = uv;
+			return out;
+		}
+	`,
+	    fragment: `
+		@binding(1) @group(0) var mySampler: sampler;
+		@binding(2) @group(0) var myTexture: texture_2d<f32>;
+
+		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+			return textureSample(myTexture, mySampler, uv);
+		}
+	`
+	};
+	class TextureMaterial extends Material {
+	    constructor(texture, sampler = new Sampler()) {
+	        super({
+	            descriptor: {
+	                code: wgslShaders$2.vertex,
+	            },
+	            dirty: true,
+	        }, {
+	            descriptor: {
+	                code: wgslShaders$2.fragment,
+	            },
+	            dirty: true,
+	        }, [
+	            {
+	                binding: 1,
+	                name: "mySampler",
+	                type: SAMPLER,
+	                value: sampler,
+	                dirty: true
+	            },
+	            {
+	                binding: 2,
+	                name: "myTexture",
+	                type: TEXTURE_IMAGE,
+	                value: texture,
+	                dirty: true
+	            }
+	        ]);
+	        this.dirty = true;
+	    }
+	    get sampler() {
+	        return this.uniforms[0].value;
+	    }
+	    set sampler(sampler) {
+	        this.uniforms[0].dirty = this.dirty = true;
+	        this.uniforms[0].value = sampler;
+	    }
+	    get texture() {
+	        return this.uniforms[1].value;
+	    }
+	    set texture(texture) {
+	        this.uniforms[1].dirty = this.dirty = true;
+	        this.uniforms[1].value = texture;
+	    }
+	    setTextureAndSampler(texture, sampler) {
+	        this.texture = texture;
+	        if (sampler) {
+	            this.sampler = sampler;
+	        }
+	        return this;
+	    }
+	}
+
+	class Sprite3 extends Renderable {
+	    static RenderType = "mesh3";
+	    constructor(texture, width, height) {
+	        super({
+	            type: Sprite3.RenderType,
+	            geometry: createPlane({
+	                width: width ?? texture.width,
+	                height: height ?? texture.height,
+	            }),
+	            material: new TextureMaterial(texture)
+	        });
+	    }
+	}
+
 	const MeshObjParser = async (text) => {
 	    const texts = text.split('\n');
 	    const positionArr = [];
@@ -8639,6 +8789,15 @@
 	    }
 	    return true;
 	};
+	const checkBufferCacheReuseable = (descriptor, cache) => {
+	    if (descriptor.size !== cache.data.size) {
+	        return false;
+	    }
+	    if (descriptor.usage !== cache.data.usage) {
+	        return false;
+	    }
+	    return true;
+	};
 	const checkSamplerCacheReuseable = (descriptor, cache) => {
 	    if (descriptor.addressModeU !== cache.addressModeU) {
 	        return false;
@@ -8722,6 +8881,31 @@
 	            dirty: true,
 	            data: device.createTexture(texture.descriptor),
 	            ...texture.descriptor
+	        };
+	        map.set(device, cache);
+	        return cache;
+	    },
+	    createGPUBufferCache: (buffer, device) => {
+	        let map = WebGPUCacheObjectStore.caches.get(buffer);
+	        if (!map) {
+	            map = new Map();
+	            WebGPUCacheObjectStore.caches.set(buffer, map);
+	        }
+	        let cache = map.get(device);
+	        if (cache) {
+	            if (checkBufferCacheReuseable(buffer.descriptor, cache)) {
+	                cache.dirty = true;
+	                cache.data.label = buffer.name;
+	                return cache;
+	            }
+	            else {
+	                cache.data.destroy();
+	            }
+	        }
+	        cache = {
+	            dirty: true,
+	            data: device.createBuffer(buffer.descriptor),
+	            ...buffer.descriptor,
 	        };
 	        map.set(device, cache);
 	        return cache;
@@ -9184,10 +9368,7 @@
 	            for (let i = 0; i < uniforms.length; i++) {
 	                const uniform = uniforms[i];
 	                if (uniform.type === BUFFER) {
-	                    const buffer = device.createBuffer({
-	                        size: uniform.value.length * 4,
-	                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-	                    });
+	                    const buffer = WebGPUCacheObjectStore.createGPUBufferCache(uniform.value, device).data;
 	                    uniformMap.set(buffer, uniform);
 	                    groupEntries.push({
 	                        binding: uniform.binding,
@@ -9705,39 +9886,7 @@ fn main(
 	    }
 	}
 
-	class Material {
-	    dirty;
-	    vertex;
-	    vertexShader;
-	    fragmentShader;
-	    blend;
-	    uniforms;
-	    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
-	        this.dirty = true;
-	        this.vertexShader = vertex;
-	        this.fragmentShader = fragment;
-	        this.blend = blend;
-	        this.uniforms = uniforms;
-	    }
-	    get vertexCode() {
-	        return this.vertexShader.descriptor.code;
-	    }
-	    set vertexCode(code) {
-	        this.vertexShader.descriptor.code = code;
-	        this.vertexShader.dirty = true;
-	        this.dirty = true;
-	    }
-	    get fragmentCode() {
-	        return this.vertexShader.descriptor.code;
-	    }
-	    set fragmentCode(code) {
-	        this.fragmentShader.descriptor.code = code;
-	        this.fragmentShader.dirty = true;
-	        this.dirty = true;
-	    }
-	}
-
-	const wgslShaders$2 = {
+	const wgslShaders$1 = {
 	    vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -9766,12 +9915,12 @@ fn main(
 	    constructor(color = new Float32Array([1, 1, 1, 1])) {
 	        super({
 	            descriptor: {
-	                code: wgslShaders$2.vertex,
+	                code: wgslShaders$1.vertex,
 	            },
 	            dirty: true
 	        }, {
 	            descriptor: {
-	                code: wgslShaders$2.fragment,
+	                code: wgslShaders$1.fragment,
 	            },
 	            dirty: true
 	        }, [{
@@ -9793,7 +9942,7 @@ fn main(
 	    }
 	}
 
-	const wgslShaders$1 = {
+	const wgslShaders = {
 	    vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -9822,12 +9971,12 @@ fn main(
 	    constructor() {
 	        super({
 	            descriptor: {
-	                code: wgslShaders$1.vertex,
+	                code: wgslShaders.vertex,
 	            },
 	            dirty: true
 	        }, {
 	            descriptor: {
-	                code: wgslShaders$1.fragment,
+	                code: wgslShaders.fragment,
 	            },
 	            dirty: true,
 	        }, [{
@@ -10160,87 +10309,6 @@ struct VertexOutput {
 	    }
 	}
 
-	const wgslShaders = {
-	    vertex: `
-		struct Uniforms {
-			 matrix : mat4x4<f32>
-	  	};
-	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-
-		struct VertexOutput {
-			@builtin(position) position : vec4<f32>,
-			@location(0) uv : vec2<f32>
-		};
-
-		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
-			var out: VertexOutput;
-			out.position = uniforms.matrix * vec4<f32>(position, 1.0);
-			out.uv = uv;
-			return out;
-		}
-	`,
-	    fragment: `
-		@binding(1) @group(0) var mySampler: sampler;
-		@binding(2) @group(0) var myTexture: texture_2d<f32>;
-
-		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-			return textureSample(myTexture, mySampler, uv);
-		}
-	`
-	};
-	class TextureMaterial extends Material {
-	    constructor(texture, sampler = new Sampler()) {
-	        super({
-	            descriptor: {
-	                code: wgslShaders.vertex,
-	            },
-	            dirty: true,
-	        }, {
-	            descriptor: {
-	                code: wgslShaders.fragment,
-	            },
-	            dirty: true,
-	        }, [
-	            {
-	                binding: 1,
-	                name: "mySampler",
-	                type: SAMPLER,
-	                value: sampler,
-	                dirty: true
-	            },
-	            {
-	                binding: 2,
-	                name: "myTexture",
-	                type: TEXTURE_IMAGE,
-	                value: texture,
-	                dirty: true
-	            }
-	        ]);
-	        this.dirty = true;
-	    }
-	    get sampler() {
-	        return this.uniforms[0].value;
-	    }
-	    set sampler(sampler) {
-	        this.uniforms[0].dirty = this.dirty = true;
-	        this.uniforms[0].value = sampler;
-	    }
-	    get texture() {
-	        return this.uniforms[1].value;
-	    }
-	    set texture(texture) {
-	        this.uniforms[1].dirty = this.dirty = true;
-	        this.uniforms[1].value = texture;
-	    }
-	    setTextureAndSampler(texture, sampler) {
-	        this.texture = texture;
-	        if (sampler) {
-	            this.sampler = sampler;
-	        }
-	        return this;
-	    }
-	}
-
 	exports.TWEEN_STATE = void 0;
 	(function (TWEEN_STATE) {
 	    TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
@@ -10499,12 +10567,22 @@ struct VertexOutput {
 	    return entity;
 	};
 
+	const createSprite3 = (texture, name = SPRITE3, world) => {
+	    const entity = new Object3(name);
+	    entity.addComponent(new Sprite3(texture));
+	    if (world) {
+	        world.addEntity(entity);
+	    }
+	    return entity;
+	};
+
 	var index = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		createCamera2: createCamera2,
 		createCamera3: createCamera3,
 		createMesh2: createMesh2,
-		createMesh3: createMesh3
+		createMesh3: createMesh3,
+		createSprite3: createSprite3
 	});
 
 	exports.APosition2 = APosition2;
@@ -10521,6 +10599,7 @@ struct VertexOutput {
 	exports.AngleRotation2 = AngleRotation2;
 	exports.ArraybufferDataType = ArraybufferDataType;
 	exports.AtlasTexture = AtlasTexture;
+	exports.BufferFloat32 = BufferFloat32;
 	exports.COLOR_HEX_MAP = COLOR_HEX_MAP;
 	exports.COMPONENT_NAME = constants$2;
 	exports.Camera2 = Camera2;
@@ -10589,6 +10668,7 @@ struct VertexOutput {
 	exports.Sphere = Sphere;
 	exports.Spherical = Spherical;
 	exports.SphericalPosition3 = SphericalPosition3;
+	exports.Sprite3 = Sprite3;
 	exports.SpritesheetTexture = SpritesheetTexture;
 	exports.System = System;
 	exports.SystemEvent = SystemEvent;

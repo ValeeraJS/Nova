@@ -5,6 +5,7 @@ export const GEOMETRY = "geometry";
 export const MATERIAL = "material";
 export const MESH2 = "mesh2";
 export const MESH3 = "mesh3";
+export const SPRITE3 = "sprite3";
 export const MODEL_2D = "model2";
 export const MODEL_3D = "model3";
 export const PROJECTION_2D = "projection2";
