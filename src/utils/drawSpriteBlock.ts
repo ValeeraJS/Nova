@@ -2,7 +2,7 @@ import { IFrame } from "../systems/render/texture/spritesheet/IFrame";
 
 const canvases: HTMLCanvasElement[] = []; // 储存多个canvas，可能存在n个图同时画
 
-export async function drawSpriteBlock(image: HTMLImageElement, width: number, height: number, frame: IFrame): Promise<ImageBitmap> {
+export async function drawSpriteBlock(image: HTMLImageElement | ImageBitmap, width: number, height: number, frame: IFrame): Promise<ImageBitmap> {
     let canvas = canvases.pop() || document.createElement("canvas");
     let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     canvas.width = width;
