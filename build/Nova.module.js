@@ -95,18 +95,34 @@ class Timeline {
     };
 }
 
+const RefWeakMap = new WeakMap();
+const allFilter = () => true;
+
+function checkFilt(firer, eventKey, target) {
+    for (const item of firer.filters) {
+        if (item.rule(eventKey, target)) {
+            item.listener(target, eventKey);
+        }
+    }
+    return firer;
+}
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const mixin$1 = (Base = Object, eventKeyList = []) => {
+const mixin$1 = (Base = Object) => {
     return class EventFirer extends Base {
-        static mixin = mixin$1;
-        #isFire = false;
-        #fireIndex = -1;
-        #offCount = new Map();
-        eventKeyList = eventKeyList;
-        filters = [];
-        listeners = new Map();
-        all(listener) {
-            return this.filt(() => true, listener);
+        filters;
+        listeners;
+        constructor(...args) {
+            super(...args);
+            this.filters = [];
+            this.listeners = new Map();
+            RefWeakMap.set(this, {
+                fireIndex: -1,
+                isFire: false,
+                offCount: new Map()
+            });
+        }
+        all(listener, checkDuplicate) {
+            return this.filt(allFilter, listener, checkDuplicate);
         }
         clearListenersByKey(eventKey) {
             this.listeners.delete(eventKey);
@@ -119,7 +135,16 @@ const mixin$1 = (Base = Object, eventKeyList = []) => {
             }
             return this;
         }
-        filt(rule, listener) {
+        filt(rule, listener, checkDuplicate) {
+            if (checkDuplicate) {
+                let f;
+                for (let i = 0, j = this.filters.length; i < j; i++) {
+                    f = this.filters[i];
+                    if (f.rule === rule && f.listener === listener) {
+                        return this;
+                    }
+                }
+            }
             this.filters.push({
                 listener,
                 rule
@@ -133,37 +158,35 @@ const mixin$1 = (Base = Object, eventKeyList = []) => {
                 }
                 return this;
             }
-            this.#isFire = true;
-            if (!this.checkEventKeyAvailable(eventKey)) {
-                console.error("EventDispatcher couldn't dispatch the event since EventKeyList doesn't contains key: ", eventKey);
-                return this;
-            }
+            const ref = RefWeakMap.get(this);
+            ref.isFire = true;
             const array = this.listeners.get(eventKey) || [];
             // let len = array.length;
             let item;
             for (let i = 0; i < array.length; i++) {
-                this.#fireIndex = i;
+                ref.fireIndex = i;
                 item = array[i];
                 item.listener(target);
                 item.times--;
                 if (item.times <= 0) {
                     array.splice(i--, 1);
                 }
-                const count = this.#offCount.get(eventKey);
+                const count = ref.offCount.get(eventKey);
                 if (count) {
                     // 如果在当前事件触发时，监听器依次触发，已触发的被移除
                     i -= count;
-                    this.#offCount.clear();
+                    ref.offCount.clear();
                 }
             }
-            this.checkFilt(eventKey, target);
-            this.#fireIndex = -1;
-            this.#offCount.clear();
-            this.#isFire = false;
+            checkFilt(this, eventKey, target);
+            ref.fireIndex = -1;
+            ref.offCount.clear();
+            ref.isFire = false;
             return this;
         }
         off(eventKey, listener) {
             const array = this.listeners.get(eventKey);
+            const ref = RefWeakMap.get(this);
             if (!array) {
                 return this;
             }
@@ -171,35 +194,38 @@ const mixin$1 = (Base = Object, eventKeyList = []) => {
             for (let i = 0; i < len; i++) {
                 if (array[i].listener === listener) {
                     array.splice(i, 1);
-                    if (this.#isFire && this.#fireIndex >= i) {
-                        const v = this.#offCount.get(eventKey) ?? 0;
-                        this.#offCount.set(eventKey, v + 1);
+                    if (ref.isFire && ref.fireIndex >= i) {
+                        const v = ref.offCount.get(eventKey) ?? 0;
+                        ref.offCount.set(eventKey, v + 1);
                     }
                     break;
                 }
             }
             return this;
         }
-        on(eventKey, listener) {
+        on(eventKey, listener, checkDuplicate) {
             if (eventKey instanceof Array) {
                 for (let i = 0, j = eventKey.length; i < j; i++) {
-                    this.times(eventKey[i], Infinity, listener);
+                    this.times(eventKey[i], Infinity, listener, checkDuplicate);
                 }
                 return this;
             }
-            return this.times(eventKey, Infinity, listener);
+            return this.times(eventKey, Infinity, listener, checkDuplicate);
         }
-        once(eventKey, listener) {
-            return this.times(eventKey, 1, listener);
+        once(eventKey, listener, checkDuplicate) {
+            return this.times(eventKey, 1, listener, checkDuplicate);
         }
-        times(eventKey, times, listener) {
-            if (!this.checkEventKeyAvailable(eventKey)) {
-                console.error("EventDispatcher couldn't add the listener: ", listener, "since EventKeyList doesn't contains key: ", eventKey);
-                return this;
-            }
+        times(eventKey, times, listener, checkDuplicate = false) {
             const array = this.listeners.get(eventKey) || [];
             if (!this.listeners.has(eventKey)) {
                 this.listeners.set(eventKey, array);
+            }
+            if (checkDuplicate) {
+                for (let i = 0, j = array.length; i < j; i++) {
+                    if (array[i].listener === listener) {
+                        return this;
+                    }
+                }
             }
             array.push({
                 listener,
@@ -207,23 +233,87 @@ const mixin$1 = (Base = Object, eventKeyList = []) => {
             });
             return this;
         }
-        checkFilt(eventKey, target) {
-            for (const item of this.filters) {
-                if (item.rule(eventKey, target)) {
-                    item.listener(target, eventKey);
-                }
-            }
-            return this;
-        }
-        checkEventKeyAvailable(eventKey) {
-            if (this.eventKeyList.length) {
-                return this.eventKeyList.includes(eventKey);
-            }
-            return true;
-        }
     };
 };
-var EventDispatcher = mixin$1(Object);
+const EventFirer = mixin$1(Object);
+
+const RefEventFirerMap = new WeakMap();
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+function eventfirer(constructor) {
+    return new Proxy(constructor, {
+        construct(Target, args) {
+            const obj = new Target(...args);
+            const firer = new EventFirer();
+            RefEventFirerMap.set(obj, firer);
+            const arr = ClassOnKeyMap.get(constructor);
+            if (arr) {
+                for (let i = 0, len = arr.length; i < len; i++) {
+                    firer.times(arr[i].eventName, arr[i].times, obj[arr[i].method].bind(obj));
+                }
+            }
+            const arr2 = ClassFiltMap.get(constructor);
+            if (arr2) {
+                for (let i = 0, len = arr2.length; i < len; i++) {
+                    firer.filt(arr2[i].rule, obj[arr2[i].method].bind(obj));
+                }
+            }
+            return obj;
+        }
+    });
+}
+const fire = (eventName) => {
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    return function (target, key) {
+        const func = target[key];
+        target[key] = function (...args) {
+            const v = func.call(this, ...args);
+            RefEventFirerMap.get(this)?.fire(eventName, this);
+            return v;
+        };
+        return target[key];
+    };
+};
+const ClassOnKeyMap = new WeakMap();
+const times = (eventName, times = Infinity) => {
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    return function (target, key) {
+        let arr = ClassOnKeyMap.get(target.constructor);
+        if (!arr) {
+            arr = [];
+            ClassOnKeyMap.set(target.constructor, arr);
+        }
+        arr.push({
+            eventName,
+            method: key,
+            times
+        });
+    };
+};
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const on = (eventName) => {
+    return times(eventName, Infinity);
+};
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const once = (eventName) => {
+    return times(eventName, 1);
+};
+const ClassFiltMap = new WeakMap();
+const filt = (rule) => {
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    return function (target, key) {
+        let arr = ClassFiltMap.get(target.constructor);
+        if (!arr) {
+            arr = [];
+            ClassFiltMap.set(target.constructor, arr);
+        }
+        arr.push({
+            method: key,
+            rule
+        });
+    };
+};
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+const all = filt(allFilter);
 
 // component type
 const ANCHOR_2D = "anchor2";
@@ -1004,7 +1094,7 @@ var clampSafeCommon = (val, a, b) => {
  * Mathx.clamp(2, 3, 1); // true;
  * Mathx.clamp(2, 3, 0.5); // false;
  */
-var closeToCommon = (val, target, epsilon = EPSILON) => {
+var closeTo = (val, target, epsilon = EPSILON) => {
     return Math.abs(val - target) <= epsilon;
 };
 
@@ -1417,529 +1507,262 @@ class EulerAngle extends Float32Array {
     }
 }
 
-let a00$2 = 0, a01$2 = 0, a10$2 = 0, a11$2 = 0;
-let b00$2 = 0, b01$2 = 0, b10$2 = 0, b11$2 = 0, det$1 = 0;
-let x$4 = 0, y$4 = 0;
-const UNIT_MATRIX2_DATA = [1, 0, 0, 1];
-class Matrix2 extends Float32Array {
-    static UNIT_MATRIX2 = new Matrix2([1, 0, 0, 1]);
-    static add = (a, b, out) => {
+let x$4 = 0;
+let y$4 = 0;
+let c$1 = 0;
+let s$2 = 0;
+class Vector2 extends Float32Array {
+    static VECTOR2_ZERO = new Vector2(0, 0);
+    static VECTOR2_TOP = new Vector2(0, 1);
+    static VECTOR2_BOTTOM = new Vector2(0, -1);
+    static VECTOR2_LEFT = new Vector2(-1, 0);
+    static VECTOR2_RIGHT = new Vector2(1, 0);
+    static VECTOR2_ONE = new Vector2(1, 1);
+    static add = (a, b, out = new Vector2()) => {
         out[0] = a[0] + b[0];
         out[1] = a[1] + b[1];
-        out[2] = a[2] + b[2];
-        out[3] = a[3] + b[3];
         return out;
     };
-    static adjoint = (a, out) => {
-        a00$2 = a[0];
-        out[0] = a[3];
-        out[1] = -a[1];
-        out[2] = -a[2];
-        out[3] = a00$2;
+    static addScalar = (a, b, out = new Vector2(2)) => {
+        out[0] = a[0] + b;
+        out[1] = a[1] + b;
         return out;
     };
-    static clone = (source) => {
-        return new Matrix2(source);
+    static angle = (a) => {
+        return Math.atan2(a[1], a[0]);
     };
-    static closeTo = (a, b) => {
-        a00$2 = a[0];
-        a10$2 = a[1];
-        a01$2 = a[2];
-        a11$2 = a[3];
-        b00$2 = b[0];
-        b10$2 = b[1];
-        b01$2 = b[2];
-        b11$2 = b[3];
-        return (closeToCommon(a00$2, b00$2) &&
-            closeToCommon(a01$2, b01$2) &&
-            closeToCommon(a10$2, b10$2) &&
-            closeToCommon(a11$2, b11$2));
+    static ceil = (a, out = new Vector2()) => {
+        out[0] = Math.ceil(a[0]);
+        out[1] = Math.ceil(a[1]);
+        return out;
     };
-    static create = (a = UNIT_MATRIX2_DATA) => {
-        return new Matrix2(a);
+    static clamp = (a, min, max, out = new Vector2()) => {
+        out[0] = clamp(a[0], min[0], max[0]);
+        out[1] = clamp(a[1], min[1], max[1]);
+        return out;
     };
-    static determinant = (a) => {
-        return a[0] * a[3] - a[1] * a[2];
+    static clampSafe = (a, min, max, out = new Vector2()) => {
+        out[0] = clampSafeCommon(a[0], min[0], max[0]);
+        out[1] = clampSafeCommon(a[1], min[1], max[1]);
+        return out;
+    };
+    static clampLength = (a, min, max, out = new Vector2()) => {
+        out[0] = clampSafeCommon(a[0], min[0], max[0]);
+        out[1] = clampSafeCommon(a[1], min[1], max[1]);
+        return out;
+    };
+    static clampScalar = (a, min, max, out = new Vector2()) => {
+        out[0] = clamp(a[0], min, max);
+        out[1] = clamp(a[1], min, max);
+        return out;
+    };
+    static closeTo = (a, b, epsilon = EPSILON) => {
+        return Vector2.distanceTo(a, b) <= epsilon;
+    };
+    static closeToRect = (a, b, epsilon = EPSILON) => {
+        return closeTo(a[0], b[0], epsilon) && closeTo(a[1], b[1], epsilon);
+    };
+    static closeToManhattan = (a, b, epsilon = EPSILON) => {
+        return Vector2.distanceToManhattan(a, b) <= epsilon;
+    };
+    static clone = (a, out = new Vector2()) => {
+        out[0] = a[0];
+        out[1] = a[1];
+        return out;
+    };
+    static cross = (a, b) => {
+        return a[0] * b[1] - a[1] * b[0];
+    };
+    static create = (x = 0, y = 0, out = new Vector2()) => {
+        out[0] = x;
+        out[1] = y;
+        return out;
+    };
+    static distanceTo = (a, b) => {
+        x$4 = b[0] - a[0];
+        y$4 = b[1] - a[1];
+        return Math.hypot(x$4, y$4);
+    };
+    static distanceToManhattan = (a, b) => {
+        return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+    };
+    static distanceToSquared = (a, b) => {
+        x$4 = a[0] - b[0];
+        y$4 = a[1] - b[1];
+        return x$4 * x$4 + y$4 * y$4;
+    };
+    static divide = (a, b, out = new Vector2()) => {
+        out[0] = a[0] / b[0];
+        out[1] = a[1] / b[1];
+        return out;
+    };
+    static divideScalar = (a, scalar, out = new Vector2()) => {
+        return Vector2.multiplyScalar(a, 1 / scalar, out);
+    };
+    static dot = (a, b) => {
+        return a[0] * b[0] + a[1] * b[1];
     };
     static equals = (a, b) => {
-        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+        return a[0] === b[0] && a[1] === b[1];
     };
-    static frobNorm = (a) => {
-        return Math.hypot(a[0], a[1], a[2], a[3]);
-    };
-    static fromArray = (source, out = new Matrix2()) => {
-        out.set(source);
+    static floor = (a, out = new Vector2()) => {
+        out[0] = Math.floor(a[0]);
+        out[1] = Math.floor(a[1]);
         return out;
     };
-    static fromRotation = (rad, out = new Matrix2()) => {
-        y$4 = Math.sin(rad);
-        x$4 = Math.cos(rad);
-        out[0] = x$4;
-        out[1] = y$4;
-        out[2] = -y$4;
-        out[3] = x$4;
+    static floorToZero = (a, out = new Vector2()) => {
+        out[0] = floorToZeroCommon(a[0]);
+        out[1] = floorToZeroCommon(a[1]);
         return out;
     };
-    static fromScaling = (v, out = new Matrix2()) => {
-        out[0] = v[0];
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = v[1];
+    static fromArray = (arr, index = 0, out = new Vector2()) => {
+        out[0] = arr[index];
+        out[1] = arr[index + 1];
         return out;
     };
-    static identity = (out = new Matrix2()) => {
-        out[0] = 1;
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = 1;
+    static fromJson = (j, out = new Vector2()) => {
+        out[0] = j.x;
+        out[1] = j.y;
         return out;
     };
-    static invert = (a, out = new Matrix2()) => {
-        a00$2 = a[0];
-        a10$2 = a[1];
-        a01$2 = a[2];
-        a11$2 = a[3];
-        det$1 = Matrix2.determinant(a);
-        if (!det$1) {
-            return null;
-        }
-        det$1 = 1.0 / det$1;
-        out[0] = a11$2 * det$1;
-        out[1] = -a10$2 * det$1;
-        out[2] = -a01$2 * det$1;
-        out[3] = a00$2 * det$1;
+    static fromPolar = (p, out = new Vector2()) => {
+        out[0] = Math.cos(p.a) * p.r;
+        out[1] = Math.sin(p.a) * p.r;
         return out;
     };
-    static minus = (a, b, out = new Matrix2()) => {
+    static fromScalar = (value = 0, out = new Vector2()) => {
+        out[0] = out[1] = value;
+        return out;
+    };
+    static inverse = (a, out = new Vector2()) => {
+        out[0] = 1 / a[0] || 0;
+        out[1] = 1 / a[1] || 0;
+        return out;
+    };
+    static norm = (a) => {
+        return Math.sqrt(a[0] * a[0] + a[1] * a[1]);
+    };
+    static lengthManhattan = (a) => {
+        return Math.abs(a[0]) + Math.abs(a[1]);
+    };
+    static lengthSquared = (a) => {
+        return a[0] * a[0] + a[1] * a[1];
+    };
+    static lerp = (a, b, alpha, out = new Vector2()) => {
+        out[0] = (b[0] - a[0]) * alpha + a[0];
+        out[1] = (b[1] - a[1]) * alpha + a[1];
+        return out;
+    };
+    static max = (a, b, out = new Vector2()) => {
+        out[0] = Math.max(a[0], b[0]);
+        out[1] = Math.max(a[1], b[1]);
+        return out;
+    };
+    static min = (a, b, out = new Vector2()) => {
+        out[0] = Math.min(a[0], b[0]);
+        out[1] = Math.min(a[1], b[1]);
+        return out;
+    };
+    static minus = (a, b, out = new Vector2()) => {
         out[0] = a[0] - b[0];
-        out[1] = a[1] - b[1];
-        out[2] = a[2] - b[2];
-        out[3] = a[3] - b[3];
+        out[1] = a[1] - b[0];
         return out;
     };
-    static multiply = (a, b, out = new Matrix2()) => {
-        a00$2 = a[0];
-        a10$2 = a[1];
-        a01$2 = a[2];
-        a11$2 = a[3];
-        b00$2 = b[0];
-        b10$2 = b[1];
-        b01$2 = b[2];
-        b11$2 = b[3];
-        out[0] = a00$2 * b00$2 + a01$2 * b10$2;
-        out[1] = a10$2 * b00$2 + a11$2 * b10$2;
-        out[2] = a00$2 * b01$2 + a01$2 * b11$2;
-        out[3] = a10$2 * b01$2 + a11$2 * b11$2;
+    static minusScalar = (a, num, out = new Vector2()) => {
+        out[0] = a[0] - num;
+        out[1] = a[1] - num;
         return out;
     };
-    static multiplyScalar = (a, b, out = new Matrix2()) => {
-        out[0] = a[0] * b;
-        out[1] = a[1] * b;
-        out[2] = a[2] * b;
-        out[3] = a[3] * b;
+    static multiply = (a, b, out = new Vector2()) => {
+        out[0] = a[0] * b[0];
+        out[1] = a[1] * b[1];
         return out;
     };
-    static rotate = (a, rad, out = new Matrix2()) => {
-        a00$2 = a[0];
-        a10$2 = a[1];
-        a01$2 = a[2];
-        a11$2 = a[3];
-        y$4 = Math.sin(rad);
-        x$4 = Math.cos(rad);
-        out[0] = a00$2 * x$4 + a01$2 * y$4;
-        out[1] = a10$2 * x$4 + a11$2 * y$4;
-        out[2] = a00$2 * -y$4 + a01$2 * x$4;
-        out[3] = a10$2 * -y$4 + a11$2 * x$4;
+    static multiplyScalar = (a, scalar, out = new Vector2()) => {
+        out[0] = a[0] * scalar;
+        out[1] = a[1] * scalar;
         return out;
     };
-    static scale = (a, v, out = new Matrix2()) => {
-        a00$2 = a[0];
-        a10$2 = a[1];
-        a01$2 = a[2];
-        a11$2 = a[3];
-        x$4 = v[0];
-        y$4 = v[1];
-        out[0] = a00$2 * x$4;
-        out[1] = a10$2 * x$4;
-        out[2] = a01$2 * y$4;
-        out[3] = a11$2 * y$4;
+    static negate = (a, out = new Vector2()) => {
+        out[0] = -a[0];
+        out[1] = -a[1];
         return out;
+    };
+    static normalize = (a, out = new Vector2()) => {
+        return Vector2.divideScalar(a, Vector2.norm(a) || 1, out);
+    };
+    static random = (norm = 1, out = new Vector2()) => {
+        x$4 = Math.random() * DEG_360_RAD;
+        out[0] = Math.cos(x$4) * norm;
+        out[1] = Math.sin(x$4) * norm;
+        return out;
+    };
+    static rotate = (a, angle, center = Vector2.VECTOR2_ZERO, out = new Vector2(2)) => {
+        c$1 = Math.cos(angle);
+        s$2 = Math.sin(angle);
+        x$4 = a[0] - center[0];
+        y$4 = a[1] - center[1];
+        out[0] = x$4 * c$1 - y$4 * s$2 + center[0];
+        out[1] = x$4 * s$2 + y$4 * c$1 + center[1];
+        return out;
+    };
+    static round = (a, out = new Vector2()) => {
+        out[0] = Math.round(a[0]);
+        out[1] = Math.round(a[1]);
+        return out;
+    };
+    static set = (x = 0, y = 0, out = new Vector2()) => {
+        out[0] = x;
+        out[1] = y;
+        return out;
+    };
+    static setNorm = (a, length, out = new Vector2(2)) => {
+        Vector2.normalize(a, out);
+        Vector2.multiplyScalar(out, length, out);
+        return out;
+    };
+    static toArray = (a, arr = []) => {
+        arr[0] = a[0];
+        arr[1] = a[1];
+        return arr;
+    };
+    static toPalorJson = (a, p = { a: 0, r: 0 }) => {
+        p.r = Vector2.norm(a);
+        p.a = Vector2.angle(a);
+        return p;
     };
     static toString = (a) => {
-        return `mat2(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
+        return `(${a[0]}, ${a[1]})`;
     };
-    static transpose = (a, out = new Matrix2()) => {
-        if (out === a) {
-            a01$2 = a[1];
-            out[1] = a[2];
-            out[2] = a01$2;
-        }
-        else {
-            out[0] = a[0];
-            out[1] = a[2];
-            out[2] = a[1];
-            out[3] = a[3];
-        }
+    static transformMatrix3 = (a, m, out = new Vector2()) => {
+        x$4 = a[0];
+        y$4 = a[1];
+        out[0] = m[0] * x$4 + m[3] * y$4 + m[6];
+        out[1] = m[1] * x$4 + m[4] * y$4 + m[7];
         return out;
     };
-    constructor(data = UNIT_MATRIX2_DATA) {
-        super(data);
+    dataType = ArraybufferDataType.VECTOR2;
+    constructor(x = 0, y = 0) {
+        super(2);
+        this[0] = x;
+        this[1] = y;
     }
-}
-
-let a00$1 = 0, a01$1 = 0, a02$1 = 0, a11$1 = 0, a10$1 = 0, a12$1 = 0, a20$1 = 0, a21$1 = 0, a22$1 = 0;
-let b00$1 = 0, b01$1 = 0, b02$1 = 0, b11$1 = 0, b10$1 = 0, b12$1 = 0, b20$1 = 0, b21$1 = 0, b22$1 = 0;
-let x$3 = 0, y$3 = 0;
-const UNIT_MATRIX3_DATA = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-class Matrix3 extends Float32Array {
-    static UNIT_MATRIX3 = new Matrix3(UNIT_MATRIX3_DATA);
-    static clone = (source) => {
-        return new Matrix3(source);
-    };
-    static cofactor00 = (a) => {
-        return a[4] * a[8] - a[5] * a[7];
-    };
-    static cofactor01 = (a) => {
-        return a[1] * a[8] - a[7] * a[2];
-    };
-    static cofactor02 = (a) => {
-        return a[1] * a[5] - a[4] * a[2];
-    };
-    static cofactor10 = (a) => {
-        return a[3] * a[8] - a[6] * a[5];
-    };
-    static cofactor11 = (a) => {
-        return a[0] * a[8] - a[6] * a[2];
-    };
-    static cofactor12 = (a) => {
-        return a[0] * a[5] - a[3] * a[2];
-    };
-    static cofactor20 = (a) => {
-        return a[3] * a[7] - a[6] * a[4];
-    };
-    static cofactor21 = (a) => {
-        return a[0] * a[7] - a[6] * a[1];
-    };
-    static cofactor22 = (a) => {
-        return a[0] * a[4] - a[3] * a[1];
-    };
-    static create = () => {
-        return new Matrix3(UNIT_MATRIX3_DATA);
-    };
-    static determinant = (a) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        return (a00$1 * (a22$1 * a11$1 - a12$1 * a21$1) +
-            a01$1 * (-a22$1 * a10$1 + a12$1 * a20$1) +
-            a02$1 * (a21$1 * a10$1 - a11$1 * a20$1));
-    };
-    static fromArray = (source, out = new Matrix3()) => {
-        out.set(source);
-        return out;
-    };
-    static fromMatrix2 = (mat4, out = new Matrix3()) => {
-        out[0] = mat4[0];
-        out[1] = mat4[1];
-        out[2] = 0;
-        out[3] = mat4[2];
-        out[4] = mat4[3];
-        out[5] = 0;
-        out[6] = 0;
-        out[7] = 0;
-        out[8] = 1;
-        return out;
-    };
-    static fromMatrix4 = (mat4, out = new Matrix3()) => {
-        out[0] = mat4[0];
-        out[1] = mat4[1];
-        out[2] = mat4[2];
-        out[3] = mat4[4];
-        out[4] = mat4[5];
-        out[5] = mat4[6];
-        out[6] = mat4[8];
-        out[7] = mat4[9];
-        out[8] = mat4[10];
-        return out;
-    };
-    static fromRotation = (rad, out = new Matrix3()) => {
-        y$3 = Math.sin(rad);
-        x$3 = Math.cos(rad);
-        out[0] = x$3;
-        out[1] = y$3;
-        out[2] = 0;
-        out[3] = -y$3;
-        out[4] = x$3;
-        out[5] = 0;
-        out[6] = 0;
-        out[7] = 0;
-        out[8] = 1;
-        return out;
-    };
-    static fromScaling = (v, out = new Matrix3()) => {
-        out[0] = v[0];
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = 0;
-        out[4] = v[1];
-        out[5] = 0;
-        out[6] = 0;
-        out[7] = 0;
-        out[8] = 1;
-        return out;
-    };
-    static fromTranslation = (v, out = new Matrix3()) => {
-        out[0] = 1;
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = 0;
-        out[4] = 1;
-        out[5] = 0;
-        out[6] = v[0];
-        out[7] = v[1];
-        out[8] = 1;
-        return out;
-    };
-    static identity = (out = new Matrix3()) => {
-        out[0] = 1;
-        out[1] = 0;
-        out[2] = 0;
-        out[3] = 0;
-        out[4] = 1;
-        out[5] = 0;
-        out[6] = 0;
-        out[7] = 0;
-        out[8] = 1;
-        return out;
-    };
-    static invert = (a, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        b01$1 = a22$1 * a11$1 - a12$1 * a21$1;
-        b11$1 = -a22$1 * a10$1 + a12$1 * a20$1;
-        b21$1 = a21$1 * a10$1 - a11$1 * a20$1;
-        let det = a00$1 * b01$1 + a01$1 * b11$1 + a02$1 * b21$1;
-        if (!det) {
-            return null;
-        }
-        det = 1.0 / det;
-        out[0] = b01$1 * det;
-        out[1] = (-a22$1 * a01$1 + a02$1 * a21$1) * det;
-        out[2] = (a12$1 * a01$1 - a02$1 * a11$1) * det;
-        out[3] = b11$1 * det;
-        out[4] = (a22$1 * a00$1 - a02$1 * a20$1) * det;
-        out[5] = (-a12$1 * a00$1 + a02$1 * a10$1) * det;
-        out[6] = b21$1 * det;
-        out[7] = (-a21$1 * a00$1 + a01$1 * a20$1) * det;
-        out[8] = (a11$1 * a00$1 - a01$1 * a10$1) * det;
-        return out;
-    };
-    static multiply = (a, b, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        b00$1 = b[0];
-        b01$1 = b[1];
-        b02$1 = b[2];
-        b10$1 = b[3];
-        b11$1 = b[4];
-        b12$1 = b[5];
-        b20$1 = b[6];
-        b21$1 = b[7];
-        b22$1 = b[8];
-        out[0] = b00$1 * a00$1 + b01$1 * a10$1 + b02$1 * a20$1;
-        out[1] = b00$1 * a01$1 + b01$1 * a11$1 + b02$1 * a21$1;
-        out[2] = b00$1 * a02$1 + b01$1 * a12$1 + b02$1 * a22$1;
-        out[3] = b10$1 * a00$1 + b11$1 * a10$1 + b12$1 * a20$1;
-        out[4] = b10$1 * a01$1 + b11$1 * a11$1 + b12$1 * a21$1;
-        out[5] = b10$1 * a02$1 + b11$1 * a12$1 + b12$1 * a22$1;
-        out[6] = b20$1 * a00$1 + b21$1 * a10$1 + b22$1 * a20$1;
-        out[7] = b20$1 * a01$1 + b21$1 * a11$1 + b22$1 * a21$1;
-        out[8] = b20$1 * a02$1 + b21$1 * a12$1 + b22$1 * a22$1;
-        return out;
-    };
-    static multiplyRotationMatrix = (a, b, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        b00$1 = b[0];
-        b01$1 = b[1];
-        b10$1 = b[3];
-        b11$1 = b[4];
-        out[0] = b00$1 * a00$1 + b01$1 * a10$1;
-        out[1] = b00$1 * a01$1 + b01$1 * a11$1;
-        out[2] = b00$1 * a02$1 + b01$1 * a12$1;
-        out[3] = b10$1 * a00$1 + b11$1 * a10$1;
-        out[4] = b10$1 * a01$1 + b11$1 * a11$1;
-        out[5] = b10$1 * a02$1 + b11$1 * a12$1;
-        out[6] = a20$1;
-        out[7] = a21$1;
-        out[8] = a22$1;
-        return out;
-    };
-    static multiplyScaleMatrix = (a, b, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        b00$1 = b[0];
-        b11$1 = b[4];
-        out[0] = b00$1 * a00$1;
-        out[1] = b00$1 * a01$1;
-        out[2] = b00$1 * a02$1;
-        out[3] = b11$1 * a10$1;
-        out[4] = b11$1 * a11$1;
-        out[5] = b11$1 * a12$1;
-        out[6] = a20$1;
-        out[7] = a21$1;
-        out[8] = a22$1;
-        return out;
-    };
-    static multiplyTranslateMatrix = (a, b, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        b20$1 = b[6];
-        b21$1 = b[7];
-        out[0] = a00$1;
-        out[1] = a01$1;
-        out[2] = a02$1;
-        out[3] = a10$1;
-        out[4] = a11$1;
-        out[5] = a12$1;
-        out[6] = b20$1 * a00$1 + b21$1 * a10$1 + a20$1;
-        out[7] = b20$1 * a01$1 + b21$1 * a11$1 + a21$1;
-        out[8] = b20$1 * a02$1 + b21$1 * a12$1 + a22$1;
-        return out;
-    };
-    static rotate = (a, rad, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        y$3 = Math.sin(rad);
-        x$3 = Math.cos(rad);
-        out[0] = x$3 * a00$1 + y$3 * a10$1;
-        out[1] = x$3 * a01$1 + y$3 * a11$1;
-        out[2] = x$3 * a02$1 + y$3 * a12$1;
-        out[3] = y$3 * a10$1 - x$3 * a00$1;
-        out[4] = y$3 * a11$1 - x$3 * a01$1;
-        out[5] = y$3 * a12$1 - x$3 * a02$1;
-        out[6] = a20$1;
-        out[7] = a21$1;
-        out[8] = a22$1;
-        return out;
-    };
-    static scale = (a, v, out = new Matrix3()) => {
-        x$3 = v[0];
-        y$3 = v[1];
-        out[0] = x$3 * a[0];
-        out[1] = x$3 * a[1];
-        out[2] = x$3 * a[2];
-        out[3] = y$3 * a[3];
-        out[4] = y$3 * a[4];
-        out[5] = y$3 * a[5];
-        out[6] = a[6];
-        out[7] = a[7];
-        out[8] = a[8];
-        return out;
-    };
-    static translate = (a, v, out = new Matrix3()) => {
-        a00$1 = a[0];
-        a01$1 = a[1];
-        a02$1 = a[2];
-        a10$1 = a[3];
-        a11$1 = a[4];
-        a12$1 = a[5];
-        a20$1 = a[6];
-        a21$1 = a[7];
-        a22$1 = a[8];
-        x$3 = v[0];
-        y$3 = v[1];
-        out[0] = a00$1;
-        out[1] = a01$1;
-        out[2] = a02$1;
-        out[3] = a10$1;
-        out[4] = a11$1;
-        out[5] = a12$1;
-        out[6] = x$3 * a00$1 + y$3 * a10$1 + a20$1;
-        out[7] = x$3 * a01$1 + y$3 * a11$1 + a21$1;
-        out[8] = x$3 * a02$1 + y$3 * a12$1 + a22$1;
-        return out;
-    };
-    static transpose = (a, out = new Matrix3()) => {
-        if (out === a) {
-            a01$1 = a[1];
-            a02$1 = a[2];
-            a12$1 = a[5];
-            out[1] = a[3];
-            out[2] = a[6];
-            out[3] = a01$1;
-            out[5] = a[7];
-            out[6] = a02$1;
-            out[7] = a12$1;
-        }
-        else {
-            out[0] = a[0];
-            out[1] = a[3];
-            out[2] = a[6];
-            out[3] = a[1];
-            out[4] = a[4];
-            out[5] = a[7];
-            out[6] = a[2];
-            out[7] = a[5];
-            out[8] = a[8];
-        }
-        return out;
-    };
-    constructor(data = UNIT_MATRIX3_DATA) {
-        super(data);
+    get x() {
+        return this[0];
+    }
+    set x(value) {
+        this[0] = value;
+    }
+    get y() {
+        return this[1];
+    }
+    set y(value) {
+        this[1] = value;
     }
 }
 
 let ax$1, ay$1, az$1, bx$1, by$1, bz$1;
-let ag, s$2;
+let ag, s$1;
 class Vector3 extends Float32Array {
     static VECTOR3_ZERO = new Vector3(0, 0, 0);
     static VECTOR3_ONE = new Vector3(1, 1, 1);
@@ -1996,7 +1819,7 @@ class Vector3 extends Float32Array {
         return out;
     };
     static closeTo = (a, b) => {
-        return closeToCommon(a[0], b[0]) && closeToCommon(a[1], b[1]) && closeToCommon(a[2], b[2]);
+        return closeTo(a[0], b[0]) && closeTo(a[1], b[1]) && closeTo(a[2], b[2]);
     };
     static create = (x = 0, y = 0, z = 0, out = new Vector3()) => {
         out[0] = x;
@@ -2201,9 +2024,9 @@ class Vector3 extends Float32Array {
     };
     static slerp = (a, b, t, out = new Vector3()) => {
         ag = Math.acos(Math.min(Math.max(Vector3.dot(a, b), -1), 1));
-        s$2 = Math.sin(ag);
-        ax$1 = Math.sin((1 - t) * ag) / s$2;
-        bx$1 = Math.sin(t * ag) / s$2;
+        s$1 = Math.sin(ag);
+        ax$1 = Math.sin((1 - t) * ag) / s$1;
+        bx$1 = Math.sin(t * ag) / s$1;
         out[0] = ax$1 * a[0] + bx$1 * b[0];
         out[1] = ax$1 * a[1] + bx$1 * b[1];
         out[2] = ax$1 * a[2] + bx$1 * b[2];
@@ -2282,10 +2105,810 @@ class Vector3 extends Float32Array {
     }
 }
 
+// import clampCommon from "../common/clamp";
+let ax, ay, az, aw, bx, by, bz, len$1;
+let ix, iy, iz, iw;
+let A, B, C, D, E, F, G, H, I, J;
+class Vector4 extends Float32Array {
+    static VECTOR3_ZERO = new Vector4(0, 0, 0, 0);
+    static VECTOR3_ONE = new Vector4(1, 1, 1, 1);
+    static add = (a, b, out = new Vector4()) => {
+        out[0] = a[0] + b[0];
+        out[1] = a[1] + b[1];
+        out[2] = a[2] + b[2];
+        out[3] = a[3] + b[3];
+        return out;
+    };
+    static ceil = (a, out = new Vector4()) => {
+        out[0] = Math.ceil(a[0]);
+        out[1] = Math.ceil(a[1]);
+        out[2] = Math.ceil(a[2]);
+        out[3] = Math.ceil(a[3]);
+        return out;
+    };
+    static closeTo = (a, b) => {
+        return (closeTo(a[0], b[0]) &&
+            closeTo(a[1], b[1]) &&
+            closeTo(a[2], b[2]) &&
+            closeTo(a[3], b[3]));
+    };
+    static create = (x = 0, y = 0, z = 0, w = 0, out = new Vector4()) => {
+        out[0] = x;
+        out[1] = y;
+        out[2] = z;
+        out[3] = w;
+        return out;
+    };
+    static cross = (u, v, w, out = new Vector4(4)) => {
+        A = v[0] * w[1] - v[1] * w[0];
+        B = v[0] * w[2] - v[2] * w[0];
+        C = v[0] * w[3] - v[3] * w[0];
+        D = v[1] * w[2] - v[2] * w[1];
+        E = v[1] * w[3] - v[3] * w[1];
+        F = v[2] * w[3] - v[3] * w[2];
+        G = u[0];
+        H = u[1];
+        I = u[2];
+        J = u[3];
+        out[0] = H * F - I * E + J * D;
+        out[1] = -(G * F) + I * C - J * B;
+        out[2] = G * E - H * C + J * A;
+        out[3] = -(G * D) + H * B - I * A;
+        return out;
+    };
+    static distanceTo = (a, b) => {
+        ax = b[0] - a[0];
+        ay = b[1] - a[1];
+        az = b[2] - a[2];
+        aw = b[3] - a[3];
+        return Math.hypot(ax, ay, az, aw);
+    };
+    static distanceToSquared = (a, b) => {
+        ax = b[0] - a[0];
+        ay = b[1] - a[1];
+        az = b[2] - a[2];
+        aw = b[3] - a[3];
+        return ax * ax + ay * ay + az * az + aw * aw;
+    };
+    static divide = (a, b, out = new Vector4()) => {
+        out[0] = a[0] / b[0];
+        out[1] = a[1] / b[1];
+        out[2] = a[2] / b[2];
+        out[3] = a[3] / b[3];
+        return out;
+    };
+    static dot = (a, b) => {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+    };
+    static equals = (a, b) => {
+        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+    };
+    static floor = (a, out = new Vector4()) => {
+        out[0] = Math.floor(a[0]);
+        out[1] = Math.floor(a[1]);
+        out[2] = Math.floor(a[2]);
+        out[3] = Math.floor(a[3]);
+        return out;
+    };
+    static fromValues = (x, y, z, w, out = new Vector4()) => {
+        out[0] = x;
+        out[1] = y;
+        out[2] = z;
+        out[3] = w;
+        return out;
+    };
+    static inverse = (a, out = new Vector4()) => {
+        out[0] = 1.0 / a[0];
+        out[1] = 1.0 / a[1];
+        out[2] = 1.0 / a[2];
+        out[3] = 1.0 / a[3];
+        return out;
+    };
+    static norm = (a) => {
+        return Math.hypot(a[0], a[1], a[2], a[3]);
+    };
+    static lengthSquared = (a) => {
+        ax = a[0];
+        ay = a[1];
+        az = a[2];
+        aw = a[3];
+        return ax * ax + ay * ay + az * az + aw * aw;
+    };
+    static lerp = (a, b, t, out = new Vector4()) => {
+        ax = a[0];
+        ay = a[1];
+        az = a[2];
+        aw = a[3];
+        out[0] = ax + t * (b[0] - ax);
+        out[1] = ay + t * (b[1] - ay);
+        out[2] = az + t * (b[2] - az);
+        out[3] = aw + t * (b[3] - aw);
+        return out;
+    };
+    static max = (a, b, out = new Vector4()) => {
+        out[0] = Math.max(a[0], b[0]);
+        out[1] = Math.max(a[1], b[1]);
+        out[2] = Math.max(a[2], b[2]);
+        out[3] = Math.max(a[3], b[3]);
+        return out;
+    };
+    static min = (a, b, out = new Vector4()) => {
+        out[0] = Math.min(a[0], b[0]);
+        out[1] = Math.min(a[1], b[1]);
+        out[2] = Math.min(a[2], b[2]);
+        out[3] = Math.min(a[3], b[3]);
+        return out;
+    };
+    static minus = (a, b, out = new Vector4()) => {
+        out[0] = a[0] - b[0];
+        out[1] = a[1] - b[1];
+        out[2] = a[2] - b[2];
+        out[3] = a[3] - b[3];
+        return out;
+    };
+    static multiply = (a, b, out = new Vector4()) => {
+        out[0] = a[0] * b[0];
+        out[1] = a[1] * b[1];
+        out[2] = a[2] * b[2];
+        out[3] = a[3] * b[3];
+        return out;
+    };
+    static multiplyScalar = (a, b, out = new Vector4()) => {
+        out[0] = a[0] * b;
+        out[1] = a[1] * b;
+        out[2] = a[2] * b;
+        out[3] = a[3] * b;
+        return out;
+    };
+    static negate = (a, out = new Vector4()) => {
+        out[0] = -a[0];
+        out[1] = -a[1];
+        out[2] = -a[2];
+        out[3] = -a[3];
+        return out;
+    };
+    static normalize = (a, out = new Vector4()) => {
+        ax = a[0];
+        ay = a[1];
+        az = a[2];
+        aw = a[3];
+        len$1 = ax * ax + ay * ay + az * az + aw * aw;
+        if (len$1 > 0) {
+            len$1 = 1 / Math.sqrt(len$1);
+        }
+        out[0] = ax * len$1;
+        out[1] = ay * len$1;
+        out[2] = az * len$1;
+        out[3] = aw * len$1;
+        return out;
+    };
+    static round = (a, out = new Vector4()) => {
+        out[0] = Math.round(a[0]);
+        out[1] = Math.round(a[1]);
+        out[2] = Math.round(a[2]);
+        out[3] = Math.round(a[3]);
+        return out;
+    };
+    static set = (x = 0, y = 0, z = 0, w = 0, out = new Vector4()) => {
+        out[0] = x;
+        out[1] = y;
+        out[2] = z;
+        out[4] = w;
+        return out;
+    };
+    static setNorm = (a, length, out = new Vector4(2)) => {
+        Vector4.normalize(a, out);
+        Vector4.multiplyScalar(out, length, out);
+        return out;
+    };
+    static toString = (a) => {
+        return `(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
+    };
+    static transformMatrix4 = (a, m, out = new Vector4()) => {
+        ax = a[0];
+        ay = a[1];
+        az = a[2];
+        aw = a[3];
+        out[0] = m[0] * ax + m[4] * ay + m[8] * az + m[12] * aw;
+        out[1] = m[1] * ax + m[5] * ay + m[9] * az + m[13] * aw;
+        out[2] = m[2] * ax + m[6] * ay + m[10] * az + m[14] * aw;
+        out[3] = m[3] * ax + m[7] * ay + m[11] * az + m[15] * aw;
+        return out;
+    };
+    static transformQuat = (a, q, out = new Vector4()) => {
+        bx = a[0];
+        by = a[1];
+        bz = a[2];
+        ax = q[0];
+        ay = q[1];
+        az = q[2];
+        aw = q[3];
+        ix = aw * bx + ay * bz - az * by;
+        iy = aw * by + az * bx - ax * bz;
+        iz = aw * bz + ax * by - ay * bx;
+        iw = -ax * bx - ay * by - az * bz;
+        out[0] = ix * aw + iw * -ax + iy * -az - iz * -ay;
+        out[1] = iy * aw + iw * -ay + iz * -ax - ix * -az;
+        out[2] = iz * aw + iw * -az + ix * -ay - iy * -ax;
+        out[3] = a[3];
+        return out;
+    };
+    dataType = ArraybufferDataType.VECTOR4;
+    constructor(x = 0, y = 0, z = 0, w = 0) {
+        super(4);
+        this[0] = x;
+        this[1] = y;
+        this[2] = z;
+        this[3] = w;
+    }
+    get x() {
+        return this[0];
+    }
+    set x(value) {
+        this[0] = value;
+    }
+    get y() {
+        return this[1];
+    }
+    set y(value) {
+        this[1] = value;
+    }
+    get z() {
+        return this[2];
+    }
+    set z(value) {
+        this[2] = value;
+    }
+    get w() {
+        return this[3];
+    }
+    set w(value) {
+        this[3] = value;
+    }
+}
+
+class Line3 {
+    a = new Vector3();
+    b = new Vector3();
+    static fromPointAndDirection(p, direction, out = new Line3()) {
+        out.a.set(p);
+        Vector3.add(out.a, direction, out.b);
+        return out;
+    }
+    constructor(a = Vector3.VECTOR3_ZERO, b = Vector3.VECTOR3_RIGHT) {
+        this.a.set(a);
+        this.b.set(b);
+    }
+    fromPointAndDirection(p, direction) {
+        return Line3.fromPointAndDirection(p, direction, this);
+    }
+}
+
+let a00$2 = 0, a01$2 = 0, a10$2 = 0, a11$2 = 0;
+let b00$2 = 0, b01$2 = 0, b10$2 = 0, b11$2 = 0, det$1 = 0;
+let x$3 = 0, y$3 = 0;
+const UNIT_MATRIX2_DATA = [1, 0, 0, 1];
+class Matrix2 extends Float32Array {
+    static UNIT_MATRIX2 = new Matrix2([1, 0, 0, 1]);
+    static add = (a, b, out) => {
+        out[0] = a[0] + b[0];
+        out[1] = a[1] + b[1];
+        out[2] = a[2] + b[2];
+        out[3] = a[3] + b[3];
+        return out;
+    };
+    static adjoint = (a, out) => {
+        a00$2 = a[0];
+        out[0] = a[3];
+        out[1] = -a[1];
+        out[2] = -a[2];
+        out[3] = a00$2;
+        return out;
+    };
+    static clone = (source) => {
+        return new Matrix2(source);
+    };
+    static closeTo = (a, b) => {
+        a00$2 = a[0];
+        a10$2 = a[1];
+        a01$2 = a[2];
+        a11$2 = a[3];
+        b00$2 = b[0];
+        b10$2 = b[1];
+        b01$2 = b[2];
+        b11$2 = b[3];
+        return (closeTo(a00$2, b00$2) &&
+            closeTo(a01$2, b01$2) &&
+            closeTo(a10$2, b10$2) &&
+            closeTo(a11$2, b11$2));
+    };
+    static create = (a = UNIT_MATRIX2_DATA) => {
+        return new Matrix2(a);
+    };
+    static determinant = (a) => {
+        return a[0] * a[3] - a[1] * a[2];
+    };
+    static equals = (a, b) => {
+        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+    };
+    static frobNorm = (a) => {
+        return Math.hypot(a[0], a[1], a[2], a[3]);
+    };
+    static fromArray = (source, out = new Matrix2()) => {
+        out.set(source);
+        return out;
+    };
+    static fromRotation = (rad, out = new Matrix2()) => {
+        y$3 = Math.sin(rad);
+        x$3 = Math.cos(rad);
+        out[0] = x$3;
+        out[1] = y$3;
+        out[2] = -y$3;
+        out[3] = x$3;
+        return out;
+    };
+    static fromScaling = (v, out = new Matrix2()) => {
+        out[0] = v[0];
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = v[1];
+        return out;
+    };
+    static identity = (out = new Matrix2()) => {
+        out[0] = 1;
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 1;
+        return out;
+    };
+    static invert = (a, out = new Matrix2()) => {
+        a00$2 = a[0];
+        a10$2 = a[1];
+        a01$2 = a[2];
+        a11$2 = a[3];
+        det$1 = Matrix2.determinant(a);
+        if (!det$1) {
+            return null;
+        }
+        det$1 = 1.0 / det$1;
+        out[0] = a11$2 * det$1;
+        out[1] = -a10$2 * det$1;
+        out[2] = -a01$2 * det$1;
+        out[3] = a00$2 * det$1;
+        return out;
+    };
+    static minus = (a, b, out = new Matrix2()) => {
+        out[0] = a[0] - b[0];
+        out[1] = a[1] - b[1];
+        out[2] = a[2] - b[2];
+        out[3] = a[3] - b[3];
+        return out;
+    };
+    static multiply = (a, b, out = new Matrix2()) => {
+        a00$2 = a[0];
+        a10$2 = a[1];
+        a01$2 = a[2];
+        a11$2 = a[3];
+        b00$2 = b[0];
+        b10$2 = b[1];
+        b01$2 = b[2];
+        b11$2 = b[3];
+        out[0] = a00$2 * b00$2 + a01$2 * b10$2;
+        out[1] = a10$2 * b00$2 + a11$2 * b10$2;
+        out[2] = a00$2 * b01$2 + a01$2 * b11$2;
+        out[3] = a10$2 * b01$2 + a11$2 * b11$2;
+        return out;
+    };
+    static multiplyScalar = (a, b, out = new Matrix2()) => {
+        out[0] = a[0] * b;
+        out[1] = a[1] * b;
+        out[2] = a[2] * b;
+        out[3] = a[3] * b;
+        return out;
+    };
+    static rotate = (a, rad, out = new Matrix2()) => {
+        a00$2 = a[0];
+        a10$2 = a[1];
+        a01$2 = a[2];
+        a11$2 = a[3];
+        y$3 = Math.sin(rad);
+        x$3 = Math.cos(rad);
+        out[0] = a00$2 * x$3 + a01$2 * y$3;
+        out[1] = a10$2 * x$3 + a11$2 * y$3;
+        out[2] = a00$2 * -y$3 + a01$2 * x$3;
+        out[3] = a10$2 * -y$3 + a11$2 * x$3;
+        return out;
+    };
+    static scale = (a, v, out = new Matrix2()) => {
+        a00$2 = a[0];
+        a10$2 = a[1];
+        a01$2 = a[2];
+        a11$2 = a[3];
+        x$3 = v[0];
+        y$3 = v[1];
+        out[0] = a00$2 * x$3;
+        out[1] = a10$2 * x$3;
+        out[2] = a01$2 * y$3;
+        out[3] = a11$2 * y$3;
+        return out;
+    };
+    static toString = (a) => {
+        return `mat2(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
+    };
+    static transpose = (a, out = new Matrix2()) => {
+        if (out === a) {
+            a01$2 = a[1];
+            out[1] = a[2];
+            out[2] = a01$2;
+        }
+        else {
+            out[0] = a[0];
+            out[1] = a[2];
+            out[2] = a[1];
+            out[3] = a[3];
+        }
+        return out;
+    };
+    constructor(data = UNIT_MATRIX2_DATA) {
+        super(data);
+    }
+}
+
+let a00$1 = 0, a01$1 = 0, a02$1 = 0, a11$1 = 0, a10$1 = 0, a12$1 = 0, a20$1 = 0, a21$1 = 0, a22$1 = 0;
+let b00$1 = 0, b01$1 = 0, b02$1 = 0, b11$1 = 0, b10$1 = 0, b12$1 = 0, b20$1 = 0, b21$1 = 0, b22$1 = 0;
+let x$2 = 0, y$2 = 0;
+const UNIT_MATRIX3_DATA = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+class Matrix3 extends Float32Array {
+    static UNIT_MATRIX3 = new Matrix3(UNIT_MATRIX3_DATA);
+    static clone = (source) => {
+        return new Matrix3(source);
+    };
+    static cofactor00 = (a) => {
+        return a[4] * a[8] - a[5] * a[7];
+    };
+    static cofactor01 = (a) => {
+        return a[1] * a[8] - a[7] * a[2];
+    };
+    static cofactor02 = (a) => {
+        return a[1] * a[5] - a[4] * a[2];
+    };
+    static cofactor10 = (a) => {
+        return a[3] * a[8] - a[6] * a[5];
+    };
+    static cofactor11 = (a) => {
+        return a[0] * a[8] - a[6] * a[2];
+    };
+    static cofactor12 = (a) => {
+        return a[0] * a[5] - a[3] * a[2];
+    };
+    static cofactor20 = (a) => {
+        return a[3] * a[7] - a[6] * a[4];
+    };
+    static cofactor21 = (a) => {
+        return a[0] * a[7] - a[6] * a[1];
+    };
+    static cofactor22 = (a) => {
+        return a[0] * a[4] - a[3] * a[1];
+    };
+    static create = () => {
+        return new Matrix3(UNIT_MATRIX3_DATA);
+    };
+    static determinant = (a) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        return (a00$1 * (a22$1 * a11$1 - a12$1 * a21$1) +
+            a01$1 * (-a22$1 * a10$1 + a12$1 * a20$1) +
+            a02$1 * (a21$1 * a10$1 - a11$1 * a20$1));
+    };
+    static fromArray = (source, out = new Matrix3()) => {
+        out.set(source);
+        return out;
+    };
+    static fromMatrix2 = (mat4, out = new Matrix3()) => {
+        out[0] = mat4[0];
+        out[1] = mat4[1];
+        out[2] = 0;
+        out[3] = mat4[2];
+        out[4] = mat4[3];
+        out[5] = 0;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 1;
+        return out;
+    };
+    static fromMatrix4 = (mat4, out = new Matrix3()) => {
+        out[0] = mat4[0];
+        out[1] = mat4[1];
+        out[2] = mat4[2];
+        out[3] = mat4[4];
+        out[4] = mat4[5];
+        out[5] = mat4[6];
+        out[6] = mat4[8];
+        out[7] = mat4[9];
+        out[8] = mat4[10];
+        return out;
+    };
+    static fromRotation = (rad, out = new Matrix3()) => {
+        y$2 = Math.sin(rad);
+        x$2 = Math.cos(rad);
+        out[0] = x$2;
+        out[1] = y$2;
+        out[2] = 0;
+        out[3] = -y$2;
+        out[4] = x$2;
+        out[5] = 0;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 1;
+        return out;
+    };
+    static fromScaling = (v, out = new Matrix3()) => {
+        out[0] = v[0];
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = v[1];
+        out[5] = 0;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 1;
+        return out;
+    };
+    static fromTranslation = (v, out = new Matrix3()) => {
+        out[0] = 1;
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = 1;
+        out[5] = 0;
+        out[6] = v[0];
+        out[7] = v[1];
+        out[8] = 1;
+        return out;
+    };
+    static identity = (out = new Matrix3()) => {
+        out[0] = 1;
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = 1;
+        out[5] = 0;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 1;
+        return out;
+    };
+    static invert = (a, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        b01$1 = a22$1 * a11$1 - a12$1 * a21$1;
+        b11$1 = -a22$1 * a10$1 + a12$1 * a20$1;
+        b21$1 = a21$1 * a10$1 - a11$1 * a20$1;
+        let det = a00$1 * b01$1 + a01$1 * b11$1 + a02$1 * b21$1;
+        if (!det) {
+            return null;
+        }
+        det = 1.0 / det;
+        out[0] = b01$1 * det;
+        out[1] = (-a22$1 * a01$1 + a02$1 * a21$1) * det;
+        out[2] = (a12$1 * a01$1 - a02$1 * a11$1) * det;
+        out[3] = b11$1 * det;
+        out[4] = (a22$1 * a00$1 - a02$1 * a20$1) * det;
+        out[5] = (-a12$1 * a00$1 + a02$1 * a10$1) * det;
+        out[6] = b21$1 * det;
+        out[7] = (-a21$1 * a00$1 + a01$1 * a20$1) * det;
+        out[8] = (a11$1 * a00$1 - a01$1 * a10$1) * det;
+        return out;
+    };
+    static multiply = (a, b, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        b00$1 = b[0];
+        b01$1 = b[1];
+        b02$1 = b[2];
+        b10$1 = b[3];
+        b11$1 = b[4];
+        b12$1 = b[5];
+        b20$1 = b[6];
+        b21$1 = b[7];
+        b22$1 = b[8];
+        out[0] = b00$1 * a00$1 + b01$1 * a10$1 + b02$1 * a20$1;
+        out[1] = b00$1 * a01$1 + b01$1 * a11$1 + b02$1 * a21$1;
+        out[2] = b00$1 * a02$1 + b01$1 * a12$1 + b02$1 * a22$1;
+        out[3] = b10$1 * a00$1 + b11$1 * a10$1 + b12$1 * a20$1;
+        out[4] = b10$1 * a01$1 + b11$1 * a11$1 + b12$1 * a21$1;
+        out[5] = b10$1 * a02$1 + b11$1 * a12$1 + b12$1 * a22$1;
+        out[6] = b20$1 * a00$1 + b21$1 * a10$1 + b22$1 * a20$1;
+        out[7] = b20$1 * a01$1 + b21$1 * a11$1 + b22$1 * a21$1;
+        out[8] = b20$1 * a02$1 + b21$1 * a12$1 + b22$1 * a22$1;
+        return out;
+    };
+    static multiplyRotationMatrix = (a, b, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        b00$1 = b[0];
+        b01$1 = b[1];
+        b10$1 = b[3];
+        b11$1 = b[4];
+        out[0] = b00$1 * a00$1 + b01$1 * a10$1;
+        out[1] = b00$1 * a01$1 + b01$1 * a11$1;
+        out[2] = b00$1 * a02$1 + b01$1 * a12$1;
+        out[3] = b10$1 * a00$1 + b11$1 * a10$1;
+        out[4] = b10$1 * a01$1 + b11$1 * a11$1;
+        out[5] = b10$1 * a02$1 + b11$1 * a12$1;
+        out[6] = a20$1;
+        out[7] = a21$1;
+        out[8] = a22$1;
+        return out;
+    };
+    static multiplyScaleMatrix = (a, b, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        b00$1 = b[0];
+        b11$1 = b[4];
+        out[0] = b00$1 * a00$1;
+        out[1] = b00$1 * a01$1;
+        out[2] = b00$1 * a02$1;
+        out[3] = b11$1 * a10$1;
+        out[4] = b11$1 * a11$1;
+        out[5] = b11$1 * a12$1;
+        out[6] = a20$1;
+        out[7] = a21$1;
+        out[8] = a22$1;
+        return out;
+    };
+    static multiplyTranslateMatrix = (a, b, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        b20$1 = b[6];
+        b21$1 = b[7];
+        out[0] = a00$1;
+        out[1] = a01$1;
+        out[2] = a02$1;
+        out[3] = a10$1;
+        out[4] = a11$1;
+        out[5] = a12$1;
+        out[6] = b20$1 * a00$1 + b21$1 * a10$1 + a20$1;
+        out[7] = b20$1 * a01$1 + b21$1 * a11$1 + a21$1;
+        out[8] = b20$1 * a02$1 + b21$1 * a12$1 + a22$1;
+        return out;
+    };
+    static rotate = (a, rad, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        y$2 = Math.sin(rad);
+        x$2 = Math.cos(rad);
+        out[0] = x$2 * a00$1 + y$2 * a10$1;
+        out[1] = x$2 * a01$1 + y$2 * a11$1;
+        out[2] = x$2 * a02$1 + y$2 * a12$1;
+        out[3] = y$2 * a10$1 - x$2 * a00$1;
+        out[4] = y$2 * a11$1 - x$2 * a01$1;
+        out[5] = y$2 * a12$1 - x$2 * a02$1;
+        out[6] = a20$1;
+        out[7] = a21$1;
+        out[8] = a22$1;
+        return out;
+    };
+    static scale = (a, v, out = new Matrix3()) => {
+        x$2 = v[0];
+        y$2 = v[1];
+        out[0] = x$2 * a[0];
+        out[1] = x$2 * a[1];
+        out[2] = x$2 * a[2];
+        out[3] = y$2 * a[3];
+        out[4] = y$2 * a[4];
+        out[5] = y$2 * a[5];
+        out[6] = a[6];
+        out[7] = a[7];
+        out[8] = a[8];
+        return out;
+    };
+    static translate = (a, v, out = new Matrix3()) => {
+        a00$1 = a[0];
+        a01$1 = a[1];
+        a02$1 = a[2];
+        a10$1 = a[3];
+        a11$1 = a[4];
+        a12$1 = a[5];
+        a20$1 = a[6];
+        a21$1 = a[7];
+        a22$1 = a[8];
+        x$2 = v[0];
+        y$2 = v[1];
+        out[0] = a00$1;
+        out[1] = a01$1;
+        out[2] = a02$1;
+        out[3] = a10$1;
+        out[4] = a11$1;
+        out[5] = a12$1;
+        out[6] = x$2 * a00$1 + y$2 * a10$1 + a20$1;
+        out[7] = x$2 * a01$1 + y$2 * a11$1 + a21$1;
+        out[8] = x$2 * a02$1 + y$2 * a12$1 + a22$1;
+        return out;
+    };
+    static transpose = (a, out = new Matrix3()) => {
+        if (out === a) {
+            a01$1 = a[1];
+            a02$1 = a[2];
+            a12$1 = a[5];
+            out[1] = a[3];
+            out[2] = a[6];
+            out[3] = a01$1;
+            out[5] = a[7];
+            out[6] = a02$1;
+            out[7] = a12$1;
+        }
+        else {
+            out[0] = a[0];
+            out[1] = a[3];
+            out[2] = a[6];
+            out[3] = a[1];
+            out[4] = a[4];
+            out[5] = a[7];
+            out[6] = a[2];
+            out[7] = a[5];
+            out[8] = a[8];
+        }
+        return out;
+    };
+    constructor(data = UNIT_MATRIX3_DATA) {
+        super(data);
+    }
+}
+
 /* eslint-disable max-lines */
 let a00 = 0, a01 = 0, a02 = 0, a03 = 0, a11 = 0, a10 = 0, a12 = 0, a13 = 0, a20 = 0, a21 = 0, a22 = 0, a23 = 0, a31 = 0, a30 = 0, a32 = 0, a33 = 0;
 let b00 = 0, b01 = 0, b02 = 0, b03 = 0, b11 = 0, b10 = 0, b12 = 0, b13 = 0, b20 = 0, b21 = 0, b22 = 0, b23 = 0, b31 = 0, b30 = 0, b32 = 0, b33 = 0;
-let x$2 = 0, y$2 = 0, z = 0, det = 0, len$1 = 0, s$1 = 0, t = 0, a = 0, b = 0, c$1 = 0, d = 0, e = 0, f = 0;
+let x$1 = 0, y$1 = 0, z = 0, det = 0, len = 0, s = 0, t = 0, a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
 const UNIT_MATRIX4_DATA = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 class Matrix4 extends Float32Array {
     static UNIT_MATRIX4 = new Matrix4(UNIT_MATRIX4_DATA);
@@ -2329,29 +2952,29 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static fromEuler = (euler, out = new Matrix4()) => {
-        x$2 = euler.x;
-        y$2 = euler.y;
+        x$1 = euler.x;
+        y$1 = euler.y;
         z = euler.z;
-        a = Math.cos(x$2);
-        b = Math.sin(x$2);
-        c$1 = Math.cos(y$2);
-        d = Math.sin(y$2);
+        a = Math.cos(x$1);
+        b = Math.sin(x$1);
+        c = Math.cos(y$1);
+        d = Math.sin(y$1);
         e = Math.cos(z);
         f = Math.sin(z);
         if (euler.order === EulerRotationOrders.XYZ) {
             const ae = a * e, af = a * f, be = b * e, bf = b * f;
-            out[0] = c$1 * e;
-            out[4] = -c$1 * f;
+            out[0] = c * e;
+            out[4] = -c * f;
             out[8] = d;
             out[1] = af + be * d;
             out[5] = ae - bf * d;
-            out[9] = -b * c$1;
+            out[9] = -b * c;
             out[2] = bf - ae * d;
             out[6] = be + af * d;
-            out[10] = a * c$1;
+            out[10] = a * c;
         }
         else if (euler.order === EulerRotationOrders.YXZ) {
-            const ce = c$1 * e, cf = c$1 * f, de = d * e, df = d * f;
+            const ce = c * e, cf = c * f, de = d * e, df = d * f;
             out[0] = ce + df * b;
             out[4] = de * b - cf;
             out[8] = a * d;
@@ -2360,10 +2983,10 @@ class Matrix4 extends Float32Array {
             out[9] = -b;
             out[2] = cf * b - de;
             out[6] = df + ce * b;
-            out[10] = a * c$1;
+            out[10] = a * c;
         }
         else if (euler.order === EulerRotationOrders.ZXY) {
-            const ce = c$1 * e, cf = c$1 * f, de = d * e, df = d * f;
+            const ce = c * e, cf = c * f, de = d * e, df = d * f;
             out[0] = ce - df * b;
             out[4] = -a * f;
             out[8] = de + cf * b;
@@ -2372,23 +2995,23 @@ class Matrix4 extends Float32Array {
             out[9] = df - ce * b;
             out[2] = -a * d;
             out[6] = b;
-            out[10] = a * c$1;
+            out[10] = a * c;
         }
         else if (euler.order === EulerRotationOrders.ZYX) {
             const ae = a * e, af = a * f, be = b * e, bf = b * f;
-            out[0] = c$1 * e;
+            out[0] = c * e;
             out[4] = be * d - af;
             out[8] = ae * d + bf;
-            out[1] = c$1 * f;
+            out[1] = c * f;
             out[5] = bf * d + ae;
             out[9] = af * d - be;
             out[2] = -d;
-            out[6] = b * c$1;
-            out[10] = a * c$1;
+            out[6] = b * c;
+            out[10] = a * c;
         }
         else if (euler.order === EulerRotationOrders.YZX) {
-            const ac = a * c$1, ad = a * d, bc = b * c$1, bd = b * d;
-            out[0] = c$1 * e;
+            const ac = a * c, ad = a * d, bc = b * c, bd = b * d;
+            out[0] = c * e;
             out[4] = bd - ac * f;
             out[8] = bc * f + ad;
             out[1] = f;
@@ -2399,8 +3022,8 @@ class Matrix4 extends Float32Array {
             out[10] = ac - bd * f;
         }
         else if (euler.order === EulerRotationOrders.XZY) {
-            const ac = a * c$1, ad = a * d, bc = b * c$1, bd = b * d;
-            out[0] = c$1 * e;
+            const ac = a * c, ad = a * d, bc = b * c, bd = b * d;
+            out[0] = c * e;
             out[4] = -f;
             out[8] = d * e;
             out[1] = ac * f + bd;
@@ -2492,31 +3115,31 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static fromRotation = (rad, axis, out = new Matrix4()) => {
-        x$2 = axis[0];
-        y$2 = axis[1];
+        x$1 = axis[0];
+        y$1 = axis[1];
         z = axis[2];
-        len$1 = Math.hypot(x$2, y$2, z);
-        if (len$1 < EPSILON) {
+        len = Math.hypot(x$1, y$1, z);
+        if (len < EPSILON) {
             return null;
         }
-        len$1 = 1 / len$1;
-        x$2 *= len$1;
-        y$2 *= len$1;
-        z *= len$1;
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
-        t = 1 - c$1;
-        out[0] = x$2 * x$2 * t + c$1;
-        out[1] = y$2 * x$2 * t + z * s$1;
-        out[2] = z * x$2 * t - y$2 * s$1;
+        len = 1 / len;
+        x$1 *= len;
+        y$1 *= len;
+        z *= len;
+        s = Math.sin(rad);
+        c = Math.cos(rad);
+        t = 1 - c;
+        out[0] = x$1 * x$1 * t + c;
+        out[1] = y$1 * x$1 * t + z * s;
+        out[2] = z * x$1 * t - y$1 * s;
         out[3] = 0;
-        out[4] = x$2 * y$2 * t - z * s$1;
-        out[5] = y$2 * y$2 * t + c$1;
-        out[6] = z * y$2 * t + x$2 * s$1;
+        out[4] = x$1 * y$1 * t - z * s;
+        out[5] = y$1 * y$1 * t + c;
+        out[6] = z * y$1 * t + x$1 * s;
         out[7] = 0;
-        out[8] = x$2 * z * t + y$2 * s$1;
-        out[9] = y$2 * z * t - x$2 * s$1;
-        out[10] = z * z * t + c$1;
+        out[8] = x$1 * z * t + y$1 * s;
+        out[9] = y$1 * z * t - x$1 * s;
+        out[10] = z * z * t + c;
         out[11] = 0;
         out[12] = 0;
         out[13] = 0;
@@ -2525,19 +3148,19 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static fromRotationX = (rad, out = new Matrix4()) => {
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
+        s = Math.sin(rad);
+        c = Math.cos(rad);
         out[0] = 1;
         out[1] = 0;
         out[2] = 0;
         out[3] = 0;
         out[4] = 0;
-        out[5] = c$1;
-        out[6] = s$1;
+        out[5] = c;
+        out[6] = s;
         out[7] = 0;
         out[8] = 0;
-        out[9] = -s$1;
-        out[10] = c$1;
+        out[9] = -s;
+        out[10] = c;
         out[11] = 0;
         out[12] = 0;
         out[13] = 0;
@@ -2546,19 +3169,19 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static fromRotationY = (rad, out = new Matrix4()) => {
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
-        out[0] = c$1;
+        s = Math.sin(rad);
+        c = Math.cos(rad);
+        out[0] = c;
         out[1] = 0;
-        out[2] = -s$1;
+        out[2] = -s;
         out[3] = 0;
         out[4] = 0;
         out[5] = 1;
         out[6] = 0;
         out[7] = 0;
-        out[8] = s$1;
+        out[8] = s;
         out[9] = 0;
-        out[10] = c$1;
+        out[10] = c;
         out[11] = 0;
         out[12] = 0;
         out[13] = 0;
@@ -2567,14 +3190,14 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static fromRotationZ = (rad, out = new Matrix4()) => {
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
-        out[0] = c$1;
-        out[1] = s$1;
+        s = Math.sin(rad);
+        c = Math.cos(rad);
+        out[0] = c;
+        out[1] = s;
         out[2] = 0;
         out[3] = 0;
-        out[4] = -s$1;
-        out[5] = c$1;
+        out[4] = -s;
+        out[5] = c;
         out[6] = 0;
         out[7] = 0;
         out[8] = 0;
@@ -2707,7 +3330,7 @@ class Matrix4 extends Float32Array {
         const centerx = center[0];
         const centery = center[1];
         const centerz = center[2];
-        if (closeToCommon(eyex, centerx) && closeToCommon(eyey, centery) && closeToCommon(eyez, centerz)) {
+        if (closeTo(eyex, centerx) && closeTo(eyey, centery) && closeTo(eyez, centerz)) {
             return Matrix4.identity(out);
         }
         z0 = eyex - centerx;
@@ -2895,10 +3518,10 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static orthogonal = (left, right, bottom, top, near, far, out = new Matrix4()) => {
-        c$1 = 1 / (left - right);
+        c = 1 / (left - right);
         b = 1 / (bottom - top);
         a = 1 / (near - far);
-        out[0] = -2 * c$1;
+        out[0] = -2 * c;
         out[1] = 0;
         out[2] = 0;
         out[3] = 0;
@@ -2910,17 +3533,17 @@ class Matrix4 extends Float32Array {
         out[9] = 0;
         out[10] = 2 * a;
         out[11] = 0;
-        out[12] = (left + right) * c$1;
+        out[12] = (left + right) * c;
         out[13] = (top + bottom) * b;
         out[14] = (far + near) * a;
         out[15] = 1;
         return out;
     };
     static orthogonalZ0 = (left, right, bottom, top, near, far, out = new Matrix4()) => {
-        c$1 = 1 / (left - right);
+        c = 1 / (left - right);
         b = 1 / (bottom - top);
         a = 1 / (near - far);
-        out[0] = -2 * c$1;
+        out[0] = -2 * c;
         out[1] = 0;
         out[2] = 0;
         out[3] = 0;
@@ -2932,7 +3555,7 @@ class Matrix4 extends Float32Array {
         out[9] = 0;
         out[10] = a;
         out[11] = 0;
-        out[12] = (left + right) * c$1;
+        out[12] = (left + right) * c;
         out[13] = (top + bottom) * b;
         out[14] = near * a;
         out[15] = 1;
@@ -2993,20 +3616,20 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static rotate = (a, rad, axis, out = new Matrix4()) => {
-        x$2 = axis[0];
-        y$2 = axis[1];
+        x$1 = axis[0];
+        y$1 = axis[1];
         z = axis[2];
-        len$1 = Math.hypot(x$2, y$2, z);
-        if (len$1 < EPSILON) {
+        len = Math.hypot(x$1, y$1, z);
+        if (len < EPSILON) {
             return null;
         }
-        len$1 = 1 / len$1;
-        x$2 *= len$1;
-        y$2 *= len$1;
-        z *= len$1;
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
-        t = 1 - c$1;
+        len = 1 / len;
+        x$1 *= len;
+        y$1 *= len;
+        z *= len;
+        s = Math.sin(rad);
+        c = Math.cos(rad);
+        t = 1 - c;
         a00 = a[0];
         a01 = a[1];
         a02 = a[2];
@@ -3019,15 +3642,15 @@ class Matrix4 extends Float32Array {
         a21 = a[9];
         a22 = a[10];
         a23 = a[11];
-        b00 = x$2 * x$2 * t + c$1;
-        b01 = y$2 * x$2 * t + z * s$1;
-        b02 = z * x$2 * t - y$2 * s$1;
-        b10 = x$2 * y$2 * t - z * s$1;
-        b11 = y$2 * y$2 * t + c$1;
-        b12 = z * y$2 * t + x$2 * s$1;
-        b20 = x$2 * z * t + y$2 * s$1;
-        b21 = y$2 * z * t - x$2 * s$1;
-        b22 = z * z * t + c$1;
+        b00 = x$1 * x$1 * t + c;
+        b01 = y$1 * x$1 * t + z * s;
+        b02 = z * x$1 * t - y$1 * s;
+        b10 = x$1 * y$1 * t - z * s;
+        b11 = y$1 * y$1 * t + c;
+        b12 = z * y$1 * t + x$1 * s;
+        b20 = x$1 * z * t + y$1 * s;
+        b21 = y$1 * z * t - x$1 * s;
+        b22 = z * z * t + c;
         out[0] = a00 * b00 + a10 * b01 + a20 * b02;
         out[1] = a01 * b00 + a11 * b01 + a21 * b02;
         out[2] = a02 * b00 + a12 * b01 + a22 * b02;
@@ -3049,8 +3672,8 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static rotateX = (a, rad, out = new Matrix4()) => {
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
+        s = Math.sin(rad);
+        c = Math.cos(rad);
         a10 = a[4];
         a11 = a[5];
         a12 = a[6];
@@ -3069,19 +3692,19 @@ class Matrix4 extends Float32Array {
             out[14] = a[14];
             out[15] = a[15];
         }
-        out[4] = a10 * c$1 + a20 * s$1;
-        out[5] = a11 * c$1 + a21 * s$1;
-        out[6] = a12 * c$1 + a22 * s$1;
-        out[7] = a13 * c$1 + a23 * s$1;
-        out[8] = a20 * c$1 - a10 * s$1;
-        out[9] = a21 * c$1 - a11 * s$1;
-        out[10] = a22 * c$1 - a12 * s$1;
-        out[11] = a23 * c$1 - a13 * s$1;
+        out[4] = a10 * c + a20 * s;
+        out[5] = a11 * c + a21 * s;
+        out[6] = a12 * c + a22 * s;
+        out[7] = a13 * c + a23 * s;
+        out[8] = a20 * c - a10 * s;
+        out[9] = a21 * c - a11 * s;
+        out[10] = a22 * c - a12 * s;
+        out[11] = a23 * c - a13 * s;
         return out;
     };
     static rotateY = (a, rad, out = new Matrix4()) => {
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
+        s = Math.sin(rad);
+        c = Math.cos(rad);
         a00 = a[0];
         a01 = a[1];
         a02 = a[2];
@@ -3100,19 +3723,19 @@ class Matrix4 extends Float32Array {
             out[14] = a[14];
             out[15] = a[15];
         }
-        out[0] = a00 * c$1 - a20 * s$1;
-        out[1] = a01 * c$1 - a21 * s$1;
-        out[2] = a02 * c$1 - a22 * s$1;
-        out[3] = a03 * c$1 - a23 * s$1;
-        out[8] = a00 * s$1 + a20 * c$1;
-        out[9] = a01 * s$1 + a21 * c$1;
-        out[10] = a02 * s$1 + a22 * c$1;
-        out[11] = a03 * s$1 + a23 * c$1;
+        out[0] = a00 * c - a20 * s;
+        out[1] = a01 * c - a21 * s;
+        out[2] = a02 * c - a22 * s;
+        out[3] = a03 * c - a23 * s;
+        out[8] = a00 * s + a20 * c;
+        out[9] = a01 * s + a21 * c;
+        out[10] = a02 * s + a22 * c;
+        out[11] = a03 * s + a23 * c;
         return out;
     };
     static rotateZ = (a, rad, out = new Matrix4()) => {
-        s$1 = Math.sin(rad);
-        c$1 = Math.cos(rad);
+        s = Math.sin(rad);
+        c = Math.cos(rad);
         a00 = a[0];
         a01 = a[1];
         a02 = a[2];
@@ -3131,28 +3754,28 @@ class Matrix4 extends Float32Array {
             out[14] = a[14];
             out[15] = a[15];
         }
-        out[0] = a00 * c$1 + a10 * s$1;
-        out[1] = a01 * c$1 + a11 * s$1;
-        out[2] = a02 * c$1 + a12 * s$1;
-        out[3] = a03 * c$1 + a13 * s$1;
-        out[4] = a10 * c$1 - a00 * s$1;
-        out[5] = a11 * c$1 - a01 * s$1;
-        out[6] = a12 * c$1 - a02 * s$1;
-        out[7] = a13 * c$1 - a03 * s$1;
+        out[0] = a00 * c + a10 * s;
+        out[1] = a01 * c + a11 * s;
+        out[2] = a02 * c + a12 * s;
+        out[3] = a03 * c + a13 * s;
+        out[4] = a10 * c - a00 * s;
+        out[5] = a11 * c - a01 * s;
+        out[6] = a12 * c - a02 * s;
+        out[7] = a13 * c - a03 * s;
         return out;
     };
     static scale = (a, v, out = new Matrix4()) => {
-        x$2 = v[0];
-        y$2 = v[1];
+        x$1 = v[0];
+        y$1 = v[1];
         z = v[2];
-        out[0] = a[0] * x$2;
-        out[1] = a[1] * x$2;
-        out[2] = a[2] * x$2;
-        out[3] = a[3] * x$2;
-        out[4] = a[4] * y$2;
-        out[5] = a[5] * y$2;
-        out[6] = a[6] * y$2;
-        out[7] = a[7] * y$2;
+        out[0] = a[0] * x$1;
+        out[1] = a[1] * x$1;
+        out[2] = a[2] * x$1;
+        out[3] = a[3] * x$1;
+        out[4] = a[4] * y$1;
+        out[5] = a[5] * y$1;
+        out[6] = a[6] * y$1;
+        out[7] = a[7] * y$1;
         out[8] = a[8] * z;
         out[9] = a[9] * z;
         out[10] = a[10] * z;
@@ -3202,14 +3825,14 @@ class Matrix4 extends Float32Array {
         return out;
     };
     static translate = (a, v, out = new Matrix4()) => {
-        x$2 = v[0];
-        y$2 = v[1];
+        x$1 = v[0];
+        y$1 = v[1];
         z = v[2];
         if (a === out) {
-            out[12] = a[0] * x$2 + a[4] * y$2 + a[8] * z + a[12];
-            out[13] = a[1] * x$2 + a[5] * y$2 + a[9] * z + a[13];
-            out[14] = a[2] * x$2 + a[6] * y$2 + a[10] * z + a[14];
-            out[15] = a[3] * x$2 + a[7] * y$2 + a[11] * z + a[15];
+            out[12] = a[0] * x$1 + a[4] * y$1 + a[8] * z + a[12];
+            out[13] = a[1] * x$1 + a[5] * y$1 + a[9] * z + a[13];
+            out[14] = a[2] * x$1 + a[6] * y$1 + a[10] * z + a[14];
+            out[15] = a[3] * x$1 + a[7] * y$1 + a[11] * z + a[15];
         }
         else {
             a00 = a[0];
@@ -3236,10 +3859,10 @@ class Matrix4 extends Float32Array {
             out[9] = a21;
             out[10] = a22;
             out[11] = a23;
-            out[12] = a00 * x$2 + a10 * y$2 + a20 * z + a[12];
-            out[13] = a01 * x$2 + a11 * y$2 + a21 * z + a[13];
-            out[14] = a02 * x$2 + a12 * y$2 + a22 * z + a[14];
-            out[15] = a03 * x$2 + a13 * y$2 + a23 * z + a[15];
+            out[12] = a00 * x$1 + a10 * y$1 + a20 * z + a[12];
+            out[13] = a01 * x$1 + a11 * y$1 + a21 * z + a[13];
+            out[14] = a02 * x$1 + a12 * y$1 + a22 * z + a[14];
+            out[15] = a03 * x$1 + a13 * y$1 + a23 * z + a[15];
         }
         return out;
     };
@@ -3289,7 +3912,7 @@ class Matrix4 extends Float32Array {
     }
 }
 
-let x$1, y$1;
+let x$5, y$5;
 /**
  * @class
  * @classdesc 极坐标
@@ -3384,10 +4007,10 @@ class Polar extends Float32Array {
      * @returns {number} this
      */
     fromVector2(v) {
-        x$1 = v[0];
-        y$1 = v[1];
-        this.r = Math.sqrt(x$1 * x$1 + y$1 * y$1);
-        this.a = Math.atan2(y$1, x$1);
+        x$5 = v[0];
+        y$5 = v[1];
+        this.r = Math.sqrt(x$5 * x$5 + y$5 * y$5);
+        this.a = Math.atan2(y$5, x$5);
         return this;
     }
     /**
@@ -3565,7 +4188,7 @@ class Ray3 {
 }
 
 // import Matrix3 from "../matrix/Matrix3";
-const v1 = new Vector3(), v2 = new Vector3(), v0 = new Vector3(), f1 = new Vector3(), f2 = new Vector3(), f0 = new Vector3();
+const v1$1 = new Vector3(), v2$1 = new Vector3(), v0 = new Vector3(), f1 = new Vector3(), f2 = new Vector3(), f0 = new Vector3();
 const ta = new Vector3();
 // const ma: Matrix3 = new Matrix3();
 const tb = new Vector3(), vA = new Vector3();
@@ -3630,12 +4253,12 @@ class Cube {
         Vector3.minus(a.max, ta, tb);
         // translate triangle to aabb origin
         Vector3.minus(b.a, ta, v0);
-        Vector3.minus(b.b, ta, v1);
-        Vector3.minus(b.c, ta, v2);
+        Vector3.minus(b.b, ta, v1$1);
+        Vector3.minus(b.c, ta, v2$1);
         // compute edge vectors for triangle
-        Vector3.minus(v1, v0, f0);
-        Vector3.minus(v2, v1, f1);
-        Vector3.minus(v0, v2, f2);
+        Vector3.minus(v1$1, v0, f0);
+        Vector3.minus(v2$1, v1$1, f1);
+        Vector3.minus(v0, v2$1, f2);
         // test against axes that are given by cross product combinations of the edges of the triangle and the edges of the aabb
         // make an axis testing of each of the 3 sides of the aabb against each of the 3 sides of the triangle = 9 axis of separation
         // axis_ij = u_i x f_j (u0, u1, u2 = face normals of aabb = x,y,z axes vectors since aabb is axis aligned)
@@ -3668,19 +4291,19 @@ class Cube {
             f2[0],
             0
         ];
-        if (!satForAxes(axes, v0, v1, v2, tb)) {
+        if (!satForAxes(axes, v0, v1$1, v2$1, tb)) {
             return false;
         }
         // test 3 face normals from the aabb
         // ta = Matrix3.identity(); ???
-        if (!satForAxes(axes, v0, v1, v2, tb)) {
+        if (!satForAxes(axes, v0, v1$1, v2$1, tb)) {
             return false;
         }
         // finally testing the face normal of the triangle
         // use already existing triangle edge vectors here
         Vector3.cross(f0, f1, ta);
         // axes = [_triangleNormal.x, _triangleNormal.y, _triangleNormal.z];
-        return satForAxes(ta, v0, v1, v2, tb);
+        return satForAxes(ta, v0, v1$1, v2$1, tb);
     };
     static isEmpty = (a) => {
         return a.max[0] < a.min[0] || a.max[0] < a.min[0] || a.max[0] < a.min[0];
@@ -3748,257 +4371,236 @@ function satForAxes(axes, v0, v1, v2, extents) {
     return true;
 }
 
-let x$5 = 0;
-let y$5 = 0;
-let c = 0;
-let s = 0;
-class Vector2 extends Float32Array {
-    static VECTOR2_ZERO = new Vector2(0, 0);
-    static VECTOR2_TOP = new Vector2(0, 1);
-    static VECTOR2_BOTTOM = new Vector2(0, -1);
-    static VECTOR2_LEFT = new Vector2(-1, 0);
-    static VECTOR2_RIGHT = new Vector2(1, 0);
-    static VECTOR2_ONE = new Vector2(1, 1);
-    static add = (a, b, out = new Vector2()) => {
-        out[0] = a[0] + b[0];
-        out[1] = a[1] + b[1];
+const v1 = new Vector3();
+const v2 = new Vector3();
+const v3 = new Vector3();
+class Plane3 {
+    static normalize(p, out = new Plane3) {
+        const normal = p.normal;
+        const factor = 1.0 / Vector3.norm(normal);
+        Vector3.multiplyScalar(normal, factor, out.normal);
+        out.distance = p.distance * factor;
         return out;
-    };
-    static addScalar = (a, b, out = new Vector2(2)) => {
-        out[0] = a[0] + b;
-        out[1] = a[1] + b;
-        return out;
-    };
-    static angle = (a) => {
-        return Math.atan2(a[1], a[0]);
-    };
-    static ceil = (a, out = new Vector2()) => {
-        out[0] = Math.ceil(a[0]);
-        out[1] = Math.ceil(a[1]);
-        return out;
-    };
-    static clamp = (a, min, max, out = new Vector2()) => {
-        out[0] = clamp(a[0], min[0], max[0]);
-        out[1] = clamp(a[1], min[1], max[1]);
-        return out;
-    };
-    static clampSafe = (a, min, max, out = new Vector2()) => {
-        out[0] = clampSafeCommon(a[0], min[0], max[0]);
-        out[1] = clampSafeCommon(a[1], min[1], max[1]);
-        return out;
-    };
-    static clampLength = (a, min, max, out = new Vector2()) => {
-        out[0] = clampSafeCommon(a[0], min[0], max[0]);
-        out[1] = clampSafeCommon(a[1], min[1], max[1]);
-        return out;
-    };
-    static clampScalar = (a, min, max, out = new Vector2()) => {
-        out[0] = clamp(a[0], min, max);
-        out[1] = clamp(a[1], min, max);
-        return out;
-    };
-    static closeTo = (a, b, epsilon = EPSILON) => {
-        return Vector2.distanceTo(a, b) <= epsilon;
-    };
-    static closeToRect = (a, b, epsilon = EPSILON) => {
-        return closeToCommon(a[0], b[0], epsilon) && closeToCommon(a[1], b[1], epsilon);
-    };
-    static closeToManhattan = (a, b, epsilon = EPSILON) => {
-        return Vector2.distanceToManhattan(a, b) <= epsilon;
-    };
-    static clone = (a, out = new Vector2()) => {
-        out[0] = a[0];
-        out[1] = a[1];
-        return out;
-    };
-    static cross = (a, b) => {
-        return a[0] * b[1] - a[1] * b[0];
-    };
-    static create = (x = 0, y = 0, out = new Vector2()) => {
-        out[0] = x;
-        out[1] = y;
-        return out;
-    };
-    static distanceTo = (a, b) => {
-        x$5 = b[0] - a[0];
-        y$5 = b[1] - a[1];
-        return Math.hypot(x$5, y$5);
-    };
-    static distanceToManhattan = (a, b) => {
-        return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-    };
-    static distanceToSquared = (a, b) => {
-        x$5 = a[0] - b[0];
-        y$5 = a[1] - b[1];
-        return x$5 * x$5 + y$5 * y$5;
-    };
-    static divide = (a, b, out = new Vector2()) => {
-        out[0] = a[0] / b[0];
-        out[1] = a[1] / b[1];
-        return out;
-    };
-    static divideScalar = (a, scalar, out = new Vector2()) => {
-        return Vector2.multiplyScalar(a, 1 / scalar, out);
-    };
-    static dot = (a, b) => {
-        return a[0] * b[0] + a[1] * b[1];
-    };
-    static equals = (a, b) => {
-        return a[0] === b[0] && a[1] === b[1];
-    };
-    static floor = (a, out = new Vector2()) => {
-        out[0] = Math.floor(a[0]);
-        out[1] = Math.floor(a[1]);
-        return out;
-    };
-    static floorToZero = (a, out = new Vector2()) => {
-        out[0] = floorToZeroCommon(a[0]);
-        out[1] = floorToZeroCommon(a[1]);
-        return out;
-    };
-    static fromArray = (arr, index = 0, out = new Vector2()) => {
-        out[0] = arr[index];
-        out[1] = arr[index + 1];
-        return out;
-    };
-    static fromJson = (j, out = new Vector2()) => {
-        out[0] = j.x;
-        out[1] = j.y;
-        return out;
-    };
-    static fromPolar = (p, out = new Vector2()) => {
-        out[0] = Math.cos(p.a) * p.r;
-        out[1] = Math.sin(p.a) * p.r;
-        return out;
-    };
-    static fromScalar = (value = 0, out = new Vector2()) => {
-        out[0] = out[1] = value;
-        return out;
-    };
-    static inverse = (a, out = new Vector2()) => {
-        out[0] = 1 / a[0] || 0;
-        out[1] = 1 / a[1] || 0;
-        return out;
-    };
-    static norm = (a) => {
-        return Math.sqrt(a[0] * a[0] + a[1] * a[1]);
-    };
-    static lengthManhattan = (a) => {
-        return Math.abs(a[0]) + Math.abs(a[1]);
-    };
-    static lengthSquared = (a) => {
-        return a[0] * a[0] + a[1] * a[1];
-    };
-    static lerp = (a, b, alpha, out = new Vector2()) => {
-        out[0] = (b[0] - a[0]) * alpha + a[0];
-        out[1] = (b[1] - a[1]) * alpha + a[1];
-        return out;
-    };
-    static max = (a, b, out = new Vector2()) => {
-        out[0] = Math.max(a[0], b[0]);
-        out[1] = Math.max(a[1], b[1]);
-        return out;
-    };
-    static min = (a, b, out = new Vector2()) => {
-        out[0] = Math.min(a[0], b[0]);
-        out[1] = Math.min(a[1], b[1]);
-        return out;
-    };
-    static minus = (a, b, out = new Vector2()) => {
-        out[0] = a[0] - b[0];
-        out[1] = a[1] - b[0];
-        return out;
-    };
-    static minusScalar = (a, num, out = new Vector2()) => {
-        out[0] = a[0] - num;
-        out[1] = a[1] - num;
-        return out;
-    };
-    static multiply = (a, b, out = new Vector2()) => {
-        out[0] = a[0] * b[0];
-        out[1] = a[1] * b[1];
-        return out;
-    };
-    static multiplyScalar = (a, scalar, out = new Vector2()) => {
-        out[0] = a[0] * scalar;
-        out[1] = a[1] * scalar;
-        return out;
-    };
-    static negate = (a, out = new Vector2()) => {
-        out[0] = -a[0];
-        out[1] = -a[1];
-        return out;
-    };
-    static normalize = (a, out = new Vector2()) => {
-        return Vector2.divideScalar(a, Vector2.norm(a) || 1, out);
-    };
-    static random = (norm = 1, out = new Vector2()) => {
-        x$5 = Math.random() * DEG_360_RAD;
-        out[0] = Math.cos(x$5) * norm;
-        out[1] = Math.sin(x$5) * norm;
-        return out;
-    };
-    static rotate = (a, angle, center = Vector2.VECTOR2_ZERO, out = new Vector2(2)) => {
-        c = Math.cos(angle);
-        s = Math.sin(angle);
-        x$5 = a[0] - center[0];
-        y$5 = a[1] - center[1];
-        out[0] = x$5 * c - y$5 * s + center[0];
-        out[1] = x$5 * s + y$5 * c + center[1];
-        return out;
-    };
-    static round = (a, out = new Vector2()) => {
-        out[0] = Math.round(a[0]);
-        out[1] = Math.round(a[1]);
-        return out;
-    };
-    static set = (x = 0, y = 0, out = new Vector2()) => {
-        out[0] = x;
-        out[1] = y;
-        return out;
-    };
-    static setNorm = (a, length, out = new Vector2(2)) => {
-        Vector2.normalize(a, out);
-        Vector2.multiplyScalar(out, length, out);
-        return out;
-    };
-    static toArray = (a, arr = []) => {
-        arr[0] = a[0];
-        arr[1] = a[1];
-        return arr;
-    };
-    static toPalorJson = (a, p = { a: 0, r: 0 }) => {
-        p.r = Vector2.norm(a);
-        p.a = Vector2.angle(a);
-        return p;
-    };
-    static toString = (a) => {
-        return `(${a[0]}, ${a[1]})`;
-    };
-    static transformMatrix3 = (a, m, out = new Vector2()) => {
-        x$5 = a[0];
-        y$5 = a[1];
-        out[0] = m[0] * x$5 + m[3] * y$5 + m[6];
-        out[1] = m[1] * x$5 + m[4] * y$5 + m[7];
-        return out;
-    };
-    dataType = ArraybufferDataType.VECTOR2;
-    constructor(x = 0, y = 0) {
-        super(2);
-        this[0] = x;
-        this[1] = y;
     }
-    get x() {
-        return this[0];
+    normal = new Vector3();
+    distance;
+    constructor(normal = Vector3.VECTOR3_TOP, distance = 0) {
+        this.normal.set(normal);
+        this.distance = distance;
     }
-    set x(value) {
-        this[0] = value;
+    distanceToPoint(point) {
+        return Vector3.dot(this.normal, point) + this.distance;
     }
-    get y() {
-        return this[1];
+    distanceToSphere(sphere) {
+        return this.distanceToPoint(sphere.position) - sphere.radius;
     }
-    set y(value) {
-        this[1] = value;
+    from(p) {
+        this.distance = p.distance;
+        this.normal.set(p.normal);
+    }
+    fromCoplanarPoints(a, b, c) {
+        Vector3.minus(b, a, v1);
+        Vector3.minus(c, a, v2);
+        Vector3.cross(v1, v2, v3);
+        Vector3.normalize(v3, v3);
+        // TODO check zero vec
+        return this.formCoplanarPointAndNormal(a, v3);
+    }
+    formCoplanarPointAndNormal(point, normal) {
+        this.normal.set(normal);
+        this.distance = -Vector3.dot(point, normal);
+        return this;
+    }
+    negate() {
+        this.distance *= -1;
+        Vector3.negate(this.normal, this.normal);
+        return this;
+    }
+    normalize() {
+        Plane3.normalize(this, this);
+        return this;
+    }
+    projectPoint(point, out = new Vector3()) {
+        out.set(this.normal);
+        Vector3.multiplyScalar(out, -this.distanceToPoint(point), out);
+        return Vector3.add(out, point, out);
+    }
+    set(normal, distance = this.distance) {
+        this.normal.set(normal);
+        this.distance = distance;
+        return this;
+    }
+}
+
+const _vector = new Vector3();
+class Frustum {
+    near;
+    far;
+    left;
+    right;
+    bottom;
+    top;
+    constructor(matrix) {
+        this.near = new Plane3();
+        this.far = new Plane3();
+        this.left = new Plane3();
+        this.right = new Plane3();
+        this.top = new Plane3();
+        this.bottom = new Plane3();
+        matrix && this.applyProjectionMatrix(matrix);
+    }
+    applyProjectionMatrix(matrix) {
+        const m11 = matrix[0];
+        const m12 = matrix[1];
+        const m13 = matrix[2];
+        const m14 = matrix[3];
+        const m21 = matrix[4];
+        const m22 = matrix[5];
+        const m23 = matrix[6];
+        const m24 = matrix[7];
+        const m31 = matrix[8];
+        const m32 = matrix[9];
+        const m33 = matrix[10];
+        const m34 = matrix[11];
+        const m41 = matrix[12];
+        const m42 = matrix[13];
+        const m43 = matrix[14];
+        const m44 = matrix[15];
+        Vector3.set(m14 + m13, m24 + m23, m34 + m33, this.near.normal);
+        this.near.distance = m44 + m43;
+        this.near.normalize();
+        Vector3.set(m14 - m13, m24 - m23, m34 - m33, this.far.normal);
+        this.far.distance = m44 - m43;
+        this.far.normalize();
+        Vector3.set(m14 + m11, m24 + m21, m34 + m31, this.left.normal);
+        this.left.distance = m44 + m41;
+        this.left.normalize();
+        Vector3.set(m14 - m11, m24 - m21, m34 - m31, this.right.normal);
+        this.right.distance = m44 - m41;
+        this.right.normalize();
+        Vector3.set(m14 + m12, m24 + m22, m34 + m32, this.bottom.normal);
+        this.bottom.distance = m44 + m42;
+        this.bottom.normalize();
+        Vector3.set(m14 - m12, m24 - m22, m34 - m32, this.top.normal);
+        this.top.distance = m44 - m42;
+        this.top.normalize();
+        return this;
+    }
+    clone() {
+        return new Frustum().from(this);
+    }
+    from(frustum) {
+        this.near.from(frustum.near);
+        this.far.from(frustum.far);
+        this.left.from(frustum.left);
+        this.right.from(frustum.right);
+        this.bottom.from(frustum.bottom);
+        this.top.from(frustum.top);
+        return this;
+    }
+    intersectsSphere(sphere) {
+        const p = sphere.position;
+        const r = -sphere.radius;
+        let distance = this.near.distanceToPoint(p);
+        if (distance < r) {
+            return false;
+        }
+        distance = this.far.distanceToPoint(p);
+        if (distance < r) {
+            return false;
+        }
+        distance = this.right.distanceToPoint(p);
+        if (distance < r) {
+            return false;
+        }
+        distance = this.left.distanceToPoint(p);
+        if (distance < r) {
+            return false;
+        }
+        distance = this.top.distanceToPoint(p);
+        if (distance < r) {
+            return false;
+        }
+        distance = this.bottom.distanceToPoint(p);
+        if (distance < r) {
+            return false;
+        }
+        return true;
+    }
+    intersectsBox(box) {
+        let plane = this.right;
+        _vector.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+        _vector.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+        _vector.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+        if (plane.distanceToPoint(_vector) < 0) {
+            return false;
+        }
+        plane = this.left;
+        _vector.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+        _vector.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+        _vector.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+        if (plane.distanceToPoint(_vector) < 0) {
+            return false;
+        }
+        plane = this.top;
+        _vector.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+        _vector.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+        _vector.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+        if (plane.distanceToPoint(_vector) < 0) {
+            return false;
+        }
+        plane = this.bottom;
+        _vector.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+        _vector.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+        _vector.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+        if (plane.distanceToPoint(_vector) < 0) {
+            return false;
+        }
+        plane = this.near;
+        _vector.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+        _vector.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+        _vector.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+        if (plane.distanceToPoint(_vector) < 0) {
+            return false;
+        }
+        plane = this.far;
+        _vector.x = plane.normal.x > 0 ? box.max.x : box.min.x;
+        _vector.y = plane.normal.y > 0 ? box.max.y : box.min.y;
+        _vector.z = plane.normal.z > 0 ? box.max.z : box.min.z;
+        if (plane.distanceToPoint(_vector) < 0) {
+            return false;
+        }
+        return true;
+    }
+    containsPoint(point) {
+        if (this.right.distanceToPoint(point) < 0) {
+            return false;
+        }
+        if (this.left.distanceToPoint(point) < 0) {
+            return false;
+        }
+        if (this.top.distanceToPoint(point) < 0) {
+            return false;
+        }
+        if (this.bottom.distanceToPoint(point) < 0) {
+            return false;
+        }
+        if (this.near.distanceToPoint(point) < 0) {
+            return false;
+        }
+        if (this.far.distanceToPoint(point) < 0) {
+            return false;
+        }
+        return true;
+    }
+    set(right, left, top, bottom, near, far) {
+        this.right.from(right);
+        this.left.from(left);
+        this.top.from(top);
+        this.bottom.from(bottom);
+        this.near.from(near);
+        this.far.from(far);
+        return this;
     }
 }
 
@@ -4181,268 +4783,6 @@ class Triangle3 {
         this.a = a;
         this.b = b;
         this.c = c;
-    }
-}
-
-// import clampCommon from "../common/clamp";
-let ax, ay, az, aw, bx, by, bz, len;
-let ix, iy, iz, iw;
-let A, B, C, D, E, F, G, H, I, J;
-class Vector4 extends Float32Array {
-    static VECTOR3_ZERO = new Vector4(0, 0, 0, 0);
-    static VECTOR3_ONE = new Vector4(1, 1, 1, 1);
-    static add = (a, b, out = new Vector4()) => {
-        out[0] = a[0] + b[0];
-        out[1] = a[1] + b[1];
-        out[2] = a[2] + b[2];
-        out[3] = a[3] + b[3];
-        return out;
-    };
-    static ceil = (a, out = new Vector4()) => {
-        out[0] = Math.ceil(a[0]);
-        out[1] = Math.ceil(a[1]);
-        out[2] = Math.ceil(a[2]);
-        out[3] = Math.ceil(a[3]);
-        return out;
-    };
-    static closeTo = (a, b) => {
-        return (closeToCommon(a[0], b[0]) &&
-            closeToCommon(a[1], b[1]) &&
-            closeToCommon(a[2], b[2]) &&
-            closeToCommon(a[3], b[3]));
-    };
-    static create = (x = 0, y = 0, z = 0, w = 0, out = new Vector4()) => {
-        out[0] = x;
-        out[1] = y;
-        out[2] = z;
-        out[3] = w;
-        return out;
-    };
-    static cross = (u, v, w, out = new Vector4(4)) => {
-        A = v[0] * w[1] - v[1] * w[0];
-        B = v[0] * w[2] - v[2] * w[0];
-        C = v[0] * w[3] - v[3] * w[0];
-        D = v[1] * w[2] - v[2] * w[1];
-        E = v[1] * w[3] - v[3] * w[1];
-        F = v[2] * w[3] - v[3] * w[2];
-        G = u[0];
-        H = u[1];
-        I = u[2];
-        J = u[3];
-        out[0] = H * F - I * E + J * D;
-        out[1] = -(G * F) + I * C - J * B;
-        out[2] = G * E - H * C + J * A;
-        out[3] = -(G * D) + H * B - I * A;
-        return out;
-    };
-    static distanceTo = (a, b) => {
-        ax = b[0] - a[0];
-        ay = b[1] - a[1];
-        az = b[2] - a[2];
-        aw = b[3] - a[3];
-        return Math.hypot(ax, ay, az, aw);
-    };
-    static distanceToSquared = (a, b) => {
-        ax = b[0] - a[0];
-        ay = b[1] - a[1];
-        az = b[2] - a[2];
-        aw = b[3] - a[3];
-        return ax * ax + ay * ay + az * az + aw * aw;
-    };
-    static divide = (a, b, out = new Vector4()) => {
-        out[0] = a[0] / b[0];
-        out[1] = a[1] / b[1];
-        out[2] = a[2] / b[2];
-        out[3] = a[3] / b[3];
-        return out;
-    };
-    static dot = (a, b) => {
-        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-    };
-    static equals = (a, b) => {
-        return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
-    };
-    static floor = (a, out = new Vector4()) => {
-        out[0] = Math.floor(a[0]);
-        out[1] = Math.floor(a[1]);
-        out[2] = Math.floor(a[2]);
-        out[3] = Math.floor(a[3]);
-        return out;
-    };
-    static fromValues = (x, y, z, w, out = new Vector4()) => {
-        out[0] = x;
-        out[1] = y;
-        out[2] = z;
-        out[3] = w;
-        return out;
-    };
-    static inverse = (a, out = new Vector4()) => {
-        out[0] = 1.0 / a[0];
-        out[1] = 1.0 / a[1];
-        out[2] = 1.0 / a[2];
-        out[3] = 1.0 / a[3];
-        return out;
-    };
-    static norm = (a) => {
-        return Math.hypot(a[0], a[1], a[2], a[3]);
-    };
-    static lengthSquared = (a) => {
-        ax = a[0];
-        ay = a[1];
-        az = a[2];
-        aw = a[3];
-        return ax * ax + ay * ay + az * az + aw * aw;
-    };
-    static lerp = (a, b, t, out = new Vector4()) => {
-        ax = a[0];
-        ay = a[1];
-        az = a[2];
-        aw = a[3];
-        out[0] = ax + t * (b[0] - ax);
-        out[1] = ay + t * (b[1] - ay);
-        out[2] = az + t * (b[2] - az);
-        out[3] = aw + t * (b[3] - aw);
-        return out;
-    };
-    static max = (a, b, out = new Vector4()) => {
-        out[0] = Math.max(a[0], b[0]);
-        out[1] = Math.max(a[1], b[1]);
-        out[2] = Math.max(a[2], b[2]);
-        out[3] = Math.max(a[3], b[3]);
-        return out;
-    };
-    static min = (a, b, out = new Vector4()) => {
-        out[0] = Math.min(a[0], b[0]);
-        out[1] = Math.min(a[1], b[1]);
-        out[2] = Math.min(a[2], b[2]);
-        out[3] = Math.min(a[3], b[3]);
-        return out;
-    };
-    static minus = (a, b, out = new Vector4()) => {
-        out[0] = a[0] - b[0];
-        out[1] = a[1] - b[1];
-        out[2] = a[2] - b[2];
-        out[3] = a[3] - b[3];
-        return out;
-    };
-    static multiply = (a, b, out = new Vector4()) => {
-        out[0] = a[0] * b[0];
-        out[1] = a[1] * b[1];
-        out[2] = a[2] * b[2];
-        out[3] = a[3] * b[3];
-        return out;
-    };
-    static multiplyScalar = (a, b, out = new Vector4()) => {
-        out[0] = a[0] * b;
-        out[1] = a[1] * b;
-        out[2] = a[2] * b;
-        out[3] = a[3] * b;
-        return out;
-    };
-    static negate = (a, out = new Vector4()) => {
-        out[0] = -a[0];
-        out[1] = -a[1];
-        out[2] = -a[2];
-        out[3] = -a[3];
-        return out;
-    };
-    static normalize = (a, out = new Vector4()) => {
-        ax = a[0];
-        ay = a[1];
-        az = a[2];
-        aw = a[3];
-        len = ax * ax + ay * ay + az * az + aw * aw;
-        if (len > 0) {
-            len = 1 / Math.sqrt(len);
-        }
-        out[0] = ax * len;
-        out[1] = ay * len;
-        out[2] = az * len;
-        out[3] = aw * len;
-        return out;
-    };
-    static round = (a, out = new Vector4()) => {
-        out[0] = Math.round(a[0]);
-        out[1] = Math.round(a[1]);
-        out[2] = Math.round(a[2]);
-        out[3] = Math.round(a[3]);
-        return out;
-    };
-    static set = (x = 0, y = 0, z = 0, w = 0, out = new Vector4()) => {
-        out[0] = x;
-        out[1] = y;
-        out[2] = z;
-        out[4] = w;
-        return out;
-    };
-    static setNorm = (a, length, out = new Vector4(2)) => {
-        Vector4.normalize(a, out);
-        Vector4.multiplyScalar(out, length, out);
-        return out;
-    };
-    static toString = (a) => {
-        return `(${a[0]}, ${a[1]}, ${a[2]}, ${a[3]})`;
-    };
-    static transformMatrix4 = (a, m, out = new Vector4()) => {
-        ax = a[0];
-        ay = a[1];
-        az = a[2];
-        aw = a[3];
-        out[0] = m[0] * ax + m[4] * ay + m[8] * az + m[12] * aw;
-        out[1] = m[1] * ax + m[5] * ay + m[9] * az + m[13] * aw;
-        out[2] = m[2] * ax + m[6] * ay + m[10] * az + m[14] * aw;
-        out[3] = m[3] * ax + m[7] * ay + m[11] * az + m[15] * aw;
-        return out;
-    };
-    static transformQuat = (a, q, out = new Vector4()) => {
-        bx = a[0];
-        by = a[1];
-        bz = a[2];
-        ax = q[0];
-        ay = q[1];
-        az = q[2];
-        aw = q[3];
-        ix = aw * bx + ay * bz - az * by;
-        iy = aw * by + az * bx - ax * bz;
-        iz = aw * bz + ax * by - ay * bx;
-        iw = -ax * bx - ay * by - az * bz;
-        out[0] = ix * aw + iw * -ax + iy * -az - iz * -ay;
-        out[1] = iy * aw + iw * -ay + iz * -ax - ix * -az;
-        out[2] = iz * aw + iw * -az + ix * -ay - iy * -ax;
-        out[3] = a[3];
-        return out;
-    };
-    dataType = ArraybufferDataType.VECTOR4;
-    constructor(x = 0, y = 0, z = 0, w = 0) {
-        super(4);
-        this[0] = x;
-        this[1] = y;
-        this[2] = z;
-        this[3] = w;
-    }
-    get x() {
-        return this[0];
-    }
-    set x(value) {
-        this[0] = value;
-    }
-    get y() {
-        return this[1];
-    }
-    set y(value) {
-        this[1] = value;
-    }
-    get z() {
-        return this[2];
-    }
-    set z(value) {
-        this[2] = value;
-    }
-    get w() {
-        return this[3];
-    }
-    set w(value) {
-        this[3] = value;
     }
 }
 
@@ -4714,7 +5054,7 @@ var TreeNode = mixin(Object);
 const IdGeneratorInstance = new IdGenerator();
 
 let weakMapTmp;
-class System extends EventDispatcher {
+class System extends EventFirer {
     id = IdGeneratorInstance.next();
     isSystem = true;
     name = "";
@@ -4869,7 +5209,7 @@ const ElementChangeEvent = {
     ADD: "add",
     REMOVE: "remove",
 };
-class Manager extends EventDispatcher {
+class Manager extends EventFirer {
     static Events = ElementChangeEvent;
     elements = new Map();
     disabled = false;
@@ -5028,7 +5368,7 @@ class ComponentManager extends Manager {
 }
 
 let arr$1;
-class Entity extends TreeNode.mixin(EventDispatcher) {
+class Entity extends TreeNode.mixin(EventFirer) {
     id = IdGeneratorInstance.next();
     isEntity = true;
     componentManager = null;
@@ -6345,7 +6685,7 @@ const DEFAULT_ENGINE_OPTIONS = {
     container: document.body
 };
 
-class EngineTaskChunk extends EventDispatcher {
+class EngineTaskChunk extends EventFirer {
     static START = 'start';
     static END = 'end';
     name;
@@ -6386,7 +6726,7 @@ class EngineTaskChunk extends EventDispatcher {
     };
 }
 
-class Engine extends EventDispatcher.mixin(Timeline) {
+class Engine extends mixin$1(Timeline) {
     options;
     static Events = EngineEvents;
     taskChunkTimeMap = new Map();
@@ -6416,6 +6756,18 @@ class Engine extends EventDispatcher.mixin(Timeline) {
         this.#taskChunks.set(chunk.name, chunk);
         if (needTimeReset) {
             this.taskChunkTimeMap.set(chunk, this.time);
+        }
+        return this;
+    }
+    removeTask(task, chunkName) {
+        if (!chunkName) {
+            super.removeTask(task);
+        }
+        else {
+            const chunk = this.#taskChunks.get(chunkName);
+            if (chunk) {
+                chunk.removeTask(task);
+            }
         }
         return this;
     }
@@ -6518,7 +6870,7 @@ var LoadType;
     LoadType["ARRAY_BUFFER"] = "arrayBuffer";
 })(LoadType || (LoadType = {}));
 
-class ResourceStore extends EventDispatcher {
+class ResourceStore extends EventFirer {
     static WILL_LOAD = "willLoad";
     static LOADING = "loading";
     static LOADED = "loaded";
@@ -6854,6 +7206,9 @@ class BufferFloat32 extends Float32Array {
         this.name = name;
         this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
         this.descriptor.size = option.size ?? 16;
+        if (option.data) {
+            this.set(option.data);
+        }
     }
     set(arr, offset) {
         super.set(arr, offset);
@@ -10250,18 +10605,21 @@ class ShadertoyMaterial extends Material {
             {
                 name: "uniforms",
                 type: BUFFER,
-                value: new Float32Array([
-                    CommonData.date.getFullYear(),
-                    CommonData.date.getMonth(),
-                    CommonData.date.getDate(),
-                    CommonData.date.getSeconds() + CommonData.date.getMinutes() * 60 + CommonData.date.getHours() + 3600,
-                    1024, 1024,
-                    0, 0,
-                    0,
-                    0,
-                    0,
-                    0, // 11
-                ]),
+                value: new BufferFloat32({
+                    size: 48,
+                    data: [
+                        CommonData.date.getFullYear(),
+                        CommonData.date.getMonth(),
+                        CommonData.date.getDate(),
+                        CommonData.date.getSeconds() + CommonData.date.getMinutes() * 60 + CommonData.date.getHours() + 3600,
+                        1024, 1024,
+                        0, 0,
+                        0,
+                        0,
+                        0,
+                        0, // 11
+                    ]
+                }),
                 binding: 6,
                 dirty: true,
             }
@@ -10611,4 +10969,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createSprite3: createSprite3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BufferFloat32, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, transformMatrix3, transformMatrix4 };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BufferFloat32, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, Frustum, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Line3, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeTo, eventfirer, filt, fire, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, mixin$1 as mixin, on, once, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, times, transformMatrix3, transformMatrix4 };

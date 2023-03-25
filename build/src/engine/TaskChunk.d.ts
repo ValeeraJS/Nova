@@ -1,4 +1,4 @@
-import EventFirer from "@valeera/eventfirer";
+import { EventFirer } from "@valeera/eventfire";
 export declare class EngineTaskChunk extends EventFirer {
     #private;
     static readonly START = "start";

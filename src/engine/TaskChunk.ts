@@ -1,4 +1,4 @@
-import EventFirer from "@valeera/eventfirer";
+import { EventFirer } from "@valeera/eventfire";
 
 export class EngineTaskChunk extends EventFirer {
     public static readonly START = 'start';
@@ -7,7 +7,7 @@ export class EngineTaskChunk extends EventFirer {
     public disabled = false;
     public time = 0;
     public delta = 0;
-	private taskTimeMap = new WeakMap<Function, number>();
+    private taskTimeMap = new WeakMap<Function, number>();
 
     #tasks: Function[] = [];
 
@@ -23,8 +23,8 @@ export class EngineTaskChunk extends EventFirer {
     public addTask(task: Function, needTimeReset?: boolean) {
         this.#tasks.push(task);
         if (needTimeReset) {
-			this.taskTimeMap.set(task, this.time);
-		}
+            this.taskTimeMap.set(task, this.time);
+        }
     }
 
     public removeTask(task: Function) {

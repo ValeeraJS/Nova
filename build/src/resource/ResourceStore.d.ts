@@ -1,4 +1,4 @@
-import EventFirer from "@valeera/eventfirer";
+import { EventFirer } from "@valeera/eventfire";
 import { ILoadItem, IParser, LoadPartType, LoadType } from "./IResourceItem";
 export declare class ResourceStore extends EventFirer {
     #private;

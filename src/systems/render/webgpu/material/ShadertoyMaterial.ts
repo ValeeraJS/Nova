@@ -3,6 +3,7 @@ import { SAMPLER, TEXTURE_IMAGE, BUFFER } from "../../../../components/constants
 import { Texture, Sampler, ImageBitmapTexture } from "../../texture";
 import { IMaterial } from "../../IMatrial";
 import Material from "./Material";
+import { BufferFloat32 } from "../../Buffer";
 
 const CommonData = {
 	date: new Date(),
@@ -82,18 +83,21 @@ export default class ShadertoyMaterial extends Material implements IMaterial {
 			{
 				name: "uniforms",
 				type: BUFFER,
-				value: new Float32Array([
-					CommonData.date.getFullYear(), // iDate 0-3
-					CommonData.date.getMonth(),
-					CommonData.date.getDate(),
-					CommonData.date.getSeconds() + CommonData.date.getMinutes() * 60 + CommonData.date.getHours() + 3600,
-					1024, 1024, // iResolution 4-5
-					0, 0, // iMouse 6-7,
-					0, // iTime 8
-					0, // 9
-					0, // 10
-					0, // 11
-				]),
+				value: new BufferFloat32({
+					size: 48,
+					data: [
+						CommonData.date.getFullYear(), // iDate 0-3
+						CommonData.date.getMonth(),
+						CommonData.date.getDate(),
+						CommonData.date.getSeconds() + CommonData.date.getMinutes() * 60 + CommonData.date.getHours() + 3600,
+						1024, 1024, // iResolution 4-5
+						0, 0, // iMouse 6-7,
+						0, // iTime 8
+						0, // 9
+						0, // 10
+						0, // 11
+					]
+				}),
 				binding: 6,
 				dirty: true,
 			}

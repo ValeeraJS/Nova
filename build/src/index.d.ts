@@ -1,5 +1,5 @@
 import Timeline from "@valeera/timeline";
-import EventFire from "@valeera/eventfirer";
+export * from "@valeera/eventfire";
 export * from "./components";
 export * from "./engine";
 export * from "./entities";
@@ -10,5 +10,5 @@ export * from "./systems/render/webgpu";
 export * from "./systems/tween";
 export * from "@valeera/x";
 export * from "@valeera/mathx";
-export { Timeline, EventFire };
+export { Timeline };
 export { EntityFactory } from "./factory";

@@ -1,4 +1,4 @@
-import EventFirer from "@valeera/eventfirer";
+import { EventFirer } from "@valeera/eventfire";
 import { ILoadItem, ILoadPart, IParser, LoadPartType, LoadType } from "./IResourceItem";
 
 type ToLoadPartRecord = {

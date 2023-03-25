@@ -1,6 +1,6 @@
 {
 	"name": "@valeera/nova",
-	"version": "0.1.7",
+	"version": "0.1.8-alpha4",
 	"description": "Event dispatcher fit for most framework.",
 	"main": "build/Nova.js",
 	"repository": "ValeeraJS/Nova",
@@ -64,13 +64,13 @@
 		"directories": {}
 	},
 	"dependencies": {
-		"@valeera/eventfirer": "latest",
+		"@valeera/eventfire": "1.1.1",
 		"@valeera/idgenerator": "latest",
-		"@valeera/mathx": "0.1.55",
+		"@valeera/mathx": "0.1.56",
 		"@valeera/timeline": "latest",
 		"@valeera/tree": "latest",
 		"@valeera/webgpu-constant": "latest",
-		"@valeera/x": "0.1.25"
+		"@valeera/x": "0.1.26"
 	},
 	"publishConfig": {
 		"access": "public"

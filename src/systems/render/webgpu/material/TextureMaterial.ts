@@ -65,7 +65,7 @@ export default class TextureMaterial extends Material implements IMaterial {
 	}
 
 	public get sampler(): Sampler {
-		return this.uniforms[0].value as Sampler;
+		return this.uniforms[0].value;
 	}
 
 	public set sampler(sampler: Sampler) {
@@ -74,7 +74,7 @@ export default class TextureMaterial extends Material implements IMaterial {
 	}
 
 	public get texture(): Texture {
-		return this.uniforms[1].value as Texture;
+		return this.uniforms[1].value;
 	}
 
 	public set texture(texture: Texture) {
