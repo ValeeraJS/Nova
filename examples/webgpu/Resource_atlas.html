@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+<body>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script>
+		const resources = [
+			{
+				type: "atlas",
+				name: "test png",
+				onParse: (textures) => {
+					let i = 0;
+					for (const t of textures) {
+						const sprite = Nova.EntityFactory.createSprite3(t);
+						sprite.scaling.set(0.006);
+						sprite.position.setXYZ((i % 4) - 1.5, 1.5 - Math.floor(i / 4), 0);
+						world.add(sprite);
+						i++;
+					}
+				},
+				loadParts: [
+					{
+						url: "./../textures/test.png",
+						type: "blob",
+					},
+					{
+						url: "./../textures/atlas.json",
+						type: "json",
+					},
+				],
+			},
+		];
+		const store = new Nova.ResourceStore();
+		store.registerParser(Nova.AtlasParser, "atlas");
+		store.loadAndParse(resources);
+		const engine = new Nova.Engine();
+		const world = new Nova.World();
+
+		const projection = new Nova.PerspectiveProjection();
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 10;
+
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.add(renderSystem);
+
+		engine.addTask(() => {
+			world.run();
+		});
+	</script>
+</body>

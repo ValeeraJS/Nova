@@ -4,7 +4,8 @@ export interface IFrame {
     h: number;
     x: number; // 当前的精灵块在整个大图里的坐标
     y: number;
-    dx: number; // 绘制精灵块区域的偏移坐标。因为完整的一套精灵图元素尺寸大于等于任意一个精灵块
-    dy: number;
+    dx?: number; // 绘制精灵块区域的偏移坐标。因为完整的一套精灵图元素尺寸大于等于任意一个精灵块
+    dy?: number;
     rotation?: boolean;
+    name?: string;
 }

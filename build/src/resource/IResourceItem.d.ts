@@ -27,4 +27,4 @@ export interface ILoadItem<T> {
     onParse?: (obj: T) => any;
     onParseError?: (e: any) => any;
 }
-export type IParser<T> = (...args: any[]) => T | Promise<T>;
+export type IParser<T> = (...args: any[]) => T | T[] | Promise<T | T[]>;

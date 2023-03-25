@@ -6779,6 +6779,42 @@ class Texture {
     }
 }
 
+const canvases = []; // 储存多个canvas，可能存在n个图同时画
+async function drawSpriteBlock(image, width, height, frame) {
+    const canvas = canvases.pop() || document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (frame.rotation) {
+        ctx.rotate(-constants$1.DEG_90_RAD);
+        ctx.translate(-frame.w, 0);
+    }
+    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx ?? 0, frame.dy ?? 0, frame.w, frame.h);
+    const result = await createImageBitmap(canvas);
+    canvases.push(canvas);
+    if (frame.rotation) {
+        ctx.translate(frame.w, 0);
+        ctx.rotate(constants$1.DEG_90_RAD);
+    }
+    return result;
+}
+
+const AtlasParser = async (blob, json) => {
+    const bitmap = await createImageBitmap(blob);
+    const result = [];
+    for (let i = 0, len = json.frames.length; i < len; i++) {
+        const f = json.frames[i];
+        const tex = new Texture({
+            image: await drawSpriteBlock(bitmap, f.w, f.h, f),
+            size: [f.w, f.h],
+            name: f.name ?? "atlas_" + i
+        });
+        result.push(tex);
+    }
+    return result;
+};
+
 const TextureParser = async (blob) => {
     const bitmap = await createImageBitmap(blob);
     return new Texture({
@@ -8324,19 +8360,6 @@ class ShaderProgram {
         this.descriptor.code = value;
         this.dirty = true;
     }
-}
-
-const canvases = []; // 储存多个canvas，可能存在n个图同时画
-async function drawSpriteBlock(image, width, height, frame) {
-    let canvas = canvases.pop() || document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-    let result = await createImageBitmap(canvas);
-    canvases.push(canvas);
-    return result;
 }
 
 class AtlasTexture extends Texture {
@@ -10579,4 +10602,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createSprite3: createSprite3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasTexture, BufferFloat32, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, transformMatrix3, transformMatrix4 };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BufferFloat32, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventDispatcher as EventFire, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeToCommon as closeTo, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, transformMatrix3, transformMatrix4 };

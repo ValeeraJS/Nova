@@ -6785,6 +6785,42 @@
 	    }
 	}
 
+	const canvases = []; // 储存多个canvas，可能存在n个图同时画
+	async function drawSpriteBlock(image, width, height, frame) {
+	    const canvas = canvases.pop() || document.createElement("canvas");
+	    const ctx = canvas.getContext("2d");
+	    canvas.width = width;
+	    canvas.height = height;
+	    ctx.clearRect(0, 0, canvas.width, canvas.height);
+	    if (frame.rotation) {
+	        ctx.rotate(-constants$1.DEG_90_RAD);
+	        ctx.translate(-frame.w, 0);
+	    }
+	    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx ?? 0, frame.dy ?? 0, frame.w, frame.h);
+	    const result = await createImageBitmap(canvas);
+	    canvases.push(canvas);
+	    if (frame.rotation) {
+	        ctx.translate(frame.w, 0);
+	        ctx.rotate(constants$1.DEG_90_RAD);
+	    }
+	    return result;
+	}
+
+	const AtlasParser = async (blob, json) => {
+	    const bitmap = await createImageBitmap(blob);
+	    const result = [];
+	    for (let i = 0, len = json.frames.length; i < len; i++) {
+	        const f = json.frames[i];
+	        const tex = new Texture({
+	            image: await drawSpriteBlock(bitmap, f.w, f.h, f),
+	            size: [f.w, f.h],
+	            name: f.name ?? "atlas_" + i
+	        });
+	        result.push(tex);
+	    }
+	    return result;
+	};
+
 	const TextureParser = async (blob) => {
 	    const bitmap = await createImageBitmap(blob);
 	    return new Texture({
@@ -8330,19 +8366,6 @@
 	        this.descriptor.code = value;
 	        this.dirty = true;
 	    }
-	}
-
-	const canvases = []; // 储存多个canvas，可能存在n个图同时画
-	async function drawSpriteBlock(image, width, height, frame) {
-	    let canvas = canvases.pop() || document.createElement("canvas");
-	    let ctx = canvas.getContext("2d");
-	    canvas.width = width;
-	    canvas.height = height;
-	    ctx.clearRect(0, 0, canvas.width, canvas.height);
-	    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx, frame.dy, frame.w, frame.h);
-	    let result = await createImageBitmap(canvas);
-	    canvases.push(canvas);
-	    return result;
 	}
 
 	class AtlasTexture extends Texture {
@@ -10598,6 +10621,7 @@ struct VertexOutput {
 	exports.Anchor3 = Anchor3;
 	exports.AngleRotation2 = AngleRotation2;
 	exports.ArraybufferDataType = ArraybufferDataType;
+	exports.AtlasParser = AtlasParser;
 	exports.AtlasTexture = AtlasTexture;
 	exports.BufferFloat32 = BufferFloat32;
 	exports.COLOR_HEX_MAP = COLOR_HEX_MAP;
