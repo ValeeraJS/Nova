@@ -6555,7 +6555,14 @@
 	            map = new Map();
 	            this.resourcesMap.set(type, map);
 	        }
-	        map.set(name, data);
+	        if (data instanceof Array) {
+	            for (let i = 0, len = data.length; i < len; i++) {
+	                map.set(data[i].name ?? name + '_' + i, data[i]);
+	            }
+	        }
+	        else {
+	            map.set(name, data);
+	        }
 	        return this;
 	    }
 	    loadAndParse = (arr) => {
@@ -6743,6 +6750,7 @@
 	class Texture {
 	    data;
 	    dirty = true;
+	    name;
 	    descriptor = {
 	        size: [0, 0],
 	        format: "rgba8unorm",
@@ -6759,6 +6767,7 @@
 	        this.descriptor.format = options.format ?? "rgba8unorm";
 	        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
 	        this.imageBitmap = options.image;
+	        this.name = options.name ?? 'untitled texture';
 	    }
 	    destroy() {
 	        this.data?.close();

@@ -9,6 +9,7 @@ export type TextureOptions = {
 export class Texture {
 	data: ImageBitmap | null | undefined;
 	dirty: boolean = true;
+	name: string;
 	public descriptor: Required<GPUTextureDescriptor> = {
 		size: [0, 0],
 		format: "rgba8unorm",
@@ -26,6 +27,7 @@ export class Texture {
 		this.descriptor.format = options.format ?? "rgba8unorm";
 		this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
 		this.imageBitmap = options.image;
+		this.name = options.name ?? 'untitled texture';
 	}
 
 	public destroy() {

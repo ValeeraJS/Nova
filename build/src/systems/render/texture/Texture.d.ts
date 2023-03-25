@@ -8,6 +8,7 @@ export type TextureOptions = {
 export declare class Texture {
     data: ImageBitmap | null | undefined;
     dirty: boolean;
+    name: string;
     descriptor: Required<GPUTextureDescriptor>;
     constructor(options: TextureOptions);
     destroy(): void;

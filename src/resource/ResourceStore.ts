@@ -42,7 +42,13 @@ export class ResourceStore extends EventFirer {
 			map = new Map();
 			this.resourcesMap.set(type, map);
 		}
-		map.set(name, data);
+		if (data instanceof Array) {
+			for (let i = 0, len = data.length; i < len; i++) {
+				map.set(data[i].name ?? name + '_' + i, data[i]);
+			}
+		} else {
+			map.set(name, data);
+		}
 
 		return this;
 	}
