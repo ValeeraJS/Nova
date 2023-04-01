@@ -1,9 +1,9 @@
 export * from "../../IMatrial";
-export { default as Material } from "./Material";
-export { default as ColorMaterial } from "./ColorMaterial";
-export { default as DomMaterial } from "./DomMaterial";
-export { default as DepthMaterial } from "./DepthMaterial";
-export { default as NormalMaterial } from "./NormalMaterial";
-export { default as ShaderMaterial } from "./ShaderMaterial";
-export { default as ShadertoyMaterial } from "./ShadertoyMaterial";
-export { default as TextureMaterial } from "./TextureMaterial";
+export * from "./Material";
+export * from "./ColorMaterial";
+export * from "./DomMaterial";
+export * from "./DepthMaterial";
+export * from "./NormalMaterial";
+export * from "./ShaderMaterial";
+export * from "./ShadertoyMaterial";
+export * from "./TextureMaterial";

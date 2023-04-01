@@ -5132,7 +5132,7 @@
 	        if (world.entityManager) {
 	            this.entitySet.get(world.entityManager)?.forEach((item) => {
 	                // 此处不应该校验disabled。这个交给各自系统自行判断
-	                this.handle(item, time, delta);
+	                this.handle(item, time, delta, world);
 	            });
 	        }
 	        return this;
@@ -5603,7 +5603,7 @@
 	}
 
 	let arr;
-	class World {
+	class World extends EventFirer {
 	    disabled = false;
 	    name;
 	    entityManager = null;
@@ -5613,6 +5613,7 @@
 	    id = IdGeneratorInstance.next();
 	    isWorld = true;
 	    constructor(name = "", entityManager, systemManager) {
+	        super();
 	        this.name = name;
 	        this.registerEntityManager(entityManager);
 	        this.registerSystemManager(systemManager);
@@ -8885,9 +8886,10 @@
 	    fragment: `
 		@binding(1) @group(0) var mySampler: sampler;
 		@binding(2) @group(0) var myTexture: texture_2d<f32>;
+		@binding(3) @group(0) var<uniform> alpha: f32;
 
 		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-			return textureSample(myTexture, mySampler, uv);
+			return textureSample(myTexture, mySampler, uv) * vec4<f32>(1., 1., 1., alpha);
 		}
 	`
 	};
@@ -8917,7 +8919,17 @@
 	                type: TEXTURE_IMAGE,
 	                value: texture,
 	                dirty: true
-	            }
+	            },
+	            {
+	                binding: 3,
+	                dirty: true,
+	                name: "alpha",
+	                type: "buffer",
+	                value: new BufferFloat32({
+	                    size: 4,
+	                    data: [1],
+	                }),
+	            },
 	        ]);
 	        this.dirty = true;
 	    }
@@ -8934,6 +8946,13 @@
 	    set texture(texture) {
 	        this.uniforms[1].dirty = this.dirty = true;
 	        this.uniforms[1].value = texture;
+	    }
+	    get alpha() {
+	        return this.uniforms[2].value[0];
+	    }
+	    set alpha(alpha) {
+	        this.uniforms[2].dirty = this.dirty = true;
+	        this.uniforms[2].value[0] = alpha;
 	    }
 	    setTextureAndSampler(texture, sampler) {
 	        this.texture = texture;
@@ -10801,13 +10820,15 @@ struct VertexOutput {
 	}
 
 	class TweenSystem extends System {
-	    query(entity) {
-	        let component = entity.getComponent("tween");
-	        if (!component) {
-	            return false;
-	        }
-	        component.time = 0;
-	        return true;
+	    constructor(name = "Tween System") {
+	        super(name, (entity) => {
+	            const component = entity.getComponent("tween");
+	            if (!component) {
+	                return false;
+	            }
+	            component.time = 0;
+	            return true;
+	        });
 	    }
 	    destroy() {
 	        throw new Error("Method not implemented.");

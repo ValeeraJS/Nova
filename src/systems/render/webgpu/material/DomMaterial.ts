@@ -1,7 +1,7 @@
 
 import { ColorGPU, Vector4 } from "@valeera/mathx";
 import { BUFFER } from "../../../../components/constants";
-import Material from "./Material";
+import { Material } from "./Material";
 
 const wgslShaders = {
 	vertex: `
@@ -29,7 +29,7 @@ const wgslShaders = {
 	`
 };
 
-export default class DomMaterial extends Material {
+export class DomMaterial extends Material {
 	constructor() {
 		super({
 			descriptor: {
@@ -49,7 +49,7 @@ export default class DomMaterial extends Material {
 			type: BUFFER
 		}, {
 			name: "borderColor",
-			value: new ColorGPU(1,1,1,1),
+			value: new ColorGPU(1, 1, 1, 1),
 			binding: 2,
 			dirty: true,
 			type: BUFFER
@@ -78,17 +78,17 @@ export default class DomMaterial extends Material {
 	get backgroundColor() {
 		return this.uniforms[0].value as ColorGPU;
 	}
-	
+
 	set backgroundColor(c: ColorGPU) {
 		this.uniforms[0].value = c;
 		this.uniforms[0].dirty = true;
 		this.dirty = true;
 	}
-	
+
 	get borderColor() {
 		return this.uniforms[1].value as ColorGPU;
 	}
-	
+
 	set borderColor(c: ColorGPU) {
 		this.uniforms[1].value = c;
 		this.uniforms[1].dirty = true;
@@ -98,17 +98,17 @@ export default class DomMaterial extends Material {
 	get height() {
 		return this.uniforms[2].value[1] as number;
 	}
-	
+
 	set height(c: number) {
 		this.uniforms[2].value[1] = c;
 		this.uniforms[2].dirty = true;
 		this.dirty = true;
 	}
-	
+
 	get width() {
 		return this.uniforms[2].value[0] as number;
 	}
-	
+
 	set width(c: number) {
 		this.uniforms[2].value[0] = c;
 		this.uniforms[2].dirty = true;

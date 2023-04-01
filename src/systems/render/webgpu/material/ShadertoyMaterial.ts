@@ -2,7 +2,7 @@
 import { SAMPLER, TEXTURE_IMAGE, BUFFER } from "../../../../components/constants";
 import { Texture, Sampler, ImageBitmapTexture } from "../../texture";
 import { IMaterial } from "../../IMatrial";
-import Material from "./Material";
+import { Material } from "./Material";
 import { BufferFloat32 } from "../../Buffer";
 
 const CommonData = {
@@ -30,7 +30,7 @@ const emptyTexture = new Texture({
 	size: [512, 512]
 });
 
-export default class ShadertoyMaterial extends Material implements IMaterial {
+export class ShadertoyMaterial extends Material implements IMaterial {
 	private dataD: Date;
 
 	public constructor(fs: string, sampler: Sampler = new Sampler()) {

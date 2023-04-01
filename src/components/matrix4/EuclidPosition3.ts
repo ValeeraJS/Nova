@@ -57,7 +57,6 @@ export default class EuclidPosition3 extends APosition3 {
 		this.vec3[1] = y;
 		this.vec3[2] = z;
 
-
 		this.data[12] = x;
 		this.data[13] = y;
 		this.data[14] = z;

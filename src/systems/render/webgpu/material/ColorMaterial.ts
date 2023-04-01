@@ -1,6 +1,6 @@
 
 import { BUFFER } from "../../../../components/constants";
-import Material from "./Material";
+import { Material } from "./Material";
 
 const wgslShaders = {
 	vertex: `
@@ -28,7 +28,7 @@ const wgslShaders = {
 	`
 };
 
-export default class ColorMaterial extends Material {
+export class ColorMaterial extends Material {
 	constructor(color: Float32Array = new Float32Array([1, 1, 1, 1])) {
 		super({
 			descriptor: {

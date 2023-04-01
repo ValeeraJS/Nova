@@ -1,7 +1,7 @@
 {
 	"name": "@valeera/nova",
-	"version": "0.1.8-alpha4",
-	"description": "Event dispatcher fit for most framework.",
+	"version": "0.1.8-alpha7",
+	"description": "Web webgpu engine for games or rendering.",
 	"main": "build/Nova.js",
 	"repository": "ValeeraJS/Nova",
 	"jsnext:main": "build/Nova.module.js",
@@ -68,9 +68,9 @@
 		"@valeera/idgenerator": "latest",
 		"@valeera/mathx": "0.1.56",
 		"@valeera/timeline": "latest",
-		"@valeera/tree": "latest",
+		"@valeera/tree": "0.1.6",
 		"@valeera/webgpu-constant": "latest",
-		"@valeera/x": "0.1.26"
+		"@valeera/x": "0.1.27.alpha1"
 	},
 	"publishConfig": {
 		"access": "public"

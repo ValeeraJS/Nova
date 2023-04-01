@@ -1,4 +1,4 @@
-import Material from "./Material";
+import { Material } from "./Material";
 
 const vertexShader = `
 struct Uniforms {
@@ -23,7 +23,7 @@ const fragmentShader = `
 	return vec4<f32>(normal.x, normal.y, normal.z, 1.0);
 }`;
 
-export default class NormalMaterial extends Material {	
+export class NormalMaterial extends Material {
 	constructor() {
 		super({
 			descriptor: {

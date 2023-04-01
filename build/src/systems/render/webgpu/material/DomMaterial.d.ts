@@ -1,6 +1,6 @@
 import { ColorGPU } from "@valeera/mathx";
-import Material from "./Material";
-export default class DomMaterial extends Material {
+import { Material } from "./Material";
+export declare class DomMaterial extends Material {
     constructor();
     get backgroundColor(): ColorGPU;
     set backgroundColor(c: ColorGPU);

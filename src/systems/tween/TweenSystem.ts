@@ -3,14 +3,15 @@ import { System, IEntity } from "@valeera/x";
 import { Tween } from "./Tween";
 
 export class TweenSystem extends System {
-
-    public query(entity: IEntity): boolean {
-        let component = entity.getComponent("tween") as Tween;
-        if (!component) {
-            return false;
-        }
-        component.time = 0;
-        return true;
+    public constructor(name: string = "Tween System") {
+        super(name, (entity: IEntity): boolean => {
+            const component = entity.getComponent("tween") as Tween;
+            if (!component) {
+                return false;
+            }
+            component.time = 0;
+            return true;
+        });
     }
 
     public destroy(): this {

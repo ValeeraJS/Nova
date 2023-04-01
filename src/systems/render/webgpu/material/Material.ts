@@ -2,7 +2,7 @@ import { DEFAULT_BLEND_STATE } from "../../Blend";
 import { IMaterial, IUniformSlot } from "../../IMatrial";
 import { IShaderProgram } from "../../ShaderProgram";
 
-export default class Material implements IMaterial {
+export class Material implements IMaterial {
 	dirty: boolean;
 	vertex: string;
 	vertexShader: IShaderProgram;

@@ -1,4 +1,4 @@
-import Material from "./Material";
+import { Material } from "./Material";
 
 const vertexShader = `
 struct Uniforms {
@@ -33,7 +33,7 @@ const fragmentShader = `
 	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
 }`;
 
-export default class DepthMaterial extends Material {
+export class DepthMaterial extends Material {
 	constructor() {
 		super({
 			descriptor: {

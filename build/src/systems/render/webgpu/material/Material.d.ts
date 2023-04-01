@@ -1,6 +1,6 @@
 import { IMaterial, IUniformSlot } from "../../IMatrial";
 import { IShaderProgram } from "../../ShaderProgram";
-export default class Material implements IMaterial {
+export declare class Material implements IMaterial {
     dirty: boolean;
     vertex: string;
     vertexShader: IShaderProgram;
