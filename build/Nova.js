@@ -9460,10 +9460,12 @@ struct VertexOutput {
 	  	};
 		struct BitmapFont {
 			channel : vec4<f32>,
-			offset : vec2<f32>,
-			size : vec2<f32>,
 			position : vec2<f32>,
+			size : vec2<f32>,
+			offset : vec2<f32>,
 			bitmapSize : vec2<f32>,
+			lineHeight : f32,
+			baseLine: f32
 		};
 	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
 		@binding(3) @group(0) var<uniform> font: BitmapFont;
@@ -9478,12 +9480,14 @@ struct VertexOutput {
 			var p = position;
 			p.x *= font.size.x;
 			p.y *= font.size.y;
+			p.x += font.size.x * 0.5 + font.offset.x;
+			p.y += font.size.y * 0.5 + font.offset.y;
 			out.position = uniforms.matrix * vec4<f32>(p, 1.0);
 			out.uv = uv;
 			out.uv.x *= font.size.x / font.bitmapSize.x;
-			out.uv.x += font.offset.x / font.bitmapSize.x;
+			out.uv.x += font.position.x / font.bitmapSize.x;
 			out.uv.y *= font.size.y / font.bitmapSize.y;
-			out.uv.y += font.offset.y / font.bitmapSize.y;
+			out.uv.y += font.position.y / font.bitmapSize.y;
 			return out;
 		}
 	`,
@@ -9534,7 +9538,9 @@ struct VertexOutput {
 	                        0, 0,
 	                        0, 0,
 	                        0, 0,
-	                        1, 1, // bitmap size
+	                        1, 1,
+	                        1, 1,
+	                        0, 0
 	                    ],
 	                }),
 	            },
