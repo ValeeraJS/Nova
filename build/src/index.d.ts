@@ -1,5 +1,8 @@
 import Timeline from "@valeera/timeline";
 export * from "@valeera/eventfire";
+export * from "@valeera/mathx";
+export * from "@valeera/x";
+export * from "./bitmapfont";
 export * from "./components";
 export * from "./engine";
 export * from "./entities";
@@ -8,7 +11,5 @@ export * from "./systems/router";
 export * from "./systems/render";
 export * from "./systems/render/webgpu";
 export * from "./systems/tween";
-export * from "@valeera/x";
-export * from "@valeera/mathx";
 export { Timeline };
-export { EntityFactory } from "./factory";
+export * from "./factory";

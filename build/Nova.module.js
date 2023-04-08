@@ -315,67 +315,12 @@ const filt = (rule) => {
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 const all = filt(allFilter);
 
-// component type
-const ANCHOR_2D = "anchor2";
-const ANCHOR_3D = "anchor3";
-const GEOMETRY = "geometry";
-const MATERIAL = "material";
-const MESH2 = "mesh2";
-const MESH3 = "mesh3";
-const SPRITE3 = "sprite3";
-const MODEL_2D = "model2";
-const MODEL_3D = "model3";
-const PROJECTION_2D = "projection2";
-const PROJECTION_3D = "projection3";
-const RENDERABLE = "renderable";
-const ROTATION_2D = "rotation2";
-const ROTATION_3D = "rotation3";
-const SCALING_2D = "scale2";
-const SCALING_3D = "scale3";
-const TRANSLATION_2D = "position2";
-const TRANSLATION_3D = "position3";
-const WORLD_MATRIX3 = "world-matrix3";
-const WORLD_MATRIX4 = "world-matrix4";
-const VIEWING_3D = "viewing3";
-// uniform type
-const SAMPLER = "sampler";
-const BUFFER = "buffer";
-const TEXTURE_IMAGE = "texture-image";
-const TEXTURE_GPU = "texture-gpu";
-
-var constants$2 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	ANCHOR_2D: ANCHOR_2D,
-	ANCHOR_3D: ANCHOR_3D,
-	BUFFER: BUFFER,
-	GEOMETRY: GEOMETRY,
-	MATERIAL: MATERIAL,
-	MESH2: MESH2,
-	MESH3: MESH3,
-	MODEL_2D: MODEL_2D,
-	MODEL_3D: MODEL_3D,
-	PROJECTION_2D: PROJECTION_2D,
-	PROJECTION_3D: PROJECTION_3D,
-	RENDERABLE: RENDERABLE,
-	ROTATION_2D: ROTATION_2D,
-	ROTATION_3D: ROTATION_3D,
-	SAMPLER: SAMPLER,
-	SCALING_2D: SCALING_2D,
-	SCALING_3D: SCALING_3D,
-	SPRITE3: SPRITE3,
-	TEXTURE_GPU: TEXTURE_GPU,
-	TEXTURE_IMAGE: TEXTURE_IMAGE,
-	TRANSLATION_2D: TRANSLATION_2D,
-	TRANSLATION_3D: TRANSLATION_3D,
-	VIEWING_3D: VIEWING_3D,
-	WORLD_MATRIX3: WORLD_MATRIX3,
-	WORLD_MATRIX4: WORLD_MATRIX4
-});
-
 const ArraybufferDataType = {
     COLOR_GPU: "col",
     COLOR_RGB: "col_rgb",
     COLOR_RGBA: "col_rgba",
+    COLOR_RYB: "col_ryb",
+    COLOR_RYBA: "col_ryba",
     COLOR_HSL: "col_hsl",
     COLOR_HSLA: "col_hsla",
     EULER: "euler",
@@ -387,7 +332,7 @@ const ArraybufferDataType = {
     SPHERICAL: "spherical",
     VECTOR2: "vec2",
     VECTOR3: "vec3",
-    VECTOR4: "vec4"
+    VECTOR4: "vec4",
 };
 
 const DEG_TO_RAD = Math.PI / 180;
@@ -402,7 +347,7 @@ const WEIGHT_GRAY_RED = 0.299;
 const WEIGHT_GRAY_GREEN = 0.587;
 const WEIGHT_GRAY_BLUE = 0.114;
 
-var constants$1 = /*#__PURE__*/Object.freeze({
+var constants$2 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	DEG_30_RAD: DEG_30_RAD,
 	DEG_360_RAD: DEG_360_RAD,
@@ -565,11 +510,14 @@ const COLOR_HEX_MAP = {
     white: 0xffffff,
     whitesmoke: 0xf5f5f5,
     yellow: 0xffff00,
-    yellowgreen: 0x9acd32
+    yellowgreen: 0x9acd32,
 };
 
-let max = 0, min = 0;
-let h = 0, s$3 = 0, l = 0;
+let max = 0;
+let min = 0;
+let h = 0;
+let s$3 = 0;
+let l = 0;
 class ColorHSL extends Float32Array {
     dataType = ArraybufferDataType.COLOR_HSL;
     static fromRGBUnsignedNormal(r, g, b, out = new ColorHSL()) {
@@ -666,6 +614,43 @@ class ColorRGBA extends Uint8Array {
         out[3] = arr[3];
         return out;
     };
+    static fromColorRYB = (color, out = new ColorRGBA()) => {
+        let r = color[0], y = color[1], b = color[2];
+        // Remove the whiteness from the color.
+        let w = Math.min(r, y, b);
+        r -= w;
+        y -= w;
+        b -= w;
+        let my = Math.max(r, y, b);
+        // Get the green out of the yellow and blue
+        let g = Math.min(y, b);
+        y -= g;
+        b -= g;
+        if (b && g) {
+            b *= 2.0;
+            g *= 2.0;
+        }
+        // Redistribute the remaining yellow.
+        r += y;
+        g += y;
+        // Normalize to values.
+        let mg = Math.max(r, g, b);
+        if (mg) {
+            let n = my / mg;
+            r *= n;
+            g *= n;
+            b *= n;
+        }
+        // Add the white back in.
+        r += w;
+        g += w;
+        b += w;
+        out[0] = r;
+        out[1] = g;
+        out[2] = b;
+        out[3] = 1;
+        return out;
+    };
     static fromHex = (hex, alpha = 255, out = new ColorRGBA()) => {
         out[0] = hex >> 16;
         out[1] = (hex >> 8) & 255;
@@ -673,14 +658,16 @@ class ColorRGBA extends Uint8Array {
         out[3] = alpha;
         return out;
     };
-    static fromHSL = (h, s, l, out = new ColorRGBA) => {
-        var r, g, b;
+    static fromHSL = (h, s, l, out = new ColorRGBA()) => {
+        let r;
+        let g;
+        let b;
         if (s === 0) {
             r = g = b = l; // achromatic
         }
         else {
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
+            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            let p = 2 * l - q;
             r = hue2rgb(p, q, h + 1 / 3);
             g = hue2rgb(p, q, h);
             b = hue2rgb(p, q, h - 1 / 3);
@@ -776,9 +763,7 @@ class ColorRGB extends Uint8Array {
         return new ColorRGB(r, g, b);
     };
     static equals = (a, b) => {
-        return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
-            (a.g ?? a[1]) === (b.g ?? b[1]) &&
-            (a.b ?? a[2]) === (b.b ?? b[2]));
+        return (a.r ?? a[0]) === (b.r ?? b[0]) && (a.g ?? a[1]) === (b.g ?? b[1]) && (a.b ?? a[2]) === (b.b ?? b[2]);
     };
     static fromArray = (arr, out = new ColorRGB()) => {
         out[0] = arr[0];
@@ -786,20 +771,58 @@ class ColorRGB extends Uint8Array {
         out[2] = arr[2];
         return out;
     };
+    static fromColorRYB(color, out = new ColorRGB()) {
+        let r = color[0], y = color[1], b = color[2];
+        // Remove the whiteness from the color.
+        let w = Math.min(r, y, b);
+        r -= w;
+        y -= w;
+        b -= w;
+        let my = Math.max(r, y, b);
+        // Get the green out of the yellow and blue
+        let g = Math.min(y, b);
+        y -= g;
+        b -= g;
+        if (b && g) {
+            b *= 2.0;
+            g *= 2.0;
+        }
+        // Redistribute the remaining yellow.
+        r += y;
+        g += y;
+        // Normalize to values.
+        let mg = Math.max(r, g, b);
+        if (mg) {
+            let n = my / mg;
+            r *= n;
+            g *= n;
+            b *= n;
+        }
+        // Add the white back in.
+        r += w;
+        g += w;
+        b += w;
+        out[0] = r;
+        out[1] = g;
+        out[2] = b;
+        return out;
+    }
     static fromHex = (hex, out = new ColorRGB()) => {
         out[0] = hex >> 16;
         out[1] = (hex >> 8) & 255;
         out[2] = hex & 255;
         return out;
     };
-    static fromHSL = (h, s, l, out = new ColorRGB) => {
-        var r, g, b;
+    static fromHSL = (h, s, l, out = new ColorRGB()) => {
+        let r;
+        let g;
+        let b;
         if (s === 0) {
             r = g = b = l; // achromatic
         }
         else {
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
+            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            let p = 2 * l - q;
             r = hue2rgb(p, q, h + 1 / 3);
             g = hue2rgb(p, q, h);
             b = hue2rgb(p, q, h - 1 / 3);
@@ -826,7 +849,7 @@ class ColorRGB extends Uint8Array {
             return ColorRGB.fromHex(COLOR_HEX_MAP[str], out);
         }
         else if (str.startsWith("#")) {
-            str = str.substr(1);
+            str = str.substring(1);
             return ColorRGB.fromScalar(parseInt(str, 16), out);
         }
         else if (str.startsWith("rgb(")) {
@@ -870,6 +893,83 @@ class ColorRGB extends Uint8Array {
     }
 }
 
+class ColorRYB extends Uint8Array {
+    static average = (color) => {
+        return (color[0] + color[1] + color[2]) / 3;
+    };
+    static averageWeighted = (color, wr = 0.333333, wy = 0.333334, wb = 0.333333) => {
+        return color[0] * wr + color[1] * wy + color[2] * wb;
+    };
+    static clone = (color) => {
+        return new ColorRYB(color[0], color[1], color[2]);
+    };
+    static create = (r = 0, g = 0, b = 0) => {
+        return new ColorRYB(r, g, b);
+    };
+    static equals = (a, b) => {
+        return (a.r ?? a[0]) === (b.r ?? b[0]) && (a.y ?? a[1]) === (b.y ?? b[1]) && (a.b ?? a[2]) === (b.b ?? b[2]);
+    };
+    static fromArray = (arr, out = new ColorRYB()) => {
+        out[0] = arr[0];
+        out[1] = arr[1];
+        out[2] = arr[2];
+        return out;
+    };
+    static fromJson = (json, out = new ColorRYB()) => {
+        out[0] = json.r;
+        out[1] = json.y;
+        out[2] = json.b;
+        return out;
+    };
+    static fromRGB = (rgb, out = new ColorRYB()) => {
+        rgb[0];
+        rgb[1];
+        rgb[2];
+        return out;
+    };
+    static fromScalar = (scalar, out = new ColorRYB()) => {
+        out[0] = scalar;
+        out[1] = scalar;
+        out[2] = scalar;
+        return out;
+    };
+    static fromString = (str, out = new ColorRYB()) => {
+        if (str.startsWith("ryb(")) {
+            str = str.substring(4, str.length - 1);
+            const arr = str.split(",");
+            out[0] = parseInt(arr[0], 10);
+            out[1] = parseInt(arr[1], 10);
+            out[2] = parseInt(arr[2], 10);
+        }
+        return out;
+    };
+    dataType = ArraybufferDataType.COLOR_RGB;
+    constructor(r = 0, y = 0, b = 0) {
+        super(3);
+        this[0] = r;
+        this[1] = y;
+        this[2] = b;
+    }
+    get r() {
+        return this[0];
+    }
+    set r(val) {
+        this[0] = val;
+    }
+    get y() {
+        return this[1];
+    }
+    set y(val) {
+        this[1] = val;
+    }
+    get b() {
+        return this[2];
+    }
+    set b(val) {
+        this[2] = val;
+    }
+}
+
 class ColorGPU extends Float32Array {
     static average = (color) => {
         return (color[0] + color[1] + color[2]) / 3;
@@ -896,14 +996,16 @@ class ColorGPU extends Float32Array {
         out[3] = arr[3];
         return out;
     };
-    static fromColorHSL = (h, s, l, out = new ColorGPU) => {
-        var r, g, b;
+    static fromColorHSL = (h, s, l, out = new ColorGPU()) => {
+        let r;
+        let g;
+        let b;
         if (s === 0) {
             r = g = b = l; // achromatic
         }
         else {
-            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            var p = 2 * l - q;
+            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            let p = 2 * l - q;
             r = hue2rgb(p, q, h + 1 / 3);
             g = hue2rgb(p, q, h);
             b = hue2rgb(p, q, h - 1 / 3);
@@ -925,6 +1027,43 @@ class ColorGPU extends Float32Array {
         out[1] = color[1] / 255;
         out[2] = color[2] / 255;
         out[3] = color[3] / 255;
+        return out;
+    }
+    static fromColorRYB(color, out = new ColorGPU()) {
+        let r = color[0], y = color[1], b = color[2];
+        // Remove the whiteness from the color.
+        let w = Math.min(r, y, b);
+        r -= w;
+        y -= w;
+        b -= w;
+        let my = Math.max(r, y, b);
+        // Get the green out of the yellow and blue
+        let g = Math.min(y, b);
+        y -= g;
+        b -= g;
+        if (b && g) {
+            b *= 2.0;
+            g *= 2.0;
+        }
+        // Redistribute the remaining yellow.
+        r += y;
+        g += y;
+        // Normalize to values.
+        let mg = Math.max(r, g, b);
+        if (mg) {
+            let n = my / mg;
+            r *= n;
+            g *= n;
+            b *= n;
+        }
+        // Add the white back in.
+        r += w;
+        g += w;
+        b += w;
+        out[0] = r / 255;
+        out[1] = g / 255;
+        out[2] = b / 255;
+        out[3] = 1;
         return out;
     }
     static fromHex = (hex, alpha = 1, out = new ColorGPU()) => {
@@ -1761,8 +1900,14 @@ class Vector2 extends Float32Array {
     }
 }
 
-let ax$1, ay$1, az$1, bx$1, by$1, bz$1;
-let ag, s$1;
+let ax$1;
+let ay$1;
+let az$1;
+let bx$1;
+let by$1;
+let bz$1;
+let ag;
+let s$1;
 class Vector3 extends Float32Array {
     static VECTOR3_ZERO = new Vector3(0, 0, 0);
     static VECTOR3_ONE = new Vector3(1, 1, 1);
@@ -1791,7 +1936,10 @@ class Vector3 extends Float32Array {
         bx$1 = b[0];
         by$1 = b[1];
         bz$1 = b[2];
-        const mag1 = Math.sqrt(ax$1 * ax$1 + ay$1 * ay$1 + az$1 * az$1), mag2 = Math.sqrt(bx$1 * bx$1 + by$1 * by$1 + bz$1 * bz$1), mag = mag1 * mag2, cosine = mag && Vector3.dot(a, b) / mag;
+        const mag1 = Math.sqrt(ax$1 * ax$1 + ay$1 * ay$1 + az$1 * az$1);
+        const mag2 = Math.sqrt(bx$1 * bx$1 + by$1 * by$1 + bz$1 * bz$1);
+        const mag = mag1 * mag2;
+        const cosine = mag && Vector3.dot(a, b) / mag;
         return Math.acos(clamp(cosine, -1, 1));
     };
     static clamp = (a, min, max, out = new Vector3()) => {
@@ -2056,13 +2204,22 @@ class Vector3 extends Float32Array {
         return out;
     };
     static transformQuat = (a, q, out = new Vector3()) => {
-        const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
-        const x = a[0], y = a[1], z = a[2];
+        const qx = q[0];
+        const qy = q[1];
+        const qz = q[2];
+        const qw = q[3];
+        const x = a[0];
+        const y = a[1];
+        const z = a[2];
         // var qvec = [qx, qy, qz];
         // var uv = vec3.cross([], qvec, a);
-        let uvx = qy * z - qz * y, uvy = qz * x - qx * z, uvz = qx * y - qy * x;
+        let uvx = qy * z - qz * y;
+        let uvy = qz * x - qx * z;
+        let uvz = qx * y - qy * x;
         // var uuv = vec3.cross([], qvec, uv);
-        let uuvx = qy * uvz - qz * uvy, uuvy = qz * uvx - qx * uvz, uuvz = qx * uvy - qy * uvx;
+        let uuvx = qy * uvz - qz * uvy;
+        let uuvy = qz * uvx - qx * uvz;
+        let uuvz = qx * uvy - qy * uvx;
         // vec3.scale(uv, uv, 2 * w);
         const w2 = qw * 2;
         uvx *= w2;
@@ -5729,1462 +5886,6 @@ class World extends EventFirer {
     }
 }
 
-class Matrix3Component extends Component {
-    constructor(name, data = Matrix3.create(), tags = []) {
-        super(name, data, tags);
-        this.dirty = true;
-    }
-}
-const updateModelMatrixComponent$1 = (mesh) => {
-    let p3 = mesh.position;
-    let r3 = mesh.rotation;
-    let s3 = mesh.scaling;
-    let a3 = mesh.anchor;
-    let m3 = mesh.modelMatrix;
-    let worldMatrix = mesh.worldMatrix;
-    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
-        Matrix3.fromArray(p3?.data || Matrix3.UNIT_MATRIX3, m3.data);
-        if (r3) {
-            Matrix3.multiplyRotationMatrix(m3.data, r3.data, m3.data);
-        }
-        if (s3) {
-            Matrix3.multiplyScaleMatrix(m3.data, s3.data, m3.data);
-        }
-        if (a3) {
-            Matrix3.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
-        }
-        if (p3) {
-            p3.dirty = false;
-        }
-        if (r3) {
-            r3.dirty = false;
-        }
-        if (s3) {
-            s3.dirty = false;
-        }
-        if (a3) {
-            a3.dirty = false;
-        }
-    }
-    if (mesh.parent) {
-        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
-        Matrix3.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
-    }
-    else {
-        Matrix3.fromArray(m3.data, worldMatrix.data);
-    }
-    return m3;
-};
-
-class Anchor2 extends Matrix3Component {
-    vec2 = new Vector2();
-    constructor(vec = Vector2.VECTOR2_ZERO) {
-        super(ANCHOR_2D, Matrix3.create(), [{
-                label: ANCHOR_2D,
-                unique: true
-            }]);
-        Vector2.fromArray(vec, 0, this.vec2);
-        this.update();
-    }
-    get x() {
-        return this.vec2[0];
-    }
-    set x(value) {
-        this.vec2[0] = value;
-        this.data[6] = -value;
-        this.dirty = true;
-    }
-    get y() {
-        return this.vec2[1];
-    }
-    set y(value) {
-        this.vec2[1] = value;
-        this.data[7] = -value;
-        this.dirty = true;
-    }
-    set(arr) {
-        this.vec2.set(arr);
-        return this.update();
-    }
-    setXY(x, y, z) {
-        this.vec2[0] = x;
-        this.vec2[1] = y;
-        return this.update();
-    }
-    update() {
-        this.data[6] = -this.x;
-        this.data[7] = -this.y;
-        this.dirty = true;
-        return this;
-    }
-}
-
-class APosition2 extends Matrix3Component {
-    constructor(data = Matrix3.create()) {
-        super(TRANSLATION_2D, data, [{
-                label: TRANSLATION_2D,
-                unique: true
-            }]);
-    }
-}
-
-class AProjection2 extends Matrix3Component {
-    constructor(data = Matrix3.create()) {
-        super(PROJECTION_2D, data, [{
-                label: PROJECTION_2D,
-                unique: true
-            }]);
-    }
-}
-
-class ARotation2 extends Matrix3Component {
-    constructor(data = Matrix3.create()) {
-        super(ROTATION_2D, data, [{
-                label: ROTATION_2D,
-                unique: true
-            }]);
-    }
-}
-
-class AScale2 extends Matrix3Component {
-    constructor(data = Matrix3.create()) {
-        super(SCALING_2D, data, [{
-                label: SCALING_2D,
-                unique: true
-            }]);
-    }
-}
-
-class EuclidPosition2 extends APosition2 {
-    vec2 = new Vector2();
-    constructor(vec2 = new Float32Array(2)) {
-        super();
-        Vector2.fromArray(vec2, 0, this.vec2);
-        this.update();
-    }
-    get x() {
-        return this.vec2[0];
-    }
-    set x(value) {
-        this.vec2[0] = value;
-        this.data[6] = value;
-        this.dirty = true;
-    }
-    get y() {
-        return this.vec2[1];
-    }
-    set y(value) {
-        this.vec2[1] = value;
-        this.data[7] = value;
-        this.dirty = true;
-    }
-    set(arr) {
-        this.vec2.set(arr);
-        this.data[6] = arr[0];
-        this.data[7] = arr[1];
-        this.dirty = true;
-        return this;
-    }
-    setXY(x, y) {
-        this.vec2[0] = x;
-        this.vec2[1] = y;
-        this.data[6] = x;
-        this.data[7] = y;
-        this.dirty = true;
-        return this;
-    }
-    update() {
-        Matrix3.fromTranslation(this.vec2, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-class AngleRotation2 extends ARotation2 {
-    #angle;
-    data = Matrix3.identity();
-    constructor(angle = 0) {
-        super();
-        this.#angle = angle;
-        this.update();
-    }
-    get a() {
-        return this.#angle;
-    }
-    set a(value) {
-        this.#angle = value;
-        this.update();
-    }
-    update() {
-        Matrix3.fromRotation(this.#angle, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-class PolarPosition2 extends APosition2 {
-    polar = new Polar();
-    constructor(radius = 0, angle = 0) {
-        super();
-        this.polar.r = radius;
-        this.polar.a = angle;
-    }
-    get r() {
-        return this.polar.r;
-    }
-    set r(value) {
-        this.polar.r = value;
-        this.update();
-    }
-    get a() {
-        return this.polar[1];
-    }
-    set a(value) {
-        this.polar[1] = value;
-        this.update();
-    }
-    set(r, a) {
-        this.polar.a = a;
-        this.polar.r = r;
-        return this;
-    }
-    update() {
-        this.data[6] = this.polar.x();
-        this.data[7] = this.polar.y();
-        this.dirty = true;
-        return this;
-    }
-}
-
-class Projection2D extends AProjection2 {
-    options;
-    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005) {
-        super();
-        this.options = {
-            left,
-            right,
-            bottom,
-            top
-        };
-        this.update();
-    }
-    get left() {
-        return this.options.left;
-    }
-    set left(value) {
-        this.options.left = value;
-        this.update();
-    }
-    get right() {
-        return this.right;
-    }
-    set right(value) {
-        this.options.right = value;
-        this.update();
-    }
-    get top() {
-        return this.top;
-    }
-    set top(value) {
-        this.options.top = value;
-        this.update();
-    }
-    get bottom() {
-        return this.bottom;
-    }
-    set bottom(value) {
-        this.options.bottom = value;
-        this.update();
-    }
-    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top) {
-        this.options.left = left;
-        this.options.right = right;
-        this.options.bottom = bottom;
-        this.options.top = top;
-        return this.update();
-    }
-    update() {
-        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-const orthogonal = (left, right, bottom, top, out = new Matrix3()) => {
-    const c = 1 / (left - right);
-    const b = 1 / (bottom - top);
-    out[0] = -2 * c;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = -2 * b;
-    out[5] = 0;
-    // out[6] = 0;
-    // out[7] = 0;
-    out[6] = (left + right) * c;
-    out[7] = (top + bottom) * b;
-    out[8] = 1;
-    return out;
-};
-
-const DEFAULT_SCALE$1 = [1, 1];
-class Vector2Scale2 extends AScale2 {
-    vec2;
-    constructor(vec2 = new Float32Array(DEFAULT_SCALE$1)) {
-        super();
-        this.vec2 = vec2;
-        this.update();
-    }
-    get x() {
-        return this.vec2[0];
-    }
-    set x(value) {
-        this.vec2[0] = value;
-        this.data[0] = value;
-        this.dirty = true;
-    }
-    get y() {
-        return this.vec2[1];
-    }
-    set y(value) {
-        this.vec2[1] = value;
-        this.data[4] = value;
-        this.dirty = true;
-    }
-    set(arr) {
-        this.vec2.set(arr);
-        return this.update();
-    }
-    setXY(x, y, z) {
-        this.vec2[0] = x;
-        this.vec2[1] = y;
-        this.data[0] = x;
-        this.data[4] = y;
-        this.dirty = true;
-        return this;
-    }
-    update() {
-        Matrix3.fromScaling(this.vec2, this.data);
-        return this;
-    }
-}
-
-class Matrix4Component extends Component {
-    constructor(name, data = Matrix4.create(), tags = []) {
-        super(name, data, tags);
-        this.dirty = true;
-    }
-}
-const updateModelMatrixComponent = (mesh) => {
-    let p3 = mesh.position;
-    let r3 = mesh.rotation;
-    let s3 = mesh.scaling;
-    let a3 = mesh.anchor;
-    let m3 = mesh.modelMatrix;
-    let worldMatrix = mesh.worldMatrix;
-    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
-        Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
-        if (r3) {
-            Matrix4.multiply(m3.data, r3.data, m3.data);
-        }
-        if (s3) {
-            Matrix4.multiplyScaleMatrix(m3.data, s3.data, m3.data);
-        }
-        if (a3) {
-            Matrix4.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
-        }
-        if (p3) {
-            p3.dirty = false;
-        }
-        if (r3) {
-            r3.dirty = false;
-        }
-        if (s3) {
-            s3.dirty = false;
-        }
-        if (a3) {
-            a3.dirty = false;
-        }
-    }
-    if (mesh.parent) {
-        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
-        Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
-    }
-    else {
-        Matrix4.fromArray(m3.data, worldMatrix.data);
-    }
-    return m3;
-};
-
-class Anchor3 extends Matrix4Component {
-    vec3 = new Vector3();
-    constructor(vec = Vector3.VECTOR3_ZERO) {
-        super(ANCHOR_3D, Matrix4.create(), [{
-                label: ANCHOR_3D,
-                unique: true
-            }]);
-        Vector3.fromArray(vec, 0, this.vec3);
-        this.update();
-    }
-    get x() {
-        return this.vec3[0];
-    }
-    set x(value) {
-        this.vec3[0] = value;
-        this.data[12] = -value;
-        this.dirty = true;
-    }
-    get y() {
-        return this.vec3[1];
-    }
-    set y(value) {
-        this.vec3[1] = value;
-        this.data[13] = -value;
-        this.dirty = true;
-    }
-    get z() {
-        return this.vec3[2];
-    }
-    set z(value) {
-        this.vec3[2] = value;
-        this.data[14] = -value;
-        this.dirty = true;
-    }
-    set(arr) {
-        this.vec3.set(arr);
-        return this.update();
-    }
-    setXYZ(x, y, z) {
-        this.vec3[0] = x;
-        this.vec3[1] = y;
-        this.vec3[2] = z;
-        return this.update();
-    }
-    update() {
-        this.data[12] = -this.x;
-        this.data[13] = -this.y;
-        this.data[14] = -this.z;
-        this.dirty = true;
-        return this;
-    }
-}
-
-class APosition3 extends Matrix4Component {
-    constructor(data = Matrix4.create()) {
-        super(TRANSLATION_3D, data, [{
-                label: TRANSLATION_3D,
-                unique: true
-            }]);
-    }
-}
-
-class AProjection3 extends Matrix4Component {
-    constructor(data = Matrix4.create()) {
-        super(PROJECTION_3D, data, [{
-                label: PROJECTION_3D,
-                unique: true
-            }]);
-    }
-}
-
-class ARotation3 extends Matrix4Component {
-    constructor(data = Matrix4.create()) {
-        super(ROTATION_3D, data, [{
-                label: ROTATION_3D,
-                unique: true
-            }]);
-    }
-}
-
-class AScale3 extends Matrix4Component {
-    constructor(data = Matrix4.create()) {
-        super(SCALING_3D, data, [{
-                label: SCALING_3D,
-                unique: true
-            }]);
-    }
-}
-
-class EuclidPosition3 extends APosition3 {
-    vec3 = new Vector3();
-    constructor(vec3) {
-        super();
-        if (vec3) {
-            Vector3.fromArray(vec3, 0, this.vec3);
-        }
-        this.update();
-    }
-    get x() {
-        return this.vec3[0];
-    }
-    set x(value) {
-        this.vec3[0] = value;
-        this.data[12] = value;
-        this.dirty = true;
-    }
-    get y() {
-        return this.vec3[1];
-    }
-    set y(value) {
-        this.vec3[1] = value;
-        this.data[13] = value;
-        this.dirty = true;
-    }
-    get z() {
-        return this.vec3[2];
-    }
-    set z(value) {
-        this.vec3[2] = value;
-        this.data[14] = value;
-        this.dirty = true;
-    }
-    set(arr) {
-        this.vec3.set(arr);
-        this.data[12] = arr[0];
-        this.data[13] = arr[1];
-        this.data[14] = arr[2];
-        this.dirty = true;
-        return this;
-    }
-    setXYZ(x, y, z) {
-        this.vec3[0] = x;
-        this.vec3[1] = y;
-        this.vec3[2] = z;
-        this.data[12] = x;
-        this.data[13] = y;
-        this.data[14] = z;
-        this.dirty = true;
-        return this;
-    }
-    update() {
-        Matrix4.fromTranslation(this.vec3, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-class EulerRotation3 extends ARotation3 {
-    euler;
-    constructor(euler = {
-        x: 0,
-        y: 0,
-        z: 0,
-        order: EulerAngle.ORDERS.XYZ,
-    }) {
-        super();
-        this.euler = euler;
-        this.update();
-    }
-    get x() {
-        return this.euler.x;
-    }
-    set x(value) {
-        this.euler.x = value;
-        this.update();
-    }
-    get y() {
-        return this.euler.y;
-    }
-    set y(value) {
-        this.euler.y = value;
-        this.update();
-    }
-    get z() {
-        return this.euler.z;
-    }
-    set z(value) {
-        this.euler.z = value;
-        this.update();
-    }
-    get order() {
-        return this.euler.order;
-    }
-    set order(value) {
-        this.euler.order = value;
-        this.update();
-    }
-    set(arr) {
-        this.x = arr.x;
-        this.y = arr.y;
-        this.z = arr.z;
-        this.order = arr.order;
-        return this.update();
-    }
-    update() {
-        Matrix4.fromEuler(this.euler, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-class OrthogonalProjection extends AProjection3 {
-    options;
-    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 100) {
-        super();
-        this.options = {
-            left,
-            right,
-            bottom,
-            top,
-            near,
-            far,
-        };
-        this.update();
-    }
-    get left() {
-        return this.options.left;
-    }
-    set left(value) {
-        this.options.left = value;
-        this.update();
-    }
-    get right() {
-        return this.options.right;
-    }
-    set right(value) {
-        this.options.right = value;
-        this.update();
-    }
-    get top() {
-        return this.options.top;
-    }
-    set top(value) {
-        this.options.top = value;
-        this.update();
-    }
-    get bottom() {
-        return this.options.bottom;
-    }
-    set bottom(value) {
-        this.options.bottom = value;
-        this.update();
-    }
-    get near() {
-        return this.options.near;
-    }
-    set near(value) {
-        this.options.near = value;
-        this.update();
-    }
-    get far() {
-        return this.options.far;
-    }
-    set far(value) {
-        this.options.far = value;
-        this.update();
-    }
-    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top, near = this.near, far = this.far) {
-        this.options.left = left;
-        this.options.right = right;
-        this.options.bottom = bottom;
-        this.options.top = top;
-        this.options.near = near;
-        this.options.far = far;
-        return this.update();
-    }
-    update() {
-        Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-class PerspectiveProjection extends AProjection3 {
-    options;
-    constructor(fovy = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
-        super();
-        this.options = {
-            fovy,
-            aspect,
-            near,
-            far,
-        };
-        this.update();
-    }
-    get fovy() {
-        return this.options.fovy;
-    }
-    set fovy(value) {
-        this.options.fovy = value;
-        this.update();
-    }
-    get aspect() {
-        return this.options.aspect;
-    }
-    set aspect(value) {
-        this.options.aspect = value;
-        this.update();
-    }
-    get near() {
-        return this.options.near;
-    }
-    set near(value) {
-        this.options.near = value;
-        this.update();
-    }
-    get far() {
-        return this.options.far;
-    }
-    set far(value) {
-        this.options.far = value;
-        this.update();
-    }
-    set(fovy = this.fovy, aspect = this.aspect, near = this.near, far = this.far) {
-        this.options.fovy = fovy;
-        this.options.aspect = aspect;
-        this.options.near = near;
-        this.options.far = far;
-        return this.update();
-    }
-    update() {
-        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-class SphericalPosition3 extends APosition3 {
-    spherical = new Spherical();
-    #vec3 = new Vector3();
-    constructor(spherical = new Float32Array(3)) {
-        super();
-        Spherical.fromArray(spherical, this.spherical);
-        this.update();
-    }
-    get radius() {
-        return this.spherical[0];
-    }
-    set radius(value) {
-        this.spherical[0] = value;
-        this.update();
-    }
-    get phi() {
-        return this.spherical[1];
-    }
-    set phi(value) {
-        this.spherical[1] = value;
-        this.update();
-    }
-    get theta() {
-        return this.spherical[2];
-    }
-    set theta(value) {
-        this.spherical[2] = value;
-        this.update();
-    }
-    set(arr) {
-        this.spherical.set(arr);
-        return this.update();
-    }
-    update() {
-        this.spherical.toVector3(this.#vec3);
-        Matrix4.fromTranslation(this.#vec3, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-const DEFAULT_SCALE = [1, 1, 1];
-class Vector3Scale3 extends AScale3 {
-    vec3;
-    constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
-        super();
-        this.vec3 = Vector3.fromArray(vec3);
-        this.update();
-    }
-    get x() {
-        return this.vec3[0];
-    }
-    set x(value) {
-        this.vec3[0] = value;
-        this.data[0] = value;
-        this.dirty = true;
-    }
-    get y() {
-        return this.vec3[1];
-    }
-    set y(value) {
-        this.vec3[1] = value;
-        this.data[5] = value;
-        this.dirty = true;
-    }
-    get z() {
-        return this.vec3[1];
-    }
-    set z(value) {
-        this.vec3[2] = value;
-        this.data[10] = value;
-        this.dirty = true;
-    }
-    set(arr) {
-        if (typeof arr === 'number') {
-            Vector3.fromScalar(arr, this.vec3);
-        }
-        else {
-            this.vec3.set(arr);
-        }
-        return this.update();
-    }
-    setXYZ(x, y, z) {
-        this.vec3[0] = x;
-        this.vec3[1] = y;
-        this.vec3[2] = z;
-        this.data[0] = x;
-        this.data[5] = y;
-        this.data[10] = z;
-        this.dirty = true;
-        return this;
-    }
-    update() {
-        Matrix4.fromScaling(this.vec3, this.data);
-        return this;
-    }
-}
-
-class PerspectiveProjectionX extends AProjection3 {
-    options;
-    constructor(fovx = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
-        super();
-        this.options = {
-            fovx,
-            aspect,
-            near,
-            far,
-        };
-        this.update();
-    }
-    get fovx() {
-        return this.options.fovx;
-    }
-    set fovx(value) {
-        this.options.fovx = value;
-        this.update();
-    }
-    get aspect() {
-        return this.options.aspect;
-    }
-    set aspect(value) {
-        this.options.aspect = value;
-        this.update();
-    }
-    get near() {
-        return this.options.near;
-    }
-    set near(value) {
-        this.options.near = value;
-        this.update();
-    }
-    get far() {
-        return this.options.far;
-    }
-    set far(value) {
-        this.options.far = value;
-        this.update();
-    }
-    set(fovx = this.fovx, aspect = this.aspect, near = this.near, far = this.far) {
-        this.options.fovx = fovx;
-        this.options.aspect = aspect;
-        this.options.near = near;
-        this.options.far = far;
-        return this.update();
-    }
-    update() {
-        Matrix4.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
-        this.dirty = true;
-        return this;
-    }
-}
-
-var getEuclidPosition3Proxy = (position) => {
-    if (position.isEntity) {
-        position = position.getComponent(TRANSLATION_3D);
-    }
-    return new Proxy(position, {
-        get: (target, property) => {
-            if (property === 'x') {
-                return target.data[12];
-            }
-            else if (property === 'y') {
-                return target.data[13];
-            }
-            else if (property === 'z') {
-                return target.data[14];
-            }
-            return target[property];
-        },
-        set: (target, property, value) => {
-            if (property === 'x') {
-                target.dirty = true;
-                target.data[12] = value;
-                return true;
-            }
-            else if (property === 'y') {
-                target.dirty = true;
-                target.data[13] = value;
-                return true;
-            }
-            else if (property === 'z') {
-                target.dirty = true;
-                target.data[14] = value;
-                return true;
-            }
-            else if (property === 'dirty') {
-                target.dirty = value;
-                return true;
-            }
-            return false;
-        },
-    });
-};
-
-var getEulerRotation3Proxy = (position) => {
-    if (position.isEntity) {
-        position = position.getComponent(ROTATION_3D);
-    }
-    let euler = EulerAngle.fromMatrix4(position.data);
-    return new Proxy(position, {
-        get: (target, property) => {
-            if (property === 'x' || property === 'y' || property === 'z' || property === 'order') {
-                return euler[property];
-            }
-            return target[property];
-        },
-        set: (target, property, value) => {
-            if (property === 'x' || property === 'y' || property === 'z') {
-                target.dirty = true;
-                euler[property] = value;
-                Matrix4.fromEuler(euler, target.data);
-                return true;
-            }
-            else if (property === 'order') {
-                target.dirty = true;
-                euler.order = value;
-                Matrix4.fromEuler(euler, target.data);
-                return true;
-            }
-            else if (property === 'dirty') {
-                target.dirty = value;
-                return true;
-            }
-            return false;
-        },
-    });
-};
-
-var index$3 = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	getEuclidPosition3Proxy: getEuclidPosition3Proxy,
-	getEulerRotation3Proxy: getEulerRotation3Proxy
-});
-
-var EngineEvents;
-(function (EngineEvents) {
-    EngineEvents["LOOP_STARTED"] = "loop-started";
-    EngineEvents["LOOP_ENDED"] = "loop-ended";
-})(EngineEvents || (EngineEvents = {}));
-const DEFAULT_ENGINE_OPTIONS = {
-    autoStart: true,
-    container: document.body
-};
-
-class EngineTaskChunk extends EventFirer {
-    static START = 'start';
-    static END = 'end';
-    name;
-    disabled = false;
-    time = 0;
-    delta = 0;
-    taskTimeMap = new WeakMap();
-    #tasks = [];
-    get tasksCount() {
-        return this.#tasks.length;
-    }
-    constructor(name) {
-        super();
-        this.name = name;
-    }
-    addTask(task, needTimeReset) {
-        this.#tasks.push(task);
-        if (needTimeReset) {
-            this.taskTimeMap.set(task, this.time);
-        }
-    }
-    removeTask(task) {
-        let i = this.#tasks.indexOf(task);
-        if (i > -1) {
-            this.#tasks.splice(i, 1);
-        }
-    }
-    run = (time, delta) => {
-        this.time = time;
-        this.delta = delta;
-        this.fire(EngineTaskChunk.START, this);
-        let len = this.#tasks.length;
-        for (let i = 0; i < len; i++) {
-            const t = this.#tasks[i];
-            t(time - (this.taskTimeMap.get(t) ?? 0), delta);
-        }
-        return this.fire(EngineTaskChunk.END, this);
-    };
-}
-
-class Engine extends mixin$1(Timeline) {
-    options;
-    static Events = EngineEvents;
-    taskChunkTimeMap = new Map();
-    #taskChunks = new Map();
-    constructor(options = {}) {
-        super();
-        this.options = {
-            ...DEFAULT_ENGINE_OPTIONS,
-            ...options,
-        };
-        if (this.options.autoStart) {
-            this.start();
-        }
-    }
-    addTask(task, needTimeReset, chunkName) {
-        if (!chunkName) {
-            return super.addTask(task, needTimeReset);
-        }
-        const chunk = this.#taskChunks.get(chunkName);
-        if (!chunkName) {
-            return super.addTask(task, needTimeReset);
-        }
-        chunk.addTask(task, needTimeReset);
-        return this;
-    }
-    addTaskChunk(chunk, needTimeReset) {
-        this.#taskChunks.set(chunk.name, chunk);
-        if (needTimeReset) {
-            this.taskChunkTimeMap.set(chunk, this.time);
-        }
-        return this;
-    }
-    removeTask(task, chunkName) {
-        if (!chunkName) {
-            super.removeTask(task);
-        }
-        else {
-            const chunk = this.#taskChunks.get(chunkName);
-            if (chunk) {
-                chunk.removeTask(task);
-            }
-        }
-        return this;
-    }
-    removeTaskChunk(chunk) {
-        if (typeof chunk === 'string') {
-            this.#taskChunks.delete(chunk);
-        }
-        else {
-            this.#taskChunks.delete(chunk.name);
-        }
-        return this;
-    }
-    runChunk(chunk, time, delta) {
-        if (chunk.disabled) {
-            return this;
-        }
-        chunk.run(time - (this.taskChunkTimeMap.get(chunk) ?? 0), delta);
-        return this;
-    }
-    update(time, delta) {
-        this.fire(Engine.Events.LOOP_STARTED, this);
-        super.update(time, delta);
-        this.#taskChunks.forEach((chunk) => {
-            this.runChunk(chunk, time, delta);
-        });
-        this.fire(Engine.Events.LOOP_ENDED, this);
-        return this;
-    }
-}
-
-class Object2 extends Entity {
-    anchor;
-    position;
-    rotation;
-    scaling;
-    modelMatrix;
-    worldMatrix;
-    constructor(name = "Object3") {
-        super(name);
-        this.scaling = new Vector2Scale2();
-        this.position = new EuclidPosition2();
-        this.rotation = new AngleRotation2();
-        this.anchor = new Anchor2();
-        this.modelMatrix = new Matrix3Component(MODEL_2D, Matrix3.create(), [{
-                label: MODEL_3D,
-                unique: true
-            }]);
-        this.worldMatrix = new Matrix3Component(WORLD_MATRIX3, Matrix3.create(), [{
-                label: WORLD_MATRIX3,
-                unique: true
-            }]);
-    }
-}
-
-class Camera2 extends Object2 {
-    projection;
-    constructor(name = "Camera2", projection) {
-        super(name);
-        this.projection = projection;
-    }
-}
-
-class Object3 extends Entity {
-    anchor;
-    position;
-    rotation;
-    scaling;
-    modelMatrix;
-    worldMatrix;
-    constructor(name = "Object3") {
-        super(name);
-        this.scaling = new Vector3Scale3();
-        this.position = new EuclidPosition3();
-        this.rotation = new EulerRotation3();
-        this.anchor = new Anchor3();
-        this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
-                label: MODEL_3D,
-                unique: true
-            }]);
-        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
-                label: WORLD_MATRIX4,
-                unique: true
-            }]);
-    }
-}
-
-class Camera3 extends Object3 {
-    projection;
-    constructor(name = "Camera3", projection) {
-        super(name);
-        this.projection = projection;
-    }
-}
-
-var LoadType;
-(function (LoadType) {
-    LoadType["JSON"] = "json";
-    LoadType["BLOB"] = "blob";
-    LoadType["TEXT"] = "text";
-    LoadType["ARRAY_BUFFER"] = "arrayBuffer";
-})(LoadType || (LoadType = {}));
-
-class ResourceStore extends EventFirer {
-    static WILL_LOAD = "willLoad";
-    static LOADING = "loading";
-    static LOADED = "loaded";
-    static PARSED = "parsed";
-    resourcesMap = new Map();
-    loadItems = {
-        [LoadType.TEXT]: new Map(),
-        [LoadType.JSON]: new Map(),
-        [LoadType.ARRAY_BUFFER]: new Map(),
-        [LoadType.BLOB]: new Map(),
-    };
-    parsers = new Map();
-    #toLoadStack = [];
-    #loadingTasks = new Set();
-    maxTasks = 5;
-    #loadTagsMap = new Map();
-    #countToParse = 0;
-    getResource(name, type) {
-        const map = this.resourcesMap.get(type);
-        if (!map) {
-            return null;
-        }
-        return map.get(name);
-    }
-    setResource(data, type, name) {
-        let map = this.resourcesMap.get(type);
-        if (!map) {
-            map = new Map();
-            this.resourcesMap.set(type, map);
-        }
-        if (data instanceof Array) {
-            for (let i = 0, len = data.length; i < len; i++) {
-                map.set(data[i].name ?? name + '_' + i, data[i]);
-            }
-        }
-        else {
-            map.set(name, data);
-        }
-        return this;
-    }
-    loadAndParse = (arr) => {
-        for (let item of arr) {
-            let check = this.getResource(item.name, item.type);
-            if (check) {
-                // 重复资源不加载
-                continue;
-            }
-            check = this.#loadTagsMap.get(item);
-            if (check) {
-                // 防止一个资源连续执行多次加载
-                continue;
-            }
-            if (item.loadParts.length) {
-                for (let part of item.loadParts) {
-                    this.#toLoadStack.push({
-                        part,
-                        belongsTo: item
-                    });
-                }
-                this.#loadTagsMap.set(item, item.loadParts.length);
-                this.#countToParse++;
-            }
-        }
-        const toLoadLength = this.#toLoadStack.length;
-        this.fire(ResourceStore.WILL_LOAD, this);
-        for (let i = 0; i < toLoadLength && i < this.maxTasks; i++) {
-            const part = this.#toLoadStack.pop();
-            let promise = this.#loadPart(part);
-            promise.finally(() => {
-                this.#loadingTasks.delete(promise);
-                if (this.#toLoadStack.length) {
-                    this.#loadPart(this.#toLoadStack.pop());
-                }
-                else {
-                    this.fire(ResourceStore.LOADED, this);
-                }
-            });
-            this.#loadingTasks.add(promise);
-        }
-    };
-    getUrlLoaded(url, type) {
-        if (type) {
-            return this.loadItems[type].get(url);
-        }
-        let result = this.loadItems[LoadType.TEXT].get(url);
-        if (result) {
-            return result;
-        }
-        result = this.loadItems[LoadType.BLOB].get(url);
-        if (result) {
-            return result;
-        }
-        result = this.loadItems[LoadType.ARRAY_BUFFER].get(url);
-        if (result) {
-            return result;
-        }
-        result = this.loadItems[LoadType.JSON].get(url);
-        if (result) {
-            return result;
-        }
-        return null;
-    }
-    #loadPart = (partRecord) => {
-        const part = partRecord.part;
-        const len = partRecord.belongsTo.loadParts.length;
-        let process = 0;
-        const assets = this.getUrlLoaded(part.url, part.type);
-        if (assets) {
-            return new Promise((resolve) => {
-                part.onLoad?.(assets);
-                resolve(assets);
-            });
-        }
-        return fetch(part.url).then((response) => {
-            const { body, headers } = response;
-            let size = parseInt(headers.get('content-length'), 10) || 0;
-            let currentSize = 0;
-            let stream;
-            const reader = body.getReader();
-            stream = new ReadableStream({
-                start: (controller) => {
-                    const push = (reader) => {
-                        reader.read().then((res) => {
-                            let currentReadData = res;
-                            let { done, value } = res;
-                            if (done) {
-                                controller.close();
-                                return;
-                            }
-                            else {
-                                if (!currentReadData || !currentReadData.value) {
-                                    process = 0;
-                                }
-                                else {
-                                    const arr = currentReadData.value;
-                                    process = arr.length * arr.constructor.BYTES_PER_ELEMENT;
-                                }
-                                currentSize += process;
-                                part.onLoadProgress?.(currentSize, size, process);
-                                controller.enqueue(value);
-                            }
-                            push(reader);
-                        }).catch((e) => {
-                            part.onLoadError?.(e);
-                        });
-                    };
-                    push(reader);
-                },
-                cancel: () => {
-                    part.onCancel?.();
-                }
-            });
-            return new Response(stream, { headers });
-        }).then((response) => {
-            if (part.type === LoadType.JSON) {
-                return response.json();
-            }
-            if (part.type === LoadType.TEXT) {
-                return response.text();
-            }
-            if (part.type === LoadType.BLOB) {
-                return response.blob();
-            }
-            return response.arrayBuffer();
-        }).then((data) => {
-            part.onLoad?.(data);
-            this.loadItems[part.type ?? LoadType.ARRAY_BUFFER].set(part.url, data);
-            let count = this.#loadTagsMap.get(partRecord.belongsTo);
-            partRecord.belongsTo.onLoadProgress?.(len - count + 1, len);
-            if (count < 2) {
-                this.#loadTagsMap.delete(partRecord.belongsTo);
-                partRecord.belongsTo.onLoad?.();
-                this.#parserResource(partRecord.belongsTo);
-            }
-            else {
-                this.#loadTagsMap.set(partRecord.belongsTo, count - 1);
-            }
-            return data;
-        }).catch((e) => {
-            part.onLoadError?.(e);
-        });
-    };
-    #parserResource = (resource) => {
-        let parser = this.parsers.get(resource.type);
-        if (!parser) {
-            resource.onParseError?.(new Error('No parser found: ' + resource.type));
-        }
-        const data = [];
-        for (let part of resource.loadParts) {
-            data.push(this.getUrlLoaded(part.url, part.type));
-        }
-        let result = parser(...data);
-        if (result instanceof Promise) {
-            return result.then((data) => {
-                this.#checkAllParseAndSetResource(resource, data);
-            }).catch((e) => {
-                resource.onParseError?.(e);
-                this.#countToParse--;
-                if (!this.#countToParse) {
-                    this.fire(ResourceStore.PARSED, this);
-                }
-            });
-        }
-        else {
-            this.#checkAllParseAndSetResource(resource, data);
-        }
-        return this;
-    };
-    #checkAllParseAndSetResource = (resource, data) => {
-        this.setResource(data, resource.type, resource.name);
-        resource.onParse?.(data);
-        this.#countToParse--;
-        if (!this.#countToParse) {
-            this.fire(ResourceStore.PARSED, this);
-        }
-    };
-    registerParser(parser, type) {
-        this.parsers.set(type, parser);
-        return this;
-    }
-}
-
-class Texture {
-    data;
-    dirty = true;
-    name;
-    descriptor = {
-        size: [0, 0],
-        format: "rgba8unorm",
-        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-        mipLevelCount: 1,
-        sampleCount: 1,
-        dimension: "2d",
-        viewFormats: [],
-        label: ""
-    };
-    constructor(options) {
-        this.descriptor.size[0] = options.size[0];
-        this.descriptor.size[1] = options.size[1];
-        this.descriptor.format = options.format ?? "rgba8unorm";
-        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
-        this.imageBitmap = options.image;
-        this.name = options.name ?? 'untitled texture';
-    }
-    destroy() {
-        this.data?.close();
-        this.data = undefined;
-    }
-    get width() {
-        return this.descriptor.size[0];
-    }
-    set width(v) {
-        this.descriptor.size[0] = v;
-    }
-    get height() {
-        return this.descriptor.size[1];
-    }
-    set height(v) {
-        this.descriptor.size[1] = v;
-    }
-    get imageBitmap() {
-        return this.data;
-    }
-    set imageBitmap(img) {
-        this.dirty = true;
-        this.data = img;
-    }
-}
-
-const canvases = []; // 储存多个canvas，可能存在n个图同时画
-async function drawSpriteBlock(image, width, height, frame) {
-    const canvas = canvases.pop() || document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (frame.rotation) {
-        ctx.rotate(-constants$1.DEG_90_RAD);
-        ctx.translate(-frame.w, 0);
-    }
-    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx ?? 0, frame.dy ?? 0, frame.w, frame.h);
-    const result = await createImageBitmap(canvas);
-    canvases.push(canvas);
-    if (frame.rotation) {
-        ctx.translate(frame.w, 0);
-        ctx.rotate(constants$1.DEG_90_RAD);
-    }
-    return result;
-}
-
-const AtlasParser = async (blob, json) => {
-    const bitmap = await createImageBitmap(blob);
-    const result = [];
-    for (let i = 0, len = json.frames.length; i < len; i++) {
-        const f = json.frames[i];
-        const tex = new Texture({
-            image: await drawSpriteBlock(bitmap, f.w, f.h, f),
-            size: [f.w, f.h],
-            name: f.name ?? "atlas_" + i
-        });
-        result.push(tex);
-    }
-    return result;
-};
-
-const TextureParser = async (blob) => {
-    const bitmap = await createImageBitmap(blob);
-    return new Texture({
-        size: [bitmap.width, bitmap.height],
-        image: bitmap,
-    });
-};
-
 const DEFAULT_BLEND_STATE = {
     color: {
         srcFactor: 'src-alpha',
@@ -7203,10 +5904,10 @@ class BufferFloat32 extends Float32Array {
     name;
     descriptor = {};
     constructor(option, name = "buffer") {
-        super((option.size ?? 16) >> 2);
+        super((option.size ?? (option.data?.length ?? 4) << 2) >> 2);
         this.name = name;
         this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
-        this.descriptor.size = option.size ?? 16;
+        this.descriptor.size = this.byteLength;
         if (option.data) {
             this.set(option.data);
         }
@@ -7216,6 +5917,63 @@ class BufferFloat32 extends Float32Array {
         this.dirty = true;
     }
 }
+
+// component type
+const ANCHOR_2D = "anchor2";
+const ANCHOR_3D = "anchor3";
+const GEOMETRY = "geometry";
+const MATERIAL = "material";
+const MESH2 = "mesh2";
+const MESH3 = "mesh3";
+const SPRITE3 = "sprite3";
+const MODEL_2D = "model2";
+const MODEL_3D = "model3";
+const PROJECTION_2D = "projection2";
+const PROJECTION_3D = "projection3";
+const RENDERABLE = "renderable";
+const ROTATION_2D = "rotation2";
+const ROTATION_3D = "rotation3";
+const SCALING_2D = "scale2";
+const SCALING_3D = "scale3";
+const TRANSLATION_2D = "position2";
+const TRANSLATION_3D = "position3";
+const WORLD_MATRIX3 = "world-matrix3";
+const WORLD_MATRIX4 = "world-matrix4";
+const VIEWING_3D = "viewing3";
+// uniform type
+const SAMPLER = "sampler";
+const BUFFER = "buffer";
+const TEXTURE_IMAGE = "texture-image";
+const TEXTURE_GPU = "texture-gpu";
+
+var constants$1 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	ANCHOR_2D: ANCHOR_2D,
+	ANCHOR_3D: ANCHOR_3D,
+	BUFFER: BUFFER,
+	GEOMETRY: GEOMETRY,
+	MATERIAL: MATERIAL,
+	MESH2: MESH2,
+	MESH3: MESH3,
+	MODEL_2D: MODEL_2D,
+	MODEL_3D: MODEL_3D,
+	PROJECTION_2D: PROJECTION_2D,
+	PROJECTION_3D: PROJECTION_3D,
+	RENDERABLE: RENDERABLE,
+	ROTATION_2D: ROTATION_2D,
+	ROTATION_3D: ROTATION_3D,
+	SAMPLER: SAMPLER,
+	SCALING_2D: SCALING_2D,
+	SCALING_3D: SCALING_3D,
+	SPRITE3: SPRITE3,
+	TEXTURE_GPU: TEXTURE_GPU,
+	TEXTURE_IMAGE: TEXTURE_IMAGE,
+	TRANSLATION_2D: TRANSLATION_2D,
+	TRANSLATION_3D: TRANSLATION_3D,
+	VIEWING_3D: VIEWING_3D,
+	WORLD_MATRIX3: WORLD_MATRIX3,
+	WORLD_MATRIX4: WORLD_MATRIX4
+});
 
 const POSITION = "position";
 const VERTICES = "vertices";
@@ -7609,7 +6367,7 @@ const DEFAULT_CYLINDER_OPTIONS = {
     heightSegments: 1,
     openEnded: false,
     thetaStart: 0,
-    thetaLength: constants$1.DEG_360_RAD,
+    thetaLength: constants$2.DEG_360_RAD,
     cullMode: "back"
 };
 const createCylinder = (options = {}) => {
@@ -8171,7 +6929,7 @@ const createSphere = (options = {}) => {
     return geo;
 };
 
-var index$2 = /*#__PURE__*/Object.freeze({
+var index$3 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	DEFAULT_BOX_OPTIONS: DEFAULT_BOX_OPTIONS,
 	DEFAULT_CIRCLE_OPTIONS: DEFAULT_CIRCLE_OPTIONS$1,
@@ -8422,7 +7180,7 @@ var createTriangle2 = (t = Triangle2.create(), options = DEFAULT_OPTIONS, topolo
     }
 };
 
-var index$1 = /*#__PURE__*/Object.freeze({
+var index$2 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	createCircle2: createCircle2,
 	createPlane2: createPlane2,
@@ -8453,7 +7211,7 @@ class Renderable extends Component {
     }
 }
 
-var getColorGPU = (color, result = new ColorGPU()) => {
+const getColorGPU = (color, result = new ColorGPU()) => {
     if (color instanceof ColorGPU) {
         result.set(color);
     }
@@ -8465,6 +7223,9 @@ var getColorGPU = (color, result = new ColorGPU()) => {
     }
     else if (color instanceof ColorRGB) {
         ColorGPU.fromColorRGB(color, result);
+    }
+    else if (color instanceof ColorRYB) {
+        ColorGPU.fromColorRYB(color, result);
     }
     else if (color instanceof ColorRGBA) {
         ColorGPU.fromColorRGBA(color, result);
@@ -8727,6 +7488,74 @@ class ShaderProgram {
     }
 }
 
+const canvases = []; // 储存多个canvas，可能存在n个图同时画
+async function drawSpriteBlock(image, width, height, frame) {
+    const canvas = canvases.pop() || document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (frame.rotation) {
+        ctx.rotate(-constants$2.DEG_90_RAD);
+        ctx.translate(-frame.w, 0);
+    }
+    ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, frame.dx ?? 0, frame.dy ?? 0, frame.w, frame.h);
+    const result = await createImageBitmap(canvas);
+    canvases.push(canvas);
+    if (frame.rotation) {
+        ctx.translate(frame.w, 0);
+        ctx.rotate(constants$2.DEG_90_RAD);
+    }
+    return result;
+}
+
+class Texture {
+    data;
+    dirty = true;
+    name;
+    descriptor = {
+        size: [0, 0],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+        mipLevelCount: 1,
+        sampleCount: 1,
+        dimension: "2d",
+        viewFormats: [],
+        label: ""
+    };
+    constructor(options) {
+        this.descriptor.size[0] = options.size[0];
+        this.descriptor.size[1] = options.size[1];
+        this.descriptor.format = options.format ?? "rgba8unorm";
+        this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
+        this.imageBitmap = options.image;
+        this.name = options.name ?? 'untitled texture';
+    }
+    destroy() {
+        this.data?.close();
+        this.data = undefined;
+    }
+    get width() {
+        return this.descriptor.size[0];
+    }
+    set width(v) {
+        this.descriptor.size[0] = v;
+    }
+    get height() {
+        return this.descriptor.size[1];
+    }
+    set height(v) {
+        this.descriptor.size[1] = v;
+    }
+    get imageBitmap() {
+        return this.data;
+    }
+    set imageBitmap(img) {
+        this.dirty = true;
+        this.data = img;
+    }
+}
+
 class AtlasTexture extends Texture {
     loaded = false;
     image;
@@ -8858,7 +7687,7 @@ class Material {
     }
 }
 
-const wgslShaders$2 = {
+const wgslShaders$3 = {
     vertex: `
 		struct Uniforms {
 			 matrix : mat4x4<f32>
@@ -8891,12 +7720,12 @@ class TextureMaterial extends Material {
     constructor(texture, sampler = new Sampler()) {
         super({
             descriptor: {
-                code: wgslShaders$2.vertex,
+                code: wgslShaders$3.vertex,
             },
             dirty: true,
         }, {
             descriptor: {
-                code: wgslShaders$2.fragment,
+                code: wgslShaders$3.fragment,
             },
             dirty: true,
         }, [
@@ -8968,194 +7797,6 @@ class Sprite3 extends Renderable {
             }),
             material: new TextureMaterial(texture)
         });
-    }
-}
-
-const MeshObjParser = async (text) => {
-    const texts = text.split('\n');
-    const positionArr = [];
-    const normalArr = [];
-    const uvArr = [];
-    const positionIndicesArr = [];
-    const normalIndicesArr = [];
-    const uvIndicesArr = [];
-    let t, ts;
-    for (let i = 0, len = texts.length; i < len; i++) {
-        t = texts[i];
-        ts = t.split(' ');
-        if (t.startsWith('v ')) {
-            positionArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
-        }
-        else if (t.startsWith('vn ')) {
-            normalArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
-        }
-        else if (t.startsWith('vt ')) {
-            uvArr.push(parseFloat(ts[1]), parseFloat(ts[2]));
-        }
-        else if (t.startsWith('f ')) {
-            if (ts[1].includes('/')) {
-                let a = ts[1].split('/');
-                let b = ts[2].split('/');
-                let c = ts[3].split('/');
-                positionIndicesArr.push(parseInt(a[0], 10), parseInt(b[0], 10), parseInt(c[0], 10));
-                if (a.length === 2) {
-                    uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
-                }
-                else {
-                    if (a[1]) {
-                        uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
-                    }
-                    normalIndicesArr.push(parseInt(a[2], 10), parseInt(b[2], 10), parseInt(c[2], 10));
-                }
-            }
-            else {
-                positionIndicesArr.push(parseInt(ts[1], 10), parseInt(ts[2], 10), parseInt(ts[3], 10));
-            }
-        }
-    }
-    const indicesLength = positionIndicesArr.length;
-    const wholeLen = indicesLength * 3;
-    const positionF32 = new Float32Array(wholeLen);
-    for (let i = 0; i < indicesLength; i++) {
-        let index = (positionIndicesArr[i] - 1) * 3;
-        positionF32[i * 3] = positionArr[index];
-        positionF32[i * 3 + 1] = positionArr[index + 1];
-        positionF32[i * 3 + 2] = positionArr[index + 2];
-    }
-    const geo = new Geometry(3, positionIndicesArr.length, "triangle-list", "none");
-    geo.addAttribute(POSITION, positionF32, 3, [
-        {
-            name: POSITION,
-            offset: 0,
-            length: 3,
-        }
-    ]);
-    const normalLength = uvIndicesArr.length;
-    if (normalLength) {
-        const wholeLen = normalLength * 3;
-        const positionF32 = new Float32Array(wholeLen);
-        for (let i = 0; i < normalLength; i++) {
-            let index = (normalIndicesArr[i] - 1) * 3;
-            positionF32[i * 3] = normalArr[index];
-            positionF32[i * 3 + 1] = normalArr[index + 1];
-            positionF32[i * 3 + 2] = normalArr[index + 2];
-        }
-        geo.addAttribute(NORMAL, positionF32, 3, [
-            {
-                name: NORMAL,
-                offset: 0,
-                length: 3,
-            }
-        ]);
-    }
-    const uvLength = uvIndicesArr.length;
-    if (uvLength) {
-        const wholeLen = uvLength * 2;
-        const positionF32 = new Float32Array(wholeLen);
-        for (let i = 0; i < uvLength; i++) {
-            let index = (uvIndicesArr[i] - 1) * 2;
-            positionF32[i * 2] = uvArr[index];
-            positionF32[i * 2 + 1] = uvArr[index + 1];
-        }
-        geo.addAttribute(UV, positionF32, 2, [
-            {
-                name: UV,
-                offset: 0,
-                length: 2,
-            }
-        ]);
-    }
-    return geo;
-};
-
-class HashRouteSystem extends System {
-    static listeningHashChange = false;
-    static count = 0; // 计数
-    static listener = () => {
-        HashRouteSystem.currentPath = location.hash.slice(1) || "/";
-    };
-    static currentPath = location.hash.slice(1) || "/";
-    currentPath = "";
-    constructor() {
-        super("HashRouteSystem", (entity) => {
-            return entity.getFirstComponentByTagLabel("HashRoute");
-        });
-        HashRouteSystem.count++;
-        if (!HashRouteSystem.listeningHashChange) {
-            HashRouteSystem.listeningHashChange = true;
-            window.addEventListener("load", HashRouteSystem.listener, false);
-            window.addEventListener("hashchange", HashRouteSystem.listener, false);
-        }
-    }
-    destroy() {
-        HashRouteSystem.count--;
-        if (HashRouteSystem.count < 1) {
-            window.removeEventListener("load", HashRouteSystem.listener, false);
-            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
-        }
-        return this;
-    }
-    handle(entity) {
-        let routeComponents = entity.getComponentsByTagLabel("HashRoute");
-        for (let i = routeComponents.length - 1; i > -1; i--) {
-            routeComponents[i].route(this.currentPath, entity);
-        }
-        return this;
-    }
-    run(world, time, delta) {
-        if (HashRouteSystem.currentPath === this.currentPath) {
-            return this;
-        }
-        this.currentPath = HashRouteSystem.currentPath;
-        super.run(world, time, delta);
-        return this;
-    }
-}
-
-function fixData(data) {
-    if (!data.path.startsWith("/")) {
-        data.path = "/" + data.path;
-    }
-    return data;
-}
-class HashRouteComponent extends TreeNode.mixin(Component) {
-    children = [];
-    constructor(name, data) {
-        super(name, fixData(data), [{
-                label: "HashRoute",
-                unique: false
-            }]);
-    }
-    route(path, entity) {
-        let p = this.data.path;
-        if (path === p) {
-            this.data.action(entity, true);
-            for (let i = this.children.length - 1; i > -1; i--) {
-                this.children[i].route("", entity);
-            }
-        }
-        else if (path.startsWith(p)) {
-            let str = path.substring(p.length);
-            if (str.startsWith("/")) {
-                this.data.action(entity, true);
-                for (let i = this.children.length - 1; i > -1; i--) {
-                    this.children[i].route(str, entity);
-                }
-            }
-            else {
-                this.data.action(entity, false);
-                for (let i = this.children.length - 1; i > -1; i--) {
-                    this.children[i].route("", entity);
-                }
-            }
-        }
-        else {
-            this.data.action(entity, false);
-            for (let i = this.children.length - 1; i > -1; i--) {
-                this.children[i].route("", entity);
-            }
-        }
-        return this;
     }
 }
 
@@ -9400,6 +8041,53 @@ const WebGPUCacheObjectStore = {
         }
         return caches.get(device);
     }
+};
+
+class Matrix3Component extends Component {
+    constructor(name, data = Matrix3.create(), tags = []) {
+        super(name, data, tags);
+        this.dirty = true;
+    }
+}
+const updateModelMatrixComponent$1 = (mesh) => {
+    let p3 = mesh.position;
+    let r3 = mesh.rotation;
+    let s3 = mesh.scaling;
+    let a3 = mesh.anchor;
+    let m3 = mesh.modelMatrix;
+    let worldMatrix = mesh.worldMatrix;
+    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
+        Matrix3.fromArray(p3?.data || Matrix3.UNIT_MATRIX3, m3.data);
+        if (r3) {
+            Matrix3.multiplyRotationMatrix(m3.data, r3.data, m3.data);
+        }
+        if (s3) {
+            Matrix3.multiplyScaleMatrix(m3.data, s3.data, m3.data);
+        }
+        if (a3) {
+            Matrix3.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
+        }
+        if (p3) {
+            p3.dirty = false;
+        }
+        if (r3) {
+            r3.dirty = false;
+        }
+        if (s3) {
+            s3.dirty = false;
+        }
+        if (a3) {
+            a3.dirty = false;
+        }
+    }
+    if (mesh.parent) {
+        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
+        Matrix3.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+    }
+    else {
+        Matrix3.fromArray(m3.data, worldMatrix.data);
+    }
+    return m3;
 };
 
 let descriptor = {
@@ -9683,6 +8371,53 @@ function fromMatrix3MVP(data, out = new Matrix4()) {
     out[15] = 1;
     return out;
 }
+
+class Matrix4Component extends Component {
+    constructor(name, data = Matrix4.create(), tags = []) {
+        super(name, data, tags);
+        this.dirty = true;
+    }
+}
+const updateModelMatrixComponent = (mesh) => {
+    let p3 = mesh.position;
+    let r3 = mesh.rotation;
+    let s3 = mesh.scaling;
+    let a3 = mesh.anchor;
+    let m3 = mesh.modelMatrix;
+    let worldMatrix = mesh.worldMatrix;
+    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
+        Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
+        if (r3) {
+            Matrix4.multiply(m3.data, r3.data, m3.data);
+        }
+        if (s3) {
+            Matrix4.multiplyScaleMatrix(m3.data, s3.data, m3.data);
+        }
+        if (a3) {
+            Matrix4.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
+        }
+        if (p3) {
+            p3.dirty = false;
+        }
+        if (r3) {
+            r3.dirty = false;
+        }
+        if (s3) {
+            s3.dirty = false;
+        }
+        if (a3) {
+            a3.dirty = false;
+        }
+    }
+    if (mesh.parent) {
+        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
+        Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+    }
+    else {
+        Matrix4.fromArray(m3.data, worldMatrix.data);
+    }
+    return m3;
+};
 
 class WebGPUMesh3Renderer {
     static renderTypes = MESH3;
@@ -10286,7 +9021,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
     }
 }
 
-const wgslShaders$1 = {
+const wgslShaders$2 = {
     vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -10315,12 +9050,12 @@ class ColorMaterial extends Material {
     constructor(color = new Float32Array([1, 1, 1, 1])) {
         super({
             descriptor: {
-                code: wgslShaders$1.vertex,
+                code: wgslShaders$2.vertex,
             },
             dirty: true
         }, {
             descriptor: {
-                code: wgslShaders$1.fragment,
+                code: wgslShaders$2.fragment,
             },
             dirty: true
         }, [{
@@ -10342,7 +9077,7 @@ class ColorMaterial extends Material {
     }
 }
 
-const wgslShaders = {
+const wgslShaders$1 = {
     vertex: `
 		struct Uniforms {
 			modelViewProjectionMatrix : mat4x4<f32>
@@ -10371,12 +9106,12 @@ class DomMaterial extends Material {
     constructor() {
         super({
             descriptor: {
-                code: wgslShaders.vertex,
+                code: wgslShaders$1.vertex,
             },
             dirty: true
         }, {
             descriptor: {
-                code: wgslShaders.fragment,
+                code: wgslShaders$1.fragment,
             },
             dirty: true,
         }, [{
@@ -10712,6 +9447,1852 @@ class ShadertoyMaterial extends Material {
     }
 }
 
+const wgslShaders = {
+    vertex: `
+		struct Uniforms {
+			 matrix : mat4x4<f32>
+	  	};
+		struct BitmapFont {
+			channel : vec4<f32>,
+			offset : vec2<f32>,
+			size : vec2<f32>,
+			position : vec2<f32>,
+			bitmapSize : vec2<f32>,
+		};
+	  	@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+		@binding(3) @group(0) var<uniform> font: BitmapFont;
+
+		struct VertexOutput {
+			@builtin(position) position : vec4<f32>,
+			@location(0) uv : vec2<f32>
+		};
+
+		@vertex fn main(@location(0) position : vec3<f32>, @location(2) uv : vec2<f32>) -> VertexOutput {
+			var out: VertexOutput;
+			var p = position;
+			p.x *= font.size.x;
+			p.y *= font.size.y;
+			out.position = uniforms.matrix * vec4<f32>(p, 1.0);
+			out.uv = uv;
+			out.uv.x *= font.size.x / font.bitmapSize.x;
+			out.uv.x += font.offset.x / font.bitmapSize.x;
+			out.uv.y *= font.size.y / font.bitmapSize.y;
+			out.uv.y += font.offset.y / font.bitmapSize.y;
+			return out;
+		}
+	`,
+    fragment: `
+		@binding(1) @group(0) var mySampler: sampler;
+		@binding(2) @group(0) var myTexture: texture_2d<f32>;
+
+		@fragment fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+			return textureSample(myTexture, mySampler, uv);
+		}
+	`
+};
+class BitmapFontMaterial extends Material {
+    constructor(texture, sampler = new Sampler()) {
+        super({
+            descriptor: {
+                code: wgslShaders.vertex,
+            },
+            dirty: true,
+        }, {
+            descriptor: {
+                code: wgslShaders.fragment,
+            },
+            dirty: true,
+        }, [
+            {
+                binding: 1,
+                name: "mySampler",
+                type: SAMPLER,
+                value: sampler,
+                dirty: true
+            },
+            {
+                binding: 2,
+                name: "myTexture",
+                type: TEXTURE_IMAGE,
+                value: texture,
+                dirty: true
+            },
+            {
+                binding: 3,
+                dirty: true,
+                name: "alpha",
+                type: "buffer",
+                value: new BufferFloat32({
+                    data: [
+                        1, 1, 1, 1,
+                        0, 0,
+                        0, 0,
+                        0, 0,
+                        1, 1, // bitmap size
+                    ],
+                }),
+            },
+            {
+                binding: 4,
+                dirty: true,
+                name: "color",
+                type: "buffer",
+                value: new BufferFloat32({
+                    data: new ColorGPU(1, 1, 1, 1),
+                }),
+            },
+        ]);
+        this.dirty = true;
+    }
+    #channel = new Vector4();
+    #position = new Vector2();
+    #size = new Vector2();
+    #offset = new Vector2();
+    #bitmapSize = new Vector2();
+    get sampler() {
+        return this.uniforms[0].value;
+    }
+    set sampler(sampler) {
+        this.uniforms[0].dirty = this.dirty = true;
+        this.uniforms[0].value = sampler;
+    }
+    get texture() {
+        return this.uniforms[1].value;
+    }
+    set texture(texture) {
+        this.uniforms[1].dirty = this.dirty = true;
+        this.uniforms[1].value = texture;
+    }
+    get channel() {
+        return this.#channel;
+    }
+    set channel(vec4) {
+        this.uniforms[2].dirty = this.dirty = true;
+        this.#channel.set(vec4);
+        this.uniforms[2].value[0] = vec4[0];
+        this.uniforms[2].value[1] = vec4[1];
+        this.uniforms[2].value[2] = vec4[2];
+        this.uniforms[2].value[3] = vec4[3];
+    }
+    get position() {
+        return this.#position;
+    }
+    set position(vec2) {
+        this.uniforms[2].dirty = this.dirty = true;
+        this.#position.set(vec2);
+        this.uniforms[2].value[4] = vec2[0];
+        this.uniforms[2].value[5] = vec2[1];
+    }
+    get size() {
+        return this.#size;
+    }
+    set size(vec2) {
+        this.uniforms[2].dirty = this.dirty = true;
+        this.#size.set(vec2);
+        this.uniforms[2].value[6] = vec2[0];
+        this.uniforms[2].value[7] = vec2[1];
+    }
+    get offset() {
+        return this.#offset;
+    }
+    set offset(vec2) {
+        this.uniforms[2].dirty = this.dirty = true;
+        this.#offset.set(vec2);
+        this.uniforms[2].value[8] = vec2[0];
+        this.uniforms[2].value[9] = vec2[1];
+    }
+    get bitmapSize() {
+        return this.#bitmapSize;
+    }
+    set bitmapSize(vec2) {
+        this.uniforms[2].dirty = this.dirty = true;
+        this.#bitmapSize.set(vec2);
+        this.uniforms[2].value[10] = vec2[0];
+        this.uniforms[2].value[11] = vec2[1];
+    }
+    setTextureAndSampler(texture, sampler) {
+        this.texture = texture;
+        if (sampler) {
+            this.sampler = sampler;
+        }
+        return this;
+    }
+    update() {
+        this.uniforms[2].dirty = this.dirty = true;
+        this.uniforms[2].value[0] = this.channel[0];
+        this.uniforms[2].value[1] = this.channel[1];
+        this.uniforms[2].value[2] = this.channel[2];
+        this.uniforms[2].value[3] = this.channel[3];
+        this.uniforms[2].value[4] = this.#position[0];
+        this.uniforms[2].value[5] = this.#position[1];
+        this.uniforms[2].value[6] = this.#size[0];
+        this.uniforms[2].value[7] = this.#size[1];
+        this.uniforms[2].value[8] = this.#offset[0];
+        this.uniforms[2].value[9] = this.#offset[1];
+        this.uniforms[2].value[10] = this.#bitmapSize[0];
+        this.uniforms[2].value[11] = this.#bitmapSize[1];
+        return this;
+    }
+}
+
+const CommonGeometry = createPlane({
+    width: 1,
+    height: 1,
+});
+class BitmapFontChar3 extends Renderable {
+    static RenderType = "mesh3";
+    #charData;
+    font;
+    constructor(char, font) {
+        super({
+            type: BitmapFontChar3.RenderType,
+            geometry: CommonGeometry,
+            material: new BitmapFontMaterial(font.pages[char.page]),
+        });
+        this.#charData = char;
+        this.font = font;
+        this.update();
+    }
+    update() {
+        this.data.material.offset.x = this.#charData.xoffset;
+        this.data.material.offset.y = this.#charData.yoffset;
+        this.data.material.size.x = this.#charData.width;
+        this.data.material.size.y = this.#charData.height;
+        this.data.material.position.x = this.#charData.x;
+        this.data.material.position.y = this.#charData.y;
+        this.data.material.bitmapSize.x = this.font.common.scaleW;
+        this.data.material.bitmapSize.y = this.font.common.scaleH;
+        this.data.material.update();
+        this.dirty = this.data.material.dirty = true;
+        return this;
+    }
+    setChar(text) {
+        if (typeof text === "string") {
+            text = text.charCodeAt(0);
+        }
+        for (let i = 0, len = this.font.chars.length; i < len; i++) {
+            if (this.font.chars[i].id === text) {
+                this.#charData = this.font.chars[i];
+                return this.update();
+            }
+        }
+        return this;
+    }
+}
+
+class BitmapFontManager {
+    fontStore = new Map();
+    addFont(json) {
+        if (this.fontStore.has(json.info.face)) {
+            console.log(`Font "${json.info.face}" already exists`);
+            return this;
+        }
+        this.fontStore.set(json.info.face, json);
+        return this;
+    }
+    createChar(charTextOrCode, fontName, fontSize) {
+        if (typeof charTextOrCode === "string") {
+            charTextOrCode = charTextOrCode.charCodeAt(0);
+        }
+        let fontData = this.fontStore.get(fontName);
+        let char;
+        for (let i = 0, len = fontData.chars.length; i < len; i++) {
+            if (fontData.chars[i].id === charTextOrCode) {
+                char = new BitmapFontChar3(fontData.chars[i], fontData);
+            }
+        }
+        return char;
+    }
+}
+
+class Anchor2 extends Matrix3Component {
+    vec2 = new Vector2();
+    constructor(vec = Vector2.VECTOR2_ZERO) {
+        super(ANCHOR_2D, Matrix3.create(), [{
+                label: ANCHOR_2D,
+                unique: true
+            }]);
+        Vector2.fromArray(vec, 0, this.vec2);
+        this.update();
+    }
+    get x() {
+        return this.vec2[0];
+    }
+    set x(value) {
+        this.vec2[0] = value;
+        this.data[6] = -value;
+        this.dirty = true;
+    }
+    get y() {
+        return this.vec2[1];
+    }
+    set y(value) {
+        this.vec2[1] = value;
+        this.data[7] = -value;
+        this.dirty = true;
+    }
+    set(arr) {
+        this.vec2.set(arr);
+        return this.update();
+    }
+    setXY(x, y, z) {
+        this.vec2[0] = x;
+        this.vec2[1] = y;
+        return this.update();
+    }
+    update() {
+        this.data[6] = -this.x;
+        this.data[7] = -this.y;
+        this.dirty = true;
+        return this;
+    }
+}
+
+class APosition2 extends Matrix3Component {
+    constructor(data = Matrix3.create()) {
+        super(TRANSLATION_2D, data, [{
+                label: TRANSLATION_2D,
+                unique: true
+            }]);
+    }
+}
+
+class AProjection2 extends Matrix3Component {
+    constructor(data = Matrix3.create()) {
+        super(PROJECTION_2D, data, [{
+                label: PROJECTION_2D,
+                unique: true
+            }]);
+    }
+}
+
+class ARotation2 extends Matrix3Component {
+    constructor(data = Matrix3.create()) {
+        super(ROTATION_2D, data, [{
+                label: ROTATION_2D,
+                unique: true
+            }]);
+    }
+}
+
+class AScale2 extends Matrix3Component {
+    constructor(data = Matrix3.create()) {
+        super(SCALING_2D, data, [{
+                label: SCALING_2D,
+                unique: true
+            }]);
+    }
+}
+
+class EuclidPosition2 extends APosition2 {
+    vec2 = new Vector2();
+    constructor(vec2 = new Float32Array(2)) {
+        super();
+        Vector2.fromArray(vec2, 0, this.vec2);
+        this.update();
+    }
+    get x() {
+        return this.vec2[0];
+    }
+    set x(value) {
+        this.vec2[0] = value;
+        this.data[6] = value;
+        this.dirty = true;
+    }
+    get y() {
+        return this.vec2[1];
+    }
+    set y(value) {
+        this.vec2[1] = value;
+        this.data[7] = value;
+        this.dirty = true;
+    }
+    set(arr) {
+        this.vec2.set(arr);
+        this.data[6] = arr[0];
+        this.data[7] = arr[1];
+        this.dirty = true;
+        return this;
+    }
+    setXY(x, y) {
+        this.vec2[0] = x;
+        this.vec2[1] = y;
+        this.data[6] = x;
+        this.data[7] = y;
+        this.dirty = true;
+        return this;
+    }
+    update() {
+        Matrix3.fromTranslation(this.vec2, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+class AngleRotation2 extends ARotation2 {
+    #angle;
+    data = Matrix3.identity();
+    constructor(angle = 0) {
+        super();
+        this.#angle = angle;
+        this.update();
+    }
+    get a() {
+        return this.#angle;
+    }
+    set a(value) {
+        this.#angle = value;
+        this.update();
+    }
+    update() {
+        Matrix3.fromRotation(this.#angle, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+class PolarPosition2 extends APosition2 {
+    polar = new Polar();
+    constructor(radius = 0, angle = 0) {
+        super();
+        this.polar.r = radius;
+        this.polar.a = angle;
+    }
+    get r() {
+        return this.polar.r;
+    }
+    set r(value) {
+        this.polar.r = value;
+        this.update();
+    }
+    get a() {
+        return this.polar[1];
+    }
+    set a(value) {
+        this.polar[1] = value;
+        this.update();
+    }
+    set(r, a) {
+        this.polar.a = a;
+        this.polar.r = r;
+        return this;
+    }
+    update() {
+        this.data[6] = this.polar.x();
+        this.data[7] = this.polar.y();
+        this.dirty = true;
+        return this;
+    }
+}
+
+class Projection2D extends AProjection2 {
+    options;
+    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005) {
+        super();
+        this.options = {
+            left,
+            right,
+            bottom,
+            top
+        };
+        this.update();
+    }
+    get left() {
+        return this.options.left;
+    }
+    set left(value) {
+        this.options.left = value;
+        this.update();
+    }
+    get right() {
+        return this.right;
+    }
+    set right(value) {
+        this.options.right = value;
+        this.update();
+    }
+    get top() {
+        return this.top;
+    }
+    set top(value) {
+        this.options.top = value;
+        this.update();
+    }
+    get bottom() {
+        return this.bottom;
+    }
+    set bottom(value) {
+        this.options.bottom = value;
+        this.update();
+    }
+    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top) {
+        this.options.left = left;
+        this.options.right = right;
+        this.options.bottom = bottom;
+        this.options.top = top;
+        return this.update();
+    }
+    update() {
+        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+const orthogonal = (left, right, bottom, top, out = new Matrix3()) => {
+    const c = 1 / (left - right);
+    const b = 1 / (bottom - top);
+    out[0] = -2 * c;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = -2 * b;
+    out[5] = 0;
+    // out[6] = 0;
+    // out[7] = 0;
+    out[6] = (left + right) * c;
+    out[7] = (top + bottom) * b;
+    out[8] = 1;
+    return out;
+};
+
+const DEFAULT_SCALE$1 = [1, 1];
+class Vector2Scale2 extends AScale2 {
+    vec2;
+    constructor(vec2 = new Float32Array(DEFAULT_SCALE$1)) {
+        super();
+        this.vec2 = vec2;
+        this.update();
+    }
+    get x() {
+        return this.vec2[0];
+    }
+    set x(value) {
+        this.vec2[0] = value;
+        this.data[0] = value;
+        this.dirty = true;
+    }
+    get y() {
+        return this.vec2[1];
+    }
+    set y(value) {
+        this.vec2[1] = value;
+        this.data[4] = value;
+        this.dirty = true;
+    }
+    set(arr) {
+        this.vec2.set(arr);
+        return this.update();
+    }
+    setXY(x, y, z) {
+        this.vec2[0] = x;
+        this.vec2[1] = y;
+        this.data[0] = x;
+        this.data[4] = y;
+        this.dirty = true;
+        return this;
+    }
+    update() {
+        Matrix3.fromScaling(this.vec2, this.data);
+        return this;
+    }
+}
+
+class Anchor3 extends Matrix4Component {
+    vec3 = new Vector3();
+    constructor(vec = Vector3.VECTOR3_ZERO) {
+        super(ANCHOR_3D, Matrix4.create(), [{
+                label: ANCHOR_3D,
+                unique: true
+            }]);
+        Vector3.fromArray(vec, 0, this.vec3);
+        this.update();
+    }
+    get x() {
+        return this.vec3[0];
+    }
+    set x(value) {
+        this.vec3[0] = value;
+        this.data[12] = -value;
+        this.dirty = true;
+    }
+    get y() {
+        return this.vec3[1];
+    }
+    set y(value) {
+        this.vec3[1] = value;
+        this.data[13] = -value;
+        this.dirty = true;
+    }
+    get z() {
+        return this.vec3[2];
+    }
+    set z(value) {
+        this.vec3[2] = value;
+        this.data[14] = -value;
+        this.dirty = true;
+    }
+    set(arr) {
+        this.vec3.set(arr);
+        return this.update();
+    }
+    setXYZ(x, y, z) {
+        this.vec3[0] = x;
+        this.vec3[1] = y;
+        this.vec3[2] = z;
+        return this.update();
+    }
+    update() {
+        this.data[12] = -this.x;
+        this.data[13] = -this.y;
+        this.data[14] = -this.z;
+        this.dirty = true;
+        return this;
+    }
+}
+
+class APosition3 extends Matrix4Component {
+    constructor(data = Matrix4.create()) {
+        super(TRANSLATION_3D, data, [{
+                label: TRANSLATION_3D,
+                unique: true
+            }]);
+    }
+}
+
+class AProjection3 extends Matrix4Component {
+    constructor(data = Matrix4.create()) {
+        super(PROJECTION_3D, data, [{
+                label: PROJECTION_3D,
+                unique: true
+            }]);
+    }
+}
+
+class ARotation3 extends Matrix4Component {
+    constructor(data = Matrix4.create()) {
+        super(ROTATION_3D, data, [{
+                label: ROTATION_3D,
+                unique: true
+            }]);
+    }
+}
+
+class AScale3 extends Matrix4Component {
+    constructor(data = Matrix4.create()) {
+        super(SCALING_3D, data, [{
+                label: SCALING_3D,
+                unique: true
+            }]);
+    }
+}
+
+class EuclidPosition3 extends APosition3 {
+    vec3 = new Vector3();
+    constructor(vec3) {
+        super();
+        if (vec3) {
+            Vector3.fromArray(vec3, 0, this.vec3);
+        }
+        this.update();
+    }
+    get x() {
+        return this.vec3[0];
+    }
+    set x(value) {
+        this.vec3[0] = value;
+        this.data[12] = value;
+        this.dirty = true;
+    }
+    get y() {
+        return this.vec3[1];
+    }
+    set y(value) {
+        this.vec3[1] = value;
+        this.data[13] = value;
+        this.dirty = true;
+    }
+    get z() {
+        return this.vec3[2];
+    }
+    set z(value) {
+        this.vec3[2] = value;
+        this.data[14] = value;
+        this.dirty = true;
+    }
+    set(arr) {
+        this.vec3.set(arr);
+        this.data[12] = arr[0];
+        this.data[13] = arr[1];
+        this.data[14] = arr[2];
+        this.dirty = true;
+        return this;
+    }
+    setXYZ(x, y, z) {
+        this.vec3[0] = x;
+        this.vec3[1] = y;
+        this.vec3[2] = z;
+        this.data[12] = x;
+        this.data[13] = y;
+        this.data[14] = z;
+        this.dirty = true;
+        return this;
+    }
+    update() {
+        Matrix4.fromTranslation(this.vec3, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+class EulerRotation3 extends ARotation3 {
+    euler;
+    constructor(euler = {
+        x: 0,
+        y: 0,
+        z: 0,
+        order: EulerAngle.ORDERS.XYZ,
+    }) {
+        super();
+        this.euler = euler;
+        this.update();
+    }
+    get x() {
+        return this.euler.x;
+    }
+    set x(value) {
+        this.euler.x = value;
+        this.update();
+    }
+    get y() {
+        return this.euler.y;
+    }
+    set y(value) {
+        this.euler.y = value;
+        this.update();
+    }
+    get z() {
+        return this.euler.z;
+    }
+    set z(value) {
+        this.euler.z = value;
+        this.update();
+    }
+    get order() {
+        return this.euler.order;
+    }
+    set order(value) {
+        this.euler.order = value;
+        this.update();
+    }
+    set(arr) {
+        this.x = arr.x;
+        this.y = arr.y;
+        this.z = arr.z;
+        this.order = arr.order;
+        return this.update();
+    }
+    update() {
+        Matrix4.fromEuler(this.euler, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+class OrthogonalProjection extends AProjection3 {
+    options;
+    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 100) {
+        super();
+        this.options = {
+            left,
+            right,
+            bottom,
+            top,
+            near,
+            far,
+        };
+        this.update();
+    }
+    get left() {
+        return this.options.left;
+    }
+    set left(value) {
+        this.options.left = value;
+        this.update();
+    }
+    get right() {
+        return this.options.right;
+    }
+    set right(value) {
+        this.options.right = value;
+        this.update();
+    }
+    get top() {
+        return this.options.top;
+    }
+    set top(value) {
+        this.options.top = value;
+        this.update();
+    }
+    get bottom() {
+        return this.options.bottom;
+    }
+    set bottom(value) {
+        this.options.bottom = value;
+        this.update();
+    }
+    get near() {
+        return this.options.near;
+    }
+    set near(value) {
+        this.options.near = value;
+        this.update();
+    }
+    get far() {
+        return this.options.far;
+    }
+    set far(value) {
+        this.options.far = value;
+        this.update();
+    }
+    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top, near = this.near, far = this.far) {
+        this.options.left = left;
+        this.options.right = right;
+        this.options.bottom = bottom;
+        this.options.top = top;
+        this.options.near = near;
+        this.options.far = far;
+        return this.update();
+    }
+    update() {
+        Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+class PerspectiveProjection extends AProjection3 {
+    options;
+    constructor(fovy = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
+        super();
+        this.options = {
+            fovy,
+            aspect,
+            near,
+            far,
+        };
+        this.update();
+    }
+    get fovy() {
+        return this.options.fovy;
+    }
+    set fovy(value) {
+        this.options.fovy = value;
+        this.update();
+    }
+    get aspect() {
+        return this.options.aspect;
+    }
+    set aspect(value) {
+        this.options.aspect = value;
+        this.update();
+    }
+    get near() {
+        return this.options.near;
+    }
+    set near(value) {
+        this.options.near = value;
+        this.update();
+    }
+    get far() {
+        return this.options.far;
+    }
+    set far(value) {
+        this.options.far = value;
+        this.update();
+    }
+    set(fovy = this.fovy, aspect = this.aspect, near = this.near, far = this.far) {
+        this.options.fovy = fovy;
+        this.options.aspect = aspect;
+        this.options.near = near;
+        this.options.far = far;
+        return this.update();
+    }
+    update() {
+        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+class SphericalPosition3 extends APosition3 {
+    spherical = new Spherical();
+    #vec3 = new Vector3();
+    constructor(spherical = new Float32Array(3)) {
+        super();
+        Spherical.fromArray(spherical, this.spherical);
+        this.update();
+    }
+    get radius() {
+        return this.spherical[0];
+    }
+    set radius(value) {
+        this.spherical[0] = value;
+        this.update();
+    }
+    get phi() {
+        return this.spherical[1];
+    }
+    set phi(value) {
+        this.spherical[1] = value;
+        this.update();
+    }
+    get theta() {
+        return this.spherical[2];
+    }
+    set theta(value) {
+        this.spherical[2] = value;
+        this.update();
+    }
+    set(arr) {
+        this.spherical.set(arr);
+        return this.update();
+    }
+    update() {
+        this.spherical.toVector3(this.#vec3);
+        Matrix4.fromTranslation(this.#vec3, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+const DEFAULT_SCALE = [1, 1, 1];
+class Vector3Scale3 extends AScale3 {
+    vec3;
+    constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
+        super();
+        this.vec3 = Vector3.fromArray(vec3);
+        this.update();
+    }
+    get x() {
+        return this.vec3[0];
+    }
+    set x(value) {
+        this.vec3[0] = value;
+        this.data[0] = value;
+        this.dirty = true;
+    }
+    get y() {
+        return this.vec3[1];
+    }
+    set y(value) {
+        this.vec3[1] = value;
+        this.data[5] = value;
+        this.dirty = true;
+    }
+    get z() {
+        return this.vec3[1];
+    }
+    set z(value) {
+        this.vec3[2] = value;
+        this.data[10] = value;
+        this.dirty = true;
+    }
+    set(arr) {
+        if (typeof arr === 'number') {
+            Vector3.fromScalar(arr, this.vec3);
+        }
+        else {
+            this.vec3.set(arr);
+        }
+        return this.update();
+    }
+    setXYZ(x, y, z) {
+        this.vec3[0] = x;
+        this.vec3[1] = y;
+        this.vec3[2] = z;
+        this.data[0] = x;
+        this.data[5] = y;
+        this.data[10] = z;
+        this.dirty = true;
+        return this;
+    }
+    update() {
+        Matrix4.fromScaling(this.vec3, this.data);
+        return this;
+    }
+}
+
+class PerspectiveProjectionX extends AProjection3 {
+    options;
+    constructor(fovx = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
+        super();
+        this.options = {
+            fovx,
+            aspect,
+            near,
+            far,
+        };
+        this.update();
+    }
+    get fovx() {
+        return this.options.fovx;
+    }
+    set fovx(value) {
+        this.options.fovx = value;
+        this.update();
+    }
+    get aspect() {
+        return this.options.aspect;
+    }
+    set aspect(value) {
+        this.options.aspect = value;
+        this.update();
+    }
+    get near() {
+        return this.options.near;
+    }
+    set near(value) {
+        this.options.near = value;
+        this.update();
+    }
+    get far() {
+        return this.options.far;
+    }
+    set far(value) {
+        this.options.far = value;
+        this.update();
+    }
+    set(fovx = this.fovx, aspect = this.aspect, near = this.near, far = this.far) {
+        this.options.fovx = fovx;
+        this.options.aspect = aspect;
+        this.options.near = near;
+        this.options.far = far;
+        return this.update();
+    }
+    update() {
+        Matrix4.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
+        this.dirty = true;
+        return this;
+    }
+}
+
+var getEuclidPosition3Proxy = (position) => {
+    if (position.isEntity) {
+        position = position.getComponent(TRANSLATION_3D);
+    }
+    return new Proxy(position, {
+        get: (target, property) => {
+            if (property === 'x') {
+                return target.data[12];
+            }
+            else if (property === 'y') {
+                return target.data[13];
+            }
+            else if (property === 'z') {
+                return target.data[14];
+            }
+            return target[property];
+        },
+        set: (target, property, value) => {
+            if (property === 'x') {
+                target.dirty = true;
+                target.data[12] = value;
+                return true;
+            }
+            else if (property === 'y') {
+                target.dirty = true;
+                target.data[13] = value;
+                return true;
+            }
+            else if (property === 'z') {
+                target.dirty = true;
+                target.data[14] = value;
+                return true;
+            }
+            else if (property === 'dirty') {
+                target.dirty = value;
+                return true;
+            }
+            return false;
+        },
+    });
+};
+
+var getEulerRotation3Proxy = (position) => {
+    if (position.isEntity) {
+        position = position.getComponent(ROTATION_3D);
+    }
+    let euler = EulerAngle.fromMatrix4(position.data);
+    return new Proxy(position, {
+        get: (target, property) => {
+            if (property === 'x' || property === 'y' || property === 'z' || property === 'order') {
+                return euler[property];
+            }
+            return target[property];
+        },
+        set: (target, property, value) => {
+            if (property === 'x' || property === 'y' || property === 'z') {
+                target.dirty = true;
+                euler[property] = value;
+                Matrix4.fromEuler(euler, target.data);
+                return true;
+            }
+            else if (property === 'order') {
+                target.dirty = true;
+                euler.order = value;
+                Matrix4.fromEuler(euler, target.data);
+                return true;
+            }
+            else if (property === 'dirty') {
+                target.dirty = value;
+                return true;
+            }
+            return false;
+        },
+    });
+};
+
+var index$1 = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	getEuclidPosition3Proxy: getEuclidPosition3Proxy,
+	getEulerRotation3Proxy: getEulerRotation3Proxy
+});
+
+var EngineEvents;
+(function (EngineEvents) {
+    EngineEvents["LOOP_STARTED"] = "loop-started";
+    EngineEvents["LOOP_ENDED"] = "loop-ended";
+})(EngineEvents || (EngineEvents = {}));
+const DEFAULT_ENGINE_OPTIONS = {
+    autoStart: true,
+    container: document.body
+};
+
+class EngineTaskChunk extends EventFirer {
+    static START = 'start';
+    static END = 'end';
+    name;
+    disabled = false;
+    time = 0;
+    delta = 0;
+    taskTimeMap = new WeakMap();
+    #tasks = [];
+    get tasksCount() {
+        return this.#tasks.length;
+    }
+    constructor(name) {
+        super();
+        this.name = name;
+    }
+    addTask(task, needTimeReset) {
+        this.#tasks.push(task);
+        if (needTimeReset) {
+            this.taskTimeMap.set(task, this.time);
+        }
+    }
+    removeTask(task) {
+        let i = this.#tasks.indexOf(task);
+        if (i > -1) {
+            this.#tasks.splice(i, 1);
+        }
+    }
+    run = (time, delta) => {
+        this.time = time;
+        this.delta = delta;
+        this.fire(EngineTaskChunk.START, this);
+        let len = this.#tasks.length;
+        for (let i = 0; i < len; i++) {
+            const t = this.#tasks[i];
+            t(time - (this.taskTimeMap.get(t) ?? 0), delta);
+        }
+        return this.fire(EngineTaskChunk.END, this);
+    };
+}
+
+class Engine extends mixin$1(Timeline) {
+    options;
+    static Events = EngineEvents;
+    taskChunkTimeMap = new Map();
+    #taskChunks = new Map();
+    constructor(options = {}) {
+        super();
+        this.options = {
+            ...DEFAULT_ENGINE_OPTIONS,
+            ...options,
+        };
+        if (this.options.autoStart) {
+            this.start();
+        }
+    }
+    addTask(task, needTimeReset, chunkName) {
+        if (!chunkName) {
+            return super.addTask(task, needTimeReset);
+        }
+        const chunk = this.#taskChunks.get(chunkName);
+        if (!chunkName) {
+            return super.addTask(task, needTimeReset);
+        }
+        chunk.addTask(task, needTimeReset);
+        return this;
+    }
+    addTaskChunk(chunk, needTimeReset) {
+        this.#taskChunks.set(chunk.name, chunk);
+        if (needTimeReset) {
+            this.taskChunkTimeMap.set(chunk, this.time);
+        }
+        return this;
+    }
+    removeTask(task, chunkName) {
+        if (!chunkName) {
+            super.removeTask(task);
+        }
+        else {
+            const chunk = this.#taskChunks.get(chunkName);
+            if (chunk) {
+                chunk.removeTask(task);
+            }
+        }
+        return this;
+    }
+    removeTaskChunk(chunk) {
+        if (typeof chunk === 'string') {
+            this.#taskChunks.delete(chunk);
+        }
+        else {
+            this.#taskChunks.delete(chunk.name);
+        }
+        return this;
+    }
+    runChunk(chunk, time, delta) {
+        if (chunk.disabled) {
+            return this;
+        }
+        chunk.run(time - (this.taskChunkTimeMap.get(chunk) ?? 0), delta);
+        return this;
+    }
+    update(time, delta) {
+        this.fire(Engine.Events.LOOP_STARTED, this);
+        super.update(time, delta);
+        this.#taskChunks.forEach((chunk) => {
+            this.runChunk(chunk, time, delta);
+        });
+        this.fire(Engine.Events.LOOP_ENDED, this);
+        return this;
+    }
+}
+
+class Object2 extends Entity {
+    anchor;
+    position;
+    rotation;
+    scaling;
+    modelMatrix;
+    worldMatrix;
+    constructor(name = "Object3") {
+        super(name);
+        this.scaling = new Vector2Scale2();
+        this.position = new EuclidPosition2();
+        this.rotation = new AngleRotation2();
+        this.anchor = new Anchor2();
+        this.modelMatrix = new Matrix3Component(MODEL_2D, Matrix3.create(), [{
+                label: MODEL_3D,
+                unique: true
+            }]);
+        this.worldMatrix = new Matrix3Component(WORLD_MATRIX3, Matrix3.create(), [{
+                label: WORLD_MATRIX3,
+                unique: true
+            }]);
+    }
+}
+
+class Camera2 extends Object2 {
+    projection;
+    constructor(name = "Camera2", projection) {
+        super(name);
+        this.projection = projection;
+    }
+}
+
+class Object3 extends Entity {
+    anchor;
+    position;
+    rotation;
+    scaling;
+    modelMatrix;
+    worldMatrix;
+    constructor(name = "Object3") {
+        super(name);
+        this.scaling = new Vector3Scale3();
+        this.position = new EuclidPosition3();
+        this.rotation = new EulerRotation3();
+        this.anchor = new Anchor3();
+        this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
+                label: MODEL_3D,
+                unique: true
+            }]);
+        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
+                label: WORLD_MATRIX4,
+                unique: true
+            }]);
+    }
+}
+
+class Camera3 extends Object3 {
+    projection;
+    constructor(name = "Camera3", projection) {
+        super(name);
+        this.projection = projection;
+    }
+}
+
+var LoadType;
+(function (LoadType) {
+    LoadType["JSON"] = "json";
+    LoadType["BLOB"] = "blob";
+    LoadType["TEXT"] = "text";
+    LoadType["ARRAY_BUFFER"] = "arrayBuffer";
+})(LoadType || (LoadType = {}));
+
+class ResourceStore extends EventFirer {
+    static WILL_LOAD = "willLoad";
+    static LOADING = "loading";
+    static LOADED = "loaded";
+    static PARSED = "parsed";
+    resourcesMap = new Map();
+    loadItems = {
+        [LoadType.TEXT]: new Map(),
+        [LoadType.JSON]: new Map(),
+        [LoadType.ARRAY_BUFFER]: new Map(),
+        [LoadType.BLOB]: new Map(),
+    };
+    parsers = new Map();
+    #toLoadStack = [];
+    #loadingTasks = new Set();
+    maxTasks = 5;
+    #loadTagsMap = new Map();
+    #countToParse = 0;
+    getResource(name, type) {
+        const map = this.resourcesMap.get(type);
+        if (!map) {
+            return null;
+        }
+        return map.get(name);
+    }
+    setResource(data, type, name) {
+        let map = this.resourcesMap.get(type);
+        if (!map) {
+            map = new Map();
+            this.resourcesMap.set(type, map);
+        }
+        if (data instanceof Array) {
+            for (let i = 0, len = data.length; i < len; i++) {
+                map.set(data[i].name ?? name + '_' + i, data[i]);
+            }
+        }
+        else {
+            map.set(name, data);
+        }
+        return this;
+    }
+    loadAndParse = (arr) => {
+        for (let item of arr) {
+            let check = this.getResource(item.name, item.type);
+            if (check) {
+                // 重复资源不加载
+                continue;
+            }
+            check = this.#loadTagsMap.get(item);
+            if (check) {
+                // 防止一个资源连续执行多次加载
+                continue;
+            }
+            if (item.loadParts.length) {
+                for (let part of item.loadParts) {
+                    this.#toLoadStack.push({
+                        part,
+                        belongsTo: item
+                    });
+                }
+                this.#loadTagsMap.set(item, item.loadParts.length);
+                this.#countToParse++;
+            }
+        }
+        const toLoadLength = this.#toLoadStack.length;
+        this.fire(ResourceStore.WILL_LOAD, this);
+        for (let i = 0; i < toLoadLength && i < this.maxTasks; i++) {
+            const part = this.#toLoadStack.pop();
+            let promise = this.#loadPart(part);
+            promise.finally(() => {
+                this.#loadingTasks.delete(promise);
+                if (this.#toLoadStack.length) {
+                    this.#loadPart(this.#toLoadStack.pop());
+                }
+                else {
+                    this.fire(ResourceStore.LOADED, this);
+                }
+            });
+            this.#loadingTasks.add(promise);
+        }
+        return this;
+    };
+    getUrlLoaded(url, type) {
+        if (type) {
+            return this.loadItems[type].get(url);
+        }
+        let result = this.loadItems[LoadType.TEXT].get(url);
+        if (result) {
+            return result;
+        }
+        result = this.loadItems[LoadType.BLOB].get(url);
+        if (result) {
+            return result;
+        }
+        result = this.loadItems[LoadType.ARRAY_BUFFER].get(url);
+        if (result) {
+            return result;
+        }
+        result = this.loadItems[LoadType.JSON].get(url);
+        if (result) {
+            return result;
+        }
+        return null;
+    }
+    #loadPart = (partRecord) => {
+        const part = partRecord.part;
+        const len = partRecord.belongsTo.loadParts.length;
+        let process = 0;
+        const assets = this.getUrlLoaded(part.url, part.type);
+        if (assets) {
+            return new Promise((resolve) => {
+                part.onLoad?.(assets);
+                resolve(assets);
+            });
+        }
+        return fetch(part.url).then((response) => {
+            const { body, headers } = response;
+            let size = parseInt(headers.get('content-length'), 10) || 0;
+            let currentSize = 0;
+            let stream;
+            const reader = body.getReader();
+            stream = new ReadableStream({
+                start: (controller) => {
+                    const push = (reader) => {
+                        reader.read().then((res) => {
+                            let currentReadData = res;
+                            let { done, value } = res;
+                            if (done) {
+                                controller.close();
+                                return;
+                            }
+                            else {
+                                if (!currentReadData || !currentReadData.value) {
+                                    process = 0;
+                                }
+                                else {
+                                    const arr = currentReadData.value;
+                                    process = arr.length * arr.constructor.BYTES_PER_ELEMENT;
+                                }
+                                currentSize += process;
+                                part.onLoadProgress?.(currentSize, size, process);
+                                controller.enqueue(value);
+                            }
+                            push(reader);
+                        }).catch((e) => {
+                            part.onLoadError?.(e);
+                        });
+                    };
+                    push(reader);
+                },
+                cancel: () => {
+                    part.onCancel?.();
+                }
+            });
+            return new Response(stream, { headers });
+        }).then((response) => {
+            if (part.type === LoadType.JSON) {
+                return response.json();
+            }
+            if (part.type === LoadType.TEXT) {
+                return response.text();
+            }
+            if (part.type === LoadType.BLOB) {
+                return response.blob();
+            }
+            return response.arrayBuffer();
+        }).then((data) => {
+            part.onLoad?.(data);
+            this.loadItems[part.type ?? LoadType.ARRAY_BUFFER].set(part.url, data);
+            let count = this.#loadTagsMap.get(partRecord.belongsTo);
+            partRecord.belongsTo.onLoadProgress?.(len - count + 1, len);
+            if (count < 2) {
+                this.#loadTagsMap.delete(partRecord.belongsTo);
+                partRecord.belongsTo.onLoad?.();
+                this.#parserResource(partRecord.belongsTo);
+            }
+            else {
+                this.#loadTagsMap.set(partRecord.belongsTo, count - 1);
+            }
+            return data;
+        }).catch((e) => {
+            part.onLoadError?.(e);
+        });
+    };
+    #parserResource = (resource) => {
+        let parser = this.parsers.get(resource.type);
+        if (!parser) {
+            resource.onParseError?.(new Error('No parser found: ' + resource.type));
+        }
+        const data = [];
+        for (let part of resource.loadParts) {
+            data.push(this.getUrlLoaded(part.url, part.type));
+        }
+        let result = parser(...data);
+        if (result instanceof Promise) {
+            return result.then((data) => {
+                this.#checkAllParseAndSetResource(resource, data);
+            }).catch((e) => {
+                resource.onParseError?.(e);
+                this.#countToParse--;
+                if (!this.#countToParse) {
+                    this.fire(ResourceStore.PARSED, this);
+                }
+            });
+        }
+        else {
+            this.#checkAllParseAndSetResource(resource, result);
+        }
+        return this;
+    };
+    #checkAllParseAndSetResource = (resource, data) => {
+        this.setResource(data, resource.type, resource.name);
+        resource.onParse?.(data);
+        this.#countToParse--;
+        if (!this.#countToParse) {
+            this.fire(ResourceStore.PARSED, this);
+        }
+    };
+    registerParser(parser, type) {
+        this.parsers.set(type, parser);
+        return this;
+    }
+}
+
+const AtlasParser = async (blob, json) => {
+    const bitmap = await createImageBitmap(blob);
+    const result = [];
+    for (let i = 0, len = json.frames.length; i < len; i++) {
+        const f = json.frames[i];
+        const tex = new Texture({
+            image: await drawSpriteBlock(bitmap, f.w, f.h, f),
+            size: [f.w, f.h],
+            name: f.name ?? "atlas_" + i
+        });
+        result.push(tex);
+    }
+    return result;
+};
+
+const FntParser = async (data, ...blobs) => {
+    if (!data) {
+        throw new Error('no data provided');
+    }
+    data = data.trim();
+    const output = {
+        pages: [],
+        chars: [],
+        kernings: [],
+    };
+    const lines = data.split(/\r\n?|\n/g);
+    if (lines.length === 0) {
+        throw new Error('no data in BMFont file');
+    }
+    for (let i = 0; i < lines.length; i++) {
+        const lineData = splitLine(lines[i], i);
+        if (!lineData) //skip empty lines
+            continue;
+        if (lineData.key === 'page') {
+            if (typeof lineData.data.id !== 'number')
+                throw new Error('malformed file at line ' + i + ' -- needs page id=N');
+            if (typeof lineData.data.file !== 'string')
+                throw new Error('malformed file at line ' + i + ' -- needs page file="path"');
+            output.pages[lineData.data.id] = lineData.data.file;
+        }
+        else if (lineData.key === 'chars' || lineData.key === 'kernings') ;
+        else if (lineData.key === 'char') {
+            output.chars.push(lineData.data);
+        }
+        else if (lineData.key === 'kerning') {
+            output.kernings.push(lineData.data);
+        }
+        else {
+            output[lineData.key] = lineData.data;
+        }
+    }
+    for (let i = 0, len = blobs.length; i < len; i++) {
+        const bitmap = await createImageBitmap(blobs[i]);
+        output.pages[i] = new Texture({
+            size: [bitmap.width, bitmap.height],
+            image: bitmap,
+        });
+    }
+    return output;
+};
+function splitLine(line, idx) {
+    line = line.replace(/\t+/g, ' ').trim();
+    if (!line)
+        return null;
+    var space = line.indexOf(' ');
+    if (space === -1)
+        throw new Error("no named row at line " + idx);
+    var key = line.substring(0, space);
+    line = line.substring(space + 1);
+    //clear "letter" field as it is non-standard and
+    //requires additional complexity to parse " / = symbols
+    line = line.replace(/letter=[\'\"]\S+[\'\"]/gi, '');
+    line = line.split("=");
+    line = line.map(function (str) {
+        return str.trim().match((/(".*?"|[^"\s]+)+(?=\s*|\s*$)/g));
+    });
+    var data = [];
+    for (var i = 0; i < line.length; i++) {
+        var dt = line[i];
+        if (i === 0) {
+            data.push({
+                key: dt[0],
+                data: ""
+            });
+        }
+        else if (i === line.length - 1) {
+            data[data.length - 1].data = parseData(dt[0]);
+        }
+        else {
+            data[data.length - 1].data = parseData(dt[0]);
+            data.push({
+                key: dt[1],
+                data: ""
+            });
+        }
+    }
+    var out = {
+        key: key,
+        data: {}
+    };
+    data.forEach(function (v) {
+        out.data[v.key] = v.data;
+    });
+    return out;
+}
+function parseData(data) {
+    if (!data || data.length === 0)
+        return "";
+    if (data.indexOf('"') === 0 || data.indexOf("'") === 0)
+        return data.substring(1, data.length - 1);
+    if (data.indexOf(',') !== -1)
+        return parseIntList(data);
+    return parseInt(data, 10);
+}
+function parseIntList(data) {
+    return data.split(',').map(function (val) {
+        return parseInt(val, 10);
+    });
+}
+
+const MeshObjParser = async (text) => {
+    const texts = text.split('\n');
+    const positionArr = [];
+    const normalArr = [];
+    const uvArr = [];
+    const positionIndicesArr = [];
+    const normalIndicesArr = [];
+    const uvIndicesArr = [];
+    let t, ts;
+    for (let i = 0, len = texts.length; i < len; i++) {
+        t = texts[i];
+        ts = t.split(' ');
+        if (t.startsWith('v ')) {
+            positionArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
+        }
+        else if (t.startsWith('vn ')) {
+            normalArr.push(parseFloat(ts[1]), parseFloat(ts[2]), parseFloat(ts[3]));
+        }
+        else if (t.startsWith('vt ')) {
+            uvArr.push(parseFloat(ts[1]), parseFloat(ts[2]));
+        }
+        else if (t.startsWith('f ')) {
+            if (ts[1].includes('/')) {
+                let a = ts[1].split('/');
+                let b = ts[2].split('/');
+                let c = ts[3].split('/');
+                positionIndicesArr.push(parseInt(a[0], 10), parseInt(b[0], 10), parseInt(c[0], 10));
+                if (a.length === 2) {
+                    uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
+                }
+                else {
+                    if (a[1]) {
+                        uvIndicesArr.push(parseInt(a[1], 10), parseInt(b[1], 10), parseInt(c[1], 10));
+                    }
+                    normalIndicesArr.push(parseInt(a[2], 10), parseInt(b[2], 10), parseInt(c[2], 10));
+                }
+            }
+            else {
+                positionIndicesArr.push(parseInt(ts[1], 10), parseInt(ts[2], 10), parseInt(ts[3], 10));
+            }
+        }
+    }
+    const indicesLength = positionIndicesArr.length;
+    const wholeLen = indicesLength * 3;
+    const positionF32 = new Float32Array(wholeLen);
+    for (let i = 0; i < indicesLength; i++) {
+        let index = (positionIndicesArr[i] - 1) * 3;
+        positionF32[i * 3] = positionArr[index];
+        positionF32[i * 3 + 1] = positionArr[index + 1];
+        positionF32[i * 3 + 2] = positionArr[index + 2];
+    }
+    const geo = new Geometry(3, positionIndicesArr.length, "triangle-list", "none");
+    geo.addAttribute(POSITION, positionF32, 3, [
+        {
+            name: POSITION,
+            offset: 0,
+            length: 3,
+        }
+    ]);
+    const normalLength = uvIndicesArr.length;
+    if (normalLength) {
+        const wholeLen = normalLength * 3;
+        const positionF32 = new Float32Array(wholeLen);
+        for (let i = 0; i < normalLength; i++) {
+            let index = (normalIndicesArr[i] - 1) * 3;
+            positionF32[i * 3] = normalArr[index];
+            positionF32[i * 3 + 1] = normalArr[index + 1];
+            positionF32[i * 3 + 2] = normalArr[index + 2];
+        }
+        geo.addAttribute(NORMAL, positionF32, 3, [
+            {
+                name: NORMAL,
+                offset: 0,
+                length: 3,
+            }
+        ]);
+    }
+    const uvLength = uvIndicesArr.length;
+    if (uvLength) {
+        const wholeLen = uvLength * 2;
+        const positionF32 = new Float32Array(wholeLen);
+        for (let i = 0; i < uvLength; i++) {
+            let index = (uvIndicesArr[i] - 1) * 2;
+            positionF32[i * 2] = uvArr[index];
+            positionF32[i * 2 + 1] = uvArr[index + 1];
+        }
+        geo.addAttribute(UV, positionF32, 2, [
+            {
+                name: UV,
+                offset: 0,
+                length: 2,
+            }
+        ]);
+    }
+    return geo;
+};
+
+const TextureParser = async (blob) => {
+    const bitmap = await createImageBitmap(blob);
+    return new Texture({
+        size: [bitmap.width, bitmap.height],
+        image: bitmap,
+    });
+};
+
+class HashRouteSystem extends System {
+    static listeningHashChange = false;
+    static count = 0; // 计数
+    static listener = () => {
+        HashRouteSystem.currentPath = location.hash.slice(1) || "/";
+    };
+    static currentPath = location.hash.slice(1) || "/";
+    currentPath = "";
+    constructor() {
+        super("HashRouteSystem", (entity) => {
+            return entity.getFirstComponentByTagLabel("HashRoute");
+        });
+        HashRouteSystem.count++;
+        if (!HashRouteSystem.listeningHashChange) {
+            HashRouteSystem.listeningHashChange = true;
+            window.addEventListener("load", HashRouteSystem.listener, false);
+            window.addEventListener("hashchange", HashRouteSystem.listener, false);
+        }
+    }
+    destroy() {
+        HashRouteSystem.count--;
+        if (HashRouteSystem.count < 1) {
+            window.removeEventListener("load", HashRouteSystem.listener, false);
+            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
+        }
+        return this;
+    }
+    handle(entity) {
+        let routeComponents = entity.getComponentsByTagLabel("HashRoute");
+        for (let i = routeComponents.length - 1; i > -1; i--) {
+            routeComponents[i].route(this.currentPath, entity);
+        }
+        return this;
+    }
+    run(world, time, delta) {
+        if (HashRouteSystem.currentPath === this.currentPath) {
+            return this;
+        }
+        this.currentPath = HashRouteSystem.currentPath;
+        super.run(world, time, delta);
+        return this;
+    }
+}
+
+function fixData(data) {
+    if (!data.path.startsWith("/")) {
+        data.path = "/" + data.path;
+    }
+    return data;
+}
+class HashRouteComponent extends TreeNode.mixin(Component) {
+    children = [];
+    constructor(name, data) {
+        super(name, fixData(data), [{
+                label: "HashRoute",
+                unique: false
+            }]);
+    }
+    route(path, entity) {
+        let p = this.data.path;
+        if (path === p) {
+            this.data.action(entity, true);
+            for (let i = this.children.length - 1; i > -1; i--) {
+                this.children[i].route("", entity);
+            }
+        }
+        else if (path.startsWith(p)) {
+            let str = path.substring(p.length);
+            if (str.startsWith("/")) {
+                this.data.action(entity, true);
+                for (let i = this.children.length - 1; i > -1; i--) {
+                    this.children[i].route(str, entity);
+                }
+            }
+            else {
+                this.data.action(entity, false);
+                for (let i = this.children.length - 1; i > -1; i--) {
+                    this.children[i].route("", entity);
+                }
+            }
+        }
+        else {
+            this.data.action(entity, false);
+            for (let i = this.children.length - 1; i > -1; i--) {
+                this.children[i].route("", entity);
+            }
+        }
+        return this;
+    }
+}
+
 var TWEEN_STATE;
 (function (TWEEN_STATE) {
     TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
@@ -10990,4 +11571,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createSprite3: createSprite3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BufferFloat32, COLOR_HEX_MAP, constants$2 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, Component, ComponentManager, index$3 as ComponentProxy, constants$1 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, Frustum, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Line3, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeTo, eventfirer, filt, fire, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, mixin$1 as mixin, on, once, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, times, transformMatrix3, transformMatrix4 };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BitmapFontChar3, BitmapFontManager, BitmapFontMaterial, BufferFloat32, COLOR_HEX_MAP, constants$1 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, ColorRYB, Component, ComponentManager, index$1 as ComponentProxy, constants$2 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, FntParser, Frustum, Geometry, index$2 as Geometry2Factory, index$3 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Line3, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeTo, eventfirer, filt, fire, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, mixin$1 as mixin, on, once, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, times, transformMatrix3, transformMatrix4 };

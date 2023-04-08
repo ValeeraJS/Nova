@@ -1,7 +1,7 @@
 import { ColorGPU } from "@valeera/mathx";
 import { IEntity, System, IEntityManager, ISystemManager } from "@valeera/x";
 import { RENDERABLE } from "../../components/constants";
-import getColorGPU, { ColorFormatType } from "../../utils/getColorGPU";
+import { getColorGPU, ColorFormatType } from "../../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";
 import { IRenderSystemInCanvas, IRenderSystemInCanvasOptions } from "./IRenderSystem";
 import IViewport from "./IViewport";

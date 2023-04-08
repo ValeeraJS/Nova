@@ -1,4 +1,3 @@
-import { IColorGPU, IColorRGB, IColorRGBA, IColorRGBAJson, IColorRGBJson, ColorGPU } from "@valeera/mathx";
-export type ColorFormatType = IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson;
-declare const _default: (color: IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson, result?: ColorGPU) => ColorGPU;
-export default _default;
+import { IColorGPU, IColorRGB, IColorRGBA, IColorRGBAJson, IColorRGBJson, ColorGPU, IColorRYB, IColorRYBA } from "@valeera/mathx";
+export type ColorFormatType = IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson | IColorRYB | IColorRYBA;
+export declare const getColorGPU: (color: ColorFormatType, result?: ColorGPU) => ColorGPU;

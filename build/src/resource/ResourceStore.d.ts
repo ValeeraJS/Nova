@@ -19,7 +19,7 @@ export declare class ResourceStore extends EventFirer {
     maxTasks: number;
     getResource(name: string, type: string): any;
     setResource(data: any, type: string, name: string): this;
-    loadAndParse: (arr: ILoadItem<LoadPartType>[]) => void;
+    loadAndParse: (arr: ILoadItem<LoadPartType>[]) => this;
     getUrlLoaded(url: string, type?: LoadType): LoadPartType | null;
     registerParser(parser: IParser<any>, type: string): this;
 }

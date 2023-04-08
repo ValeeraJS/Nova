@@ -1,8 +1,8 @@
-import { IColorGPU, IColorRGB, IColorRGBA, IColorRGBAJson, IColorRGBJson, ColorGPU, ColorRGB, ColorRGBA, ColorHSL } from "@valeera/mathx";
+import { IColorGPU, IColorRGB, IColorRGBA, IColorRGBAJson, IColorRGBJson, ColorGPU, ColorRGB, ColorRGBA, ColorHSL, IColorRYB, IColorRYBA, ColorRYB } from "@valeera/mathx";
 
-export type ColorFormatType = IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson;
+export type ColorFormatType = IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson | IColorRYB | IColorRYBA;
 
-export default (color: IColorGPU | string | Float32Array | number[] | number | IColorRGB | IColorRGBA | IColorRGBAJson | IColorRGBJson, result = new ColorGPU()) => {
+export const getColorGPU = (color: ColorFormatType, result = new ColorGPU()) => {
     if (color instanceof ColorGPU) {
         result.set(color);
     } else if (typeof color === "string") {
@@ -11,6 +11,8 @@ export default (color: IColorGPU | string | Float32Array | number[] | number | I
         ColorGPU.fromHex(color, 1, result);
     } else if (color instanceof ColorRGB) {
         ColorGPU.fromColorRGB(color, result);
+    } else if (color instanceof ColorRYB) {
+        ColorGPU.fromColorRYB(color, result);
     } else if (color instanceof ColorRGBA) {
         ColorGPU.fromColorRGBA(color, result);
     } else if (color instanceof ColorHSL) {

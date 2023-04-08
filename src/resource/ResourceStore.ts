@@ -99,6 +99,8 @@ export class ResourceStore extends EventFirer {
 			});
 			this.#loadingTasks.add(promise);
 		}
+
+		return this;
 	}
 
 	getUrlLoaded(url: string, type?: LoadType): LoadPartType | null {
@@ -227,7 +229,7 @@ export class ResourceStore extends EventFirer {
 				}
 			});
 		} else {
-			this.#checkAllParseAndSetResource(resource, data);
+			this.#checkAllParseAndSetResource(resource, result);
 		}
 
 		return this;

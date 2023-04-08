@@ -5,11 +5,6 @@ import { Texture } from "./texture/Texture";
 import { createPlane } from "./geometry/factory3/createPlane";
 import { TextureMaterial } from "./webgpu/material/TextureMaterial";
 
-export interface Mesh3Data extends RenderableData<Geometry, IMaterial> {
-	geometry: Geometry;
-	material: IMaterial;
-}
-
 export class Sprite3 extends Renderable<Geometry, IMaterial> {
 	public static readonly RenderType = "mesh3";
 	constructor(texture: Texture, width?: number, height?: number) {

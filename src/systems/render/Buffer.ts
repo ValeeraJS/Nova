@@ -3,10 +3,10 @@ export class BufferFloat32 extends Float32Array {
     name: string;
     descriptor: GPUBufferDescriptor = {} as any;
     constructor(option: Partial<GPUBufferDescriptor> & {data?: Float32Array | number[]}, name = "buffer") {
-        super((option.size ?? 16) >> 2);
+        super((option.size ?? (option.data?.length ?? 4) << 2) >> 2);
         this.name = name;
         this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
-        this.descriptor.size = option.size ?? 16;
+        this.descriptor.size = this.byteLength;
         if (option.data) {
             this.set(option.data);
         }
