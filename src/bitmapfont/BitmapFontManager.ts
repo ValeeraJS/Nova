@@ -20,6 +20,7 @@ export class BitmapFontManager {
         for (let i = 0, len = fontData.chars.length; i<len; i++) {
             if (fontData.chars[i].id === charTextOrCode) {
                 char  = new BitmapFontChar3(fontData.chars[i], fontData);
+                break;
             }
         }
         return char;

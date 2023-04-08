@@ -16,7 +16,7 @@ function fixData(data: RouteComponentData) {
 export default class HashRouteComponent extends TreeNode.mixin(Component)<RouteComponentData> {
     children: HashRouteComponent[] = [];
     
-    public constructor(name, data: RouteComponentData) {
+    public constructor(name: string, data: RouteComponentData) {
         super(name, fixData(data), [{
             label: "HashRoute",
             unique: false

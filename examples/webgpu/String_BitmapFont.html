@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+<body>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script>
+		const resources = [
+			{
+				type: "bitmapfont",
+				name: "sans-serif",
+				loadParts: [
+					{
+						url: "./../bitmapfont/sans-serif.fnt",
+						type: "text",
+					},
+					{
+						url: "./../bitmapfont/sans-serif.png",
+						type: "blob",
+					},
+				],
+			},
+		];
+		const store = new Nova.ResourceStore();
+		store.registerParser(Nova.FntParser, "bitmapfont");
+		store.loadAndParse(resources).on("parsed", () => {
+			console.log(store.getResource("sans-serif", "bitmapfont"))
+			const entity = new Nova.BitmapFontString("BitmapFont", store.getResource("sans-serif", "bitmapfont"));
+			world.add(entity);
+		});
+
+		const engine = new Nova.Engine();
+		const world = new Nova.World();
+		const camera = new Nova.Camera3("test-camera", new Nova.OrthogonalProjection(-innerWidth, innerWidth, -innerHeight, innerHeight));
+		camera.position.z = 5;
+		const renderSystem = new Nova.WebGPURenderSystem();
+		renderSystem.clearColor = "white";
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem);
+
+		engine.addTask(() => {
+			world.run();
+		});
+	</script>
+</body>

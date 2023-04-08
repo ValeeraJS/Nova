@@ -36,7 +36,7 @@ declare const HashRouteComponent_base: {
 } & typeof Component;
 export default class HashRouteComponent extends HashRouteComponent_base<RouteComponentData> {
     children: HashRouteComponent[];
-    constructor(name: any, data: RouteComponentData);
+    constructor(name: string, data: RouteComponentData);
     route(path: string, entity: IEntity): this;
 }
 export {};

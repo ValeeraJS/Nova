@@ -614,6 +614,10 @@ packages:
     resolution: {integrity: sha512-HzrA3+/BPCBmtQ6fuZDkg0DxcUAXKdygu7Saeb6fJwd9OrYY/iaQ8fMmLeQM7Mv79pGJqwjzvFFpa4WVY6g5dg==}
     dev: false
 
+  /@valeera/tree/0.1.7:
+    resolution: {integrity: sha512-YJQWsUlDwpYrPgSXWFPuaPXM4xjAuZTuc27/4URqRNvVKER7c7bdsfN2XCSdl4NkNdIVTvufiGix927oTmI5Jw==}
+    dev: false
+
   /@valeera/webgpu-constant/0.1.1:
     resolution: {integrity: sha512-74n1qjoMiAorlLdi9eRWFU7Rl9z1YBXD0kr1ixmV39sprbkGFXva4OPFib179FxXmvM0D9OFFSz5qyIxH5GwuA==}
     dev: false
@@ -623,7 +627,7 @@ packages:
     dependencies:
       '@valeera/eventfire': 1.1.1
       '@valeera/idgenerator': 1.2.2
-      '@valeera/tree': 0.1.6
+      '@valeera/tree': 0.1.7
       clone-deep: 4.0.1
     dev: false
 

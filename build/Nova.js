@@ -113,7 +113,7 @@
 	    return firer;
 	}
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin$1 = (Base = Object) => {
+	const mixin$2 = (Base = Object) => {
 	    return class EventFirer extends Base {
 	        filters;
 	        listeners;
@@ -241,7 +241,7 @@
 	        }
 	    };
 	};
-	const EventFirer = mixin$1(Object);
+	const EventFirer = mixin$2(Object);
 
 	const RefEventFirerMap = new WeakMap();
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -5099,22 +5099,22 @@
 	    }
 	}
 
-	const FIND_LEAVES_VISITOR = {
+	const FIND_LEAVES_VISITOR$1 = {
 	    enter: (node, result) => {
 	        if (!node.children.length) {
 	            result.push(node);
 	        }
 	    }
 	};
-	const ARRAY_VISITOR = {
+	const ARRAY_VISITOR$1 = {
 	    enter: (node, result) => {
 	        result.push(node);
 	    }
 	};
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base = Object) => {
+	const mixin$1 = (Base = Object) => {
 	    return class TreeNode extends Base {
-	        static mixin = mixin;
+	        static mixin = mixin$1;
 	        static addChild(node, child) {
 	            if (TreeNode.hasAncestor(node, child)) {
 	                throw new Error("The node added is one of the ancestors of current one.");
@@ -5141,7 +5141,7 @@
 	        }
 	        static findLeaves(node) {
 	            const result = [];
-	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR$1, result);
 	            return result;
 	        }
 	        static findRoot(node) {
@@ -5172,7 +5172,7 @@
 	        }
 	        static toArray(node) {
 	            const result = [];
-	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            TreeNode.traverse(node, ARRAY_VISITOR$1, result);
 	            return result;
 	        }
 	        static traverse(node, visitor, rest) {
@@ -5212,7 +5212,7 @@
 	        }
 	    };
 	};
-	var TreeNode = mixin(Object);
+	var TreeNode$1 = mixin$1(Object);
 
 	const IdGeneratorInstance = new IdGenerator();
 
@@ -5531,7 +5531,7 @@
 	}
 
 	let arr$1;
-	class Entity extends TreeNode.mixin(EventFirer) {
+	class Entity extends TreeNode$1.mixin(EventFirer) {
 	    id = IdGeneratorInstance.next();
 	    isEntity = true;
 	    componentManager = null;
@@ -5892,38 +5892,6 @@
 	    }
 	}
 
-	const DEFAULT_BLEND_STATE = {
-	    color: {
-	        srcFactor: 'src-alpha',
-	        dstFactor: 'one-minus-src-alpha',
-	        operation: 'add',
-	    },
-	    alpha: {
-	        srcFactor: 'zero',
-	        dstFactor: 'one',
-	        operation: 'add',
-	    }
-	};
-
-	class BufferFloat32 extends Float32Array {
-	    dirty = true;
-	    name;
-	    descriptor = {};
-	    constructor(option, name = "buffer") {
-	        super((option.size ?? (option.data?.length ?? 4) << 2) >> 2);
-	        this.name = name;
-	        this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
-	        this.descriptor.size = this.byteLength;
-	        if (option.data) {
-	            this.set(option.data);
-	        }
-	    }
-	    set(arr, offset) {
-	        super.set(arr, offset);
-	        this.dirty = true;
-	    }
-	}
-
 	// component type
 	const ANCHOR_2D = "anchor2";
 	const ANCHOR_3D = "anchor3";
@@ -5980,6 +5948,1009 @@
 		WORLD_MATRIX3: WORLD_MATRIX3,
 		WORLD_MATRIX4: WORLD_MATRIX4
 	});
+
+	class Matrix3Component extends Component {
+	    constructor(name, data = Matrix3.create(), tags = []) {
+	        super(name, data, tags);
+	        this.dirty = true;
+	    }
+	}
+	const updateModelMatrixComponent$1 = (mesh) => {
+	    let p3 = mesh.position;
+	    let r3 = mesh.rotation;
+	    let s3 = mesh.scaling;
+	    let a3 = mesh.anchor;
+	    let m3 = mesh.modelMatrix;
+	    let worldMatrix = mesh.worldMatrix;
+	    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
+	        Matrix3.fromArray(p3?.data || Matrix3.UNIT_MATRIX3, m3.data);
+	        if (r3) {
+	            Matrix3.multiplyRotationMatrix(m3.data, r3.data, m3.data);
+	        }
+	        if (s3) {
+	            Matrix3.multiplyScaleMatrix(m3.data, s3.data, m3.data);
+	        }
+	        if (a3) {
+	            Matrix3.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
+	        }
+	        if (p3) {
+	            p3.dirty = false;
+	        }
+	        if (r3) {
+	            r3.dirty = false;
+	        }
+	        if (s3) {
+	            s3.dirty = false;
+	        }
+	        if (a3) {
+	            a3.dirty = false;
+	        }
+	    }
+	    if (mesh.parent) {
+	        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
+	        Matrix3.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+	    }
+	    else {
+	        Matrix3.fromArray(m3.data, worldMatrix.data);
+	    }
+	    return m3;
+	};
+
+	class Anchor2 extends Matrix3Component {
+	    vec2 = new Vector2();
+	    constructor(vec = Vector2.VECTOR2_ZERO) {
+	        super(ANCHOR_2D, Matrix3.create(), [{
+	                label: ANCHOR_2D,
+	                unique: true
+	            }]);
+	        Vector2.fromArray(vec, 0, this.vec2);
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec2[0];
+	    }
+	    set x(value) {
+	        this.vec2[0] = value;
+	        this.data[6] = -value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec2[1];
+	    }
+	    set y(value) {
+	        this.vec2[1] = value;
+	        this.data[7] = -value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        this.vec2.set(arr);
+	        return this.update();
+	    }
+	    setXY(x, y, z) {
+	        this.vec2[0] = x;
+	        this.vec2[1] = y;
+	        return this.update();
+	    }
+	    update() {
+	        this.data[6] = -this.x;
+	        this.data[7] = -this.y;
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class APosition2 extends Matrix3Component {
+	    constructor(data = Matrix3.create()) {
+	        super(TRANSLATION_2D, data, [{
+	                label: TRANSLATION_2D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class AProjection2 extends Matrix3Component {
+	    constructor(data = Matrix3.create()) {
+	        super(PROJECTION_2D, data, [{
+	                label: PROJECTION_2D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class ARotation2 extends Matrix3Component {
+	    constructor(data = Matrix3.create()) {
+	        super(ROTATION_2D, data, [{
+	                label: ROTATION_2D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class AScale2 extends Matrix3Component {
+	    constructor(data = Matrix3.create()) {
+	        super(SCALING_2D, data, [{
+	                label: SCALING_2D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class EuclidPosition2 extends APosition2 {
+	    vec2 = new Vector2();
+	    constructor(vec2 = new Float32Array(2)) {
+	        super();
+	        Vector2.fromArray(vec2, 0, this.vec2);
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec2[0];
+	    }
+	    set x(value) {
+	        this.vec2[0] = value;
+	        this.data[6] = value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec2[1];
+	    }
+	    set y(value) {
+	        this.vec2[1] = value;
+	        this.data[7] = value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        this.vec2.set(arr);
+	        this.data[6] = arr[0];
+	        this.data[7] = arr[1];
+	        this.dirty = true;
+	        return this;
+	    }
+	    setXY(x, y) {
+	        this.vec2[0] = x;
+	        this.vec2[1] = y;
+	        this.data[6] = x;
+	        this.data[7] = y;
+	        this.dirty = true;
+	        return this;
+	    }
+	    update() {
+	        Matrix3.fromTranslation(this.vec2, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class AngleRotation2 extends ARotation2 {
+	    #angle;
+	    data = Matrix3.identity();
+	    constructor(angle = 0) {
+	        super();
+	        this.#angle = angle;
+	        this.update();
+	    }
+	    get a() {
+	        return this.#angle;
+	    }
+	    set a(value) {
+	        this.#angle = value;
+	        this.update();
+	    }
+	    update() {
+	        Matrix3.fromRotation(this.#angle, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class PolarPosition2 extends APosition2 {
+	    polar = new Polar();
+	    constructor(radius = 0, angle = 0) {
+	        super();
+	        this.polar.r = radius;
+	        this.polar.a = angle;
+	    }
+	    get r() {
+	        return this.polar.r;
+	    }
+	    set r(value) {
+	        this.polar.r = value;
+	        this.update();
+	    }
+	    get a() {
+	        return this.polar[1];
+	    }
+	    set a(value) {
+	        this.polar[1] = value;
+	        this.update();
+	    }
+	    set(r, a) {
+	        this.polar.a = a;
+	        this.polar.r = r;
+	        return this;
+	    }
+	    update() {
+	        this.data[6] = this.polar.x();
+	        this.data[7] = this.polar.y();
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class Projection2D extends AProjection2 {
+	    options;
+	    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005) {
+	        super();
+	        this.options = {
+	            left,
+	            right,
+	            bottom,
+	            top
+	        };
+	        this.update();
+	    }
+	    get left() {
+	        return this.options.left;
+	    }
+	    set left(value) {
+	        this.options.left = value;
+	        this.update();
+	    }
+	    get right() {
+	        return this.right;
+	    }
+	    set right(value) {
+	        this.options.right = value;
+	        this.update();
+	    }
+	    get top() {
+	        return this.top;
+	    }
+	    set top(value) {
+	        this.options.top = value;
+	        this.update();
+	    }
+	    get bottom() {
+	        return this.bottom;
+	    }
+	    set bottom(value) {
+	        this.options.bottom = value;
+	        this.update();
+	    }
+	    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top) {
+	        this.options.left = left;
+	        this.options.right = right;
+	        this.options.bottom = bottom;
+	        this.options.top = top;
+	        return this.update();
+	    }
+	    update() {
+	        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+	const orthogonal = (left, right, bottom, top, out = new Matrix3()) => {
+	    const c = 1 / (left - right);
+	    const b = 1 / (bottom - top);
+	    out[0] = -2 * c;
+	    out[1] = 0;
+	    out[2] = 0;
+	    out[3] = 0;
+	    out[4] = -2 * b;
+	    out[5] = 0;
+	    // out[6] = 0;
+	    // out[7] = 0;
+	    out[6] = (left + right) * c;
+	    out[7] = (top + bottom) * b;
+	    out[8] = 1;
+	    return out;
+	};
+
+	const DEFAULT_SCALE$1 = [1, 1];
+	class Vector2Scale2 extends AScale2 {
+	    vec2;
+	    constructor(vec2 = new Float32Array(DEFAULT_SCALE$1)) {
+	        super();
+	        this.vec2 = vec2;
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec2[0];
+	    }
+	    set x(value) {
+	        this.vec2[0] = value;
+	        this.data[0] = value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec2[1];
+	    }
+	    set y(value) {
+	        this.vec2[1] = value;
+	        this.data[4] = value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        this.vec2.set(arr);
+	        return this.update();
+	    }
+	    setXY(x, y, z) {
+	        this.vec2[0] = x;
+	        this.vec2[1] = y;
+	        this.data[0] = x;
+	        this.data[4] = y;
+	        this.dirty = true;
+	        return this;
+	    }
+	    update() {
+	        Matrix3.fromScaling(this.vec2, this.data);
+	        return this;
+	    }
+	}
+
+	class Matrix4Component extends Component {
+	    constructor(name, data = Matrix4.create(), tags = []) {
+	        super(name, data, tags);
+	        this.dirty = true;
+	    }
+	}
+	const updateModelMatrixComponent = (mesh) => {
+	    let p3 = mesh.position;
+	    let r3 = mesh.rotation;
+	    let s3 = mesh.scaling;
+	    let a3 = mesh.anchor;
+	    let m3 = mesh.modelMatrix;
+	    let worldMatrix = mesh.worldMatrix;
+	    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
+	        Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
+	        if (r3) {
+	            Matrix4.multiply(m3.data, r3.data, m3.data);
+	        }
+	        if (s3) {
+	            Matrix4.multiplyScaleMatrix(m3.data, s3.data, m3.data);
+	        }
+	        if (a3) {
+	            Matrix4.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
+	        }
+	        if (p3) {
+	            p3.dirty = false;
+	        }
+	        if (r3) {
+	            r3.dirty = false;
+	        }
+	        if (s3) {
+	            s3.dirty = false;
+	        }
+	        if (a3) {
+	            a3.dirty = false;
+	        }
+	    }
+	    if (mesh.parent) {
+	        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
+	        Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
+	    }
+	    else {
+	        Matrix4.fromArray(m3.data, worldMatrix.data);
+	    }
+	    return m3;
+	};
+
+	class Anchor3 extends Matrix4Component {
+	    vec3 = new Vector3();
+	    constructor(vec = Vector3.VECTOR3_ZERO) {
+	        super(ANCHOR_3D, Matrix4.create(), [{
+	                label: ANCHOR_3D,
+	                unique: true
+	            }]);
+	        Vector3.fromArray(vec, 0, this.vec3);
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec3[0];
+	    }
+	    set x(value) {
+	        this.vec3[0] = value;
+	        this.data[12] = -value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec3[1];
+	    }
+	    set y(value) {
+	        this.vec3[1] = value;
+	        this.data[13] = -value;
+	        this.dirty = true;
+	    }
+	    get z() {
+	        return this.vec3[2];
+	    }
+	    set z(value) {
+	        this.vec3[2] = value;
+	        this.data[14] = -value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        this.vec3.set(arr);
+	        return this.update();
+	    }
+	    setXYZ(x, y, z) {
+	        this.vec3[0] = x;
+	        this.vec3[1] = y;
+	        this.vec3[2] = z;
+	        return this.update();
+	    }
+	    update() {
+	        this.data[12] = -this.x;
+	        this.data[13] = -this.y;
+	        this.data[14] = -this.z;
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class APosition3 extends Matrix4Component {
+	    constructor(data = Matrix4.create()) {
+	        super(TRANSLATION_3D, data, [{
+	                label: TRANSLATION_3D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class AProjection3 extends Matrix4Component {
+	    constructor(data = Matrix4.create()) {
+	        super(PROJECTION_3D, data, [{
+	                label: PROJECTION_3D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class ARotation3 extends Matrix4Component {
+	    constructor(data = Matrix4.create()) {
+	        super(ROTATION_3D, data, [{
+	                label: ROTATION_3D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class AScale3 extends Matrix4Component {
+	    constructor(data = Matrix4.create()) {
+	        super(SCALING_3D, data, [{
+	                label: SCALING_3D,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	class EuclidPosition3 extends APosition3 {
+	    vec3 = new Vector3();
+	    constructor(vec3) {
+	        super();
+	        if (vec3) {
+	            Vector3.fromArray(vec3, 0, this.vec3);
+	        }
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec3[0];
+	    }
+	    set x(value) {
+	        this.vec3[0] = value;
+	        this.data[12] = value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec3[1];
+	    }
+	    set y(value) {
+	        this.vec3[1] = value;
+	        this.data[13] = value;
+	        this.dirty = true;
+	    }
+	    get z() {
+	        return this.vec3[2];
+	    }
+	    set z(value) {
+	        this.vec3[2] = value;
+	        this.data[14] = value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        this.vec3.set(arr);
+	        this.data[12] = arr[0];
+	        this.data[13] = arr[1];
+	        this.data[14] = arr[2];
+	        this.dirty = true;
+	        return this;
+	    }
+	    setXYZ(x, y, z) {
+	        this.vec3[0] = x;
+	        this.vec3[1] = y;
+	        this.vec3[2] = z;
+	        this.data[12] = x;
+	        this.data[13] = y;
+	        this.data[14] = z;
+	        this.dirty = true;
+	        return this;
+	    }
+	    update() {
+	        Matrix4.fromTranslation(this.vec3, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class EulerRotation3 extends ARotation3 {
+	    euler;
+	    constructor(euler = {
+	        x: 0,
+	        y: 0,
+	        z: 0,
+	        order: EulerAngle.ORDERS.XYZ,
+	    }) {
+	        super();
+	        this.euler = euler;
+	        this.update();
+	    }
+	    get x() {
+	        return this.euler.x;
+	    }
+	    set x(value) {
+	        this.euler.x = value;
+	        this.update();
+	    }
+	    get y() {
+	        return this.euler.y;
+	    }
+	    set y(value) {
+	        this.euler.y = value;
+	        this.update();
+	    }
+	    get z() {
+	        return this.euler.z;
+	    }
+	    set z(value) {
+	        this.euler.z = value;
+	        this.update();
+	    }
+	    get order() {
+	        return this.euler.order;
+	    }
+	    set order(value) {
+	        this.euler.order = value;
+	        this.update();
+	    }
+	    set(arr) {
+	        this.x = arr.x;
+	        this.y = arr.y;
+	        this.z = arr.z;
+	        this.order = arr.order;
+	        return this.update();
+	    }
+	    update() {
+	        Matrix4.fromEuler(this.euler, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class OrthogonalProjection extends AProjection3 {
+	    options;
+	    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 100) {
+	        super();
+	        this.options = {
+	            left,
+	            right,
+	            bottom,
+	            top,
+	            near,
+	            far,
+	        };
+	        this.update();
+	    }
+	    get left() {
+	        return this.options.left;
+	    }
+	    set left(value) {
+	        this.options.left = value;
+	        this.update();
+	    }
+	    get right() {
+	        return this.options.right;
+	    }
+	    set right(value) {
+	        this.options.right = value;
+	        this.update();
+	    }
+	    get top() {
+	        return this.options.top;
+	    }
+	    set top(value) {
+	        this.options.top = value;
+	        this.update();
+	    }
+	    get bottom() {
+	        return this.options.bottom;
+	    }
+	    set bottom(value) {
+	        this.options.bottom = value;
+	        this.update();
+	    }
+	    get near() {
+	        return this.options.near;
+	    }
+	    set near(value) {
+	        this.options.near = value;
+	        this.update();
+	    }
+	    get far() {
+	        return this.options.far;
+	    }
+	    set far(value) {
+	        this.options.far = value;
+	        this.update();
+	    }
+	    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top, near = this.near, far = this.far) {
+	        this.options.left = left;
+	        this.options.right = right;
+	        this.options.bottom = bottom;
+	        this.options.top = top;
+	        this.options.near = near;
+	        this.options.far = far;
+	        return this.update();
+	    }
+	    update() {
+	        Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class PerspectiveProjection extends AProjection3 {
+	    options;
+	    constructor(fovy = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
+	        super();
+	        this.options = {
+	            fovy,
+	            aspect,
+	            near,
+	            far,
+	        };
+	        this.update();
+	    }
+	    get fovy() {
+	        return this.options.fovy;
+	    }
+	    set fovy(value) {
+	        this.options.fovy = value;
+	        this.update();
+	    }
+	    get aspect() {
+	        return this.options.aspect;
+	    }
+	    set aspect(value) {
+	        this.options.aspect = value;
+	        this.update();
+	    }
+	    get near() {
+	        return this.options.near;
+	    }
+	    set near(value) {
+	        this.options.near = value;
+	        this.update();
+	    }
+	    get far() {
+	        return this.options.far;
+	    }
+	    set far(value) {
+	        this.options.far = value;
+	        this.update();
+	    }
+	    set(fovy = this.fovy, aspect = this.aspect, near = this.near, far = this.far) {
+	        this.options.fovy = fovy;
+	        this.options.aspect = aspect;
+	        this.options.near = near;
+	        this.options.far = far;
+	        return this.update();
+	    }
+	    update() {
+	        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	class SphericalPosition3 extends APosition3 {
+	    spherical = new Spherical();
+	    #vec3 = new Vector3();
+	    constructor(spherical = new Float32Array(3)) {
+	        super();
+	        Spherical.fromArray(spherical, this.spherical);
+	        this.update();
+	    }
+	    get radius() {
+	        return this.spherical[0];
+	    }
+	    set radius(value) {
+	        this.spherical[0] = value;
+	        this.update();
+	    }
+	    get phi() {
+	        return this.spherical[1];
+	    }
+	    set phi(value) {
+	        this.spherical[1] = value;
+	        this.update();
+	    }
+	    get theta() {
+	        return this.spherical[2];
+	    }
+	    set theta(value) {
+	        this.spherical[2] = value;
+	        this.update();
+	    }
+	    set(arr) {
+	        this.spherical.set(arr);
+	        return this.update();
+	    }
+	    update() {
+	        this.spherical.toVector3(this.#vec3);
+	        Matrix4.fromTranslation(this.#vec3, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	const DEFAULT_SCALE = [1, 1, 1];
+	class Vector3Scale3 extends AScale3 {
+	    vec3;
+	    constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
+	        super();
+	        this.vec3 = Vector3.fromArray(vec3);
+	        this.update();
+	    }
+	    get x() {
+	        return this.vec3[0];
+	    }
+	    set x(value) {
+	        this.vec3[0] = value;
+	        this.data[0] = value;
+	        this.dirty = true;
+	    }
+	    get y() {
+	        return this.vec3[1];
+	    }
+	    set y(value) {
+	        this.vec3[1] = value;
+	        this.data[5] = value;
+	        this.dirty = true;
+	    }
+	    get z() {
+	        return this.vec3[1];
+	    }
+	    set z(value) {
+	        this.vec3[2] = value;
+	        this.data[10] = value;
+	        this.dirty = true;
+	    }
+	    set(arr) {
+	        if (typeof arr === 'number') {
+	            Vector3.fromScalar(arr, this.vec3);
+	        }
+	        else {
+	            this.vec3.set(arr);
+	        }
+	        return this.update();
+	    }
+	    setXYZ(x, y, z) {
+	        this.vec3[0] = x;
+	        this.vec3[1] = y;
+	        this.vec3[2] = z;
+	        this.data[0] = x;
+	        this.data[5] = y;
+	        this.data[10] = z;
+	        this.dirty = true;
+	        return this;
+	    }
+	    update() {
+	        Matrix4.fromScaling(this.vec3, this.data);
+	        return this;
+	    }
+	}
+
+	class PerspectiveProjectionX extends AProjection3 {
+	    options;
+	    constructor(fovx = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
+	        super();
+	        this.options = {
+	            fovx,
+	            aspect,
+	            near,
+	            far,
+	        };
+	        this.update();
+	    }
+	    get fovx() {
+	        return this.options.fovx;
+	    }
+	    set fovx(value) {
+	        this.options.fovx = value;
+	        this.update();
+	    }
+	    get aspect() {
+	        return this.options.aspect;
+	    }
+	    set aspect(value) {
+	        this.options.aspect = value;
+	        this.update();
+	    }
+	    get near() {
+	        return this.options.near;
+	    }
+	    set near(value) {
+	        this.options.near = value;
+	        this.update();
+	    }
+	    get far() {
+	        return this.options.far;
+	    }
+	    set far(value) {
+	        this.options.far = value;
+	        this.update();
+	    }
+	    set(fovx = this.fovx, aspect = this.aspect, near = this.near, far = this.far) {
+	        this.options.fovx = fovx;
+	        this.options.aspect = aspect;
+	        this.options.near = near;
+	        this.options.far = far;
+	        return this.update();
+	    }
+	    update() {
+	        Matrix4.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
+	        this.dirty = true;
+	        return this;
+	    }
+	}
+
+	var getEuclidPosition3Proxy = (position) => {
+	    if (position.isEntity) {
+	        position = position.getComponent(TRANSLATION_3D);
+	    }
+	    return new Proxy(position, {
+	        get: (target, property) => {
+	            if (property === 'x') {
+	                return target.data[12];
+	            }
+	            else if (property === 'y') {
+	                return target.data[13];
+	            }
+	            else if (property === 'z') {
+	                return target.data[14];
+	            }
+	            return target[property];
+	        },
+	        set: (target, property, value) => {
+	            if (property === 'x') {
+	                target.dirty = true;
+	                target.data[12] = value;
+	                return true;
+	            }
+	            else if (property === 'y') {
+	                target.dirty = true;
+	                target.data[13] = value;
+	                return true;
+	            }
+	            else if (property === 'z') {
+	                target.dirty = true;
+	                target.data[14] = value;
+	                return true;
+	            }
+	            else if (property === 'dirty') {
+	                target.dirty = value;
+	                return true;
+	            }
+	            return false;
+	        },
+	    });
+	};
+
+	var getEulerRotation3Proxy = (position) => {
+	    if (position.isEntity) {
+	        position = position.getComponent(ROTATION_3D);
+	    }
+	    let euler = EulerAngle.fromMatrix4(position.data);
+	    return new Proxy(position, {
+	        get: (target, property) => {
+	            if (property === 'x' || property === 'y' || property === 'z' || property === 'order') {
+	                return euler[property];
+	            }
+	            return target[property];
+	        },
+	        set: (target, property, value) => {
+	            if (property === 'x' || property === 'y' || property === 'z') {
+	                target.dirty = true;
+	                euler[property] = value;
+	                Matrix4.fromEuler(euler, target.data);
+	                return true;
+	            }
+	            else if (property === 'order') {
+	                target.dirty = true;
+	                euler.order = value;
+	                Matrix4.fromEuler(euler, target.data);
+	                return true;
+	            }
+	            else if (property === 'dirty') {
+	                target.dirty = value;
+	                return true;
+	            }
+	            return false;
+	        },
+	    });
+	};
+
+	var index$3 = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		getEuclidPosition3Proxy: getEuclidPosition3Proxy,
+		getEulerRotation3Proxy: getEulerRotation3Proxy
+	});
+
+	class Object3 extends Entity {
+	    anchor;
+	    position;
+	    rotation;
+	    scaling;
+	    modelMatrix;
+	    worldMatrix;
+	    constructor(name = "Object3") {
+	        super(name);
+	        this.scaling = new Vector3Scale3();
+	        this.position = new EuclidPosition3();
+	        this.rotation = new EulerRotation3();
+	        this.anchor = new Anchor3();
+	        this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
+	                label: MODEL_3D,
+	                unique: true
+	            }]);
+	        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
+	                label: WORLD_MATRIX4,
+	                unique: true
+	            }]);
+	    }
+	}
+
+	const DEFAULT_BLEND_STATE = {
+	    color: {
+	        srcFactor: 'src-alpha',
+	        dstFactor: 'one-minus-src-alpha',
+	        operation: 'add',
+	    },
+	    alpha: {
+	        srcFactor: 'zero',
+	        dstFactor: 'one',
+	        operation: 'add',
+	    }
+	};
+
+	class BufferFloat32 extends Float32Array {
+	    dirty = true;
+	    name;
+	    descriptor = {};
+	    constructor(option, name = "buffer") {
+	        super((option.size ?? (option.data?.length ?? 4) << 2) >> 2);
+	        this.name = name;
+	        this.descriptor.usage = option.usage ?? (GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+	        this.descriptor.size = this.byteLength;
+	        if (option.data) {
+	            this.set(option.data);
+	        }
+	    }
+	    set(arr, offset) {
+	        super.set(arr, offset);
+	        this.dirty = true;
+	    }
+	}
 
 	const POSITION = "position";
 	const VERTICES = "vertices";
@@ -6935,7 +7906,7 @@
 	    return geo;
 	};
 
-	var index$3 = /*#__PURE__*/Object.freeze({
+	var index$2 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		DEFAULT_BOX_OPTIONS: DEFAULT_BOX_OPTIONS,
 		DEFAULT_CIRCLE_OPTIONS: DEFAULT_CIRCLE_OPTIONS$1,
@@ -7186,7 +8157,7 @@
 	    }
 	};
 
-	var index$2 = /*#__PURE__*/Object.freeze({
+	var index$1 = /*#__PURE__*/Object.freeze({
 		__proto__: null,
 		createCircle2: createCircle2,
 		createPlane2: createPlane2,
@@ -8049,53 +9020,6 @@
 	    }
 	};
 
-	class Matrix3Component extends Component {
-	    constructor(name, data = Matrix3.create(), tags = []) {
-	        super(name, data, tags);
-	        this.dirty = true;
-	    }
-	}
-	const updateModelMatrixComponent$1 = (mesh) => {
-	    let p3 = mesh.position;
-	    let r3 = mesh.rotation;
-	    let s3 = mesh.scaling;
-	    let a3 = mesh.anchor;
-	    let m3 = mesh.modelMatrix;
-	    let worldMatrix = mesh.worldMatrix;
-	    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
-	        Matrix3.fromArray(p3?.data || Matrix3.UNIT_MATRIX3, m3.data);
-	        if (r3) {
-	            Matrix3.multiplyRotationMatrix(m3.data, r3.data, m3.data);
-	        }
-	        if (s3) {
-	            Matrix3.multiplyScaleMatrix(m3.data, s3.data, m3.data);
-	        }
-	        if (a3) {
-	            Matrix3.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
-	        }
-	        if (p3) {
-	            p3.dirty = false;
-	        }
-	        if (r3) {
-	            r3.dirty = false;
-	        }
-	        if (s3) {
-	            s3.dirty = false;
-	        }
-	        if (a3) {
-	            a3.dirty = false;
-	        }
-	    }
-	    if (mesh.parent) {
-	        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
-	        Matrix3.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
-	    }
-	    else {
-	        Matrix3.fromArray(m3.data, worldMatrix.data);
-	    }
-	    return m3;
-	};
-
 	let descriptor = {
 	    size: 0,
 	    usage: GPUBufferUsage.VERTEX,
@@ -8377,53 +9301,6 @@
 	    out[15] = 1;
 	    return out;
 	}
-
-	class Matrix4Component extends Component {
-	    constructor(name, data = Matrix4.create(), tags = []) {
-	        super(name, data, tags);
-	        this.dirty = true;
-	    }
-	}
-	const updateModelMatrixComponent = (mesh) => {
-	    let p3 = mesh.position;
-	    let r3 = mesh.rotation;
-	    let s3 = mesh.scaling;
-	    let a3 = mesh.anchor;
-	    let m3 = mesh.modelMatrix;
-	    let worldMatrix = mesh.worldMatrix;
-	    if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
-	        Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
-	        if (r3) {
-	            Matrix4.multiply(m3.data, r3.data, m3.data);
-	        }
-	        if (s3) {
-	            Matrix4.multiplyScaleMatrix(m3.data, s3.data, m3.data);
-	        }
-	        if (a3) {
-	            Matrix4.multiplyTranslateMatrix(m3.data, a3.data, m3.data);
-	        }
-	        if (p3) {
-	            p3.dirty = false;
-	        }
-	        if (r3) {
-	            r3.dirty = false;
-	        }
-	        if (s3) {
-	            s3.dirty = false;
-	        }
-	        if (a3) {
-	            a3.dirty = false;
-	        }
-	    }
-	    if (mesh.parent) {
-	        let parentWorldMatrix = mesh.parent.worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
-	        Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
-	    }
-	    else {
-	        Matrix4.fromArray(m3.data, worldMatrix.data);
-	    }
-	    return m3;
-	};
 
 	class WebGPUMesh3Renderer {
 	    static renderTypes = MESH3;
@@ -9481,7 +10358,7 @@ struct VertexOutput {
 			p.x *= font.size.x;
 			p.y *= font.size.y;
 			p.x += font.size.x * 0.5 + font.offset.x;
-			p.y += font.size.y * 0.5 + font.offset.y;
+			p.y += -font.size.y * 0.5 - font.offset.y + font.baseLine;
 			out.position = uniforms.matrix * vec4<f32>(p, 1.0);
 			out.uv = uv;
 			out.uv.x *= font.size.x / font.bitmapSize.x;
@@ -9653,7 +10530,7 @@ struct VertexOutput {
 	});
 	class BitmapFontChar3 extends Renderable {
 	    static RenderType = "mesh3";
-	    #charData;
+	    charData;
 	    font;
 	    constructor(char, font) {
 	        super({
@@ -9661,17 +10538,17 @@ struct VertexOutput {
 	            geometry: CommonGeometry,
 	            material: new BitmapFontMaterial(font.pages[char.page]),
 	        });
-	        this.#charData = char;
+	        this.charData = char;
 	        this.font = font;
 	        this.update();
 	    }
 	    update() {
-	        this.data.material.offset.x = this.#charData.xoffset;
-	        this.data.material.offset.y = this.#charData.yoffset;
-	        this.data.material.size.x = this.#charData.width;
-	        this.data.material.size.y = this.#charData.height;
-	        this.data.material.position.x = this.#charData.x;
-	        this.data.material.position.y = this.#charData.y;
+	        this.data.material.offset.x = this.charData.xoffset;
+	        this.data.material.offset.y = this.charData.yoffset;
+	        this.data.material.size.x = this.charData.width;
+	        this.data.material.size.y = this.charData.height;
+	        this.data.material.position.x = this.charData.x;
+	        this.data.material.position.y = this.charData.y;
 	        this.data.material.bitmapSize.x = this.font.common.scaleW;
 	        this.data.material.bitmapSize.y = this.font.common.scaleH;
 	        this.data.material.update();
@@ -9684,11 +10561,43 @@ struct VertexOutput {
 	        }
 	        for (let i = 0, len = this.font.chars.length; i < len; i++) {
 	            if (this.font.chars[i].id === text) {
-	                this.#charData = this.font.chars[i];
+	                this.charData = this.font.chars[i];
 	                return this.update();
 	            }
 	        }
 	        return this;
+	    }
+	}
+	class BitmapFontString extends Object3 {
+	    font;
+	    constructor(str, font, name) {
+	        super(name ?? str);
+	        this.font = font;
+	        this.setText(str);
+	    }
+	    destroyChildren() {
+	        for (let i = 0, len = this.children.length; i < len; i++) {
+	            this.children[i].destroy();
+	        }
+	    }
+	    setText(text) {
+	        this.destroyChildren();
+	        let x = 0;
+	        for (let i = 0, len = text.length; i < len; i++) {
+	            const e = new Object3();
+	            let char;
+	            const code = text.charCodeAt(i);
+	            for (let i = 0, len = this.font.chars.length; i < len; i++) {
+	                if (this.font.chars[i].id === code) {
+	                    char = new BitmapFontChar3(this.font.chars[i], this.font);
+	                    break;
+	                }
+	            }
+	            e.addComponent(char);
+	            e.position.x = x;
+	            x += char.charData.xadvance;
+	            this.addChild(e);
+	        }
 	    }
 	}
 
@@ -9711,864 +10620,12 @@ struct VertexOutput {
 	        for (let i = 0, len = fontData.chars.length; i < len; i++) {
 	            if (fontData.chars[i].id === charTextOrCode) {
 	                char = new BitmapFontChar3(fontData.chars[i], fontData);
+	                break;
 	            }
 	        }
 	        return char;
 	    }
 	}
-
-	class Anchor2 extends Matrix3Component {
-	    vec2 = new Vector2();
-	    constructor(vec = Vector2.VECTOR2_ZERO) {
-	        super(ANCHOR_2D, Matrix3.create(), [{
-	                label: ANCHOR_2D,
-	                unique: true
-	            }]);
-	        Vector2.fromArray(vec, 0, this.vec2);
-	        this.update();
-	    }
-	    get x() {
-	        return this.vec2[0];
-	    }
-	    set x(value) {
-	        this.vec2[0] = value;
-	        this.data[6] = -value;
-	        this.dirty = true;
-	    }
-	    get y() {
-	        return this.vec2[1];
-	    }
-	    set y(value) {
-	        this.vec2[1] = value;
-	        this.data[7] = -value;
-	        this.dirty = true;
-	    }
-	    set(arr) {
-	        this.vec2.set(arr);
-	        return this.update();
-	    }
-	    setXY(x, y, z) {
-	        this.vec2[0] = x;
-	        this.vec2[1] = y;
-	        return this.update();
-	    }
-	    update() {
-	        this.data[6] = -this.x;
-	        this.data[7] = -this.y;
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class APosition2 extends Matrix3Component {
-	    constructor(data = Matrix3.create()) {
-	        super(TRANSLATION_2D, data, [{
-	                label: TRANSLATION_2D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class AProjection2 extends Matrix3Component {
-	    constructor(data = Matrix3.create()) {
-	        super(PROJECTION_2D, data, [{
-	                label: PROJECTION_2D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class ARotation2 extends Matrix3Component {
-	    constructor(data = Matrix3.create()) {
-	        super(ROTATION_2D, data, [{
-	                label: ROTATION_2D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class AScale2 extends Matrix3Component {
-	    constructor(data = Matrix3.create()) {
-	        super(SCALING_2D, data, [{
-	                label: SCALING_2D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class EuclidPosition2 extends APosition2 {
-	    vec2 = new Vector2();
-	    constructor(vec2 = new Float32Array(2)) {
-	        super();
-	        Vector2.fromArray(vec2, 0, this.vec2);
-	        this.update();
-	    }
-	    get x() {
-	        return this.vec2[0];
-	    }
-	    set x(value) {
-	        this.vec2[0] = value;
-	        this.data[6] = value;
-	        this.dirty = true;
-	    }
-	    get y() {
-	        return this.vec2[1];
-	    }
-	    set y(value) {
-	        this.vec2[1] = value;
-	        this.data[7] = value;
-	        this.dirty = true;
-	    }
-	    set(arr) {
-	        this.vec2.set(arr);
-	        this.data[6] = arr[0];
-	        this.data[7] = arr[1];
-	        this.dirty = true;
-	        return this;
-	    }
-	    setXY(x, y) {
-	        this.vec2[0] = x;
-	        this.vec2[1] = y;
-	        this.data[6] = x;
-	        this.data[7] = y;
-	        this.dirty = true;
-	        return this;
-	    }
-	    update() {
-	        Matrix3.fromTranslation(this.vec2, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class AngleRotation2 extends ARotation2 {
-	    #angle;
-	    data = Matrix3.identity();
-	    constructor(angle = 0) {
-	        super();
-	        this.#angle = angle;
-	        this.update();
-	    }
-	    get a() {
-	        return this.#angle;
-	    }
-	    set a(value) {
-	        this.#angle = value;
-	        this.update();
-	    }
-	    update() {
-	        Matrix3.fromRotation(this.#angle, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class PolarPosition2 extends APosition2 {
-	    polar = new Polar();
-	    constructor(radius = 0, angle = 0) {
-	        super();
-	        this.polar.r = radius;
-	        this.polar.a = angle;
-	    }
-	    get r() {
-	        return this.polar.r;
-	    }
-	    set r(value) {
-	        this.polar.r = value;
-	        this.update();
-	    }
-	    get a() {
-	        return this.polar[1];
-	    }
-	    set a(value) {
-	        this.polar[1] = value;
-	        this.update();
-	    }
-	    set(r, a) {
-	        this.polar.a = a;
-	        this.polar.r = r;
-	        return this;
-	    }
-	    update() {
-	        this.data[6] = this.polar.x();
-	        this.data[7] = this.polar.y();
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class Projection2D extends AProjection2 {
-	    options;
-	    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005) {
-	        super();
-	        this.options = {
-	            left,
-	            right,
-	            bottom,
-	            top
-	        };
-	        this.update();
-	    }
-	    get left() {
-	        return this.options.left;
-	    }
-	    set left(value) {
-	        this.options.left = value;
-	        this.update();
-	    }
-	    get right() {
-	        return this.right;
-	    }
-	    set right(value) {
-	        this.options.right = value;
-	        this.update();
-	    }
-	    get top() {
-	        return this.top;
-	    }
-	    set top(value) {
-	        this.options.top = value;
-	        this.update();
-	    }
-	    get bottom() {
-	        return this.bottom;
-	    }
-	    set bottom(value) {
-	        this.options.bottom = value;
-	        this.update();
-	    }
-	    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top) {
-	        this.options.left = left;
-	        this.options.right = right;
-	        this.options.bottom = bottom;
-	        this.options.top = top;
-	        return this.update();
-	    }
-	    update() {
-	        orthogonal(this.options.left, this.options.right, this.options.bottom, this.options.top, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-	const orthogonal = (left, right, bottom, top, out = new Matrix3()) => {
-	    const c = 1 / (left - right);
-	    const b = 1 / (bottom - top);
-	    out[0] = -2 * c;
-	    out[1] = 0;
-	    out[2] = 0;
-	    out[3] = 0;
-	    out[4] = -2 * b;
-	    out[5] = 0;
-	    // out[6] = 0;
-	    // out[7] = 0;
-	    out[6] = (left + right) * c;
-	    out[7] = (top + bottom) * b;
-	    out[8] = 1;
-	    return out;
-	};
-
-	const DEFAULT_SCALE$1 = [1, 1];
-	class Vector2Scale2 extends AScale2 {
-	    vec2;
-	    constructor(vec2 = new Float32Array(DEFAULT_SCALE$1)) {
-	        super();
-	        this.vec2 = vec2;
-	        this.update();
-	    }
-	    get x() {
-	        return this.vec2[0];
-	    }
-	    set x(value) {
-	        this.vec2[0] = value;
-	        this.data[0] = value;
-	        this.dirty = true;
-	    }
-	    get y() {
-	        return this.vec2[1];
-	    }
-	    set y(value) {
-	        this.vec2[1] = value;
-	        this.data[4] = value;
-	        this.dirty = true;
-	    }
-	    set(arr) {
-	        this.vec2.set(arr);
-	        return this.update();
-	    }
-	    setXY(x, y, z) {
-	        this.vec2[0] = x;
-	        this.vec2[1] = y;
-	        this.data[0] = x;
-	        this.data[4] = y;
-	        this.dirty = true;
-	        return this;
-	    }
-	    update() {
-	        Matrix3.fromScaling(this.vec2, this.data);
-	        return this;
-	    }
-	}
-
-	class Anchor3 extends Matrix4Component {
-	    vec3 = new Vector3();
-	    constructor(vec = Vector3.VECTOR3_ZERO) {
-	        super(ANCHOR_3D, Matrix4.create(), [{
-	                label: ANCHOR_3D,
-	                unique: true
-	            }]);
-	        Vector3.fromArray(vec, 0, this.vec3);
-	        this.update();
-	    }
-	    get x() {
-	        return this.vec3[0];
-	    }
-	    set x(value) {
-	        this.vec3[0] = value;
-	        this.data[12] = -value;
-	        this.dirty = true;
-	    }
-	    get y() {
-	        return this.vec3[1];
-	    }
-	    set y(value) {
-	        this.vec3[1] = value;
-	        this.data[13] = -value;
-	        this.dirty = true;
-	    }
-	    get z() {
-	        return this.vec3[2];
-	    }
-	    set z(value) {
-	        this.vec3[2] = value;
-	        this.data[14] = -value;
-	        this.dirty = true;
-	    }
-	    set(arr) {
-	        this.vec3.set(arr);
-	        return this.update();
-	    }
-	    setXYZ(x, y, z) {
-	        this.vec3[0] = x;
-	        this.vec3[1] = y;
-	        this.vec3[2] = z;
-	        return this.update();
-	    }
-	    update() {
-	        this.data[12] = -this.x;
-	        this.data[13] = -this.y;
-	        this.data[14] = -this.z;
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class APosition3 extends Matrix4Component {
-	    constructor(data = Matrix4.create()) {
-	        super(TRANSLATION_3D, data, [{
-	                label: TRANSLATION_3D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class AProjection3 extends Matrix4Component {
-	    constructor(data = Matrix4.create()) {
-	        super(PROJECTION_3D, data, [{
-	                label: PROJECTION_3D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class ARotation3 extends Matrix4Component {
-	    constructor(data = Matrix4.create()) {
-	        super(ROTATION_3D, data, [{
-	                label: ROTATION_3D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class AScale3 extends Matrix4Component {
-	    constructor(data = Matrix4.create()) {
-	        super(SCALING_3D, data, [{
-	                label: SCALING_3D,
-	                unique: true
-	            }]);
-	    }
-	}
-
-	class EuclidPosition3 extends APosition3 {
-	    vec3 = new Vector3();
-	    constructor(vec3) {
-	        super();
-	        if (vec3) {
-	            Vector3.fromArray(vec3, 0, this.vec3);
-	        }
-	        this.update();
-	    }
-	    get x() {
-	        return this.vec3[0];
-	    }
-	    set x(value) {
-	        this.vec3[0] = value;
-	        this.data[12] = value;
-	        this.dirty = true;
-	    }
-	    get y() {
-	        return this.vec3[1];
-	    }
-	    set y(value) {
-	        this.vec3[1] = value;
-	        this.data[13] = value;
-	        this.dirty = true;
-	    }
-	    get z() {
-	        return this.vec3[2];
-	    }
-	    set z(value) {
-	        this.vec3[2] = value;
-	        this.data[14] = value;
-	        this.dirty = true;
-	    }
-	    set(arr) {
-	        this.vec3.set(arr);
-	        this.data[12] = arr[0];
-	        this.data[13] = arr[1];
-	        this.data[14] = arr[2];
-	        this.dirty = true;
-	        return this;
-	    }
-	    setXYZ(x, y, z) {
-	        this.vec3[0] = x;
-	        this.vec3[1] = y;
-	        this.vec3[2] = z;
-	        this.data[12] = x;
-	        this.data[13] = y;
-	        this.data[14] = z;
-	        this.dirty = true;
-	        return this;
-	    }
-	    update() {
-	        Matrix4.fromTranslation(this.vec3, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class EulerRotation3 extends ARotation3 {
-	    euler;
-	    constructor(euler = {
-	        x: 0,
-	        y: 0,
-	        z: 0,
-	        order: EulerAngle.ORDERS.XYZ,
-	    }) {
-	        super();
-	        this.euler = euler;
-	        this.update();
-	    }
-	    get x() {
-	        return this.euler.x;
-	    }
-	    set x(value) {
-	        this.euler.x = value;
-	        this.update();
-	    }
-	    get y() {
-	        return this.euler.y;
-	    }
-	    set y(value) {
-	        this.euler.y = value;
-	        this.update();
-	    }
-	    get z() {
-	        return this.euler.z;
-	    }
-	    set z(value) {
-	        this.euler.z = value;
-	        this.update();
-	    }
-	    get order() {
-	        return this.euler.order;
-	    }
-	    set order(value) {
-	        this.euler.order = value;
-	        this.update();
-	    }
-	    set(arr) {
-	        this.x = arr.x;
-	        this.y = arr.y;
-	        this.z = arr.z;
-	        this.order = arr.order;
-	        return this.update();
-	    }
-	    update() {
-	        Matrix4.fromEuler(this.euler, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class OrthogonalProjection extends AProjection3 {
-	    options;
-	    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 100) {
-	        super();
-	        this.options = {
-	            left,
-	            right,
-	            bottom,
-	            top,
-	            near,
-	            far,
-	        };
-	        this.update();
-	    }
-	    get left() {
-	        return this.options.left;
-	    }
-	    set left(value) {
-	        this.options.left = value;
-	        this.update();
-	    }
-	    get right() {
-	        return this.options.right;
-	    }
-	    set right(value) {
-	        this.options.right = value;
-	        this.update();
-	    }
-	    get top() {
-	        return this.options.top;
-	    }
-	    set top(value) {
-	        this.options.top = value;
-	        this.update();
-	    }
-	    get bottom() {
-	        return this.options.bottom;
-	    }
-	    set bottom(value) {
-	        this.options.bottom = value;
-	        this.update();
-	    }
-	    get near() {
-	        return this.options.near;
-	    }
-	    set near(value) {
-	        this.options.near = value;
-	        this.update();
-	    }
-	    get far() {
-	        return this.options.far;
-	    }
-	    set far(value) {
-	        this.options.far = value;
-	        this.update();
-	    }
-	    set(left = this.left, right = this.right, bottom = this.bottom, top = this.top, near = this.near, far = this.far) {
-	        this.options.left = left;
-	        this.options.right = right;
-	        this.options.bottom = bottom;
-	        this.options.top = top;
-	        this.options.near = near;
-	        this.options.far = far;
-	        return this.update();
-	    }
-	    update() {
-	        Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class PerspectiveProjection extends AProjection3 {
-	    options;
-	    constructor(fovy = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
-	        super();
-	        this.options = {
-	            fovy,
-	            aspect,
-	            near,
-	            far,
-	        };
-	        this.update();
-	    }
-	    get fovy() {
-	        return this.options.fovy;
-	    }
-	    set fovy(value) {
-	        this.options.fovy = value;
-	        this.update();
-	    }
-	    get aspect() {
-	        return this.options.aspect;
-	    }
-	    set aspect(value) {
-	        this.options.aspect = value;
-	        this.update();
-	    }
-	    get near() {
-	        return this.options.near;
-	    }
-	    set near(value) {
-	        this.options.near = value;
-	        this.update();
-	    }
-	    get far() {
-	        return this.options.far;
-	    }
-	    set far(value) {
-	        this.options.far = value;
-	        this.update();
-	    }
-	    set(fovy = this.fovy, aspect = this.aspect, near = this.near, far = this.far) {
-	        this.options.fovy = fovy;
-	        this.options.aspect = aspect;
-	        this.options.near = near;
-	        this.options.far = far;
-	        return this.update();
-	    }
-	    update() {
-	        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	class SphericalPosition3 extends APosition3 {
-	    spherical = new Spherical();
-	    #vec3 = new Vector3();
-	    constructor(spherical = new Float32Array(3)) {
-	        super();
-	        Spherical.fromArray(spherical, this.spherical);
-	        this.update();
-	    }
-	    get radius() {
-	        return this.spherical[0];
-	    }
-	    set radius(value) {
-	        this.spherical[0] = value;
-	        this.update();
-	    }
-	    get phi() {
-	        return this.spherical[1];
-	    }
-	    set phi(value) {
-	        this.spherical[1] = value;
-	        this.update();
-	    }
-	    get theta() {
-	        return this.spherical[2];
-	    }
-	    set theta(value) {
-	        this.spherical[2] = value;
-	        this.update();
-	    }
-	    set(arr) {
-	        this.spherical.set(arr);
-	        return this.update();
-	    }
-	    update() {
-	        this.spherical.toVector3(this.#vec3);
-	        Matrix4.fromTranslation(this.#vec3, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	const DEFAULT_SCALE = [1, 1, 1];
-	class Vector3Scale3 extends AScale3 {
-	    vec3;
-	    constructor(vec3 = new Float32Array(DEFAULT_SCALE)) {
-	        super();
-	        this.vec3 = Vector3.fromArray(vec3);
-	        this.update();
-	    }
-	    get x() {
-	        return this.vec3[0];
-	    }
-	    set x(value) {
-	        this.vec3[0] = value;
-	        this.data[0] = value;
-	        this.dirty = true;
-	    }
-	    get y() {
-	        return this.vec3[1];
-	    }
-	    set y(value) {
-	        this.vec3[1] = value;
-	        this.data[5] = value;
-	        this.dirty = true;
-	    }
-	    get z() {
-	        return this.vec3[1];
-	    }
-	    set z(value) {
-	        this.vec3[2] = value;
-	        this.data[10] = value;
-	        this.dirty = true;
-	    }
-	    set(arr) {
-	        if (typeof arr === 'number') {
-	            Vector3.fromScalar(arr, this.vec3);
-	        }
-	        else {
-	            this.vec3.set(arr);
-	        }
-	        return this.update();
-	    }
-	    setXYZ(x, y, z) {
-	        this.vec3[0] = x;
-	        this.vec3[1] = y;
-	        this.vec3[2] = z;
-	        this.data[0] = x;
-	        this.data[5] = y;
-	        this.data[10] = z;
-	        this.dirty = true;
-	        return this;
-	    }
-	    update() {
-	        Matrix4.fromScaling(this.vec3, this.data);
-	        return this;
-	    }
-	}
-
-	class PerspectiveProjectionX extends AProjection3 {
-	    options;
-	    constructor(fovx = Math.PI * 0.25, aspect = window.innerWidth / window.innerHeight, near = 0.01, far = 100) {
-	        super();
-	        this.options = {
-	            fovx,
-	            aspect,
-	            near,
-	            far,
-	        };
-	        this.update();
-	    }
-	    get fovx() {
-	        return this.options.fovx;
-	    }
-	    set fovx(value) {
-	        this.options.fovx = value;
-	        this.update();
-	    }
-	    get aspect() {
-	        return this.options.aspect;
-	    }
-	    set aspect(value) {
-	        this.options.aspect = value;
-	        this.update();
-	    }
-	    get near() {
-	        return this.options.near;
-	    }
-	    set near(value) {
-	        this.options.near = value;
-	        this.update();
-	    }
-	    get far() {
-	        return this.options.far;
-	    }
-	    set far(value) {
-	        this.options.far = value;
-	        this.update();
-	    }
-	    set(fovx = this.fovx, aspect = this.aspect, near = this.near, far = this.far) {
-	        this.options.fovx = fovx;
-	        this.options.aspect = aspect;
-	        this.options.near = near;
-	        this.options.far = far;
-	        return this.update();
-	    }
-	    update() {
-	        Matrix4.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
-	        this.dirty = true;
-	        return this;
-	    }
-	}
-
-	var getEuclidPosition3Proxy = (position) => {
-	    if (position.isEntity) {
-	        position = position.getComponent(TRANSLATION_3D);
-	    }
-	    return new Proxy(position, {
-	        get: (target, property) => {
-	            if (property === 'x') {
-	                return target.data[12];
-	            }
-	            else if (property === 'y') {
-	                return target.data[13];
-	            }
-	            else if (property === 'z') {
-	                return target.data[14];
-	            }
-	            return target[property];
-	        },
-	        set: (target, property, value) => {
-	            if (property === 'x') {
-	                target.dirty = true;
-	                target.data[12] = value;
-	                return true;
-	            }
-	            else if (property === 'y') {
-	                target.dirty = true;
-	                target.data[13] = value;
-	                return true;
-	            }
-	            else if (property === 'z') {
-	                target.dirty = true;
-	                target.data[14] = value;
-	                return true;
-	            }
-	            else if (property === 'dirty') {
-	                target.dirty = value;
-	                return true;
-	            }
-	            return false;
-	        },
-	    });
-	};
-
-	var getEulerRotation3Proxy = (position) => {
-	    if (position.isEntity) {
-	        position = position.getComponent(ROTATION_3D);
-	    }
-	    let euler = EulerAngle.fromMatrix4(position.data);
-	    return new Proxy(position, {
-	        get: (target, property) => {
-	            if (property === 'x' || property === 'y' || property === 'z' || property === 'order') {
-	                return euler[property];
-	            }
-	            return target[property];
-	        },
-	        set: (target, property, value) => {
-	            if (property === 'x' || property === 'y' || property === 'z') {
-	                target.dirty = true;
-	                euler[property] = value;
-	                Matrix4.fromEuler(euler, target.data);
-	                return true;
-	            }
-	            else if (property === 'order') {
-	                target.dirty = true;
-	                euler.order = value;
-	                Matrix4.fromEuler(euler, target.data);
-	                return true;
-	            }
-	            else if (property === 'dirty') {
-	                target.dirty = value;
-	                return true;
-	            }
-	            return false;
-	        },
-	    });
-	};
-
-	var index$1 = /*#__PURE__*/Object.freeze({
-		__proto__: null,
-		getEuclidPosition3Proxy: getEuclidPosition3Proxy,
-		getEulerRotation3Proxy: getEulerRotation3Proxy
-	});
 
 	exports.EngineEvents = void 0;
 	(function (EngineEvents) {
@@ -10621,7 +10678,7 @@ struct VertexOutput {
 	    };
 	}
 
-	class Engine extends mixin$1(Timeline) {
+	class Engine extends mixin$2(Timeline) {
 	    options;
 	    static Events = exports.EngineEvents;
 	    taskChunkTimeMap = new Map();
@@ -10722,30 +10779,6 @@ struct VertexOutput {
 	    constructor(name = "Camera2", projection) {
 	        super(name);
 	        this.projection = projection;
-	    }
-	}
-
-	class Object3 extends Entity {
-	    anchor;
-	    position;
-	    rotation;
-	    scaling;
-	    modelMatrix;
-	    worldMatrix;
-	    constructor(name = "Object3") {
-	        super(name);
-	        this.scaling = new Vector3Scale3();
-	        this.position = new EuclidPosition3();
-	        this.rotation = new EulerRotation3();
-	        this.anchor = new Anchor3();
-	        this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
-	                label: MODEL_3D,
-	                unique: true
-	            }]);
-	        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
-	                label: WORLD_MATRIX4,
-	                unique: true
-	            }]);
 	    }
 	}
 
@@ -11258,6 +11291,121 @@ struct VertexOutput {
 	    }
 	}
 
+	const FIND_LEAVES_VISITOR = {
+	    enter: (node, result) => {
+	        if (!node.children.length) {
+	            result.push(node);
+	        }
+	    }
+	};
+	const ARRAY_VISITOR = {
+	    enter: (node, result) => {
+	        result.push(node);
+	    }
+	};
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+	const mixin = (Base = Object) => {
+	    return class TreeNode extends Base {
+	        static mixin = mixin;
+	        static addChild(node, child) {
+	            if (TreeNode.hasAncestor(node, child)) {
+	                throw new Error("The node added is one of the ancestors of current one.");
+	            }
+	            node.children.push(child);
+	            child.parent = node;
+	            return node;
+	        }
+	        static depth(node) {
+	            if (!node.children.length) {
+	                return 1;
+	            }
+	            else {
+	                const childrenDepth = [];
+	                for (const item of node.children) {
+	                    item && childrenDepth.push(this.depth(item));
+	                }
+	                let max = 0;
+	                for (const item of childrenDepth) {
+	                    max = Math.max(max, item);
+	                }
+	                return 1 + max;
+	            }
+	        }
+	        static findLeaves(node) {
+	            const result = [];
+	            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+	            return result;
+	        }
+	        static findRoot(node) {
+	            if (node.parent) {
+	                return this.findRoot(node.parent);
+	            }
+	            return node;
+	        }
+	        static hasAncestor(node, ancestor) {
+	            if (!node.parent) {
+	                return false;
+	            }
+	            else {
+	                if (node.parent === ancestor) {
+	                    return true;
+	                }
+	                else {
+	                    return TreeNode.hasAncestor(node.parent, ancestor);
+	                }
+	            }
+	        }
+	        static removeChild(node, child) {
+	            if (node.children.includes(child)) {
+	                node.children.splice(node.children.indexOf(child), 1);
+	                child.parent = null;
+	            }
+	            return node;
+	        }
+	        static toArray(node) {
+	            const result = [];
+	            TreeNode.traverse(node, ARRAY_VISITOR, result);
+	            return result;
+	        }
+	        static traverse(node, visitor, rest) {
+	            visitor.enter?.(node, rest);
+	            visitor.visit?.(node, rest);
+	            for (const item of node.children) {
+	                item && TreeNode.traverse(item, visitor, rest);
+	            }
+	            visitor.leave?.(node, rest);
+	            return node;
+	        }
+	        parent = null;
+	        children = [];
+	        addChild(node) {
+	            return TreeNode.addChild(this, node);
+	        }
+	        depth() {
+	            return TreeNode.depth(this);
+	        }
+	        findLeaves() {
+	            return TreeNode.findLeaves(this);
+	        }
+	        findRoot() {
+	            return TreeNode.findRoot(this);
+	        }
+	        hasAncestor(ancestor) {
+	            return TreeNode.hasAncestor(this, ancestor);
+	        }
+	        removeChild(child) {
+	            return TreeNode.removeChild(this, child);
+	        }
+	        toArray() {
+	            return TreeNode.toArray(this);
+	        }
+	        traverse(visitor, rest) {
+	            return TreeNode.traverse(this, visitor, rest);
+	        }
+	    };
+	};
+	var TreeNode = mixin(Object);
+
 	function fixData(data) {
 	    if (!data.path.startsWith("/")) {
 	        data.path = "/" + data.path;
@@ -11601,6 +11749,7 @@ struct VertexOutput {
 	exports.BitmapFontChar3 = BitmapFontChar3;
 	exports.BitmapFontManager = BitmapFontManager;
 	exports.BitmapFontMaterial = BitmapFontMaterial;
+	exports.BitmapFontString = BitmapFontString;
 	exports.BufferFloat32 = BufferFloat32;
 	exports.COLOR_HEX_MAP = COLOR_HEX_MAP;
 	exports.COMPONENT_NAME = constants$1;
@@ -11614,7 +11763,7 @@ struct VertexOutput {
 	exports.ColorRYB = ColorRYB;
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
-	exports.ComponentProxy = index$1;
+	exports.ComponentProxy = index$3;
 	exports.Constants = constants$2;
 	exports.Cube = Cube;
 	exports.DEFAULT_BLEND_STATE = DEFAULT_BLEND_STATE;
@@ -11637,8 +11786,8 @@ struct VertexOutput {
 	exports.FntParser = FntParser;
 	exports.Frustum = Frustum;
 	exports.Geometry = Geometry;
-	exports.Geometry2Factory = index$2;
-	exports.Geometry3Factory = index$3;
+	exports.Geometry2Factory = index$1;
+	exports.Geometry3Factory = index$2;
 	exports.HashRouteComponent = HashRouteComponent;
 	exports.HashRouteSystem = HashRouteSystem;
 	exports.IdGeneratorInstance = IdGeneratorInstance;
@@ -11713,7 +11862,7 @@ struct VertexOutput {
 	exports.isPowerOfTwo = isPowerOfTwo;
 	exports.lerp = lerp;
 	exports.mapRange = mapRange;
-	exports.mixin = mixin$1;
+	exports.mixin = mixin$2;
 	exports.on = on;
 	exports.once = once;
 	exports.randFloat = randFloat;
