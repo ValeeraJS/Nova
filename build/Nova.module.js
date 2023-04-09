@@ -323,6 +323,9 @@ const ArraybufferDataType = {
     COLOR_RYBA: "col_ryba",
     COLOR_HSL: "col_hsl",
     COLOR_HSLA: "col_hsla",
+    COLOR_HSV: "col_hsv",
+    COLOR_HSVA: "col_hsva",
+    COLOR_CMYK: "col_cmyk",
     EULER: "euler",
     MATRIX2: "mat2",
     MATRIX3: "mat3",
@@ -513,38 +516,82 @@ const COLOR_HEX_MAP = {
     yellowgreen: 0x9acd32,
 };
 
-let max = 0;
-let min = 0;
-let h = 0;
-let s$3 = 0;
+let max$2 = 0;
+class ColorCMYK extends Float32Array {
+    dataType = ArraybufferDataType.COLOR_CMYK;
+    static fromRGBUnsignedNormal(r, g, b, out = new ColorCMYK()) {
+        max$2 = Math.max(r, g, b);
+        out[0] = 1 - r / max$2;
+        out[1] = 1 - g / max$2;
+        out[2] = 1 - b / max$2;
+        out[3] = 1 - max$2;
+        return out;
+    }
+    constructor(c = 0, m = 0, y = 0, k = 0) {
+        super(4);
+        this[0] = c;
+        this[1] = m;
+        this[2] = y;
+        this[3] = k;
+    }
+    get c() {
+        return this[0];
+    }
+    set c(val) {
+        this[0] = val;
+    }
+    get m() {
+        return this[1];
+    }
+    set m(val) {
+        this[1] = val;
+    }
+    get y() {
+        return this[2];
+    }
+    set y(val) {
+        this[2] = val;
+    }
+    get k() {
+        return this[3];
+    }
+    set k(val) {
+        this[3] = val;
+    }
+}
+
+let max$1 = 0;
+let min$1 = 0;
+let h$1 = 0;
+let s$4 = 0;
 let l = 0;
 class ColorHSL extends Float32Array {
     dataType = ArraybufferDataType.COLOR_HSL;
     static fromRGBUnsignedNormal(r, g, b, out = new ColorHSL()) {
-        max = Math.max(r, g, b);
-        min = Math.min(r, g, b);
-        l = (max + min) / 2;
-        if (max === min) {
-            h = s$3 = 0;
+        max$1 = Math.max(r, g, b);
+        min$1 = Math.min(r, g, b);
+        l = (max$1 + min$1) / 2;
+        if (max$1 === min$1) {
+            h$1 = s$4 = 0;
         }
         else {
-            let d = max - min;
-            s$3 = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
+            let d = max$1 - min$1;
+            s$4 = l > 0.5 ? d / (2 - max$1 - min$1) : d / (max$1 + min$1);
+            switch (max$1) {
                 case r:
-                    h = (g - b) / d + (g < b ? 6 : 0);
+                    h$1 = (g - b) / d + (g < b ? 6 : 0);
                     break;
                 case g:
-                    h = (b - r) / d + 2;
+                    h$1 = (b - r) / d + 2;
                     break;
                 case b:
-                    h = (r - g) / d + 4;
+                    h$1 = (r - g) / d + 4;
                     break;
             }
-            h /= 6;
+            h$1 /= 6;
         }
-        out[0] = h;
-        out[1] = s$3;
+        out[0] = h$1;
+        out[1] = s$4;
         out[2] = l;
         return out;
     }
@@ -570,6 +617,73 @@ class ColorHSL extends Float32Array {
         return this[2];
     }
     set l(val) {
+        this[2] = val;
+    }
+}
+
+let max = 0;
+let min = 0;
+let h = 0;
+let s$3 = 0;
+let v$2 = 0;
+class ColorHSV extends Float32Array {
+    dataType = ArraybufferDataType.COLOR_HSV;
+    static fromRGBUnsignedNormal(r, g, b, out = new ColorHSV()) {
+        max = Math.max(r, g, b);
+        min = Math.min(r, g, b);
+        v$2 = max;
+        if (max === min) {
+            h = 0;
+        }
+        else {
+            let d = max - min;
+            s$3 = v$2 > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+            h /= 6;
+        }
+        if (max) {
+            s$3 = 1 - min / max;
+        }
+        else {
+            s$3 = 0;
+        }
+        out[0] = h;
+        out[1] = s$3;
+        out[2] = v$2;
+        return out;
+    }
+    constructor(h = 0, s = 0, v = 0) {
+        super(3);
+        this[0] = h;
+        this[1] = s;
+        this[2] = v;
+    }
+    get h() {
+        return this[0];
+    }
+    set h(val) {
+        this[0] = val;
+    }
+    get s() {
+        return this[1];
+    }
+    set s(val) {
+        this[1] = val;
+    }
+    get v() {
+        return this[2];
+    }
+    set v(val) {
         this[2] = val;
     }
 }
@@ -615,7 +729,9 @@ class ColorRGBA extends Uint8Array {
         return out;
     };
     static fromColorRYB = (color, out = new ColorRGBA()) => {
-        let r = color[0], y = color[1], b = color[2];
+        let r = color[0];
+        let y = color[1];
+        let b = color[2];
         // Remove the whiteness from the color.
         let w = Math.min(r, y, b);
         r -= w;
@@ -697,7 +813,7 @@ class ColorRGBA extends Uint8Array {
             return ColorRGBA.fromHex(COLOR_HEX_MAP[str], 255, out);
         }
         else if (str.startsWith("#")) {
-            str = str.substr(1);
+            str = str.substring(1);
             return ColorRGBA.fromScalar(parseInt(str, 16), 255, out);
         }
         else if (str.startsWith("rgba(")) {
@@ -772,7 +888,9 @@ class ColorRGB extends Uint8Array {
         return out;
     };
     static fromColorRYB(color, out = new ColorRGB()) {
-        let r = color[0], y = color[1], b = color[2];
+        let r = color[0];
+        let y = color[1];
+        let b = color[2];
         // Remove the whiteness from the color.
         let w = Math.min(r, y, b);
         r -= w;
@@ -970,6 +1088,9 @@ class ColorRYB extends Uint8Array {
     }
 }
 
+let r$2;
+let g;
+let b$1;
 class ColorGPU extends Float32Array {
     static average = (color) => {
         return (color[0] + color[1] + color[2]) / 3;
@@ -996,23 +1117,74 @@ class ColorGPU extends Float32Array {
         out[3] = arr[3];
         return out;
     };
-    static fromColorHSL = (h, s, l, out = new ColorGPU()) => {
-        let r;
-        let g;
-        let b;
+    static fromColorCMYK = (arr, out = new ColorGPU()) => {
+        const k = 1 - arr[3];
+        out[0] = (1 - arr[0]) * k;
+        out[1] = (1 - arr[1]) * k;
+        out[2] = (1 - arr[2]) * k;
+        out[3] = 1;
+        return out;
+    };
+    static fromColorHSL = (color, out = new ColorGPU()) => {
+        let h = color[0];
+        let s = color[1];
+        let l = color[2];
         if (s === 0) {
-            r = g = b = l; // achromatic
+            r$2 = g = b$1 = l; // achromatic
         }
         else {
             let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
             let p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
+            r$2 = hue2rgb(p, q, h + 1 / 3);
             g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
+            b$1 = hue2rgb(p, q, h - 1 / 3);
         }
-        out[0] = r;
+        out[0] = r$2;
         out[1] = g;
-        out[2] = b;
+        out[2] = b$1;
+        out[3] = 1;
+        return out;
+    };
+    static fromColorHSV = (color, out = new ColorGPU()) => {
+        const s = color[1];
+        const v = color[2];
+        const h6 = color[0] * 6;
+        const hi = Math.floor(h6);
+        const f = h6 - hi;
+        const p = v * (1 - s);
+        const q = v * (1 - f * s);
+        const t = v * (1 - (1 - f) * s);
+        if (hi === 0 || hi === 6) {
+            out[0] = v;
+            out[1] = t;
+            out[2] = p;
+        }
+        else if (hi === 1) {
+            out[0] = q;
+            out[1] = v;
+            out[2] = p;
+        }
+        else if (hi === 2) {
+            out[0] = p;
+            out[1] = v;
+            out[2] = t;
+        }
+        else if (hi === 3) {
+            out[0] = p;
+            out[1] = q;
+            out[2] = v;
+        }
+        else if (hi === 4) {
+            out[0] = t;
+            out[1] = p;
+            out[2] = v;
+        }
+        else if (hi === 5) {
+            out[0] = v;
+            out[1] = p;
+            out[2] = q;
+        }
+        out[3] = 1;
         return out;
     };
     static fromColorRGB(color, out = new ColorGPU()) {
@@ -1030,7 +1202,9 @@ class ColorGPU extends Float32Array {
         return out;
     }
     static fromColorRYB(color, out = new ColorGPU()) {
-        let r = color[0], y = color[1], b = color[2];
+        let r = color[0];
+        let y = color[1];
+        let b = color[2];
         // Remove the whiteness from the color.
         let w = Math.min(r, y, b);
         r -= w;
@@ -1091,7 +1265,7 @@ class ColorGPU extends Float32Array {
             return ColorGPU.fromHex(COLOR_HEX_MAP[str], 1, out);
         }
         else if (str.startsWith("#")) {
-            str = str.substr(1);
+            str = str.substring(1);
             return ColorGPU.fromHex(parseInt(str, 16), 1, out);
         }
         else if (str.startsWith("rgb(")) {
@@ -8202,7 +8376,13 @@ const getColorGPU = (color, result = new ColorGPU()) => {
         ColorGPU.fromColorRGBA(color, result);
     }
     else if (color instanceof ColorHSL) {
-        ColorGPU.fromColorHSL(color.h, color.s, color.l, result);
+        ColorGPU.fromColorHSL(color, result);
+    }
+    else if (color instanceof ColorHSV) {
+        ColorGPU.fromColorHSV(color, result);
+    }
+    else if (color instanceof ColorCMYK) {
+        ColorGPU.fromColorCMYK(color, result);
     }
     else if (color instanceof Float32Array || color instanceof Array) {
         ColorGPU.fromArray(color, result);
@@ -11725,4 +11905,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createSprite3: createSprite3
 });
 
-export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BitmapFontChar3, BitmapFontManager, BitmapFontMaterial, BitmapFontString, BufferFloat32, COLOR_HEX_MAP, constants$1 as COMPONENT_NAME, Camera2, Camera3, ColorGPU, ColorHSL, ColorMaterial, ColorRGB, ColorRGBA, ColorRYB, Component, ComponentManager, index$3 as ComponentProxy, constants$2 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, FntParser, Frustum, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Line3, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeTo, eventfirer, filt, fire, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, mixin$2 as mixin, on, once, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, times, transformMatrix3, transformMatrix4 };
+export { APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BitmapFontChar3, BitmapFontManager, BitmapFontMaterial, BitmapFontString, BufferFloat32, COLOR_HEX_MAP, constants$1 as COMPONENT_NAME, Camera2, Camera3, ColorCMYK, ColorGPU, ColorHSL, ColorHSV, ColorMaterial, ColorRGB, ColorRGBA, ColorRYB, Component, ComponentManager, index$3 as ComponentProxy, constants$2 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, FntParser, Frustum, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Line3, LoadType, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeTo, eventfirer, filt, fire, floorPowerOfTwo, floorToZeroCommon as floorToZero, isPowerOfTwo, lerp, mapRange, mixin$2 as mixin, on, once, randFloat, randInt, rndFloat, rndFloatRange, rndInt, sum, sumArray, times, transformMatrix3, transformMatrix4 };
