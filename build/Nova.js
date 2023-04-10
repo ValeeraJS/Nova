@@ -10750,33 +10750,86 @@ struct VertexOutput {
 	}
 	class BitmapFontString extends Object3 {
 	    font;
+	    #text;
+	    #chars = [];
+	    style = {};
+	    #textPixelWidth = 0;
 	    constructor(str, font, name) {
 	        super(name ?? str);
 	        this.font = font;
-	        this.setText(str);
+	        this.#text = str;
+	        this.update(str);
 	    }
-	    destroyChildren() {
-	        for (let i = 0, len = this.children.length; i < len; i++) {
-	            this.children[i].destroy();
+	    destroy() {
+	        for (let i = 0, len = this.#chars.length; i < len; i++) {
+	            this.#chars[i].destroy();
+	        }
+	        this.destroy();
+	    }
+	    get text() {
+	        return this.#text;
+	    }
+	    set text(text) {
+	        this.#text = text;
+	        this.update(this.#text);
+	    }
+	    get textAlign() {
+	        return this.style.textAlign;
+	    }
+	    set textAlign(value) {
+	        const old = this.style.textAlign;
+	        this.style.textAlign = value;
+	        if (old === value) {
+	            return;
+	        }
+	        const v1 = old === "right" ? 0 : (old === "center" ? 0.5 : 1);
+	        const v2 = value === "right" ? 0 : (value === "center" ? 0.5 : 1);
+	        const delta = v2 - v1;
+	        for (let i = 0, len = this.#text.length; i < len; i++) {
+	            this.#chars[i].position.x += delta * this.#textPixelWidth;
 	        }
 	    }
-	    setText(text) {
-	        this.destroyChildren();
+	    update(text) {
 	        let x = 0;
+	        const oldLength = this.#chars.length;
 	        for (let i = 0, len = text.length; i < len; i++) {
-	            const e = new Object3();
-	            let char;
+	            const e = this.#chars[i] ?? new Object3();
+	            let char = e.getComponentByClass(BitmapFontChar3);
 	            const code = text.charCodeAt(i);
-	            for (let i = 0, len = this.font.chars.length; i < len; i++) {
-	                if (this.font.chars[i].id === code) {
-	                    char = new BitmapFontChar3(this.font.chars[i], this.font);
-	                    break;
-	                }
+	            if (char) {
+	                char.setChar(code);
 	            }
-	            e.addComponent(char);
+	            else {
+	                for (let i = 0, len = this.font.chars.length; i < len; i++) {
+	                    if (this.font.chars[i].id === code) {
+	                        char = new BitmapFontChar3(this.font.chars[i], this.font);
+	                        break;
+	                    }
+	                }
+	                e.addComponent(char);
+	                this.#chars.push(e);
+	            }
 	            e.position.x = x;
 	            x += char.charData.xadvance;
 	            this.addChild(e);
+	            e.disabled = false;
+	        }
+	        this.#textPixelWidth = x;
+	        if (this.style.textAlign === "center") {
+	            const h = x * 0.5;
+	            for (let i = 0, len = this.#text.length; i < len; i++) {
+	                this.#chars[i].position.x -= h;
+	            }
+	        }
+	        else if (this.style.textAlign === "right") {
+	            for (let i = 0, len = this.#text.length; i < len; i++) {
+	                this.#chars[i].position.x -= x;
+	            }
+	        }
+	        if (oldLength > this.#text.length) {
+	            for (let i = this.#text.length; i < oldLength; i++) {
+	                this.#chars[i].disabled = true;
+	            }
 	        }
 	    }
 	}

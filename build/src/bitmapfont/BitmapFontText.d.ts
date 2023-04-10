@@ -10,9 +10,19 @@ export declare class BitmapFontChar3 extends Renderable<Geometry, IMaterial> {
     update(): this;
     setChar(text: string | number): this;
 }
+export type FontStyle = {
+    textAlign?: "left" | "center" | "right";
+    fontSize?: number;
+};
 export declare class BitmapFontString extends Object3 {
+    #private;
     font: BitmapFontJson;
+    style: FontStyle;
     constructor(str: string, font: BitmapFontJson, name?: string);
-    destroyChildren(): void;
-    setText(text: string): void;
+    destroy(): void;
+    get text(): string;
+    set text(text: string);
+    get textAlign(): "left" | "center" | "right";
+    set textAlign(value: "left" | "center" | "right");
+    update(text: string): void;
 }

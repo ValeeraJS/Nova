@@ -4,7 +4,7 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<!-- <script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script> -->
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
 		const resources = [
@@ -29,6 +29,7 @@
 			console.log(store.getResource("sans-serif", "bitmapfont"))
 			const entity = new Nova.BitmapFontString("BitmapFont", store.getResource("sans-serif", "bitmapfont"));
 			world.add(entity);
+			window.text = entity;
 		});
 
 		const engine = new Nova.Engine();
