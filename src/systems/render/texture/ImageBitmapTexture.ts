@@ -5,7 +5,7 @@ export class ImageBitmapTexture extends Texture {
 	sizeChanged = false;
 	image: HTMLImageElement = new Image();
 
-	constructor(img: HTMLImageElement | string, width: number, height: number, name: string = "image-texture") {
+	constructor(img: HTMLImageElement | string | ImageBitmap, width: number, height: number, name: string = "image-texture") {
 		super({
 			size: [width, height],
 			name,
