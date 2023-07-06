@@ -2,6 +2,22 @@ import { ImageBitmapTexture } from "../../systems/render/texture/ImageBitmapText
 import { Texture } from "../../systems/render/texture/Texture";
 import { IParser } from "../IResourceItem";
 
+export type GifFrame = {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	has_local_palette: boolean;
+	palette_offset: number;
+	palette_size: number;
+	data_offset: number;
+	data_length: number;
+	transparent_index: number;
+	interlaced: boolean;
+	delay: number;
+	disposal: number;
+};
+
 export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 	const buffer = new Uint8Array(buf);
 	const result: Texture[] = [];
@@ -28,12 +44,12 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 	if (global_palette_flag) {
 		global_palette_offset = p;
 		global_palette_size = num_global_colors;
-		p += num_global_colors * 3;  // Seek past palette.
+		p += (num_global_colors << 1) + num_global_colors;  // Seek past palette.
 	}
 
 	let no_eof = true;
 
-	const frames = [];
+	const frames: GifFrame[] = [];
 
 	let delay = 0;
 	let transparent_index = null;
@@ -48,12 +64,12 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 						// Try if it's a Netscape block (with animation loop counter).
 						if (buffer[p] !== 0x0b ||  // 21 FF already read, check block size.
 							// NETSCAPE2.0
-							buffer[p + 1] == 0x4e && buffer[p + 2] == 0x45 && buffer[p + 3] == 0x54 &&
-							buffer[p + 4] == 0x53 && buffer[p + 5] == 0x43 && buffer[p + 6] == 0x41 &&
-							buffer[p + 7] == 0x50 && buffer[p + 8] == 0x45 && buffer[p + 9] == 0x32 &&
-							buffer[p + 10] == 0x2e && buffer[p + 11] == 0x30 &&
+							buffer[p + 1] === 0x4e && buffer[p + 2] === 0x45 && buffer[p + 3] === 0x54 &&
+							buffer[p + 4] === 0x53 && buffer[p + 5] === 0x43 && buffer[p + 6] === 0x41 &&
+							buffer[p + 7] === 0x50 && buffer[p + 8] === 0x45 && buffer[p + 9] === 0x32 &&
+							buffer[p + 10] === 0x2e && buffer[p + 11] === 0x30 &&
 							// Sub-block
-							buffer[p + 12] == 0x03 && buffer[p + 13] == 0x01 && buffer[p + 16] == 0) {
+							buffer[p + 12] === 0x03 && buffer[p + 13] === 0x01 && buffer[p + 16] === 0) {
 							p += 14;
 							loop_count = buffer[p++] | buffer[p++] << 8;
 							p++;  // Skip terminator.
@@ -72,7 +88,7 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 					case 0xf9:  // Graphics Control Extension
 						if (buffer[p++] !== 0x4 || buffer[p + 4] !== 0)
 							throw new Error("Invalid graphics extension block.");
-						var pf1 = buffer[p++];
+						const pf1 = buffer[p++];
 						delay = buffer[p++] | buffer[p++] << 8;
 						transparent_index = buffer[p++];
 						if ((pf1 & 1) === 0) transparent_index = null;
@@ -86,11 +102,10 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 					case 0x01:  // Plain Text Extension (fallthrough to Comment Extension)
 					case 0xfe:  // Comment Extension.
 						while (true) {  // Seek through subblocks.
-							var block_size = buffer[p++];
+							const block_size = buffer[p++];
 							// Bad block size (ex: undefined from an out of bounds read).
 							if (!(block_size >= 0)) throw Error("Invalid block size");
 							if (block_size === 0) break;  // 0 size is terminator
-							// console.log(buf.slice(p, p+block_size).toString('ascii'));
 							p += block_size;
 						}
 						break;
@@ -102,30 +117,30 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 				break;
 
 			case 0x2c:  // Image Descriptor.
-				var x = buffer[p++] | buffer[p++] << 8;
-				var y = buffer[p++] | buffer[p++] << 8;
-				var w = buffer[p++] | buffer[p++] << 8;
-				var h = buffer[p++] | buffer[p++] << 8;
-				var pf2 = buffer[p++];
-				var local_palette_flag = pf2 >> 7;
-				var interlace_flag = pf2 >> 6 & 1;
-				var num_local_colors_pow2 = pf2 & 0x7;
-				var num_local_colors = 1 << (num_local_colors_pow2 + 1);
-				var palette_offset = global_palette_offset;
-				var palette_size = global_palette_size;
-				var has_local_palette = false;
+				const x = buffer[p++] | buffer[p++] << 8;
+				const y = buffer[p++] | buffer[p++] << 8;
+				const width = buffer[p++] | buffer[p++] << 8;
+				const height = buffer[p++] | buffer[p++] << 8;
+				const pf2 = buffer[p++];
+				const local_palette_flag = pf2 >> 7;
+				const interlace_flag = pf2 >> 6 & 1;
+				const num_local_colors_pow2 = pf2 & 0x7;
+				const num_local_colors = 1 << (num_local_colors_pow2 + 1);
+				let palette_offset = global_palette_offset;
+				let palette_size = global_palette_size;
+				let has_local_palette = false;
 				if (local_palette_flag) {
-					var has_local_palette = true;
+					has_local_palette = true;
 					palette_offset = p;  // Override with local palette.
 					palette_size = num_local_colors;
-					p += num_local_colors * 3;  // Seek past palette.
+					p += (num_local_colors << 1) + num_local_colors;  // Seek past palette.
 				}
 
-				var data_offset = p;
+				let data_offset = p;
 
 				p++;  // codesize
 				while (true) {
-					var block_size = buf[p++];
+					const block_size = buffer[p++];
 					// Bad block size (ex: undefined from an out of bounds read).
 					if (!(block_size >= 0)) throw Error("Invalid block size");
 					if (block_size === 0) break;  // 0 size is terminator
@@ -133,16 +148,19 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 				}
 
 				frames.push({
-					x: x, y: y, width: w, height: h,
-					has_local_palette: has_local_palette,
-					palette_offset: palette_offset,
-					palette_size: palette_size,
-					data_offset: data_offset,
+					x,
+					y,
+					width,
+					height,
+					has_local_palette,
+					palette_offset,
+					palette_size,
+					data_offset,
 					data_length: p - data_offset,
-					transparent_index: transparent_index,
-					interlaced: !!interlace_flag,
-					delay: delay,
-					disposal: disposal
+					transparent_index,
+					interlaced: Boolean(interlace_flag),
+					delay,
+					disposal,
 				});
 				break;
 
@@ -160,7 +178,7 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 	const promises = [];
 	for (let i = 0; i < frames.length; i++) {
 		const imageData = new ImageData(width, height);
-		decodeAndBlitFrameRGBA(frames[i], imageData.data);
+		decodeAndBlitFrameRGBA(buffer, frames[i], imageData.data);
 		promises.push(
 			createImageBitmap(imageData).then((value) => {
 				bitmapArr[i] = value;
@@ -174,14 +192,16 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 			result.push(tex);
 		}
 	});
+
+	return result;
 }
 
-function decodeAndBlitFrameRGBA(frame, pixels: Uint8ClampedArray) {
-	var num_pixels = frame.width * frame.height;
-	var index_stream = new Uint8Array(num_pixels);  // At most 8-bit indices.
-	GifReaderLZWOutputIndexStream(
-		buf, frame.data_offset, index_stream, num_pixels);
-	var palette_offset = frame.palette_offset;
+function decodeAndBlitFrameRGBA(buffer: Uint8Array, frame: GifFrame, pixels: Uint8ClampedArray) {
+	const num_pixels = frame.width * frame.height;
+	const index_stream = new Uint8Array(num_pixels);  // At most 8-bit indices.
+	gifReaderLZWOutputIndexStream(
+		buffer, frame.data_offset, index_stream, num_pixels);
+	const palette_offset = frame.palette_offset;
 
 	// NOTE(deanm): It seems to be much faster to compare index to 256 than
 	// to === null.  Not sure why, but CompareStub_EQ_STRICT shows up high in
@@ -193,34 +213,34 @@ function decodeAndBlitFrameRGBA(frame, pixels: Uint8ClampedArray) {
 	// That is a subrect within the framerect, so the additional pixels
 	// must be skipped over after we finished a scanline.
 	var framewidth = frame.width;
-	var framestride = width - framewidth;
+	var framestride = frame.width - framewidth;
 	var xleft = framewidth;  // Number of subrect pixels left in scanline.
 
 	// Output index of the top left corner of the subrect.
-	var opbeg = ((frame.y * width) + frame.x) * 4;
+	var opbeg = ((frame.y * frame.width) + frame.x) << 2;
 	// Output index of what would be the left edge of the subrect, one row
 	// below it, i.e. the index at which an interlace pass should wrap.
-	var opend = ((frame.y + frame.height) * width + frame.x) * 4;
+	var opend = ((frame.y + frame.height) * frame.width + frame.x) << 2;
 	var op = opbeg;
 
-	var scanstride = framestride * 4;
+	let scanstride = framestride << 2;
 
 	// Use scanstride to skip past the rows when interlacing.  This is skipping
 	// 7 rows for the first two passes, then 3 then 1.
 	if (frame.interlaced === true) {
-		scanstride += width * 4 * 7;  // Pass 1.
+		scanstride += frame.width * 28;  // Pass 1.
 	}
 
-	var interlaceskip = 8;  // Tracking the row interval in the current pass.
+	let interlaceskip = 8;  // Tracking the row interval in the current pass.
 
-	for (var i = 0, il = index_stream.length; i < il; ++i) {
-		var index = index_stream[i];
+	for (let i = 0, il = index_stream.length; i < il; ++i) {
+		const index = index_stream[i];
 
 		if (xleft === 0) {  // Beginning of new scan line
 			op += scanstride;
 			xleft = framewidth;
 			if (op >= opend) { // Catch the wrap to switch passes when interlacing.
-				scanstride = framestride * 4 + width * 4 * (interlaceskip - 1);
+				scanstride = (framestride << 2) + (frame.width << 2) * (interlaceskip - 1);
 				// interlaceskip / 2 * 4 is interlaceskip << 1.
 				op = opbeg + (framewidth + framestride) * (interlaceskip << 1);
 				interlaceskip >>= 1;
@@ -230,9 +250,10 @@ function decodeAndBlitFrameRGBA(frame, pixels: Uint8ClampedArray) {
 		if (index === trans) {
 			op += 4;
 		} else {
-			var r = buf[palette_offset + index * 3];
-			var g = buf[palette_offset + index * 3 + 1];
-			var b = buf[palette_offset + index * 3 + 2];
+			const index3 = (index << 1) + index;
+			const r = buffer[palette_offset + index3];
+			const g = buffer[palette_offset + index3 + 1];
+			const b = buffer[palette_offset + index3 + 2];
 			pixels[op++] = r;
 			pixels[op++] = g;
 			pixels[op++] = b;
@@ -242,28 +263,21 @@ function decodeAndBlitFrameRGBA(frame, pixels: Uint8ClampedArray) {
 	}
 };
 
-function GifReaderLZWOutputIndexStream(code_stream, p, output, output_length) {
-	var min_code_size = code_stream[p++];
+function gifReaderLZWOutputIndexStream(buffer: Uint8Array, p: number, output: Uint8Array, output_length: number) {
+	let min_code_size = buffer[p++];
+	let clear_code = 1 << min_code_size;
+	let eoi_code = clear_code + 1;
+	let next_code = eoi_code + 1;
 
-	var clear_code = 1 << min_code_size;
-	var eoi_code = clear_code + 1;
-	var next_code = eoi_code + 1;
-
-	var cur_code_size = min_code_size + 1;  // Number of bits per code.
+	let cur_code_size = min_code_size + 1;  // Number of bits per code.
 	// NOTE: This shares the same name as the encoder, but has a different
 	// meaning here.  Here this masks each code coming from the code stream.
-	var code_mask = (1 << cur_code_size) - 1;
-	var cur_shift = 0;
-	var cur = 0;
-
-	var op = 0;  // Output pointer.
-
-	var subblock_size = code_stream[p++];
-
-	// TODO(deanm): Would using a TypedArray be any faster?  At least it would
-	// solve the fast mode / backing store uncertainty.
-	// var code_table = Array(4096);
-	var code_table = new Int32Array(4096);  // Can be signed, we only use 20 bits.
+	let code_mask = (1 << cur_code_size) - 1;
+	let cur_shift = 0;
+	let cur = 0;
+	let op = 0;  // Output pointer.
+	let subblock_size = buffer[p++];
+	const code_table = new Int32Array(4096);  // Can be signed, we only use 20 bits.
 
 	var prev_code = null;  // Track code-1.
 
@@ -272,11 +286,11 @@ function GifReaderLZWOutputIndexStream(code_stream, p, output, output_length) {
 		while (cur_shift < 16) {
 			if (subblock_size === 0) break;  // No more data to be read.
 
-			cur |= code_stream[p++] << cur_shift;
+			cur |= buffer[p++] << cur_shift;
 			cur_shift += 8;
 
 			if (subblock_size === 1) {  // Never let it get to 0 to hold logic above.
-				subblock_size = code_stream[p++];  // Next subblock.
+				subblock_size = buffer[p++];  // Next subblock.
 			} else {
 				--subblock_size;
 			}
@@ -287,7 +301,7 @@ function GifReaderLZWOutputIndexStream(code_stream, p, output, output_length) {
 		if (cur_shift < cur_code_size)
 			break;
 
-		var code = cur & code_mask;
+		let code = cur & code_mask;
 		cur >>= cur_code_size;
 		cur_shift -= cur_code_size;
 
@@ -329,19 +343,19 @@ function GifReaderLZWOutputIndexStream(code_stream, p, output, output_length) {
 		// The code table stores the prefix entry in 12 bits and then the suffix
 		// byte in 8 bits, so each entry is 20 bits.
 
-		var chase_code = code < next_code ? code : prev_code;
+		let chase_code = code < next_code ? code : prev_code;
 
 		// Chase what we will output, either {CODE} or {CODE-1}.
-		var chase_length = 0;
-		var chase = chase_code;
+		let chase_length = 0;
+		let chase = chase_code;
 		while (chase > clear_code) {
 			chase = code_table[chase] >> 8;
 			++chase_length;
 		}
 
-		var k = chase;
+		let k = chase;
 
-		var op_end = op + chase_length + (chase_code !== code ? 1 : 0);
+		let op_end = op + chase_length + (chase_code !== code ? 1 : 0);
 		if (op_end > output_length) {
 			console.log("Warning, gif stream longer than expected.");
 			return;
@@ -351,7 +365,7 @@ function GifReaderLZWOutputIndexStream(code_stream, p, output, output_length) {
 		output[op++] = k;
 
 		op += chase_length;
-		var b = op;  // Track pointer, writing backwards.
+		let b = op;  // Track pointer, writing backwards.
 
 		if (chase_code !== code)  // The case of emitting {CODE-1} + k.
 			output[op++] = k;
