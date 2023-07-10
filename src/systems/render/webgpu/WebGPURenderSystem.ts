@@ -192,6 +192,9 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 
 	private postprocess(world: any, time: number, delta: number) {
 		this.postprocessingPasses.forEach((pass) => {
+			if (pass.disabled) {
+				return;
+			}
 			this.context.passEncoder.end();
 			this.commandEncoder.copyTextureToTexture(
 				{
