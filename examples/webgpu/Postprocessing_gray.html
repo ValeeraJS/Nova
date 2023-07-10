@@ -31,8 +31,10 @@ fn main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
     var col = textureSample(myTexture, mySampler, fragUV);
 	var gray = 0.2989 * col.r + 0.5870 * col.g + 0.1140 * col.b;
 	return vec4<f32>(gray, gray, gray, 1.);
-}
-		`);
+}`);
+
+		const gui = new dat.GUI();
+		gui.add(pass, "disabled");
 
 		renderSystem.addPostprocessingPass(pass);
 
