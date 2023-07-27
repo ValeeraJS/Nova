@@ -58,7 +58,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 			this.targetTexture = this.context.device.createTexture({
 				size: [this.canvas.width, this.canvas.height],
 				format: this.context.preferredFormat,
-				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST| GPUTextureUsage.COPY_SRC
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC
 			});
 			if (options.multisample?.count > 1) {
 				this.msaaTexture = this.context.device.createTexture({
@@ -190,6 +190,43 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		this.postprocessingPasses.delete(pass);
 	}
 
+
+	public async getFramePixelData() {
+		const width = this.swapChainTexture.width;
+		const height = this.swapChainTexture.height;
+		const numChannels = 4;
+		const size = height * width * numChannels;
+
+		const buffer = this.context.device.createBuffer({ size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+
+		const commandEncoder = this.context.device.createCommandEncoder({});
+
+		commandEncoder.copyTextureToBuffer({
+			texture: this.targetTexture,
+			origin: {
+				x: 0,
+				y: 0,
+				z: 0
+			}
+		}, {
+			buffer: buffer,
+			offset: 0,
+			bytesPerRow: width * numChannels,
+			rowsPerImage: height
+		}, {
+			width,
+			height,
+			depthOrArrayLayers: 1
+		});
+
+		this.context.device.queue.submit([commandEncoder!.finish()]);
+
+		await buffer.mapAsync(GPUMapMode.READ);
+		const copyArrayBuffer = buffer.getMappedRange();
+  
+		console.log(new Uint8Array(copyArrayBuffer));
+	}
+
 	private postprocess(world: any, time: number, delta: number) {
 		this.postprocessingPasses.forEach((pass) => {
 			if (pass.disabled) {
@@ -203,16 +240,24 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 				{
 					texture: this.targetTexture,
 				},
-				[this.canvas.width, this.canvas.height]
+				[this.swapChainTexture.width, this.swapChainTexture.height]
 			);
 			this.context.passEncoder = this.commandEncoder.beginRenderPass(this.renderPassDescriptor);
 			pass.render(this.context, this.targetTexture);
-			// super.run(world, time, delta);
 		});
 	}
 
 	private loopEnd() {
 		this.context.passEncoder.end();
+		this.commandEncoder.copyTextureToTexture(
+			{
+				texture: this.swapChainTexture,
+			},
+			{
+				texture: this.targetTexture,
+			},
+			[this.swapChainTexture.width, this.swapChainTexture.height]
+		);
 		this.context.device.queue.submit([this.commandEncoder.finish()]);
 		while (this.endTaskQueue.length) {
 			this.endTaskQueue.shift()();
