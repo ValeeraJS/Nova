@@ -1,3 +1,4 @@
+export * from "./APngParser";
 export * from "./AtlasParser";
 export * from './FntParser';
 export * from './GifParser';
