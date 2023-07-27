@@ -1,5 +1,6 @@
 
 import { BUFFER } from "../../../../components/constants";
+import { BufferFloat32 } from "../../Buffer";
 import { Material } from "./Material";
 
 const wgslShaders = {
@@ -42,7 +43,10 @@ export class ColorMaterial extends Material {
 			dirty: true
 		}, [{
 			name: "color",
-			value: color,
+			value: new BufferFloat32({
+				size: 48,
+				data: color
+			}),
 			binding: 1,
 			dirty: true,
 			type: BUFFER
