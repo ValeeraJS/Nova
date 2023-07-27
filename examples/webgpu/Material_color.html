@@ -18,8 +18,8 @@
 		const camera = new Nova.Camera3("test-camera", projection);
 		camera.position.z = 5;
 
-		let renderSystem = new Nova.WebGPURenderSystem();
-		let renderer = new Nova.WebGPUMesh3Renderer(camera);
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
 		renderSystem.addRenderer(renderer);
 		world.addSystem(renderSystem).add(mesh);
 
