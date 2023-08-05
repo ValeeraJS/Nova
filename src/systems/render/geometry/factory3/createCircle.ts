@@ -1,3 +1,4 @@
+import { Constants } from "@valeera/mathx";
 import { NORMAL, POSITION, UV, VERTICES } from "../constants";
 import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
@@ -17,7 +18,7 @@ export const DEFAULT_CIRCLE_OPTIONS: ICircleGeometryOptions = {
     combine: true,
     segments: 32,
     angleStart: 0,
-    angle: Math.PI * 2,
+    angle: Constants.DEG_360_RAD,
     radius: 1,
 };
 

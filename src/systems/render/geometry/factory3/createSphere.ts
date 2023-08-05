@@ -1,4 +1,4 @@
-import { Vector3 } from "@valeera/mathx";
+import { Constants, Vector3 } from "@valeera/mathx";
 import { POSITION, VERTICES } from "../constants";
 import { Geometry, AttributePicker } from "../Geometry";
 import { DEFAULT_OPTIONS, IGeometryOptions } from "../geometryOptions";
@@ -21,9 +21,9 @@ export const DEFAULT_SPHERE_OPTIONS: ISphereGeometryOptions = {
     combine: true,
     radius: 1,
     phiStart: 0,
-    phiLength: Math.PI * 2,
+    phiLength: Constants.DEG_360_RAD,
     thetaStart: 0,
-    thetaLength: Math.PI ,
+    thetaLength: Math.PI,
     widthSegments: 32,
     heightSegments: 32,
     cullMode: "back"

@@ -5,7 +5,7 @@ import { Object3 } from "../../entities/Object3";
 export class OrbitControls extends Component<any> {
     speedTheta: number = -0.005;
     speedPhi: number = -0.005;
-    speedZoom: number = 0.1;
+    speedZoom: number = 0.005;
     minDistance: number = 0.1;
     maxDistance: number = Infinity;
     minPolarAngle: number = (1 / 180) * Math.PI;
@@ -25,7 +25,6 @@ export class OrbitControls extends Component<any> {
     screenPositionOld = new Vector2();
     screenPositionNew = new Vector2();
     positionDelta = new Vector2();
-
     innerPosition = new Vector3();
     addEvent() {
         this.dom.addEventListener('pointerdown', (e) => {
@@ -33,7 +32,6 @@ export class OrbitControls extends Component<any> {
                 return;
             }
             this.isDown = true;
-
             this.screenPositionNew.x = e.offsetX;
             this.screenPositionNew.y = e.offsetY;
         });
@@ -52,21 +50,19 @@ export class OrbitControls extends Component<any> {
                 return;
             }
             this.screenPositionOld.set(this.screenPositionNew);
-            this.screenPositionNew.x = e.offsetX;
-            this.screenPositionNew.y = e.offsetY;
-            this.positionDelta.x = this.screenPositionNew.x - this.screenPositionOld.x;
-            this.positionDelta.y = this.screenPositionNew.y - this.screenPositionOld.y;
+            Vector2.fromValues(e.offsetX, e.offsetY, this.screenPositionNew);
+            Vector2.minus(this.screenPositionNew, this.screenPositionOld, this.positionDelta);
             this.spherical.theta += this.positionDelta.y * this.speedPhi;
             this.spherical.phi += this.positionDelta.x * this.speedTheta;
             this.spherical.theta = clamp(this.spherical.theta, this.minPolarAngle, this.maxPolarAngle);
             this.dirty = true;
         });
 
-        this.dom.addEventListener('wheel', (e)=> {
+        this.dom.addEventListener('wheel', (e) => {
             if (this.disabled) {
                 return;
             }
-            
+
             this.spherical.radius += e.deltaY * this.speedZoom;
             this.spherical.radius = clamp(this.spherical.radius, this.minDistance, this.maxDistance);
             this.dirty = true;

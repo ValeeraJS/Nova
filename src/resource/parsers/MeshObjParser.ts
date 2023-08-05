@@ -84,12 +84,12 @@ export const MeshObjParser: IParser<Geometry> = async (text: string) => {
 
 	const uvLength = uvIndicesArr.length;
 	if (uvLength) {
-		const wholeLen = uvLength * 2;
+		const wholeLen = uvLength << 1;
 		const positionF32 = new Float32Array(wholeLen);
 		for (let i = 0; i < uvLength; i++) {
-			let index = (uvIndicesArr[i] - 1) * 2;
-			positionF32[i * 2] = uvArr[index];
-			positionF32[i * 2 + 1] = uvArr[index + 1];
+			let index = uvIndicesArr[i] + uvIndicesArr[i] - 2;
+			positionF32[i << 1] = uvArr[index];
+			positionF32[i << 1 + 1] = uvArr[index + 1];
 		}
 		geo.addAttribute(UV, positionF32, 2, [
 			{

@@ -6,6 +6,8 @@ export declare class WebGPUPostProcessingPass {
     verticesBuffer: GPUBuffer;
     sampler: GPUSampler;
     name: string;
+    disabled: boolean;
+    resolution: Float32Array;
     constructor(name: string, shader: string);
     update(context: GPURendererContext): this;
     render(context: GPURendererContext, texture: GPUTexture): void;

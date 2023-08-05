@@ -22,6 +22,8 @@ export declare class WebGPURenderSystem extends RenderSystemInCanvas {
     postprocessingPasses: Set<WebGPUPostProcessingPass>;
     private renderPassDescriptor;
     constructor(name?: string, options?: IRenderSystemWebGPUOptions);
+    get msaa(): boolean;
+    set msaa(value: boolean);
     setMSAA(data: boolean | GPUMultisampleState): this;
     resize(width: number, height: number, resolution?: number): this;
     run(world: IWorld, time: number, delta: number): this;
@@ -31,6 +33,7 @@ export declare class WebGPURenderSystem extends RenderSystemInCanvas {
     private loopStart;
     addPostprocessingPass(pass: WebGPUPostProcessingPass): void;
     removePostprocessingPass(pass: WebGPUPostProcessingPass): void;
+    getFramePixelData(): Promise<void>;
     private postprocess;
     private loopEnd;
     private endTaskQueue;

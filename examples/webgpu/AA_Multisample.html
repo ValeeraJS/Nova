@@ -30,5 +30,12 @@
 			world.run();
 			mesh.rotation.y -= 0.01;
 		});
+
+		createGUI();
+		function createGUI() {
+			const gui = new dat.GUI();
+
+			gui.add(renderSystem, "msaa");
+		}
 	</script>
 </body>

@@ -47,6 +47,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		WebGPURenderSystem.detect(this.canvas).then((data) => {
 			this.context = data as any;
 			this.context.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+			this.#msaa = !!options.multisample;
 			this.setMSAA(options.multisample ?? false);
 			this.setRenderPassDescripter();
 			data.gpu.configure({
@@ -70,6 +71,20 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 			}
 			this.inited = true;
 		});
+	}
+
+	#msaa = false;
+
+	get msaa() {
+		return this.#msaa;
+	}
+
+	set msaa(value: boolean) {
+		if (value === this.#msaa) {
+			return;
+		}
+		this.#msaa = value;
+		this.setMSAA(value);
 	}
 
 	setMSAA(data: boolean | GPUMultisampleState) {
