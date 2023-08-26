@@ -20,17 +20,25 @@ struct VertexOutput {
 }`;
 
 const fragmentShader = `
-// let PackUpscale: f32 = 1.003921568627451;
-// let PackFactors: vec3<f32> = vec3<f32>( 256., 256., 256. );
-// let ShiftRight8: f32 = 0.00390625;
-// fn packDepthToRGBA(v: f32 ) -> vec4<f32> {
-// 	var r: vec4<f32> = vec4<f32>( fract( v * PackFactors ), v );
-// 	r = vec4<f32>(r.x, r.y - r.x * ShiftRight8, r.z - r.y * ShiftRight8, r.w - r.z * ShiftRight8);
-// 	return r * PackUpscale;
-// }
+const PackUpscale: f32 = 256. / 255.;
+const PackFactors: vec3<f32> = vec3<f32>( 16777216., 65536., 256. );
+const ShiftRight8: f32 = 1. / 256.;
+
+fn packDepthToRGBA(v:f32) -> vec4<f32> {
+	var val: vec3<f32> = fract(v * PackFactors);
+	var r: vec4<f32> = vec4<f32>(val, v);
+	r.y -= val.x * ShiftRight8;
+	r.z -= val.y * ShiftRight8;
+	r.w -= val.z * ShiftRight8;
+	// r.yzw -= r.xyz * ShiftRight8;
+	return r * PackUpscale;
+	// return val;
+}
+
 @fragment fn main(@location(0) depth : vec4<f32>) -> @location(0) vec4<f32> {
 	var fragCoordZ: f32 = depth.z / depth.w;
-	return vec4<f32>(vec3<f32>(pow(fragCoordZ, 490.)), 1.0);
+	return vec4<f32>(fragCoordZ,fragCoordZ,fragCoordZ,1.);
+	// return vec4<f32>(packDepthToRGBA(fragCoordZ));
 }`;
 
 export class DepthMaterial extends Material {

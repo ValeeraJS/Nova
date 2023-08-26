@@ -9,13 +9,13 @@ export default class Matrix4Component extends Component<Float32Array> {
     }
 }
 
-export const updateModelMatrixComponent = (mesh: IObject3) => {
-    let p3 = mesh.position;
-    let r3 = mesh.rotation;
-    let s3 = mesh.scaling;
-    let a3 = mesh.anchor;
-    let m3 = mesh.modelMatrix;
-    let worldMatrix = mesh.worldMatrix;
+export const updateModelMatrixComponent = (obj3: IObject3) => {
+    let p3 = obj3.position;
+    let r3 = obj3.rotation;
+    let s3 = obj3.scaling;
+    let a3 = obj3.anchor;
+    let m3 = obj3.modelMatrix;
+    let worldMatrix = obj3.worldMatrix;
 
     if (p3?.dirty || r3?.dirty || s3?.dirty || a3?.dirty) {
         Matrix4.fromArray(p3?.data || Matrix4.UNIT_MATRIX4, m3.data);
@@ -43,8 +43,8 @@ export const updateModelMatrixComponent = (mesh: IObject3) => {
         }
     }
 
-    if (mesh.parent) {
-        let parentWorldMatrix = (mesh.parent as IObject3).worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
+    if (obj3.parent) {
+        let parentWorldMatrix = (obj3.parent as IObject3).worldMatrix?.data ?? Matrix4.UNIT_MATRIX4;
         Matrix4.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
     } else {
         Matrix4.fromArray(m3.data, worldMatrix.data);

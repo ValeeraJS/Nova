@@ -36,7 +36,7 @@ export default class HashRouteSystem extends System {
 	}
 
 	handle(entity: Entity): this {
-		let routeComponents = entity.getComponentsByTagLabel("HashRoute") as HashRouteComponent[];
+		let routeComponents = entity.getComponentsByTagLabel("HashRoute") as any[];
 		for (let i = routeComponents.length - 1; i > -1; i--) {
 			routeComponents[i].route(this.currentPath, entity);
 		}

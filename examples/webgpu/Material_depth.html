@@ -4,34 +4,32 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
-	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script>
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
-		const geometry = Nova.Geometry2Factory.createTriangle2();
+		const geo = Nova.Geometry3Factory.createPlane({
+			width: 10,
+			height: 10
+		});
+		const material = new Nova.DepthMaterial();
+		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 
-		const mesh = Nova.EntityFactory.createMesh2(geometry);
+		const projection = new Nova.OrthogonalProjection();
+		const camera = new Nova.Camera3("test-camera", projection);
+		camera.position.z = 5;
 
-		const projection = new Nova.Projection2D();
-		const camera = new Nova.Camera2("", projection);
 		const renderSystem = new Nova.WebGPURenderSystem();
-		const renderer = new Nova.WebGPUMesh2Renderer(camera);
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
 		renderSystem.addRenderer(renderer);
 		world.addSystem(renderSystem).add(mesh);
 
 		engine.addTask(() => {
 			world.run();
+			mesh.rotation.y -= 0.01;
 		});
 
-		createGUI();
-
-		function createGUI() {
-			const gui = new dat.GUI();
-
-			gui.add(mesh.anchor, "x", -5, 5).step(0.1);
-			gui.add(mesh.anchor, "y", -5, 5).step(0.1);
-		}
 	</script>
 </body>

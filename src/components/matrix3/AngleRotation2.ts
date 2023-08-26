@@ -3,7 +3,7 @@ import ARotation2 from "./ARotation2";
 
 export default class AngleRotation2 extends ARotation2 {
     #angle: number;
-    data = Matrix3.identity();
+    data = Matrix3.identity(new Matrix3);
 
     constructor(angle: number = 0) {
         super();

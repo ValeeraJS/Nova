@@ -15,6 +15,7 @@ function fixData(data: RouteComponentData) {
 
 export default class HashRouteComponent extends TreeNode.mixin(Component)<RouteComponentData> {
     children: HashRouteComponent[] = [];
+    data: RouteComponentData;
     
     public constructor(name: string, data: RouteComponentData) {
         super(name, fixData(data), [{
@@ -23,7 +24,7 @@ export default class HashRouteComponent extends TreeNode.mixin(Component)<RouteC
         }]);
     }
 
-    route(path: string, entity: IEntity) {
+    public route(path: string, entity: IEntity) {
         let p = this.data.path;
         if (path === p) {
             this.data.action(entity, true);
