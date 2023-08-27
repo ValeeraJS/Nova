@@ -1,6 +1,6 @@
 {
 	"name": "@valeera/nova",
-	"version": "0.1.9",
+	"version": "0.1.10-alpha1",
 	"description": "Web webgpu engine for games or rendering.",
 	"main": "build/Nova.js",
 	"repository": "ValeeraJS/Nova",
@@ -40,7 +40,7 @@
 		"chai": "latest",
 		"concurrently": "latest",
 		"eslint": "latest",
-		"eslint-config-valeera": "latest",
+		"eslint-config-valeera": ">=0.1.4",
 		"eslint-plugin-html": "latest",
 		"eslint-plugin-prettier": "latest",
 		"esm": "latest",
@@ -64,13 +64,13 @@
 		"directories": {}
 	},
 	"dependencies": {
-		"@valeera/eventfire": "1.1.1",
-		"@valeera/idgenerator": "1.2.2",
-		"@valeera/mathx": "0.1.66",
-		"@valeera/timeline": "0.1.2",
-		"@valeera/tree": "0.1.8",
-		"@valeera/webgpu-constant": "latest",
-		"@valeera/x": "0.1.30"
+		"@valeera/eventfire": ">=1.1.1",
+		"@valeera/idgenerator": ">=1.2.2",
+		"@valeera/mathx": ">=0.1.66",
+		"@valeera/timeline": ">=0.1.2",
+		"@valeera/tree": ">=0.1.8",
+		"@valeera/webgpu-constant": ">=0.1.1",
+		"@valeera/x": ">=0.1.31"
 	},
 	"publishConfig": {
 		"access": "public"
