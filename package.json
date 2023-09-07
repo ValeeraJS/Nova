@@ -66,11 +66,11 @@
 	"dependencies": {
 		"@valeera/eventfire": ">=1.1.1",
 		"@valeera/idgenerator": ">=1.2.2",
-		"@valeera/mathx": ">=0.1.66",
+		"@valeera/mathx": ">=0.1.67",
 		"@valeera/timeline": ">=0.1.2",
-		"@valeera/tree": ">=0.1.8",
+		"@valeera/tree": ">=0.1.9alpha-2",
 		"@valeera/webgpu-constant": ">=0.1.1",
-		"@valeera/x": ">=0.1.31"
+		"@valeera/x": ">=0.1.32alpha-3"
 	},
 	"publishConfig": {
 		"access": "public"

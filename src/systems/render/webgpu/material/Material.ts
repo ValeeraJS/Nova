@@ -9,6 +9,11 @@ export class Material implements IMaterial {
 	fragmentShader: IShaderProgram;
 	blend: GPUBlendState;
 	uniforms: IUniformSlot<any>[];
+	depthStencil: GPUDepthStencilState = {
+		depthWriteEnabled: true,
+		depthCompare: 'less',
+		format: 'depth24plus',
+	};
 	constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms: IUniformSlot<any>[] = [], blend: GPUBlendState = DEFAULT_BLEND_STATE) {
 		this.dirty = true;
 		this.vertexShader = vertex;

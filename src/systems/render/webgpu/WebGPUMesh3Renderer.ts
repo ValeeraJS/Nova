@@ -194,11 +194,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 				cullMode: geometry.cullMode,
 				frontFace: geometry.frontFace,
 			},
-			depthStencil: {
-				depthWriteEnabled: true,
-				depthCompare: 'less',
-				format: 'depth24plus',
-			}
+			depthStencil: material.depthStencil
 		};
 		if (context.multisample) {
 			des.multisample = context.multisample;

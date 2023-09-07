@@ -22,4 +22,5 @@ export interface IMaterial {
     uniforms: IUniformSlot<any>[];
     blend: GPUBlendState;
     dirty: boolean;
+    depthStencil: GPUDepthStencilState;
 }

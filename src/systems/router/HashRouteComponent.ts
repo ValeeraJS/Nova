@@ -13,7 +13,7 @@ function fixData(data: RouteComponentData) {
     return data;
 }
 
-export default class HashRouteComponent extends TreeNode.mixin(Component)<RouteComponentData> {
+export default class HashRouteComponent extends TreeNode.mixin(Component)<HashRouteComponent> {
     children: HashRouteComponent[] = [];
     data: RouteComponentData;
     

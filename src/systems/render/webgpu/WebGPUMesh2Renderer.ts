@@ -204,11 +204,7 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 				cullMode: geometry.cullMode,
 				frontFace: geometry.frontFace,
 			},
-			depthStencil: {
-				depthWriteEnabled: true,
-				depthCompare: 'less',
-				format: 'depth24plus',
-			},
+			depthStencil: material.depthStencil,
 		});
 
 		return pipeline;

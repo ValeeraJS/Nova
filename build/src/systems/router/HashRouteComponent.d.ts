@@ -4,7 +4,7 @@ type RouteComponentData = {
     action: (entity: IEntity, matching: boolean) => any;
 };
 declare const HashRouteComponent_base: {
-    new <T_1>(...rest: any[]): {
+    new <T_1 extends import("@valeera/tree").ITreeNodeData<T_1>>(...rest: any[]): {
         parent: import("@valeera/tree").ITreeNode<T_1>;
         children: import("@valeera/tree").ITreeNode<T_1>[];
         addChild(node: import("@valeera/tree").ITreeNodeData<T_1>): any;
@@ -26,7 +26,7 @@ declare const HashRouteComponent_base: {
     toArray<T_8>(node: import("@valeera/tree").ITreeNodeData<T_8>): import("@valeera/tree").ITreeNodeData<T_8>[];
     traverse<T_9>(node: import("@valeera/tree").ITreeNodeData<T_9>, visitor: import("@valeera/tree").IVisitor<T_9>, rest?: any): import("@valeera/tree").ITreeNodeData<T_9>;
 };
-export default class HashRouteComponent extends HashRouteComponent_base<RouteComponentData> {
+export default class HashRouteComponent extends HashRouteComponent_base<HashRouteComponent> {
     children: HashRouteComponent[];
     data: RouteComponentData;
     constructor(name: string, data: RouteComponentData);

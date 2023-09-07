@@ -56,6 +56,7 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
         this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
         this.autoResize = options.autoResize ?? false;
         this.options.noDepthTexture = options.noDepthTexture ?? false;
+        this.priority = 2;
     }
 
     protected clearColorGPU = new ColorGPU(0, 0, 0, 1);

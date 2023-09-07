@@ -7,6 +7,7 @@ export declare class Material implements IMaterial {
     fragmentShader: IShaderProgram;
     blend: GPUBlendState;
     uniforms: IUniformSlot<any>[];
+    depthStencil: GPUDepthStencilState;
     constructor(vertex: IShaderProgram, fragment: IShaderProgram, uniforms?: IUniformSlot<any>[], blend?: GPUBlendState);
     get vertexCode(): string;
     set vertexCode(code: string);

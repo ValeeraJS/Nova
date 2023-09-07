@@ -1593,8 +1593,12 @@
 	    }
 	}
 
-	const MATRIX_XYZ2RGB = new Float32Array([3.2404542, -0.9692660, 0.0556434, -1.5371385, 1.8760108, -0.2040259, -0.4985314, 0.0415560, 1.0572252]);
-	const MATRIX_RGB2XYZ = new Float32Array([0.4124564, 0.2126729, 0.0193339, 0.3575761, 0.7151522, 0.1191920, 0.1804375, 0.0721750, 0.9503041]);
+	const MATRIX_XYZ2RGB = new Float32Array([
+	    3.2404542, -0.969266, 0.0556434, -1.5371385, 1.8760108, -0.2040259, -0.4985314, 0.041556, 1.0572252,
+	]);
+	const MATRIX_RGB2XYZ = new Float32Array([
+	    0.4124564, 0.2126729, 0.0193339, 0.3575761, 0.7151522, 0.119192, 0.1804375, 0.072175, 0.9503041,
+	]);
 	const tmpVec3 = new Float32Array(3);
 	class ColorXYZ extends Float32Array {
 	    static clone = (color) => {
@@ -1856,6 +1860,13 @@
 	    static grayscale = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE, out = new ColorGPU()) => {
 	        const gray = ColorGPU.averageWeighted(color, wr, wg, wb);
 	        ColorGPU.fromScalar(gray, out);
+	        return out;
+	    };
+	    static lerp = (a, b, alpha, out = new ColorGPU()) => {
+	        out[0] = (b[0] - a[0]) * alpha + a[0];
+	        out[1] = (b[1] - a[1]) * alpha + a[1];
+	        out[2] = (b[2] - a[2]) * alpha + a[2];
+	        out[3] = (b[3] - a[3]) * alpha + a[3];
 	        return out;
 	    };
 	    dataType = ArraybufferDataType.COLOR_GPU;
@@ -5717,9 +5728,8 @@
 	        result.push(node);
 	    }
 	};
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	const mixin = (Base) => {
-	    return class TreeNode extends (Base || Object) {
+	const mixin = (Base = Object) => {
+	    return class TreeNode extends (Base) {
 	        static mixin = mixin;
 	        static addChild(node, child) {
 	            if (TreeNode.hasAncestor(node, child)) {
@@ -5840,11 +5850,21 @@
 	    currentWorld = null;
 	    rule;
 	    _disabled = false;
+	    _priority = 0;
 	    get disabled() {
 	        return this._disabled;
 	    }
 	    set disabled(value) {
 	        this._disabled = value;
+	    }
+	    get priority() {
+	        return this._priority;
+	    }
+	    set priority(v) {
+	        this._priority = v;
+	        for (let i = 0, len = this.usedBy.length; i < len; i++) {
+	            this.usedBy[i].updatePriorityOrder();
+	        }
 	    }
 	    constructor(name = "Untitled System", fitRule) {
 	        super();
@@ -6308,12 +6328,14 @@
 	    BEFORE_RUN: "beforeRun",
 	    REMOVE: "remove",
 	};
+	const sort = (a, b) => a[1].priority - b[1].priority;
 	class SystemManager extends Manager {
 	    static Events = SystemEvent;
 	    disabled = false;
 	    elements = new Map();
 	    loopTimes = 0;
 	    usedBy = [];
+	    #systemChunks = [];
 	    constructor(world) {
 	        super();
 	        if (world) {
@@ -6322,6 +6344,7 @@
 	    }
 	    add(system) {
 	        super.add(system);
+	        this.updatePriorityOrder();
 	        this.updateSystemEntitySetByAddFromManager(system);
 	        return this;
 	    }
@@ -6359,6 +6382,15 @@
 	        }
 	        this.loopTimes++;
 	        this.fire(SystemManager.Events.BEFORE_RUN, this);
+	        return this;
+	    }
+	    updatePriorityOrder() {
+	        const arr = Array.from(this.elements);
+	        arr.sort(sort);
+	        this.#systemChunks.length = 0;
+	        for (let i = 0; i < arr.length; i++) {
+	            this.#systemChunks.push(arr[i][1]);
+	        }
 	        return this;
 	    }
 	    updateSystemEntitySetByRemovedFromManager(system) {
@@ -9011,6 +9043,7 @@
 	        this.clearColor = options.clearColor ?? new ColorGPU(0, 0, 0, 1);
 	        this.autoResize = options.autoResize ?? false;
 	        this.options.noDepthTexture = options.noDepthTexture ?? false;
+	        this.priority = 2;
 	    }
 	    clearColorGPU = new ColorGPU(0, 0, 0, 1);
 	    get clearColor() {
@@ -9371,6 +9404,11 @@
 	    fragmentShader;
 	    blend;
 	    uniforms;
+	    depthStencil = {
+	        depthWriteEnabled: true,
+	        depthCompare: 'less',
+	        format: 'depth24plus',
+	    };
 	    constructor(vertex, fragment, uniforms = [], blend = DEFAULT_BLEND_STATE) {
 	        this.dirty = true;
 	        this.vertexShader = vertex;
@@ -9914,11 +9952,7 @@
 	                cullMode: geometry.cullMode,
 	                frontFace: geometry.frontFace,
 	            },
-	            depthStencil: {
-	                depthWriteEnabled: true,
-	                depthCompare: 'less',
-	                format: 'depth24plus',
-	            },
+	            depthStencil: material.depthStencil,
 	        });
 	        return pipeline;
 	    }
@@ -10178,11 +10212,7 @@
 	                cullMode: geometry.cullMode,
 	                frontFace: geometry.frontFace,
 	            },
-	            depthStencil: {
-	                depthWriteEnabled: true,
-	                depthCompare: 'less',
-	                format: 'depth24plus',
-	            }
+	            depthStencil: material.depthStencil
 	        };
 	        if (context.multisample) {
 	            des.multisample = context.multisample;
