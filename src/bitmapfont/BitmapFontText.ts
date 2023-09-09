@@ -1,6 +1,6 @@
 import { EuclidPosition3 } from "../components";
 import { Object3 } from "../entities/Object3";
-import { Geometry, Renderable, Texture } from "../systems/render";
+import { Geometry, Renderable } from "../systems/render";
 import { createPlane } from "../systems/render/geometry/factory3";
 import { IMaterial } from "../systems/render/IMatrial";
 import { BitmapFontMaterial } from "./BitmapFontMaterial";

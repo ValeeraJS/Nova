@@ -6759,7 +6759,7 @@
 	        this.vec2.set(arr);
 	        return this.update();
 	    }
-	    setXY(x, y, z) {
+	    setXY(x, y) {
 	        this.vec2[0] = x;
 	        this.vec2[1] = y;
 	        return this.update();
@@ -7007,7 +7007,7 @@
 	        this.vec2.set(arr);
 	        return this.update();
 	    }
-	    setXY(x, y, z) {
+	    setXY(x, y) {
 	        this.vec2[0] = x;
 	        this.vec2[1] = y;
 	        this.data[0] = x;
@@ -8977,9 +8977,6 @@
 	    else if (color instanceof Float32Array || color instanceof Array) {
 	        ColorGPU.fromArray(color, result);
 	    }
-	    else if (color instanceof Float32Array || color instanceof Array) {
-	        ColorGPU.fromArray(color, result);
-	    }
 	    else {
 	        if ("a" in color) {
 	            ColorGPU.fromJson(color, result);
@@ -10073,6 +10070,7 @@
 	    static renderTypes = MESH3;
 	    renderTypes = MESH3;
 	    camera;
+	    vpMatrix = new Float32Array(16);
 	    entityCacheData = new Map();
 	    constructor(camera) {
 	        this.camera = camera;
@@ -10081,12 +10079,16 @@
 	        this.entityCacheData.clear();
 	        return this;
 	    }
+	    beforeRender() {
+	        Matrix4.multiply(this.camera.projection.data, Matrix4.invert(updateModelMatrixComponent(this.camera).data), this.vpMatrix);
+	        return this;
+	    }
 	    render(entity, context) {
 	        let cacheData = this.entityCacheData.get(entity);
 	        // 假设更换了几何体和材质则重新生成缓存
-	        let mesh3 = entity.getComponent(RENDERABLE);
-	        let material = mesh3.material;
-	        let geometry = mesh3.geometry;
+	        const mesh3 = entity.getComponent(RENDERABLE);
+	        const material = mesh3.material;
+	        const geometry = mesh3.geometry;
 	        // TODO 哪个改了更新对应cache
 	        if (!cacheData || material.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
 	            cacheData = this.createCacheData(entity, context);
@@ -10103,8 +10105,7 @@
 	            context.passEncoder.setVertexBuffer(i, cacheData.attributesBuffers[i]);
 	        }
 	        const mvp = cacheData.mvp;
-	        Matrix4.multiply(this.camera.projection.data, Matrix4.invert(updateModelMatrixComponent(this.camera).data), mvp);
-	        Matrix4.multiply(mvp, entity.worldMatrix.data, mvp);
+	        Matrix4.multiply(this.vpMatrix, entity.worldMatrix.data, mvp);
 	        context.device.queue.writeBuffer(cacheData.uniformBuffer, 0, mvp.buffer, mvp.byteOffset, mvp.byteLength);
 	        cacheData.uniformMap.forEach((uniform, key) => {
 	            if (uniform.type === BUFFER && uniform.dirty) {
@@ -10135,20 +10136,20 @@
 	        const mesh3 = entity.getComponent(RENDERABLE);
 	        const geometry = mesh3.geometry;
 	        geometry.dirty = false;
-	        let material = mesh3.material;
-	        let nodes = geometry.data;
+	        const material = mesh3.material;
+	        const nodes = geometry.data;
 	        for (let i = 0; i < nodes.length; i++) {
 	            buffers.push(createVerticesBuffer(device, nodes[i].data));
 	        }
-	        let pipeline = this.createPipeline(geometry, material, context);
-	        let groupEntries = [{
+	        const pipeline = this.createPipeline(geometry, material, context);
+	        const groupEntries = [{
 	                binding: 0,
 	                resource: {
 	                    buffer: uniformBuffer,
 	                },
 	            }];
-	        let uniforms = material.uniforms;
-	        let uniformMap = new Map();
+	        const uniforms = material.uniforms;
+	        const uniformMap = new Map();
 	        if (uniforms) {
 	            for (let i = 0; i < uniforms.length; i++) {
 	                const uniform = uniforms[i];
@@ -10608,6 +10609,17 @@ fn main(
 	    }
 	    set scissor(value) {
 	        this.#scissor = value;
+	    }
+	    handleBefore(time, delta, world) {
+	        if (this.disabled) {
+	            return this;
+	        }
+	        super.handleBefore(time, delta, world);
+	        // 根据不同类别进行渲染
+	        this.rendererMap.forEach((renderer) => {
+	            renderer.beforeRender?.(this.context);
+	        });
+	        return this;
 	    }
 	    handle(entity) {
 	        if (entity.disabled) {
@@ -11504,7 +11516,7 @@ struct VertexOutput {
 	        this.fontStore.set(json.info.face, json);
 	        return this;
 	    }
-	    createChar(charTextOrCode, fontName, fontSize) {
+	    createChar(charTextOrCode, fontName) {
 	        if (typeof charTextOrCode === "string") {
 	            charTextOrCode = charTextOrCode.charCodeAt(0);
 	        }
@@ -12033,7 +12045,7 @@ struct VertexOutput {
 	    if (frame) {
 	        apng.frames.push(frame);
 	    }
-	    if (apng.frames.length == 0) {
+	    if (apng.frames.length === 0) {
 	        return errNotAPNG;
 	    }
 	    const preBlob = new Blob(preDataParts), postBlob = new Blob(postDataParts);
@@ -12262,7 +12274,7 @@ struct VertexOutput {
 	                        else { // We don't know what it is, just try to get past it.
 	                            p += 12;
 	                            while (true) { // Seek through subblocks.
-	                                var block_size = buffer[p++];
+	                                const block_size = buffer[p++];
 	                                // Bad block size (ex: undefined from an out of bounds read).
 	                                if (!(block_size >= 0))
 	                                    throw Error("Invalid block size");
@@ -12809,7 +12821,7 @@ struct VertexOutput {
 	        for (let key in to) {
 	            if (key in from) {
 	                // TODO 目前只支持数字和F32数组插值，后续扩展
-	                if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
+	                if (typeof to[key] === 'number' && typeof from[key] === 'number') {
 	                    map.set(key, {
 	                        type: 'number',
 	                        origin: from[key],

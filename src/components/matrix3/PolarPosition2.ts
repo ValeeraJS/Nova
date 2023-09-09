@@ -1,4 +1,4 @@
-import { Matrix3, Vector2, Polar } from "@valeera/mathx";
+import { Polar } from "@valeera/mathx";
 import APosition2 from "./APosition2";
 
 export default class PolarPosition2 extends APosition2 {

@@ -1,11 +1,11 @@
 import { Matrix4 } from "@valeera/mathx";
-import { IEntity } from "@valeera/x";
+import type { IEntity } from "@valeera/x";
 import { Geometry, AttributesNodeData } from "../geometry/Geometry";
 import { BUFFER, MESH3, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4Component";
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
-import { IMaterial, IUniformSlot } from "../IMatrial";
+import type { IMaterial, IUniformSlot } from "../IMatrial";
 import { ICamera3 } from "../../../entities/Camera3";
 import { Object3 } from "../../../entities/Object3";
 import { Mesh3 } from "../Mesh3";
@@ -26,7 +26,10 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 	public static readonly renderTypes = MESH3;
 	public readonly renderTypes = MESH3;
 	public camera: ICamera3;
+	public vpMatrix = new Float32Array(16);
+
 	private entityCacheData: Map<IEntity, ICacheData> = new Map();
+
 	public constructor(camera: ICamera3) {
 		this.camera = camera;
 	}
@@ -36,12 +39,19 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		return this;
 	}
 
+	beforeRender(): this {
+		Matrix4.multiply(this.camera.projection.data,
+			(Matrix4.invert(updateModelMatrixComponent(this.camera).data) as Float32Array), this.vpMatrix);
+
+		return this;
+	}
+
 	render(entity: Object3, context: GPURendererContext): this {
 		let cacheData = this.entityCacheData.get(entity);
 		// 假设更换了几何体和材质则重新生成缓存
-		let mesh3 = entity.getComponent(RENDERABLE) as Mesh3;
-		let material = mesh3.material;
-		let geometry = mesh3.geometry;
+		const mesh3 = entity.getComponent(RENDERABLE) as Mesh3;
+		const material = mesh3.material;
+		const geometry = mesh3.geometry;
 
 		// TODO 哪个改了更新对应cache
 		if (!cacheData || material.dirty || material !== cacheData.material || geometry !== cacheData.geometry || geometry.dirty) {
@@ -60,9 +70,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		}
 
 		const mvp = cacheData.mvp;
-		Matrix4.multiply(this.camera.projection.data,
-			(Matrix4.invert(updateModelMatrixComponent(this.camera).data) as Float32Array), mvp);
-		Matrix4.multiply(mvp, entity.worldMatrix.data, mvp);
+		Matrix4.multiply(this.vpMatrix, entity.worldMatrix.data, mvp);
 
 		context.device.queue.writeBuffer(
 			cacheData.uniformBuffer,
@@ -114,22 +122,22 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 		const mesh3 = entity.getComponent(RENDERABLE) as Mesh3;
 		const geometry = mesh3.geometry;
 		geometry.dirty = false;
-		let material = mesh3.material;
-		let nodes = geometry.data as AttributesNodeData[];
+		const material = mesh3.material;
+		const nodes = geometry.data as AttributesNodeData[];
 		for (let i = 0; i < nodes.length; i++) {
 			buffers.push(createVerticesBuffer(device, nodes[i].data));
 		}
 
-		let pipeline = this.createPipeline(geometry, material, context);
-		let groupEntries: GPUBindGroupEntry[] = [{
+		const pipeline = this.createPipeline(geometry, material, context);
+		const groupEntries: GPUBindGroupEntry[] = [{
 			binding: 0,
 			resource: {
 				buffer: uniformBuffer,
 			},
 		}];
 
-		let uniforms: IUniformSlot<any>[] = material.uniforms;
-		let uniformMap = new Map();
+		const uniforms: IUniformSlot<any>[] = material.uniforms;
+		const uniformMap = new Map();
 		if (uniforms) {
 			for (let i = 0; i < uniforms.length; i++) {
 				const uniform = uniforms[i];

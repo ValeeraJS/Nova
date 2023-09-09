@@ -7,6 +7,6 @@ export default class Vector2Scale2 extends AScale2 {
     get y(): number;
     set y(value: number);
     set(arr: Float32Array | number[]): this;
-    setXY(x: number, y: number, z: number): this;
+    setXY(x: number, y: number): this;
     update(): this;
 }

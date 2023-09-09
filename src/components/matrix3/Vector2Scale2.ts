@@ -38,7 +38,7 @@ export default class Vector2Scale2 extends AScale2 {
         return this.update();
     }
 
-    setXY(x: number, y: number, z: number) {
+    setXY(x: number, y: number) {
         this.vec2[0] = x;
         this.vec2[1] = y;
         

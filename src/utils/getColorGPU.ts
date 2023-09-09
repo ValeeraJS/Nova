@@ -23,8 +23,6 @@ export const getColorGPU = (color: ColorFormatType, result = new ColorGPU()) => 
         ColorGPU.fromColorCMYK(color, result);
     } else if (color instanceof Float32Array || color instanceof Array) {
         ColorGPU.fromArray(color, result);
-    } else if (color instanceof Float32Array || color instanceof Array) {
-        ColorGPU.fromArray(color, result);
     } else {
         if ("a" in color) {
             ColorGPU.fromJson(color as IColorRGBAJson, result);

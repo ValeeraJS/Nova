@@ -8,6 +8,6 @@ export default class Anchor2 extends Matrix3Component {
     get y(): number;
     set y(value: number);
     set(arr: Float32Array | number[]): this;
-    setXY(x: number, y: number, z: number): this;
+    setXY(x: number, y: number): this;
     update(): this;
 }

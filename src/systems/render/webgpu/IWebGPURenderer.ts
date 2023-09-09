@@ -12,5 +12,6 @@ export interface GPURendererContext {
 
 export interface IWebGPURenderer extends IRenderer {
     clearCache(): this;
+    beforeRender?(context: GPURendererContext): this;
     render(entity: IEntity, context: GPURendererContext): any; // 处理渲染逻辑
 }

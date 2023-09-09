@@ -74,7 +74,7 @@ export class Tween extends Component<Map<string, InterpolationType>> {
 		for (let key in to) {
 			if (key in from) {
 				// TODO 目前只支持数字和F32数组插值，后续扩展
-				if (typeof to[key] === 'number' && 'number' === typeof from[key]) {
+				if (typeof to[key] === 'number' && typeof from[key] === 'number') {
 					map.set(key, {
 						type: 'number',
 						origin: from[key],

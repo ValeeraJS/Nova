@@ -11,7 +11,7 @@ export class BitmapFontManager {
         this.fontStore.set(json.info.face, json);
         return this;
     }
-    createChar(charTextOrCode: string | number, fontName: string, fontSize?: number): BitmapFontChar3 {
+    createChar(charTextOrCode: string | number, fontName: string): BitmapFontChar3 {
         if (typeof charTextOrCode === "string") {
             charTextOrCode = charTextOrCode.charCodeAt(0);
         }

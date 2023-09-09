@@ -76,7 +76,7 @@ export const GifParser: IParser<Texture[]> = async (buf: ArrayBuffer) => {
 						} else {  // We don't know what it is, just try to get past it.
 							p += 12;
 							while (true) {  // Seek through subblocks.
-								var block_size = buffer[p++];
+								const block_size = buffer[p++];
 								// Bad block size (ex: undefined from an out of bounds read).
 								if (!(block_size >= 0)) throw Error("Invalid block size");
 								if (block_size === 0) break;  // 0 size is terminator

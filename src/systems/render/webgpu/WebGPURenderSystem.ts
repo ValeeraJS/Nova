@@ -168,6 +168,19 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		this.#scissor = value;
 	}
 
+	handleBefore(time: number, delta: number, world: IWorld): this {
+		if (this.disabled) {
+			return this;
+		}
+		super.handleBefore(time, delta, world);
+		
+		// 根据不同类别进行渲染
+		this.rendererMap.forEach((renderer: IWebGPURenderer) => {
+			renderer.beforeRender?.(this.context);
+		});
+		return this;
+	}
+
 	handle(entity: IEntity): this {
 		if (entity.disabled) {
 			return this;

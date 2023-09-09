@@ -5,9 +5,11 @@ export declare class WebGPUMesh3Renderer implements IWebGPURenderer {
     static readonly renderTypes = "mesh3";
     readonly renderTypes = "mesh3";
     camera: ICamera3;
+    vpMatrix: Float32Array;
     private entityCacheData;
     constructor(camera: ICamera3);
     clearCache(): this;
+    beforeRender(): this;
     render(entity: Object3, context: GPURendererContext): this;
     private createCacheData;
     private createPipeline;

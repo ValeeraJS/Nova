@@ -138,7 +138,7 @@ export const APngParser = (buffer: ArrayBuffer) => {
 		apng.frames.push(frame);
 	}
 
-	if (apng.frames.length == 0) {
+	if (apng.frames.length === 0) {
 		return errNotAPNG;
 	}
 

@@ -16,7 +16,7 @@
 
 		function createWorld(engine, canvas, clearColor) {
 			const world = new Nova.World();
-			const geo = Nova.Geometry3Factory.createTriangle3();
+			const geo = Nova.Geometry3Factory.createTriangle();
 			const mesh = Nova.EntityFactory.createMesh3(geo);
 			mesh.position.z = -5;
 
@@ -41,7 +41,7 @@
 			});
 		}
 
-		createWorld(engine1, canvas, new Nova.Mathx.ColorGPU(1, 0, 0, 1));
-		createWorld(engine2, canvas2, new Nova.Mathx.ColorGPU(0, 0, 1, 1));
+		createWorld(engine1, canvas, new Nova.ColorGPU(1, 0, 0, 1));
+		createWorld(engine2, canvas2, new Nova.ColorGPU(0, 0, 1, 1));
 	</script>
 </body>

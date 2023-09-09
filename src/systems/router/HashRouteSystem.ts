@@ -1,5 +1,4 @@
 import { IWorld, Entity, System } from "@valeera/x";
-import HashRouteComponent from "./HashRouteComponent";
 
 export default class HashRouteSystem extends System {
 	private static listeningHashChange = false;

@@ -29,6 +29,7 @@ export declare class WebGPURenderSystem extends RenderSystemInCanvas {
     run(world: IWorld, time: number, delta: number): this;
     get scissor(): IScissor;
     set scissor(value: IScissor);
+    handleBefore(time: number, delta: number, world: IWorld): this;
     handle(entity: IEntity): this;
     private loopStart;
     addPostprocessingPass(pass: WebGPUPostProcessingPass): void;
