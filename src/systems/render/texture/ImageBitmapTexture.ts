@@ -17,15 +17,28 @@ export class ImageBitmapTexture extends Texture {
 		this.loaded = false;
 		this.dirty = false;
 		if (typeof img === "string") {
+			if (this.image.src === img) {
+				return this;
+			}
 			this.image.src = img;
 		} else if (img instanceof ImageBitmap) {
+			if (this.data === img) {
+				return this;
+			}
 			this.dirty = true;
 			this.loaded = true;
 			this.data = img;
 
 			return this;
 		} else {
+			if (this.image === img) {
+				return this;
+			}
 			this.image = img;
+		}
+
+		if (this.data) {
+			this.data.close();
 		}
 
 		await this.image.decode();
@@ -36,6 +49,7 @@ export class ImageBitmapTexture extends Texture {
 			this.width = this.data.width;
 			this.height = this.data.height;
 		}
+		console.log(this)
 		this.dirty = true;
 		this.loaded = true;
 		return this;
