@@ -32,12 +32,12 @@
 	"author": "hypnosnova",
 	"license": "MIT",
 	"devDependencies": {
-		"@babel/eslint-parser": "^7.22.15",
+		"@babel/eslint-parser": ">=7.22.15",
 		"@rollup/plugin-json": "latest",
 		"@rollup/plugin-node-resolve": "latest",
 		"@typescript-eslint/eslint-plugin": "latest",
 		"@typescript-eslint/parser": "latest",
-		"@webgpu/types": "latest",
+		"@webgpu/types": ">=0.1.37",
 		"chai": "latest",
 		"concurrently": "latest",
 		"eslint": "latest",
@@ -68,7 +68,7 @@
 	"dependencies": {
 		"@valeera/eventfire": ">=1.1.1",
 		"@valeera/idgenerator": ">=1.2.2",
-		"@valeera/mathx": ">=0.1.67",
+		"@valeera/mathx": ">=0.1.69",
 		"@valeera/timeline": ">=0.1.2",
 		"@valeera/tree": ">=0.1.9alpha-2",
 		"@valeera/webgpu-constant": ">=0.1.1",

@@ -870,6 +870,13 @@
 	    static normalize = (a, out = new Vector2()) => {
 	        return Vector2.divideScalar(a, Vector2.norm(a) || 1, out);
 	    };
+	    static opposite = (a, center, out = new Vector2()) => {
+	        x$4 = center[0];
+	        y$4 = center[1];
+	        out[0] = x$4 + x$4 - a[0];
+	        out[1] = y$4 + y$4 - a[1];
+	        return out;
+	    };
 	    static random = (norm = 1, out = new Vector2()) => {
 	        x$4 = Math.random() * DEG_360_RAD;
 	        out[0] = Math.cos(x$4) * norm;
@@ -910,6 +917,13 @@
 	    };
 	    static toString = (a) => {
 	        return `(${a[0]}, ${a[1]})`;
+	    };
+	    static transformDirection = (a, m, out = new Vector2()) => {
+	        x$4 = a[0];
+	        y$4 = a[1];
+	        out[0] = m[0] * x$4 + m[3] * y$4;
+	        out[1] = m[1] * x$4 + m[4] * y$4;
+	        return Vector2.normalize(out, out);
 	    };
 	    static transformMatrix3 = (a, m, out = new Vector2()) => {
 	        x$4 = a[0];
@@ -1164,6 +1178,15 @@
 	    static normalize = (a, out = new Vector3()) => {
 	        return Vector3.divideScalar(a, Vector3.norm(a) || 1, out);
 	    };
+	    static opposite = (a, center, out = new Vector3()) => {
+	        ax$1 = center[0];
+	        ay$1 = center[1];
+	        az$1 = center[2];
+	        out[0] = ax$1 + ax$1 - a[0];
+	        out[1] = ay$1 + ay$1 - a[1];
+	        out[2] = az$1 + az$1 - a[2];
+	        return out;
+	    };
 	    static reflect = (origin, normal, out = new Vector3()) => {
 	        Vector3.multiplyScalar(normal, 2 * Vector3.dot(origin, normal), out);
 	        return Vector3.minus(origin, out, out);
@@ -1234,6 +1257,15 @@
 	        out[1] = ax$1 * m[1] + ay$1 * m[4] + az$1 * m[7];
 	        out[2] = ax$1 * m[2] + ay$1 * m[5] + az$1 * m[8];
 	        return out;
+	    };
+	    static transformDirection = (a, m, out = new Vector3()) => {
+	        ax$1 = a[0];
+	        ay$1 = a[1];
+	        az$1 = a[2];
+	        out[0] = m[0] * ax$1 + m[4] * ay$1 + m[8] * az$1;
+	        out[1] = m[1] * ax$1 + m[5] * ay$1 + m[9] * az$1;
+	        out[2] = m[2] * ax$1 + m[6] * ay$1 + m[10] * az$1;
+	        return Vector3.normalize(out, out);
 	    };
 	    static transformMatrix4 = (a, m, out = new Vector3()) => {
 	        ax$1 = a[0];
@@ -2472,6 +2504,10 @@
 	    d1 = range1[1] - range1[0];
 	    d2$1 = range2[1] - range2[0];
 	    return (value - d1 * 0.5) / d2$1 / d1;
+	};
+
+	const opposite = (v, center = 0) => {
+	    return center + center - v;
 	};
 
 	var randFloat = (min = 0, max = 1) => {
@@ -3780,6 +3816,32 @@
 	        out[15] = 1;
 	        return out;
 	    };
+	    static fromReflectPlane = (plane, out = new Matrix4()) => {
+	        x$1 = plane.normal.x;
+	        y$1 = plane.normal.y;
+	        z = plane.normal.z;
+	        d = plane.distance;
+	        a = x$1 * 2;
+	        b = y$1 * 2;
+	        c = z * 2;
+	        out[0] = 1 - a * x$1;
+	        out[1] = -a * y$1;
+	        out[2] = -a * z;
+	        out[3] = 0;
+	        out[4] = out[1];
+	        out[5] = 1 - b * y$1;
+	        out[6] = -b * z;
+	        out[7] = 0;
+	        out[8] = out[2];
+	        out[9] = out[6];
+	        out[10] = 1 - c * z;
+	        out[11] = 0;
+	        out[8] = -d * a;
+	        out[9] = -d * b;
+	        out[10] = -d * c;
+	        out[11] = 1;
+	        return out;
+	    };
 	    static fromRotation = (rad, axis, out = new Matrix4()) => {
 	        x$1 = axis[0];
 	        y$1 = axis[1];
@@ -4787,7 +4849,9 @@
 	    return low + Math.floor(Math.random() * (high - low + 1));
 	};
 
-	let dis, r2, d2;
+	let dis;
+	let r2;
+	let d2;
 	const v = new Vector3();
 	class Ray3 {
 	    static at = (a, b, out = new Vector3()) => {
@@ -7131,11 +7195,15 @@
 	}
 
 	class AProjection3 extends Matrix4Component {
+	    inverseMatrix = new Float32Array(16);
 	    constructor(data = Matrix4.create()) {
 	        super(PROJECTION_3D, data, [{
 	                label: PROJECTION_3D,
 	                unique: true
 	            }]);
+	    }
+	    updateProjectionInverse() {
+	        Matrix4.invert(this.data, this.inverseMatrix);
 	    }
 	}
 
@@ -7281,7 +7349,7 @@
 	            near,
 	            far,
 	        };
-	        this.update();
+	        this.update(true);
 	    }
 	    get left() {
 	        return this.options.left;
@@ -7334,9 +7402,12 @@
 	        this.options.far = far;
 	        return this.update();
 	    }
-	    update() {
+	    update(inverse = false) {
 	        Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
+	        if (inverse) {
+	            this.updateProjectionInverse();
+	        }
 	        return this;
 	    }
 	}
@@ -7351,7 +7422,7 @@
 	            near,
 	            far,
 	        };
-	        this.update();
+	        this.update(true);
 	    }
 	    get fovy() {
 	        return this.options.fovy;
@@ -7388,9 +7459,12 @@
 	        this.options.far = far;
 	        return this.update();
 	    }
-	    update() {
+	    update(inverse = false) {
 	        Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
+	        if (inverse) {
+	            this.updateProjectionInverse();
+	        }
 	        return this;
 	    }
 	}
@@ -7503,7 +7577,7 @@
 	            near,
 	            far,
 	        };
-	        this.update();
+	        this.update(true);
 	    }
 	    get fovx() {
 	        return this.options.fovx;
@@ -7540,9 +7614,12 @@
 	        this.options.far = far;
 	        return this.update();
 	    }
-	    update() {
+	    update(inverse = false) {
 	        Matrix4.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
 	        this.dirty = true;
+	        if (inverse) {
+	            this.updateProjectionInverse();
+	        }
 	        return this;
 	    }
 	}
@@ -7798,7 +7875,8 @@
 	        return this;
 	    }
 	}
-	let x, y;
+	let x;
+	let y;
 	const transformMatrix3 = (a, m, offset) => {
 	    x = a[offset];
 	    y = a[1 + offset];
@@ -7905,7 +7983,10 @@
 	        // update total number of vertices
 	        numberOfVertices += vertexCounter;
 	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let len = indices.length;
+	    let i3 = 0;
+	    let strideI = 0;
+	    let i2 = 0;
 	    // let count = len / 3;
 	    let geo = new Geometry(3, len, topology, cullMode);
 	    if (combine) {
@@ -8344,7 +8425,10 @@
 	            indices.push(b, c, d);
 	        }
 	    }
-	    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	    let len = indices.length;
+	    let i3 = 0;
+	    let strideI = 0;
+	    let i2 = 0;
 	    // let count = len / 3;
 	    let geo = new Geometry(3, len, topology, cullMode);
 	    // TODO indices 现在都是非索引版本
@@ -8405,31 +8489,6 @@
 	                result[4 + strideI] = uvs[i2 + 1];
 	            }
 	        }
-	        // result.set(t.a);
-	        // result.set(t.b, stride);
-	        // result.set(t.c, stride + stride);
-	        // if (options.hasNormal) {
-	        //     let normal = Triangle3.normal(t);
-	        //     result.set(normal, 3);
-	        //     result.set(normal, stride + 3);
-	        //     result.set(normal, stride + stride + 3);
-	        //     pickers.push({
-	        //         name: 'normal',
-	        //         offset: 3,
-	        //         length: 3,
-	        //     });
-	        // }
-	        // if (options.hasUV) {
-	        //     let offset = options.hasNormal ? 6 : 3;
-	        //     result.set([0, 1], offset);
-	        //     result.set([1, 1], stride + offset);
-	        //     result.set([0.5, 0], stride + stride + offset);
-	        //     pickers.push({
-	        //         name: UV,
-	        //         offset,
-	        //         length: 2,
-	        //     });
-	        // }
 	        geo.addAttribute(VERTICES, result, stride, pickers);
 	        return geo;
 	    }
@@ -9162,17 +9221,87 @@
 	    descriptor = {};
 	    name;
 	    constructor(option = {}, name = "sampler") {
-	        this.descriptor.minFilter = option.minFilter ?? "linear";
-	        this.descriptor.magFilter = option.magFilter ?? "linear";
 	        this.descriptor.addressModeU = option.addressModeU ?? "repeat";
 	        this.descriptor.addressModeV = option.addressModeV ?? "repeat";
 	        this.descriptor.addressModeW = option.addressModeW ?? "repeat";
-	        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
+	        this.descriptor.magFilter = option.magFilter ?? "linear";
+	        this.descriptor.minFilter = option.minFilter ?? "linear";
 	        this.descriptor.mipmapFilter = option.mipmapFilter ?? "linear";
+	        this.descriptor.maxAnisotropy = option.maxAnisotropy ?? 1;
 	        this.descriptor.lodMaxClamp = option.lodMaxClamp ?? 32;
 	        this.descriptor.lodMinClamp = option.lodMinClamp ?? 0;
 	        this.descriptor.compare = option.compare ?? undefined;
 	        this.name = name;
+	    }
+	    get addressModeU() {
+	        return this.descriptor.addressModeU;
+	    }
+	    set addressModeU(value) {
+	        this.descriptor.addressModeU = value;
+	        this.dirty = true;
+	    }
+	    get addressModeV() {
+	        return this.descriptor.addressModeV;
+	    }
+	    set addressModeV(value) {
+	        this.descriptor.addressModeV = value;
+	        this.dirty = true;
+	    }
+	    get addressModeW() {
+	        return this.descriptor.addressModeW;
+	    }
+	    set addressModeW(value) {
+	        this.descriptor.addressModeW = value;
+	        this.dirty = true;
+	    }
+	    get magFilter() {
+	        return this.descriptor.magFilter;
+	    }
+	    set magFilter(v) {
+	        this.descriptor.magFilter = v;
+	        this.dirty = true;
+	    }
+	    get minFilter() {
+	        return this.descriptor.minFilter;
+	    }
+	    set minFilter(v) {
+	        this.descriptor.minFilter = v;
+	        this.dirty = true;
+	    }
+	    get mipmapFilter() {
+	        return this.descriptor.mipmapFilter;
+	    }
+	    set mipmapFilter(v) {
+	        this.descriptor.mipmapFilter = v;
+	        this.dirty = true;
+	    }
+	    get lodMaxClamp() {
+	        return this.descriptor.lodMaxClamp;
+	    }
+	    set lodMaxClamp(v) {
+	        this.descriptor.lodMaxClamp = v;
+	        this.dirty = true;
+	    }
+	    get lodMinClamp() {
+	        return this.descriptor.lodMinClamp;
+	    }
+	    set lodMinClamp(v) {
+	        this.descriptor.lodMinClamp = v;
+	        this.dirty = true;
+	    }
+	    get maxAnisotropy() {
+	        return this.descriptor.maxAnisotropy;
+	    }
+	    set maxAnisotropy(v) {
+	        this.descriptor.maxAnisotropy = v;
+	        this.dirty = true;
+	    }
+	    get compare() {
+	        return this.descriptor.compare;
+	    }
+	    set compare(v) {
+	        this.descriptor.compare = v;
+	        this.dirty = true;
 	    }
 	    setAddressMode(u, v, w) {
 	        this.descriptor.addressModeU = u;
@@ -9334,16 +9463,28 @@
 	        this.loaded = false;
 	        this.dirty = false;
 	        if (typeof img === "string") {
+	            if (this.image.src === img) {
+	                return this;
+	            }
 	            this.image.src = img;
 	        }
 	        else if (img instanceof ImageBitmap) {
+	            if (this.data === img) {
+	                return this;
+	            }
 	            this.dirty = true;
 	            this.loaded = true;
 	            this.data = img;
 	            return this;
 	        }
 	        else {
+	            if (this.image === img) {
+	                return this;
+	            }
 	            this.image = img;
+	        }
+	        if (this.data) {
+	            this.data.close();
 	        }
 	        await this.image.decode();
 	        this.data = await createImageBitmap(this.image);
@@ -9352,6 +9493,7 @@
 	            this.width = this.data.width;
 	            this.height = this.data.height;
 	        }
+	        console.log(this);
 	        this.dirty = true;
 	        this.loaded = true;
 	        return this;
@@ -10659,8 +10801,8 @@ fn main(
 	        const width = this.swapChainTexture.width;
 	        const height = this.swapChainTexture.height;
 	        const numChannels = 4;
-	        const size = height * width * numChannels;
-	        const buffer = this.context.device.createBuffer({ size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+	        const size = Math.ceil(width * numChannels / 256) * 256;
+	        const buffer = this.context.device.createBuffer({ size: size * height, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
 	        const commandEncoder = this.context.device.createCommandEncoder({});
 	        commandEncoder.copyTextureToBuffer({
 	            texture: this.targetTexture,
@@ -10672,7 +10814,7 @@ fn main(
 	        }, {
 	            buffer: buffer,
 	            offset: 0,
-	            bytesPerRow: width * numChannels,
+	            bytesPerRow: size,
 	            rowsPerImage: height
 	        }, {
 	            width,
@@ -12664,6 +12806,255 @@ struct VertexOutput {
 	    });
 	};
 
+	const TYPE_NO_DATA = 0;
+	const TYPE_INDEXED = 1;
+	const TYPE_GREY = 3;
+	const TYPE_RLE_INDEXED = 9;
+	const TYPE_RLE_RGB = 10;
+	const TYPE_RLE_GREY = 11;
+	const ORIGIN_BOTTOM_LEFT = 0x00;
+	const ORIGIN_TOP_LEFT = 0x02;
+	const ORIGIN_TOP_RIGHT = 0x03;
+	const ORIGIN_SHIFT = 0x04;
+	const ORIGIN_MASK = 0x30;
+	const TgaParser = async (buffer) => {
+	    const data = new Uint8Array(buffer);
+	    if (data.length < 0x12) {
+	        throw new Error('Not enough data to contain header');
+	    }
+	    const bitmap = await createImageBitmap(parse(data));
+	    return new Texture({
+	        size: [bitmap.width, bitmap.height],
+	        image: bitmap,
+	    });
+	};
+	function parse(data) {
+	    let offset = 0;
+	    const header = {
+	        /* 0x00  BYTE */ idLength: data[offset++],
+	        /* 0x01  BYTE */ colorMapType: data[offset++],
+	        /* 0x02  BYTE */ imageType: data[offset++],
+	        /* 0x03  WORD */ colorMapIndex: data[offset++] | (data[offset++] << 8),
+	        /* 0x05  WORD */ colorMapLength: data[offset++] | (data[offset++] << 8),
+	        /* 0x07  BYTE */ colorMapDepth: data[offset++],
+	        /* 0x08  WORD */ offsetX: data[offset++] | (data[offset++] << 8),
+	        /* 0x0a  WORD */ offsetY: data[offset++] | (data[offset++] << 8),
+	        /* 0x0c  WORD */ width: data[offset++] | (data[offset++] << 8),
+	        /* 0x0e  WORD */ height: data[offset++] | (data[offset++] << 8),
+	        /* 0x10  BYTE */ pixelDepth: data[offset++],
+	        /* 0x11  BYTE */ flags: data[offset++],
+	        hasEncoding: false,
+	        hasColorMap: false,
+	        isGreyColor: false,
+	    };
+	    header.hasEncoding =
+	        header.imageType === TYPE_RLE_INDEXED ||
+	            header.imageType === TYPE_RLE_RGB ||
+	            header.imageType === TYPE_RLE_GREY;
+	    header.hasColorMap =
+	        header.imageType === TYPE_RLE_INDEXED ||
+	            header.imageType === TYPE_INDEXED;
+	    header.isGreyColor =
+	        header.imageType === TYPE_RLE_GREY || header.imageType === TYPE_GREY;
+	    checkHeader(header);
+	    offset += header.idLength;
+	    if (offset >= data.length) {
+	        throw new Error('No data');
+	    }
+	    // Read palette
+	    let palette;
+	    if (header.hasColorMap) {
+	        const colorMapSize = header.colorMapLength * (header.colorMapDepth >> 3);
+	        palette = data.subarray(offset, offset + colorMapSize);
+	        offset += colorMapSize;
+	    }
+	    const pixelSize = header.pixelDepth >> 3;
+	    const imageSize = header.width * header.height;
+	    const pixelTotal = imageSize * pixelSize;
+	    let colorData;
+	    if (header.hasEncoding) {
+	        colorData = decodeRLE(data, offset, pixelSize, pixelTotal);
+	    }
+	    else {
+	        colorData = data.subarray(offset, offset + (header.hasColorMap ? imageSize : pixelTotal));
+	    }
+	    const imageData = new ImageData(header.width, header.height);
+	    const origin = (header.flags & ORIGIN_MASK) >> ORIGIN_SHIFT;
+	    let x_start, x_step, x_end, y_start, y_step, y_end;
+	    if (origin === ORIGIN_TOP_LEFT || origin === ORIGIN_TOP_RIGHT) {
+	        y_start = 0;
+	        y_step = 1;
+	        y_end = header.height;
+	    }
+	    else {
+	        y_start = header.height - 1;
+	        y_step = -1;
+	        y_end = -1;
+	    }
+	    if (origin === ORIGIN_TOP_LEFT || origin === ORIGIN_BOTTOM_LEFT) {
+	        x_start = 0;
+	        x_step = 1;
+	        x_end = header.width;
+	    }
+	    else {
+	        x_start = header.width - 1;
+	        x_step = -1;
+	        x_end = -1;
+	    }
+	    switch (header.pixelDepth) {
+	        case 8:
+	            header.isGreyColor
+	                ? getImageDataGrey8bits(imageData.data, colorData, header.width, y_start, y_step, y_end, x_start, x_step, x_end)
+	                : getImageData8bits(imageData.data, colorData, palette, header.width, y_start, y_step, y_end, x_start, x_step, x_end);
+	            break;
+	        case 16:
+	            header.isGreyColor
+	                ? getImageDataGrey16bits(imageData.data, colorData, header.width, y_start, y_step, y_end, x_start, x_step, x_end)
+	                : getImageData16bits(imageData.data, colorData, header.width, y_start, y_step, y_end, x_start, x_step, x_end);
+	            break;
+	        case 24:
+	            getImageData24bits(imageData.data, colorData, header.width, y_start, y_step, y_end, x_start, x_step, x_end);
+	            break;
+	        case 32:
+	            getImageData32bits(imageData.data, colorData, header.width, y_start, y_step, y_end, x_start, x_step, x_end);
+	            break;
+	    }
+	    return imageData;
+	}
+	function getImageData32bits(imageData, pixels, width, y_start, y_step, y_end, x_start, x_step, x_end) {
+	    for (let i = 0, y = y_start; y !== y_end; y += y_step) {
+	        for (let x = x_start; x !== x_end; x += x_step, i += 4) {
+	            const index = (x + width * y) << 2;
+	            imageData[index + 2] = pixels[i];
+	            imageData[index + 1] = pixels[i + 1];
+	            imageData[index] = pixels[i + 2];
+	            imageData[index + 3] = pixels[i + 3];
+	        }
+	    }
+	    return imageData;
+	}
+	function getImageData24bits(imageData, pixels, width, y_start, y_step, y_end, x_start, x_step, x_end) {
+	    for (let i = 0, y = y_start; y !== y_end; y += y_step) {
+	        for (let x = x_start; x !== x_end; x += x_step, i += 3) {
+	            const index = (x + width * y) << 2;
+	            imageData[index + 3] = 255;
+	            imageData[index + 2] = pixels[i + 0];
+	            imageData[index + 1] = pixels[i + 1];
+	            imageData[index] = pixels[i + 2];
+	        }
+	    }
+	    return imageData;
+	}
+	function getImageData16bits(imageData, pixels, width, y_start, y_step, y_end, x_start, x_step, x_end) {
+	    for (let i = 0, y = y_start; y !== y_end; y += y_step) {
+	        for (let x = x_start; x !== x_end; x += x_step, i += 2) {
+	            const color = pixels[i] | (pixels[i + 1] << 8);
+	            const index = (x + width * y) << 2;
+	            imageData[index] = (color & 0x7c00) >> 7;
+	            imageData[index + 1] = (color & 0x03e0) >> 2;
+	            imageData[index + 2] = (color & 0x001f) >> 3;
+	            imageData[index + 3] = color & 0x8000 ? 0 : 255;
+	        }
+	    }
+	    return imageData;
+	}
+	function getImageDataGrey16bits(imageData, pixels, width, y_start, y_step, y_end, x_start, x_step, x_end) {
+	    for (let i = 0, y = y_start; y !== y_end; y += y_step) {
+	        for (let x = x_start; x !== x_end; x += x_step, i += 2) {
+	            const index = (x + width * y) << 2;
+	            imageData[index] = pixels[i];
+	            imageData[index + 1] = pixels[i];
+	            imageData[index + 2] = pixels[i];
+	            imageData[index + 3] = pixels[i + 1];
+	        }
+	    }
+	    return imageData;
+	}
+	function getImageData8bits(imageData, pixels, colormap, width, y_start, y_step, y_end, x_start, x_step, x_end) {
+	    for (let i = 0, y = y_start; y !== y_end; y += y_step) {
+	        for (let x = x_start; x !== x_end; x += x_step, i++) {
+	            const color = pixels[i] * 3;
+	            const index = (x + width * y) << 2;
+	            imageData[index + 3] = 255;
+	            imageData[index + 2] = colormap[color + 0];
+	            imageData[index + 1] = colormap[color + 1];
+	            imageData[index] = colormap[color + 2];
+	        }
+	    }
+	    return imageData;
+	}
+	function getImageDataGrey8bits(imageData, pixels, width, y_start, y_step, y_end, x_start, x_step, x_end) {
+	    for (let i = 0, y = y_start; y !== y_end; y += y_step) {
+	        for (let x = x_start; x !== x_end; x += x_step, i++) {
+	            const color = pixels[i];
+	            const index = (x + width * y) << 2;
+	            imageData[index] = color;
+	            imageData[index + 1] = color;
+	            imageData[index + 2] = color;
+	            imageData[index + 3] = 255;
+	        }
+	    }
+	    return imageData;
+	}
+	function checkHeader(header) {
+	    if (header.imageType === TYPE_NO_DATA) {
+	        throw new Error('No data');
+	    }
+	    if (header.hasColorMap) {
+	        if (header.colorMapLength > 256 ||
+	            header.colorMapDepth !== 24 ||
+	            header.colorMapType !== 1) {
+	            throw new Error('Invalid colormap for indexed type');
+	        }
+	    }
+	    else {
+	        if (header.colorMapType) {
+	            throw new Error('Why does the image contain a palette ?');
+	        }
+	    }
+	    if (!header.width || !header.height) {
+	        throw new Error('Invalid image size');
+	    }
+	    if (header.pixelDepth !== 8 &&
+	        header.pixelDepth !== 16 &&
+	        header.pixelDepth !== 24 &&
+	        header.pixelDepth !== 32) {
+	        throw new Error('Invalid pixel size "' + header.pixelDepth + '"');
+	    }
+	}
+	function decodeRLE(data, offset, pixelSize, outputSize) {
+	    const output = new Uint8Array(outputSize);
+	    const pixels = new Uint8Array(pixelSize);
+	    let pos = 0;
+	    while (pos < outputSize) {
+	        const c = data[offset++];
+	        let count = (c & 0x7f) + 1;
+	        // RLE pixels.
+	        if (c & 0x80) {
+	            // Bind pixel tmp array
+	            for (let i = 0; i < pixelSize; ++i) {
+	                pixels[i] = data[offset + i];
+	            }
+	            offset += pixelSize;
+	            // Copy pixel array
+	            for (let i = 0; i < count; ++i) {
+	                output.set(pixels, pos);
+	                pos += pixelSize;
+	            }
+	        }
+	        // Raw pixels.
+	        else {
+	            count *= pixelSize;
+	            for (let i = 0; i < count; ++i) {
+	                output[pos + i] = data[offset + i];
+	            }
+	            pos += count;
+	            offset += count;
+	        }
+	    }
+	    return output;
+	}
+
 	class HashRouteSystem extends System {
 	    static listeningHashChange = false;
 	    static count = 0; // 计数
@@ -13143,6 +13534,7 @@ struct VertexOutput {
 	exports.Texture = Texture;
 	exports.TextureMaterial = TextureMaterial;
 	exports.TextureParser = TextureParser;
+	exports.TgaParser = TgaParser;
 	exports.Timeline = Timeline;
 	exports.Triangle2 = Triangle2;
 	exports.Triangle3 = Triangle3;
@@ -13182,6 +13574,7 @@ struct VertexOutput {
 	exports.mixin = mixin$1;
 	exports.on = on;
 	exports.once = once;
+	exports.opposite = opposite;
 	exports.quadraticBezier = quadraticBezier;
 	exports.randFloat = randFloat;
 	exports.randInt = randInt;

@@ -17,7 +17,7 @@
 		"noEmit": true,
 		"jsx": "react",
 		"noResolve": false,
-		"typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"]
+		"types": ["@webgpu/types"]
 	},
 	"include": ["src", "node_modules/@webgpu/types", "./node_modules/@valeera"]
 }

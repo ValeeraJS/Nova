@@ -12,7 +12,7 @@ export default class PerspectiveProjection extends AProjection3 {
             near,
             far,
         }
-        this.update();
+        this.update(true);
     }
 
     get fovy() {
@@ -65,9 +65,14 @@ export default class PerspectiveProjection extends AProjection3 {
         return this.update();
     }
 
-    update() {
+    update(inverse = false) {
         Matrix4.perspectiveZ0(this.options.fovy, this.options.aspect, this.options.near, this.options.far, this.data);
         this.dirty = true;
+
+        if (inverse) {
+            this.updateProjectionInverse();
+        }
+
         return this;
     }
 }

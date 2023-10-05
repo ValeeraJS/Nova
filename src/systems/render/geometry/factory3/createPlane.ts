@@ -70,7 +70,7 @@ export const createPlane = (options: IPlaneGeometryOptionsInput = {}): Geometry 
         }
     }
 
-    let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+    let len = indices.length; let i3 = 0; let strideI = 0; let i2 = 0;
     // let count = len / 3;
     let geo = new Geometry(3, len, topology, cullMode);
 
@@ -132,32 +132,6 @@ export const createPlane = (options: IPlaneGeometryOptionsInput = {}): Geometry 
             }
         }
 
-        // result.set(t.a);
-        // result.set(t.b, stride);
-        // result.set(t.c, stride + stride);
-
-        // if (options.hasNormal) {
-        //     let normal = Triangle3.normal(t);
-        //     result.set(normal, 3);
-        //     result.set(normal, stride + 3);
-        //     result.set(normal, stride + stride + 3);
-        //     pickers.push({
-        //         name: 'normal',
-        //         offset: 3,
-        //         length: 3,
-        //     });
-        // }
-        // if (options.hasUV) {
-        //     let offset = options.hasNormal ? 6 : 3;
-        //     result.set([0, 1], offset);
-        //     result.set([1, 1], stride + offset);
-        //     result.set([0.5, 0], stride + stride + offset);
-        //     pickers.push({
-        //         name: UV,
-        //         offset,
-        //         length: 2,
-        //     });
-        // }
         geo.addAttribute(VERTICES, result, stride, pickers);
 
         return geo;

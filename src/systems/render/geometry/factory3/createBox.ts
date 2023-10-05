@@ -133,7 +133,10 @@ export const createBox = (options: IBoxGeometryOptionsInput = {}): Geometry => {
 
 	}
 
-	let len = indices.length, i3 = 0, strideI = 0, i2 = 0;
+	let len = indices.length;
+	let i3 = 0;
+	let strideI = 0;
+	let i2 = 0;
 	// let count = len / 3;
 	let geo = new Geometry(3, len, topology, cullMode);
 
@@ -197,7 +200,7 @@ export const createBox = (options: IBoxGeometryOptionsInput = {}): Geometry => {
 		geo.addAttribute(VERTICES, result, stride, pickers);
 		return geo;
 	} else {
-		
+
 
 		return geo;
 	}

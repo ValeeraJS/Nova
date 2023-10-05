@@ -14,7 +14,7 @@ export default class OrthogonalProjection extends AProjection3 {
             near,
             far,
         }
-        this.update();
+        this.update(true);
     }
 
     get left() {
@@ -89,9 +89,13 @@ export default class OrthogonalProjection extends AProjection3 {
         return this.update();
     }
 
-    update() {
+    update(inverse = false) {
         Matrix4.orthogonalZ0(this.options.left, this.options.right, this.options.bottom, this.options.top, this.options.near, this.options.far, this.data);
         this.dirty = true;
+
+        if (inverse) {
+            this.updateProjectionInverse();
+        }
 
         return this;
     }

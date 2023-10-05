@@ -12,7 +12,7 @@ export class PerspectiveProjectionX extends AProjection3 {
             near,
             far,
         }
-        this.update();
+        this.update(true);
     }
 
     get fovx() {
@@ -65,9 +65,14 @@ export class PerspectiveProjectionX extends AProjection3 {
         return this.update();
     }
 
-    update() {
+    update(inverse = false) {
         Matrix4.perspectiveZ0(this.options.fovx / this.options.aspect, this.options.aspect, this.options.near, this.options.far, this.data);
         this.dirty = true;
+        
+        if (inverse) {
+            this.updateProjectionInverse();
+        }
+
         return this;
     }
 }

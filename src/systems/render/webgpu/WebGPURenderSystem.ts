@@ -223,9 +223,9 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		const width = this.swapChainTexture.width;
 		const height = this.swapChainTexture.height;
 		const numChannels = 4;
-		const size = height * width * numChannels;
+		const size = Math.ceil(width * numChannels / 256) * 256;
 
-		const buffer = this.context.device.createBuffer({ size, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+		const buffer = this.context.device.createBuffer({ size: size * height, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
 
 		const commandEncoder = this.context.device.createCommandEncoder({});
 
@@ -239,7 +239,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		}, {
 			buffer: buffer,
 			offset: 0,
-			bytesPerRow: width * numChannels,
+			bytesPerRow: size,
 			rowsPerImage: height
 		}, {
 			width,

@@ -22,5 +22,5 @@ export default class OrthogonalProjection extends AProjection3 {
     get far(): number;
     set far(value: number);
     set(left?: number, right?: number, bottom?: number, top?: number, near?: number, far?: number): this;
-    update(): this;
+    update(inverse?: boolean): this;
 }

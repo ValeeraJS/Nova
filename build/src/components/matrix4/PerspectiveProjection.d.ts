@@ -16,5 +16,5 @@ export default class PerspectiveProjection extends AProjection3 {
     get far(): number;
     set far(value: number);
     set(fovy?: number, aspect?: number, near?: number, far?: number): this;
-    update(): this;
+    update(inverse?: boolean): this;
 }

@@ -95,7 +95,8 @@ export class Geometry extends Component<AttributesNodeData[]> {
     }
 }
 
-let x: number, y: number;
+let x: number;
+let y: number;
 
 export const transformMatrix3 = (
     a: Float32Array,
