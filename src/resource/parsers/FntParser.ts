@@ -43,7 +43,7 @@ export const FntParser = async (data: string, ...blobs: Blob[]) => {
 		const bitmap = await createImageBitmap(blobs[i]);
 		output.pages[i] = new Texture({
 			size: [bitmap.width, bitmap.height],
-			image: bitmap,
+			source: bitmap,
 		});
 	}
 

@@ -42,7 +42,7 @@ export const TgaParser: IParser<Texture> = async (buffer: ArrayBuffer) => {
 	const bitmap = await createImageBitmap(parse(data));
 	return new Texture({
 		size: [bitmap.width, bitmap.height],
-		image: bitmap,
+		source: bitmap,
 	});
 }
 

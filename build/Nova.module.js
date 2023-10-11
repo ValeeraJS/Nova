@@ -9390,11 +9390,13 @@ class Texture {
         this.descriptor.size[1] = options.size[1];
         this.descriptor.format = options.format ?? "rgba8unorm";
         this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
-        this.imageBitmap = options.image;
+        this.source = options.source;
         this.name = options.name ?? 'untitled texture';
     }
     destroy() {
-        this.data?.close();
+        if (this.data instanceof ImageBitmap) {
+            this.data.close();
+        }
         this.data = undefined;
     }
     get width() {
@@ -9409,10 +9411,10 @@ class Texture {
     set height(v) {
         this.descriptor.size[1] = v;
     }
-    get imageBitmap() {
+    get source() {
         return this.data;
     }
-    set imageBitmap(img) {
+    set source(img) {
         this.dirty = true;
         this.data = img;
     }
@@ -9436,7 +9438,7 @@ class AtlasTexture extends Texture {
         img.src = json.image;
         this.image = img;
         await img.decode();
-        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
+        this.source = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
         this.loaded = true;
         return this;
     }
@@ -9477,7 +9479,7 @@ class ImageBitmapTexture extends Texture {
             }
             this.image = img;
         }
-        if (this.data) {
+        if (this.data instanceof ImageBitmap) {
             this.data.close();
         }
         await this.image.decode();
@@ -12106,7 +12108,7 @@ class Frame {
         const image = await createImageBitmap(this.imageData);
         this.texture = new Texture({
             size: [image.width, image.height],
-            image,
+            source: image,
         });
         return this.texture;
     }
@@ -12247,7 +12249,7 @@ const AtlasParser = async (blob, json) => {
     for (let i = 0, len = json.frames.length; i < len; i++) {
         const f = json.frames[i];
         const tex = new Texture({
-            image: await drawSpriteBlock(bitmap, f.w, f.h, f),
+            source: await drawSpriteBlock(bitmap, f.w, f.h, f),
             size: [f.w, f.h],
             name: f.name ?? "atlas_" + i
         });
@@ -12296,7 +12298,7 @@ const FntParser = async (data, ...blobs) => {
         const bitmap = await createImageBitmap(blobs[i]);
         output.pages[i] = new Texture({
             size: [bitmap.width, bitmap.height],
-            image: bitmap,
+            source: bitmap,
         });
     }
     return output;
@@ -12796,7 +12798,7 @@ const TextureParser = async (blob) => {
     const bitmap = await createImageBitmap(blob);
     return new Texture({
         size: [bitmap.width, bitmap.height],
-        image: bitmap,
+        source: bitmap,
     });
 };
 
@@ -12819,7 +12821,7 @@ const TgaParser = async (buffer) => {
     const bitmap = await createImageBitmap(parse(data));
     return new Texture({
         size: [bitmap.width, bitmap.height],
-        image: bitmap,
+        source: bitmap,
     });
 };
 function parse(data) {

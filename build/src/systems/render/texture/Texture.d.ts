@@ -3,10 +3,11 @@ export type TextureOptions = {
     name?: string;
     format?: GPUTextureFormat;
     usage?: number;
-    image?: undefined | null | ImageBitmap;
+    source?: undefined | null | GPUImageCopyExternalImageSource;
+    label?: string;
 };
 export declare class Texture {
-    data: ImageBitmap | null | undefined;
+    data: GPUImageCopyExternalImageSource | null | undefined;
     dirty: boolean;
     name: string;
     descriptor: Required<GPUTextureDescriptor>;
@@ -16,6 +17,6 @@ export declare class Texture {
     set width(v: number);
     get height(): number;
     set height(v: number);
-    get imageBitmap(): ImageBitmap | undefined | null;
-    set imageBitmap(img: ImageBitmap | undefined | null);
+    get source(): GPUImageCopyExternalImageSource | undefined | null;
+    set source(img: GPUImageCopyExternalImageSource | undefined | null);
 }

@@ -4,19 +4,45 @@
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
 <body>
+	<canvas width="512" height="512" id="img"/>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script>
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
 
+		const canvas = document.getElementById("img");
+		const ctx = canvas.getContext("2d");
+		ctx.beginPath();
+		ctx.arc(250, 250, 100, 0, 2 * Math.PI, false)
+		ctx.fillStyle = "yellow";
+		ctx.fill();
+		ctx.stroke();  
+		ctx.beginPath();
+		ctx.arc(200, 200, 10, 0, 2 * Math.PI, false);
+		ctx.fillStyle = "gray";
+		ctx.fill();
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.arc(300, 200, 10, 0, 2 * Math.PI, false);
+		ctx.fillStyle = "gray";
+		ctx.fill();
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.arc(250, 280, 40,0.8* Math.PI, 0.2* Math.PI, true);
+		ctx.stroke();
+		
+
 		const geo = Nova.Geometry3Factory.createPlane();
-		const material = new Nova.TextureMaterial(new Nova.ImageBitmapTexture("./../textures/mario.jpg", 128, 128));
+		const material = new Nova.TextureMaterial(new Nova.Texture({
+			size: [512, 512],
+			source: document.getElementById("img")
+		}));
 		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 
 		const projection = new Nova.PerspectiveProjection();
 		const camera = new Nova.Camera3("test-camera", projection);
-		camera.position.z = 3;
+		camera.position.z = 4;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
 		const renderer = new Nova.WebGPUMesh3Renderer(camera);
@@ -27,19 +53,5 @@
 			world.run();
 			mesh.rotation.y -= 0.01;
 		});
-
-		createGUI();
-
-		function createGUI() {
-			const gui = new dat.GUI();
-			const f = gui.addFolder("filter");
-
-			f.add(material.sampler, "minFilter", ["linear", "nearest"]).onChange(onChange);
-			f.add(material.sampler, "magFilter", ["linear", "nearest"]).onChange(onChange);
-
-			function onChange() {
-				material.dirty = true;
-			}
-		}
 	</script>
 </body>

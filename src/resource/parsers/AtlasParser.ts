@@ -10,7 +10,7 @@ export const AtlasParser: IParser<Texture[]> = async (blob: Blob, json: { frames
 	for (let i = 0, len = json.frames.length; i < len; i++) {
 		const f = json.frames[i];
 		const tex = new Texture({
-			image: await drawSpriteBlock(bitmap, f.w, f.h, f),
+			source: await drawSpriteBlock(bitmap, f.w, f.h, f),
 			size: [f.w, f.h],
 			name: f.name ?? "atlas_" + i
 		});

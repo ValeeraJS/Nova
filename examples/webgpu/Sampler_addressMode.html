@@ -52,8 +52,8 @@
 			const gui = new dat.GUI();
 			const f = gui.addFolder("filter");
 
-			f.add(material.sampler.descriptor, "addressModeU", ["repeat", "clamp-to-edge", "mirror-repeat"]).onChange(onChange);
-			f.add(material.sampler.descriptor, "addressModeV", ["repeat", "clamp-to-edge", "mirror-repeat"]).onChange(onChange);
+			f.add(material.sampler, "addressModeU", ["repeat", "clamp-to-edge", "mirror-repeat"]).onChange(onChange);
+			f.add(material.sampler, "addressModeV", ["repeat", "clamp-to-edge", "mirror-repeat"]).onChange(onChange);
 
 			function onChange() {
 				material.dirty = true;

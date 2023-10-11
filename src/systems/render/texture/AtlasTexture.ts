@@ -24,7 +24,7 @@ export class AtlasTexture extends Texture {
         this.image = img;
         await img.decode();
 
-        this.imageBitmap = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
+        this.source = await drawSpriteBlock(this.image, json.spriteSize.w, json.spriteSize.h, json.frame);
 
         this.loaded = true;
         return this;

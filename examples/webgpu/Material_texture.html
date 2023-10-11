@@ -21,7 +21,7 @@
 		const renderSystem = new Nova.WebGPURenderSystem();
 		const renderer = new Nova.WebGPUMesh3Renderer(camera);
 		renderSystem.addRenderer(renderer);
-		world.addSystem(renderSystem).add(mesh);
+		world.add(renderSystem).add(mesh);
 
 		engine.addTask(() => {
 			world.run();

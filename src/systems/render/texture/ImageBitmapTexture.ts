@@ -37,7 +37,7 @@ export class ImageBitmapTexture extends Texture {
 			this.image = img;
 		}
 
-		if (this.data) {
+		if (this.data instanceof ImageBitmap) {
 			this.data.close();
 		}
 

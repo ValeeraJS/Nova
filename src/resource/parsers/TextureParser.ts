@@ -5,6 +5,6 @@ export const TextureParser: IParser<Texture> = async (blob: Blob) => {
 	const bitmap = await createImageBitmap(blob);
 	return new Texture({
 		size: [bitmap.width, bitmap.height],
-		image: bitmap,
+		source: bitmap,
 	});
 }

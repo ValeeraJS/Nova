@@ -49,7 +49,7 @@ class Frame {
 		const image = await createImageBitmap(this.imageData);
 		this.texture = new Texture({
 			size: [image.width, image.height],
-			image,
+			source: image,
 		});
 		return this.texture;
 	}

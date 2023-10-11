@@ -3,11 +3,12 @@ export type TextureOptions = {
 	name?: string;
 	format?: GPUTextureFormat;
 	usage?: number;
-	image?: undefined | null | ImageBitmap;
+	source?: undefined | null | GPUImageCopyExternalImageSource;
+	label?: string;
 }
 
 export class Texture {
-	data: ImageBitmap | null | undefined;
+	data: GPUImageCopyExternalImageSource | null | undefined;
 	dirty: boolean = true;
 	name: string;
 	public descriptor: Required<GPUTextureDescriptor> = {
@@ -26,12 +27,14 @@ export class Texture {
 		this.descriptor.size[1] = options.size[1];
 		this.descriptor.format = options.format ?? "rgba8unorm";
 		this.descriptor.usage = options.usage ?? (GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT);
-		this.imageBitmap = options.image;
+		this.source = options.source;
 		this.name = options.name ?? 'untitled texture';
 	}
 
 	public destroy() {
-		this.data?.close();
+		if (this.data instanceof ImageBitmap) {
+			this.data.close();
+		}
 		this.data = undefined;
 	}
 
@@ -51,11 +54,11 @@ export class Texture {
 		this.descriptor.size[1] = v;
 	}
 
-	get imageBitmap() {
+	get source() {
 		return this.data;
 	}
 
-	set imageBitmap(img: ImageBitmap | undefined | null) {
+	set source(img: GPUImageCopyExternalImageSource | undefined | null) {
 		this.dirty = true;
 		this.data = img;
 	}
