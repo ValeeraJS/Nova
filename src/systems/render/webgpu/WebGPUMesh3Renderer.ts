@@ -1,5 +1,5 @@
 import { Matrix4 } from "@valeera/mathx";
-import type { IEntity } from "@valeera/x";
+import type { Entity } from "@valeera/x";
 import { Geometry, AttributesNodeData } from "../geometry/Geometry";
 import { BUFFER, MESH3, RENDERABLE, SAMPLER, TEXTURE_IMAGE } from "../../../components/constants";
 import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4Component";
@@ -28,7 +28,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 	public camera: ICamera3;
 	public vpMatrix = new Float32Array(16);
 
-	private entityCacheData: Map<IEntity, ICacheData> = new Map();
+	private entityCacheData: Map<Entity, ICacheData> = new Map();
 
 	public constructor(camera: ICamera3) {
 		this.camera = camera;
