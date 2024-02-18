@@ -11,21 +11,14 @@
 	<script>
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
-		const geometry = Nova.Geometry3Factory.createPlane({
-			width: 3,
-			height: 3
-		});
 
-		const mesh = Nova.EntityFactory.createMesh3(geometry);
-		mesh.position.z = -10;
-
-		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("", projection);
+		const mesh = Nova.EntityFactory.createMesh3(Nova.Geometry3Factory.createPlane());
+		mesh.position.z = -3;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
-		const renderer = new Nova.WebGPUMesh3Renderer(camera);
-		renderSystem.addRenderer(renderer);
-		world.addSystem(renderSystem).add(mesh);
+		renderSystem.addRenderer(new Nova.WebGPUMesh3Renderer(new Nova.Camera3()));
+
+		world.add(renderSystem).add(mesh);
 		engine.addTask(() => {
 			world.run();
 			mesh.rotation.y -= 0.01;
@@ -34,7 +27,6 @@
 		createGUI();
 		function createGUI() {
 			const gui = new dat.GUI();
-
 			gui.add(renderSystem, "msaa");
 		}
 	</script>
