@@ -1,16 +1,41 @@
-import type { IWorld } from "@valeera/x";
+import type { World } from "@valeera/x";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { RenderSystemInCanvas } from "../RenderSystem";
 import { IRenderSystemWebGPUOptions } from "../IRenderSystem";
-import { IEntity } from "@valeera/x";
-import { RENDERABLE } from "../../../components/constants";
+import { Entity } from "@valeera/x";
 import IScissor from "../IScissor";
 import { WebGPUPostProcessingPass } from "./WebGPUPostProcessingPass";
+import { Renderable } from "../Renderable";
 
 export class WebGPURenderSystem extends RenderSystemInCanvas {
 
+	public static Events = {
+		INITED: 'inited'
+	}
+
+	public static async getAdapterAndDevice(adapterInput?: GPUAdapter, deviceInput?: GPUDevice) {
+		const adapter = adapterInput ?? await navigator?.gpu?.requestAdapter();
+
+		if (!adapter) {
+			throw new Error('WebGPU not supported: ');
+		}
+
+		const device = deviceInput ?? await adapter.requestDevice();
+
+		if (!device) {
+			throw new Error('WebGPU not supported: ');
+		}
+
+		return {
+			adapter,
+			device,
+		};
+	}
+
 	public static async detect(
 		canvas: HTMLCanvasElement = document.createElement("canvas"),
+		adapterInput?: GPUAdapter,
+		deviceInput?: GPUDevice,
 	): Promise<{ gpu: GPUCanvasContext, adapter: GPUAdapter, device: GPUDevice }> {
 		const gpu = canvas.getContext("webgpu") as any as GPUCanvasContext;
 
@@ -18,19 +43,10 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 			throw new Error('WebGPU not supported: ');
 		}
 
-		const adapter = await navigator?.gpu?.requestAdapter();
-
-		if (!adapter) {
-			throw new Error('WebGPU not supported: ');
-		}
-
-		const device = await adapter.requestDevice();
-
-		if (!device) {
-			throw new Error('WebGPU not supported: ');
-		}
-
-		return { gpu, adapter, device };
+		return {
+			gpu,
+			...await WebGPURenderSystem.getAdapterAndDevice(adapterInput, deviceInput)
+		};
 	}
 	rendererMap: Map<string, IWebGPURenderer> = new Map();
 	inited = false;
@@ -42,9 +58,14 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 	public postprocessingPasses = new Set<WebGPUPostProcessingPass>();
 	private renderPassDescriptor: GPURenderPassDescriptor;
 
-	constructor(name: string = "WebGPU Render System", options: IRenderSystemWebGPUOptions = {}) {
-		super(name, options);
-		WebGPURenderSystem.detect(this.canvas).then((data) => {
+	constructor(
+		options: IRenderSystemWebGPUOptions = {},
+		adapterInput?: GPUAdapter,
+		deviceInput?: GPUDevice,
+		name: string = "WebGPURenderSystem"
+	) {
+		super(options, name);
+		WebGPURenderSystem.detect(this.canvas, adapterInput, deviceInput).then((data) => {
 			this.context = data as any;
 			this.context.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
 			this.#msaa = !!options.multisample;
@@ -70,6 +91,8 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 				});
 			}
 			this.inited = true;
+
+			this.fire(WebGPURenderSystem.Events.INITED, this);
 		});
 	}
 
@@ -113,7 +136,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		return this;
 	}
 
-	public resize(width: number, height: number, resolution: number = this.resolution): this {
+	public resize(width: number = this.options.width, height: number = this.options.height, resolution: number = this.resolution): this {
 		super.resize(width, height, resolution);
 		if (this.context) {
 			this.setRenderPassDescripter();
@@ -134,7 +157,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		return this;
 	}
 
-	run(world: IWorld, time: number, delta: number): this {
+	run(world: World, time: number, delta: number): this {
 		if (!this.inited) {
 			return this;
 		}
@@ -168,12 +191,12 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		this.#scissor = value;
 	}
 
-	handleBefore(time: number, delta: number, world: IWorld): this {
+	handleBefore(time: number, delta: number, world: World): this {
 		if (this.disabled) {
 			return this;
 		}
 		super.handleBefore(time, delta, world);
-		
+
 		// 根据不同类别进行渲染
 		this.rendererMap.forEach((renderer: IWebGPURenderer) => {
 			renderer.beforeRender?.(this.context);
@@ -181,12 +204,12 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		return this;
 	}
 
-	handle(entity: IEntity): this {
+	handle(entity: Entity): this {
 		if (entity.disabled) {
 			return this;
 		}
 		// 根据不同类别进行渲染
-		this.rendererMap.get(entity.getComponent(RENDERABLE)?.data.type)?.render(entity, this.context);
+		this.rendererMap.get(entity.getComponent(Renderable)?.data.type)?.render(entity, this.context);
 		return this;
 	}
 
@@ -251,8 +274,10 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 
 		await buffer.mapAsync(GPUMapMode.READ);
 		const copyArrayBuffer = buffer.getMappedRange();
-  
+
 		console.log(new Uint8Array(copyArrayBuffer));
+
+		return copyArrayBuffer;
 	}
 
 	private postprocess(world: any, time: number, delta: number) {
