@@ -5,10 +5,10 @@ import Matrix4Component from "./Matrix4Component";
 export default class Anchor3 extends Matrix4Component {
 	vec3: Vector3 = new Vector3();
     constructor(vec: IVector3 | Float32Array | number[] = Vector3.VECTOR3_ZERO) {
-        super(ANCHOR_3D, Matrix4.create(), [{
+        super(Matrix4.create(), [{
 			label: ANCHOR_3D,
 			unique: true
-		}]);
+		}], ANCHOR_3D);
 		Vector3.fromArray(vec, 0, this.vec3);
 		this.update();
     }
