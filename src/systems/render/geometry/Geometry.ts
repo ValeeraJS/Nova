@@ -31,12 +31,12 @@ export class Geometry extends Component<AttributesNodeData[]> {
      * 拓扑类型
      */
     dimension: number;
-    topology: GPUPrimitiveTopology;
+    #topology: GPUPrimitiveTopology;
     /**
      * 剔除方式
      */
-    cullMode: GPUCullMode;
-    frontFace: GPUFrontFace;
+    #cullMode: GPUCullMode;
+    #frontFace: GPUFrontFace;
     data: AttributesNodeData[] = [];
     tags = [{
         label: GEOMETRY,
@@ -44,12 +44,39 @@ export class Geometry extends Component<AttributesNodeData[]> {
     }];
 
     constructor(dimension: number, count: number = 0, topology: GPUPrimitiveTopology = "triangle-list", cullMode: GPUCullMode = "none", data: AttributesNodeData[] = []) {
-        super(GEOMETRY, data);
+        super(data, undefined, GEOMETRY);
         this.count = count;
-        this.cullMode = cullMode;
+        this.#cullMode = cullMode;
         this.dimension = dimension;
-        this.topology = topology;
-        this.frontFace = "ccw";
+        this.#topology = topology;
+        this.#frontFace = "ccw";
+    }
+
+    get cullMode() {
+        return this.#cullMode;
+    }
+
+    set cullMode(mode: GPUCullMode) {
+        this.#cullMode = mode;
+        this.dirty = true;
+    }
+
+    get frontFace() {
+        return this.#frontFace;
+    }
+
+    set frontFace(mode: GPUFrontFace) {
+        this.#frontFace = mode;
+        this.dirty = true;
+    }
+
+    get topology() {
+        return this.#topology;
+    }
+
+    set topology(mode: GPUPrimitiveTopology) {
+        this.#topology = mode;
+        this.dirty = true;
     }
 
     addAttribute(name: string, arr: Float32Array, stride: number = arr.length / this.count, attributes: AttributePicker[] = []) {
