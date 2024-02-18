@@ -15,7 +15,7 @@ export class OrbitControls extends Component<any> {
     dom: HTMLElement;
     target: Vector3;
     constructor(target: Vector3 = Vector3.VECTOR3_ZERO, dom: HTMLElement = document.body) {
-        super('orbitcontrols', target);
+        super(target, undefined, 'orbitcontrols');
         this.dom = dom;
         this.target = target;
         this.addEvent();
@@ -50,7 +50,7 @@ export class OrbitControls extends Component<any> {
                 return;
             }
             this.screenPositionOld.set(this.screenPositionNew);
-            Vector2.fromValues(e.offsetX, e.offsetY, this.screenPositionNew);
+            Vector2.fromXY(e.offsetX, e.offsetY, this.screenPositionNew);
             Vector2.minus(this.screenPositionNew, this.screenPositionOld, this.positionDelta);
             this.spherical.theta += this.positionDelta.y * this.speedPhi;
             this.spherical.phi += this.positionDelta.x * this.speedTheta;
@@ -76,20 +76,18 @@ export class OrbitControls extends Component<any> {
         this.dirty = false;
         this.spherical.toVector3(this.innerPosition);
         for (let manager of this.usedBy) {
-            const entities = (manager as ComponentManager).usedBy as Object3[];
-            for (let entity of entities) {
-                const position = entity.position;
-                Matrix4.fromTranslation(this.innerPosition, position.data);
-                position.dirty = true;
-                const rotation = entity.rotation;
-                Matrix4.targetTo(
-                    this.innerPosition,
-                    this.target,
-                    Vector3.VECTOR3_TOP,
-                    rotation.data
-                );
-                rotation.dirty = true;
-            }
+            const entity = manager.usedBy as Object3;
+            const position = entity.position;
+            Matrix4.fromTranslation(this.innerPosition, position.data);
+            position.dirty = true;
+            const rotation = entity.rotation;
+            Matrix4.targetTo(
+                this.innerPosition,
+                this.target,
+                Vector3.VECTOR3_TOP,
+                rotation.data
+            );
+            rotation.dirty = true;
         }
     }
 }
