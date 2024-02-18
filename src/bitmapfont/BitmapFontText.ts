@@ -76,7 +76,8 @@ export class BitmapFontString extends Object3 {
 		for (let i = 0, len = this.#chars.length; i < len; i++) {
 			(this.#chars[i] as any).destroy();
 		}
-		this.destroy();
+
+		return super.destroy();
 	}
 
 	get text() {
@@ -111,7 +112,7 @@ export class BitmapFontString extends Object3 {
 		const oldLength = this.#chars.length;
 		for (let i = 0, len = text.length; i < len; i++) {
 			const e = this.#chars[i] ?? new Object3();
-			let char: BitmapFontChar3 = e.getComponentByClass(BitmapFontChar3 as any) as BitmapFontChar3;
+			let char: BitmapFontChar3 = e.getComponent(BitmapFontChar3) as BitmapFontChar3;
 			const code = text.charCodeAt(i);
 			if (char) {
 				char.setChar(code);
