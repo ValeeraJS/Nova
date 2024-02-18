@@ -14,7 +14,7 @@
 		sprite.scaling.set(0.003);
 
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("test-camera", projection);
+		const camera = new Nova.Camera3(projection);
 		camera.position.z = 4;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
