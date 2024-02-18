@@ -157,7 +157,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		return this;
 	}
 
-	run(world: World, time: number, delta: number): this {
+	public run(world: World, time: number, delta: number): this {
 		if (!this.inited) {
 			return this;
 		}
@@ -191,7 +191,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		this.#scissor = value;
 	}
 
-	handleBefore(time: number, delta: number, world: World): this {
+	public handleBefore(time: number, delta: number, world: World): this {
 		if (this.disabled) {
 			return this;
 		}
@@ -204,7 +204,7 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		return this;
 	}
 
-	handle(entity: Entity): this {
+	public handle(entity: Entity): this {
 		if (entity.disabled) {
 			return this;
 		}
@@ -233,12 +233,24 @@ export class WebGPURenderSystem extends RenderSystemInCanvas {
 		this.context.passEncoder = this.commandEncoder.beginRenderPass(this.renderPassDescriptor);
 	}
 
+	public add(renderOrPass: WebGPUPostProcessingPass | IWebGPURenderer) {
+		if (renderOrPass instanceof WebGPUPostProcessingPass) {
+			return this.addPostprocessingPass(renderOrPass);
+		} else {
+			return this.addRenderer(renderOrPass);
+		}
+	}
+
 	public addPostprocessingPass(pass: WebGPUPostProcessingPass) {
 		this.postprocessingPasses.add(pass);
+
+		return this;
 	}
 
 	public removePostprocessingPass(pass: WebGPUPostProcessingPass) {
 		this.postprocessingPasses.delete(pass);
+
+		return this;
 	}
 
 

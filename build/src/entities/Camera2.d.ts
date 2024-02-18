@@ -5,5 +5,5 @@ export interface ICamera2 extends IObject2 {
 }
 export declare class Camera2 extends Object2 implements ICamera2 {
     projection: Matrix3Component;
-    constructor(name: string, projection: Matrix3Component);
+    constructor(projection: Matrix3Component, name?: string);
 }

@@ -13,16 +13,13 @@
 		const world = new Nova.World();
 
 		const geometry = Nova.Geometry3Factory.createSphere();
-
 		const mesh = Nova.EntityFactory.createMesh3(geometry, new Nova.NormalMaterial());
 		mesh.position.z = -5;
-		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3(projection);
 
 		const renderSystem = new Nova.WebGPURenderSystem();
-		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		const renderer = new Nova.WebGPUMesh3Renderer();
 		renderSystem.addRenderer(renderer);
-		world.addSystem(renderSystem).add(mesh);
+		world.add(renderSystem).add(mesh);
 
 		createGUI();
 
@@ -34,7 +31,6 @@
 		function createGUI() {
 			const gui = new dat.GUI();
 			const f = gui.addFolder("Topology type");
-			// TODO 没自动更新管线
 			f.add(geometry, "topology", ["point-list", "line-list", "line-strip", "triangle-list", "triangle-strip"]);
 		}
 	</script>

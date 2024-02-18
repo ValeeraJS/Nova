@@ -12,6 +12,7 @@ export type AttributesNodeData = {
     attributes: AttributePicker[];
 };
 export declare class Geometry extends Component<AttributesNodeData[]> {
+    #private;
     /**
      * 顶点数量
      */
@@ -20,18 +21,18 @@ export declare class Geometry extends Component<AttributesNodeData[]> {
      * 拓扑类型
      */
     dimension: number;
-    topology: GPUPrimitiveTopology;
-    /**
-     * 剔除方式
-     */
-    cullMode: GPUCullMode;
-    frontFace: GPUFrontFace;
     data: AttributesNodeData[];
     tags: {
         label: string;
         unique: boolean;
     }[];
     constructor(dimension: number, count?: number, topology?: GPUPrimitiveTopology, cullMode?: GPUCullMode, data?: AttributesNodeData[]);
+    get cullMode(): GPUCullMode;
+    set cullMode(mode: GPUCullMode);
+    get frontFace(): GPUFrontFace;
+    set frontFace(mode: GPUFrontFace);
+    get topology(): GPUPrimitiveTopology;
+    set topology(mode: GPUPrimitiveTopology);
     addAttribute(name: string, arr: Float32Array, stride?: number, attributes?: AttributePicker[]): void;
     transform(matrix: Float32Array): this;
 }

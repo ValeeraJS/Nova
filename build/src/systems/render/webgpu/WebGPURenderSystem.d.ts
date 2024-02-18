@@ -1,13 +1,20 @@
-import type { IWorld } from "@valeera/x";
+import type { World } from "@valeera/x";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import { RenderSystemInCanvas } from "../RenderSystem";
 import { IRenderSystemWebGPUOptions } from "../IRenderSystem";
-import { IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import IScissor from "../IScissor";
 import { WebGPUPostProcessingPass } from "./WebGPUPostProcessingPass";
 export declare class WebGPURenderSystem extends RenderSystemInCanvas {
     #private;
-    static detect(canvas?: HTMLCanvasElement): Promise<{
+    static Events: {
+        INITED: string;
+    };
+    static getAdapterAndDevice(adapterInput?: GPUAdapter, deviceInput?: GPUDevice): Promise<{
+        adapter: GPUAdapter;
+        device: GPUDevice;
+    }>;
+    static detect(canvas?: HTMLCanvasElement, adapterInput?: GPUAdapter, deviceInput?: GPUDevice): Promise<{
         gpu: GPUCanvasContext;
         adapter: GPUAdapter;
         device: GPUDevice;
@@ -21,20 +28,21 @@ export declare class WebGPURenderSystem extends RenderSystemInCanvas {
     msaaTexture: GPUTexture;
     postprocessingPasses: Set<WebGPUPostProcessingPass>;
     private renderPassDescriptor;
-    constructor(name?: string, options?: IRenderSystemWebGPUOptions);
+    constructor(options?: IRenderSystemWebGPUOptions, adapterInput?: GPUAdapter, deviceInput?: GPUDevice, name?: string);
     get msaa(): boolean;
     set msaa(value: boolean);
     setMSAA(data: boolean | GPUMultisampleState): this;
-    resize(width: number, height: number, resolution?: number): this;
-    run(world: IWorld, time: number, delta: number): this;
+    resize(width?: number, height?: number, resolution?: number): this;
+    run(world: World, time: number, delta: number): this;
     get scissor(): IScissor;
     set scissor(value: IScissor);
-    handleBefore(time: number, delta: number, world: IWorld): this;
-    handle(entity: IEntity): this;
+    handleBefore(time: number, delta: number, world: World): this;
+    handle(entity: Entity): this;
     private loopStart;
-    addPostprocessingPass(pass: WebGPUPostProcessingPass): void;
-    removePostprocessingPass(pass: WebGPUPostProcessingPass): void;
-    getFramePixelData(): Promise<void>;
+    add(renderOrPass: WebGPUPostProcessingPass | IWebGPURenderer): this;
+    addPostprocessingPass(pass: WebGPUPostProcessingPass): this;
+    removePostprocessingPass(pass: WebGPUPostProcessingPass): this;
+    getFramePixelData(): Promise<ArrayBuffer>;
     private postprocess;
     private loopEnd;
     private endTaskQueue;

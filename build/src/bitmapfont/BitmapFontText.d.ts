@@ -19,7 +19,7 @@ export declare class BitmapFontString extends Object3 {
     font: BitmapFontJson;
     style: FontStyle;
     constructor(str: string, font: BitmapFontJson, name?: string);
-    destroy(): void;
+    destroy(): this;
     get text(): string;
     set text(text: string);
     get textAlign(): "left" | "center" | "right";

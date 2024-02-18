@@ -16,7 +16,7 @@
 		mesh.position.z = -3;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
-		renderSystem.addRenderer(new Nova.WebGPUMesh3Renderer(new Nova.Camera3()));
+		renderSystem.add(new Nova.WebGPUMesh3Renderer());
 
 		world.add(renderSystem).add(mesh);
 		engine.addTask(() => {

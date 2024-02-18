@@ -1,5 +1,5 @@
-import { IWorld, Entity, System } from "@valeera/x";
-export default class HashRouteSystem extends System {
+import { World, Entity, System } from "@valeera/x";
+export declare class HashRouteSystem extends System {
     private static listeningHashChange;
     private static count;
     private static listener;
@@ -8,5 +8,5 @@ export default class HashRouteSystem extends System {
     constructor();
     destroy(): this;
     handle(entity: Entity): this;
-    run(world: IWorld, time: number, delta: number): this;
+    run(world: World, time: number, delta: number): this;
 }

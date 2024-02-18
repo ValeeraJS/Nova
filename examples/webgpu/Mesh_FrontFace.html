@@ -13,17 +13,15 @@
 		const world = new Nova.World();
 
 		const geometry = Nova.Geometry3Factory.createTriangle();
-		geometry.cullMode = "front";
+		geometry.cullMode = "back";
 
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
 		mesh.position.z = -5;
-		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3(projection);
 
 		const renderSystem = new Nova.WebGPURenderSystem();
-		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		const renderer = new Nova.WebGPUMesh3Renderer();
 		renderSystem.addRenderer(renderer);
-		world.addSystem(renderSystem).add(mesh);
+		world.add(renderSystem).add(mesh);
 
 		createGUI();
 

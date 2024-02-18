@@ -1,7 +1,7 @@
 import { Vector3Like } from "@valeera/mathx";
-import { Entity, IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import Matrix4Component from "../components/matrix4/Matrix4Component";
-export interface IObject3 extends IEntity {
+export interface IObject3 extends Entity {
     anchor: Matrix4Component;
     position: Matrix4Component;
     rotation: Matrix4Component;

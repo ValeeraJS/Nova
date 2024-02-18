@@ -1,4 +1,4 @@
-import { IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import { Matrix4Component } from "..";
-declare const _default: (position: Matrix4Component | IEntity) => Matrix4Component | IEntity;
+declare const _default: (position: Matrix4Component | Entity) => Matrix4Component | Entity;
 export default _default;

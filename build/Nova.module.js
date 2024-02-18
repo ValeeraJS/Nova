@@ -615,7 +615,7 @@ const srgbToLinear = (x) => {
  * Mathx.clamp(-1, 0, 2); // 0;
  * Mathx.clamp(3, 0, 2); // 2;
  */
-var clamp = (val, min, max) => {
+const clamp = (val, min, max) => {
     return Math.max(min, Math.min(max, val));
 };
 
@@ -634,7 +634,7 @@ var clamp = (val, min, max) => {
  * Mathx.clamp(3, 0, 2); // 2;
  * Mathx.clamp(3, 2, 0); // 2;
  */
-var clampSafeCommon = (val, a, b) => {
+const clampSafe = (val, a, b) => {
     if (a > b) {
         return Math.max(b, Math.min(a, val));
     }
@@ -654,7 +654,7 @@ var clampSafeCommon = (val, a, b) => {
  * Mathx.clamp(2, 3, 1); // true;
  * Mathx.clamp(2, 3, 0.5); // false;
  */
-var closeTo = (val, target, epsilon = EPSILON) => {
+const closeTo = (val, target, epsilon = EPSILON) => {
     return Math.abs(val - target) <= epsilon;
 };
 
@@ -667,7 +667,7 @@ var closeTo = (val, target, epsilon = EPSILON) => {
  * Mathx.roundToZero(-0.8); // 0;
  * Mathx.roundToZero(-1.1); // -1;
  */
-var floorToZero = (num) => {
+const floorToZero = (num) => {
     return num < 0 ? Math.ceil(num) : Math.floor(num);
 };
 
@@ -709,13 +709,13 @@ class Vector2 extends Float32Array {
         return out;
     };
     static clampSafe = (a, min, max, out = new Vector2()) => {
-        out[0] = clampSafeCommon(a[0], min[0], max[0]);
-        out[1] = clampSafeCommon(a[1], min[1], max[1]);
+        out[0] = clampSafe(a[0], min[0], max[0]);
+        out[1] = clampSafe(a[1], min[1], max[1]);
         return out;
     };
     static clampLength = (a, min, max, out = new Vector2()) => {
-        out[0] = clampSafeCommon(a[0], min[0], max[0]);
-        out[1] = clampSafeCommon(a[1], min[1], max[1]);
+        out[0] = clampSafe(a[0], min[0], max[0]);
+        out[1] = clampSafe(a[1], min[1], max[1]);
         return out;
     };
     static clampScalar = (a, min, max, out = new Vector2()) => {
@@ -798,11 +798,18 @@ class Vector2 extends Float32Array {
         out[1] = Math.sin(p.a) * p.r;
         return out;
     };
+    static fromPointerEvent = (e, out = new Vector2()) => {
+        if (e.target) {
+            out[0] = (e.clientX / e.target.offsetWidth) * 2 - 1;
+            out[1] = 1 - (e.clientY / e.target.offsetHeight) * 2;
+        }
+        return out;
+    };
     static fromScalar = (value = 0, out = new Vector2()) => {
         out[0] = out[1] = value;
         return out;
     };
-    static fromValues = (x, y, out = new Vector2()) => {
+    static fromXY = (x, y, out = new Vector2()) => {
         out[0] = x;
         out[1] = y;
         return out;
@@ -995,9 +1002,9 @@ class Vector3 extends Float32Array {
         return out;
     };
     static clampSafe = (a, min, max, out = new Vector3()) => {
-        out[0] = clampSafeCommon(a[0], min[0], max[0]);
-        out[1] = clampSafeCommon(a[1], min[1], max[1]);
-        out[1] = clampSafeCommon(a[2], min[2], max[2]);
+        out[0] = clampSafe(a[0], min[0], max[0]);
+        out[1] = clampSafe(a[1], min[1], max[1]);
+        out[1] = clampSafe(a[2], min[2], max[2]);
         return out;
     };
     static clampScalar = (a, min, max, out = new Vector3()) => {
@@ -1012,8 +1019,11 @@ class Vector3 extends Float32Array {
         out[2] = a[2];
         return out;
     };
-    static closeTo = (a, b) => {
-        return closeTo(a[0], b[0]) && closeTo(a[1], b[1]) && closeTo(a[2], b[2]);
+    static closeTo = (a, b, epsilon = EPSILON) => {
+        return Vector3.distanceTo(a, b) <= epsilon;
+    };
+    static closeToRect = (a, b, epsilon = EPSILON) => {
+        return closeTo(a[0], b[0], epsilon) && closeTo(a[1], b[1], epsilon) && closeTo(a[2], b[2], epsilon);
     };
     static create = (x = 0, y = 0, z = 0) => {
         const out = new Vector3();
@@ -1083,10 +1093,16 @@ class Vector3 extends Float32Array {
         out[0] = out[1] = out[2] = num;
         return out;
     };
-    static fromValues = (x, y, z, out = new Vector3()) => {
+    static fromXYZ = (x, y, z, out = new Vector3()) => {
         out[0] = x;
         out[1] = y;
         out[2] = z;
+        return out;
+    };
+    static fromMatrix4Scale = (mat, out = new Vector3()) => {
+        out[0] = mat[0];
+        out[1] = mat[5];
+        out[2] = mat[10];
         return out;
     };
     static fromMatrix4Translate = (mat, out = new Vector3()) => {
@@ -1373,11 +1389,11 @@ class Vector4 extends Float32Array {
         out[3] = Math.ceil(a[3]);
         return out;
     };
-    static closeTo = (a, b) => {
-        return (closeTo(a[0], b[0]) &&
-            closeTo(a[1], b[1]) &&
-            closeTo(a[2], b[2]) &&
-            closeTo(a[3], b[3]));
+    static closeTo = (a, b, epsilon = EPSILON) => {
+        return Vector4.distanceTo(a, b) <= epsilon;
+    };
+    static closeToRect = (a, b, epsilon = EPSILON) => {
+        return closeTo(a[0], b[0], epsilon) && closeTo(a[1], b[1], epsilon) && closeTo(a[2], b[2], epsilon) && closeTo(a[3], b[3], epsilon);
     };
     static create = (x = 0, y = 0, z = 0, w = 0) => {
         const out = new Vector4();
@@ -1449,7 +1465,7 @@ class Vector4 extends Float32Array {
         out[0] = out[1] = out[2] = out[3] = num;
         return out;
     };
-    static fromValues = (x, y, z, w, out = new Vector4()) => {
+    static fromXYZW = (x, y, z, w, out = new Vector4()) => {
         out[0] = x;
         out[1] = y;
         out[2] = z;
@@ -1690,9 +1706,567 @@ class ColorXYZ extends Float32Array {
     }
 }
 
+let max$1 = 0;
+let min$1 = 0;
+let h$1 = 0;
+let s$2 = 0;
+let l = 0;
+class ColorHSL extends Float32Array {
+    dataType = ArraybufferDataType.COLOR_HSL;
+    static fromRGBUnsignedNormal(r, g, b, out = new ColorHSL()) {
+        max$1 = Math.max(r, g, b);
+        min$1 = Math.min(r, g, b);
+        l = (max$1 + min$1) / 2;
+        if (max$1 === min$1) {
+            h$1 = s$2 = 0;
+        }
+        else {
+            let d = max$1 - min$1;
+            s$2 = l > 0.5 ? d / (2 - max$1 - min$1) : d / (max$1 + min$1);
+            switch (max$1) {
+                case r:
+                    h$1 = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h$1 = (b - r) / d + 2;
+                    break;
+                case b:
+                    h$1 = (r - g) / d + 4;
+                    break;
+            }
+            h$1 /= 6;
+        }
+        out[0] = h$1;
+        out[1] = s$2;
+        out[2] = l;
+        return out;
+    }
+    constructor(h = 0, s = 0, l = 0) {
+        super(3);
+        this[0] = h;
+        this[1] = s;
+        this[2] = l;
+    }
+    get h() {
+        return this[0];
+    }
+    set h(val) {
+        this[0] = val;
+    }
+    get s() {
+        return this[1];
+    }
+    set s(val) {
+        this[1] = val;
+    }
+    get l() {
+        return this[2];
+    }
+    set l(val) {
+        this[2] = val;
+    }
+}
+
+let max = 0;
+let min = 0;
+let h = 0;
+let s$1 = 0;
+let v$2 = 0;
+class ColorHSV extends Float32Array {
+    dataType = ArraybufferDataType.COLOR_HSV;
+    static fromRGBUnsignedNormal(r, g, b, out = new ColorHSV()) {
+        max = Math.max(r, g, b);
+        min = Math.min(r, g, b);
+        v$2 = max;
+        if (max === min) {
+            h = 0;
+        }
+        else {
+            let d = max - min;
+            s$1 = v$2 > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+            h /= 6;
+        }
+        if (max) {
+            s$1 = 1 - min / max;
+        }
+        else {
+            s$1 = 0;
+        }
+        out[0] = h;
+        out[1] = s$1;
+        out[2] = v$2;
+        return out;
+    }
+    constructor(h = 0, s = 0, v = 0) {
+        super(3);
+        this[0] = h;
+        this[1] = s;
+        this[2] = v;
+    }
+    get h() {
+        return this[0];
+    }
+    set h(val) {
+        this[0] = val;
+    }
+    get s() {
+        return this[1];
+    }
+    set s(val) {
+        this[1] = val;
+    }
+    get v() {
+        return this[2];
+    }
+    set v(val) {
+        this[2] = val;
+    }
+}
+
+class ColorRGB extends Uint8Array {
+    static average = (color) => {
+        return (color[0] + color[1] + color[2]) / 3;
+    };
+    static averageWeighted = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE) => {
+        return color[0] * wr + color[1] * wg + color[2] * wb;
+    };
+    static clone = (color) => {
+        return new ColorRGB(color[0], color[1], color[2]);
+    };
+    static create = (r = 0, g = 0, b = 0) => {
+        return new ColorRGB(r, g, b);
+    };
+    static equals = (a, b) => {
+        return (a.r ?? a[0]) === (b.r ?? b[0]) && (a.g ?? a[1]) === (b.g ?? b[1]) && (a.b ?? a[2]) === (b.b ?? b[2]);
+    };
+    static fromArray = (arr, out = new ColorRGB()) => {
+        out[0] = arr[0];
+        out[1] = arr[1];
+        out[2] = arr[2];
+        return out;
+    };
+    static fromColorRYB(color, out = new ColorRGB()) {
+        let r = color[0];
+        let y = color[1];
+        let b = color[2];
+        // Remove the whiteness from the color.
+        let w = Math.min(r, y, b);
+        r -= w;
+        y -= w;
+        b -= w;
+        let my = Math.max(r, y, b);
+        // Get the green out of the yellow and blue
+        let g = Math.min(y, b);
+        y -= g;
+        b -= g;
+        if (b && g) {
+            b *= 2.0;
+            g *= 2.0;
+        }
+        // Redistribute the remaining yellow.
+        r += y;
+        g += y;
+        // Normalize to values.
+        let mg = Math.max(r, g, b);
+        if (mg) {
+            let n = my / mg;
+            r *= n;
+            g *= n;
+            b *= n;
+        }
+        // Add the white back in.
+        r += w;
+        g += w;
+        b += w;
+        out[0] = r;
+        out[1] = g;
+        out[2] = b;
+        return out;
+    }
+    static fromHex = (hex, out = new ColorRGB()) => {
+        out[0] = hex >> 16;
+        out[1] = (hex >> 8) & 255;
+        out[2] = hex & 255;
+        return out;
+    };
+    static fromHSL = (h, s, l, out = new ColorRGB()) => {
+        let r;
+        let g;
+        let b;
+        if (s === 0) {
+            r = g = b = l; // achromatic
+        }
+        else {
+            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            let p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        out[0] = Math.round(r * 255);
+        out[1] = Math.round(g * 255);
+        out[2] = Math.round(b * 255);
+        return out;
+    };
+    static fromJson = (json, out = new ColorRGB()) => {
+        out[0] = json.r;
+        out[1] = json.g;
+        out[2] = json.b;
+        return out;
+    };
+    static fromScalar = (scalar, out = new ColorRGB()) => {
+        out[0] = scalar;
+        out[1] = scalar;
+        out[2] = scalar;
+        return out;
+    };
+    static fromString = (str, out = new ColorRGB()) => {
+        if (str in COLOR_HEX_MAP) {
+            return ColorRGB.fromHex(COLOR_HEX_MAP[str], out);
+        }
+        else if (str.startsWith("#")) {
+            str = str.substring(1);
+            return ColorRGB.fromScalar(parseInt(str, 16), out);
+        }
+        else if (str.startsWith("rgb(")) {
+            str = str.substring(4, str.length - 1);
+            const arr = str.split(",");
+            out[0] = parseInt(arr[0], 10);
+            out[1] = parseInt(arr[1], 10);
+            out[2] = parseInt(arr[2], 10);
+        }
+        return out;
+    };
+    static grayscale = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE, out = new ColorRGB()) => {
+        const gray = ColorRGB.averageWeighted(color, wr, wg, wb);
+        ColorRGB.fromScalar(gray, out);
+        return out;
+    };
+    dataType = ArraybufferDataType.COLOR_RGB;
+    constructor(r = 0, g = 0, b = 0) {
+        super(3);
+        this[0] = r;
+        this[1] = g;
+        this[2] = b;
+    }
+    get r() {
+        return this[0];
+    }
+    set r(val) {
+        this[0] = val;
+    }
+    get g() {
+        return this[1];
+    }
+    set g(val) {
+        this[1] = val;
+    }
+    get b() {
+        return this[2];
+    }
+    set b(val) {
+        this[2] = val;
+    }
+}
+
+class ColorRGBA extends Uint8Array {
+    static average = (color) => {
+        return (color[0] + color[1] + color[2]) / 3;
+    };
+    static averageWeighted = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE) => {
+        return color[0] * wr + color[1] * wg + color[2] * wb;
+    };
+    static clone = (color) => {
+        return new ColorRGBA(color[0], color[1], color[2], color[3]);
+    };
+    static create = (r = 0, g = 0, b = 0, a = 1) => {
+        return new ColorRGBA(r, g, b, a);
+    };
+    static equals = (a, b) => {
+        return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
+            (a.g ?? a[1]) === (b.g ?? b[1]) &&
+            (a.b ?? a[2]) === (b.b ?? b[2]) &&
+            (a.a ?? a[3]) === (b.a ?? b[3]));
+    };
+    static fromArray = (arr, out = new ColorRGBA()) => {
+        out[0] = arr[0];
+        out[1] = arr[1];
+        out[2] = arr[2];
+        out[3] = arr[3];
+        return out;
+    };
+    static fromColorRYB = (color, out = new ColorRGBA()) => {
+        let r = color[0];
+        let y = color[1];
+        let b = color[2];
+        // Remove the whiteness from the color.
+        let w = Math.min(r, y, b);
+        r -= w;
+        y -= w;
+        b -= w;
+        let my = Math.max(r, y, b);
+        // Get the green out of the yellow and blue
+        let g = Math.min(y, b);
+        y -= g;
+        b -= g;
+        if (b && g) {
+            b *= 2.0;
+            g *= 2.0;
+        }
+        // Redistribute the remaining yellow.
+        r += y;
+        g += y;
+        // Normalize to values.
+        let mg = Math.max(r, g, b);
+        if (mg) {
+            let n = my / mg;
+            r *= n;
+            g *= n;
+            b *= n;
+        }
+        // Add the white back in.
+        r += w;
+        g += w;
+        b += w;
+        out[0] = r;
+        out[1] = g;
+        out[2] = b;
+        out[3] = 1;
+        return out;
+    };
+    static fromHex = (hex, alpha = 255, out = new ColorRGBA()) => {
+        out[0] = hex >> 16;
+        out[1] = (hex >> 8) & 255;
+        out[2] = hex & 255;
+        out[3] = alpha;
+        return out;
+    };
+    static fromHSL = (h, s, l, out = new ColorRGBA()) => {
+        let r;
+        let g;
+        let b;
+        if (s === 0) {
+            r = g = b = l; // achromatic
+        }
+        else {
+            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            let p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        out[0] = Math.round(r * 255);
+        out[1] = Math.round(g * 255);
+        out[2] = Math.round(b * 255);
+        out[3] = 255;
+        return out;
+    };
+    static fromJson = (json, out = new ColorRGBA()) => {
+        out[0] = json.r;
+        out[1] = json.g;
+        out[2] = json.b;
+        out[3] = json.a;
+        return out;
+    };
+    static fromScalar = (scalar, alpha = 255, out = new ColorRGBA()) => {
+        out[0] = scalar;
+        out[1] = scalar;
+        out[2] = scalar;
+        out[3] = alpha;
+        return out;
+    };
+    static fromString = (str, out = new ColorRGBA()) => {
+        if (str in COLOR_HEX_MAP) {
+            return ColorRGBA.fromHex(COLOR_HEX_MAP[str], 255, out);
+        }
+        else if (str.startsWith("#")) {
+            str = str.substring(1);
+            return ColorRGBA.fromScalar(parseInt(str, 16), 255, out);
+        }
+        else if (str.startsWith("rgba(")) {
+            str = str.substring(4, str.length - 1);
+            const arr = str.split(",");
+            out[0] = parseInt(arr[0], 10);
+            out[1] = parseInt(arr[1], 10);
+            out[2] = parseInt(arr[2], 10);
+            out[3] = parseInt(arr[3], 10);
+        }
+        return out;
+    };
+    static grayscale = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE, out = new ColorRGBA()) => {
+        const gray = ColorRGBA.averageWeighted(color, wr, wg, wb);
+        ColorRGBA.fromScalar(gray, color[3], out);
+        return out;
+    };
+    dataType = ArraybufferDataType.COLOR_RGBA;
+    constructor(r = 0, g = 0, b = 0, a = 255) {
+        super(4);
+        this[0] = r;
+        this[1] = g;
+        this[2] = b;
+        this[3] = a;
+    }
+    get r() {
+        return this[0];
+    }
+    set r(val) {
+        this[0] = val;
+    }
+    get g() {
+        return this[1];
+    }
+    set g(val) {
+        this[1] = val;
+    }
+    get b() {
+        return this[2];
+    }
+    set b(val) {
+        this[2] = val;
+    }
+    get a() {
+        return this[3];
+    }
+    set a(val) {
+        this[3] = val;
+    }
+}
+
+class ColorRYB extends Uint8Array {
+    static average = (color) => {
+        return (color[0] + color[1] + color[2]) / 3;
+    };
+    static averageWeighted = (color, wr = 0.333333, wy = 0.333334, wb = 0.333333) => {
+        return color[0] * wr + color[1] * wy + color[2] * wb;
+    };
+    static clone = (color) => {
+        return new ColorRYB(color[0], color[1], color[2]);
+    };
+    static create = (r = 0, g = 0, b = 0) => {
+        return new ColorRYB(r, g, b);
+    };
+    static equals = (a, b) => {
+        return (a.r ?? a[0]) === (b.r ?? b[0]) && (a.y ?? a[1]) === (b.y ?? b[1]) && (a.b ?? a[2]) === (b.b ?? b[2]);
+    };
+    static fromArray = (arr, out = new ColorRYB()) => {
+        out[0] = arr[0];
+        out[1] = arr[1];
+        out[2] = arr[2];
+        return out;
+    };
+    static fromJson = (json, out = new ColorRYB()) => {
+        out[0] = json.r;
+        out[1] = json.y;
+        out[2] = json.b;
+        return out;
+    };
+    static fromRGB = (rgb, out = new ColorRYB()) => {
+        rgb[0];
+        rgb[1];
+        rgb[2];
+        return out;
+    };
+    static fromScalar = (scalar, out = new ColorRYB()) => {
+        out[0] = scalar;
+        out[1] = scalar;
+        out[2] = scalar;
+        return out;
+    };
+    static fromString = (str, out = new ColorRYB()) => {
+        if (str.startsWith("ryb(")) {
+            str = str.substring(4, str.length - 1);
+            const arr = str.split(",");
+            out[0] = parseInt(arr[0], 10);
+            out[1] = parseInt(arr[1], 10);
+            out[2] = parseInt(arr[2], 10);
+        }
+        return out;
+    };
+    dataType = ArraybufferDataType.COLOR_RGB;
+    constructor(r = 0, y = 0, b = 0) {
+        super(3);
+        this[0] = r;
+        this[1] = y;
+        this[2] = b;
+    }
+    get r() {
+        return this[0];
+    }
+    set r(val) {
+        this[0] = val;
+    }
+    get y() {
+        return this[1];
+    }
+    set y(val) {
+        this[1] = val;
+    }
+    get b() {
+        return this[2];
+    }
+    set b(val) {
+        this[2] = val;
+    }
+}
+
 let r$2;
 let g;
 let b$1;
+const getColorGPU$1 = (color, result = new ColorGPU()) => {
+    if (color instanceof ColorGPU) {
+        result.set(color);
+    }
+    else if (typeof color === "string") {
+        ColorGPU.fromString(color, result);
+    }
+    else if (typeof color === "number") {
+        ColorGPU.fromHex(color, 1, result);
+    }
+    else if (color instanceof ColorRGB) {
+        ColorGPU.fromColorRGB(color, result);
+    }
+    else if (color instanceof ColorRYB) {
+        ColorGPU.fromColorRYB(color, result);
+    }
+    else if (color instanceof ColorRGBA) {
+        ColorGPU.fromColorRGBA(color, result);
+    }
+    else if (color instanceof ColorHSL) {
+        ColorGPU.fromColorHSL(color, result);
+    }
+    else if (color instanceof ColorHSV) {
+        ColorGPU.fromColorHSV(color, result);
+    }
+    else if (color instanceof ColorCMYK) {
+        ColorGPU.fromColorCMYK(color, result);
+    }
+    else if (color instanceof Float32Array || color instanceof Array) {
+        ColorGPU.fromArray(color, result);
+    }
+    else {
+        if ("a" in color) {
+            ColorGPU.fromJson(color, result);
+        }
+        else {
+            ColorGPU.fromJson({
+                ...color,
+                a: 1,
+            }, result);
+        }
+    }
+    return result;
+};
 class ColorGPU extends Float32Array {
     static average = (color) => {
         return (color[0] + color[1] + color[2]) / 3;
@@ -1929,525 +2503,27 @@ class ColorGPU extends Float32Array {
     }
 }
 
-let max$1 = 0;
-let min$1 = 0;
-let h$1 = 0;
-let s$2 = 0;
-let l = 0;
-class ColorHSL extends Float32Array {
-    dataType = ArraybufferDataType.COLOR_HSL;
-    static fromRGBUnsignedNormal(r, g, b, out = new ColorHSL()) {
-        max$1 = Math.max(r, g, b);
-        min$1 = Math.min(r, g, b);
-        l = (max$1 + min$1) / 2;
-        if (max$1 === min$1) {
-            h$1 = s$2 = 0;
-        }
-        else {
-            let d = max$1 - min$1;
-            s$2 = l > 0.5 ? d / (2 - max$1 - min$1) : d / (max$1 + min$1);
-            switch (max$1) {
-                case r:
-                    h$1 = (g - b) / d + (g < b ? 6 : 0);
-                    break;
-                case g:
-                    h$1 = (b - r) / d + 2;
-                    break;
-                case b:
-                    h$1 = (r - g) / d + 4;
-                    break;
-            }
-            h$1 /= 6;
-        }
-        out[0] = h$1;
-        out[1] = s$2;
-        out[2] = l;
-        return out;
+const tmpResult = [];
+const factorialNaturalNumber = (n) => {
+    if (n === 0 || n === 1) {
+        return 1;
     }
-    constructor(h = 0, s = 0, l = 0) {
-        super(3);
-        this[0] = h;
-        this[1] = s;
-        this[2] = l;
+    if (tmpResult[n] > 0) {
+        return tmpResult[n];
     }
-    get h() {
-        return this[0];
-    }
-    set h(val) {
-        this[0] = val;
-    }
-    get s() {
-        return this[1];
-    }
-    set s(val) {
-        this[1] = val;
-    }
-    get l() {
-        return this[2];
-    }
-    set l(val) {
-        this[2] = val;
-    }
-}
+    return tmpResult[n] = factorialNaturalNumber(n - 1) * n;
+};
 
-let max = 0;
-let min = 0;
-let h = 0;
-let s$1 = 0;
-let v$2 = 0;
-class ColorHSV extends Float32Array {
-    dataType = ArraybufferDataType.COLOR_HSV;
-    static fromRGBUnsignedNormal(r, g, b, out = new ColorHSV()) {
-        max = Math.max(r, g, b);
-        min = Math.min(r, g, b);
-        v$2 = max;
-        if (max === min) {
-            h = 0;
-        }
-        else {
-            let d = max - min;
-            s$1 = v$2 > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r:
-                    h = (g - b) / d + (g < b ? 6 : 0);
-                    break;
-                case g:
-                    h = (b - r) / d + 2;
-                    break;
-                case b:
-                    h = (r - g) / d + 4;
-                    break;
-            }
-            h /= 6;
-        }
-        if (max) {
-            s$1 = 1 - min / max;
-        }
-        else {
-            s$1 = 0;
-        }
-        out[0] = h;
-        out[1] = s$1;
-        out[2] = v$2;
-        return out;
-    }
-    constructor(h = 0, s = 0, v = 0) {
-        super(3);
-        this[0] = h;
-        this[1] = s;
-        this[2] = v;
-    }
-    get h() {
-        return this[0];
-    }
-    set h(val) {
-        this[0] = val;
-    }
-    get s() {
-        return this[1];
-    }
-    set s(val) {
-        this[1] = val;
-    }
-    get v() {
-        return this[2];
-    }
-    set v(val) {
-        this[2] = val;
-    }
-}
+const arrangement = (a, b) => {
+    return factorialNaturalNumber(a) / factorialNaturalNumber(a - b);
+};
 
-class ColorRGBA extends Uint8Array {
-    static average = (color) => {
-        return (color[0] + color[1] + color[2]) / 3;
-    };
-    static averageWeighted = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE) => {
-        return color[0] * wr + color[1] * wg + color[2] * wb;
-    };
-    static clone = (color) => {
-        return new ColorRGBA(color[0], color[1], color[2], color[3]);
-    };
-    static create = (r = 0, g = 0, b = 0, a = 1) => {
-        return new ColorRGBA(r, g, b, a);
-    };
-    static equals = (a, b) => {
-        return ((a.r ?? a[0]) === (b.r ?? b[0]) &&
-            (a.g ?? a[1]) === (b.g ?? b[1]) &&
-            (a.b ?? a[2]) === (b.b ?? b[2]) &&
-            (a.a ?? a[3]) === (b.a ?? b[3]));
-    };
-    static fromArray = (arr, out = new ColorRGBA()) => {
-        out[0] = arr[0];
-        out[1] = arr[1];
-        out[2] = arr[2];
-        out[3] = arr[3];
-        return out;
-    };
-    static fromColorRYB = (color, out = new ColorRGBA()) => {
-        let r = color[0];
-        let y = color[1];
-        let b = color[2];
-        // Remove the whiteness from the color.
-        let w = Math.min(r, y, b);
-        r -= w;
-        y -= w;
-        b -= w;
-        let my = Math.max(r, y, b);
-        // Get the green out of the yellow and blue
-        let g = Math.min(y, b);
-        y -= g;
-        b -= g;
-        if (b && g) {
-            b *= 2.0;
-            g *= 2.0;
-        }
-        // Redistribute the remaining yellow.
-        r += y;
-        g += y;
-        // Normalize to values.
-        let mg = Math.max(r, g, b);
-        if (mg) {
-            let n = my / mg;
-            r *= n;
-            g *= n;
-            b *= n;
-        }
-        // Add the white back in.
-        r += w;
-        g += w;
-        b += w;
-        out[0] = r;
-        out[1] = g;
-        out[2] = b;
-        out[3] = 1;
-        return out;
-    };
-    static fromHex = (hex, alpha = 255, out = new ColorRGBA()) => {
-        out[0] = hex >> 16;
-        out[1] = (hex >> 8) & 255;
-        out[2] = hex & 255;
-        out[3] = alpha;
-        return out;
-    };
-    static fromHSL = (h, s, l, out = new ColorRGBA()) => {
-        let r;
-        let g;
-        let b;
-        if (s === 0) {
-            r = g = b = l; // achromatic
-        }
-        else {
-            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            let p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
-        }
-        out[0] = Math.round(r * 255);
-        out[1] = Math.round(g * 255);
-        out[2] = Math.round(b * 255);
-        out[3] = 255;
-        return out;
-    };
-    static fromJson = (json, out = new ColorRGBA()) => {
-        out[0] = json.r;
-        out[1] = json.g;
-        out[2] = json.b;
-        out[3] = json.a;
-        return out;
-    };
-    static fromScalar = (scalar, alpha = 255, out = new ColorRGBA()) => {
-        out[0] = scalar;
-        out[1] = scalar;
-        out[2] = scalar;
-        out[3] = alpha;
-        return out;
-    };
-    static fromString = (str, out = new ColorRGBA()) => {
-        if (str in COLOR_HEX_MAP) {
-            return ColorRGBA.fromHex(COLOR_HEX_MAP[str], 255, out);
-        }
-        else if (str.startsWith("#")) {
-            str = str.substring(1);
-            return ColorRGBA.fromScalar(parseInt(str, 16), 255, out);
-        }
-        else if (str.startsWith("rgba(")) {
-            str = str.substring(4, str.length - 1);
-            const arr = str.split(",");
-            out[0] = parseInt(arr[0], 10);
-            out[1] = parseInt(arr[1], 10);
-            out[2] = parseInt(arr[2], 10);
-            out[3] = parseInt(arr[3], 10);
-        }
-        return out;
-    };
-    static grayscale = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE, out = new ColorRGBA()) => {
-        const gray = ColorRGBA.averageWeighted(color, wr, wg, wb);
-        ColorRGBA.fromScalar(gray, color[3], out);
-        return out;
-    };
-    dataType = ArraybufferDataType.COLOR_RGBA;
-    constructor(r = 0, g = 0, b = 0, a = 255) {
-        super(4);
-        this[0] = r;
-        this[1] = g;
-        this[2] = b;
-        this[3] = a;
-    }
-    get r() {
-        return this[0];
-    }
-    set r(val) {
-        this[0] = val;
-    }
-    get g() {
-        return this[1];
-    }
-    set g(val) {
-        this[1] = val;
-    }
-    get b() {
-        return this[2];
-    }
-    set b(val) {
-        this[2] = val;
-    }
-    get a() {
-        return this[3];
-    }
-    set a(val) {
-        this[3] = val;
-    }
-}
-
-class ColorRGB extends Uint8Array {
-    static average = (color) => {
-        return (color[0] + color[1] + color[2]) / 3;
-    };
-    static averageWeighted = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE) => {
-        return color[0] * wr + color[1] * wg + color[2] * wb;
-    };
-    static clone = (color) => {
-        return new ColorRGB(color[0], color[1], color[2]);
-    };
-    static create = (r = 0, g = 0, b = 0) => {
-        return new ColorRGB(r, g, b);
-    };
-    static equals = (a, b) => {
-        return (a.r ?? a[0]) === (b.r ?? b[0]) && (a.g ?? a[1]) === (b.g ?? b[1]) && (a.b ?? a[2]) === (b.b ?? b[2]);
-    };
-    static fromArray = (arr, out = new ColorRGB()) => {
-        out[0] = arr[0];
-        out[1] = arr[1];
-        out[2] = arr[2];
-        return out;
-    };
-    static fromColorRYB(color, out = new ColorRGB()) {
-        let r = color[0];
-        let y = color[1];
-        let b = color[2];
-        // Remove the whiteness from the color.
-        let w = Math.min(r, y, b);
-        r -= w;
-        y -= w;
-        b -= w;
-        let my = Math.max(r, y, b);
-        // Get the green out of the yellow and blue
-        let g = Math.min(y, b);
-        y -= g;
-        b -= g;
-        if (b && g) {
-            b *= 2.0;
-            g *= 2.0;
-        }
-        // Redistribute the remaining yellow.
-        r += y;
-        g += y;
-        // Normalize to values.
-        let mg = Math.max(r, g, b);
-        if (mg) {
-            let n = my / mg;
-            r *= n;
-            g *= n;
-            b *= n;
-        }
-        // Add the white back in.
-        r += w;
-        g += w;
-        b += w;
-        out[0] = r;
-        out[1] = g;
-        out[2] = b;
-        return out;
-    }
-    static fromHex = (hex, out = new ColorRGB()) => {
-        out[0] = hex >> 16;
-        out[1] = (hex >> 8) & 255;
-        out[2] = hex & 255;
-        return out;
-    };
-    static fromHSL = (h, s, l, out = new ColorRGB()) => {
-        let r;
-        let g;
-        let b;
-        if (s === 0) {
-            r = g = b = l; // achromatic
-        }
-        else {
-            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            let p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
-        }
-        out[0] = Math.round(r * 255);
-        out[1] = Math.round(g * 255);
-        out[2] = Math.round(b * 255);
-        return out;
-    };
-    static fromJson = (json, out = new ColorRGB()) => {
-        out[0] = json.r;
-        out[1] = json.g;
-        out[2] = json.b;
-        return out;
-    };
-    static fromScalar = (scalar, out = new ColorRGB()) => {
-        out[0] = scalar;
-        out[1] = scalar;
-        out[2] = scalar;
-        return out;
-    };
-    static fromString = (str, out = new ColorRGB()) => {
-        if (str in COLOR_HEX_MAP) {
-            return ColorRGB.fromHex(COLOR_HEX_MAP[str], out);
-        }
-        else if (str.startsWith("#")) {
-            str = str.substring(1);
-            return ColorRGB.fromScalar(parseInt(str, 16), out);
-        }
-        else if (str.startsWith("rgb(")) {
-            str = str.substring(4, str.length - 1);
-            const arr = str.split(",");
-            out[0] = parseInt(arr[0], 10);
-            out[1] = parseInt(arr[1], 10);
-            out[2] = parseInt(arr[2], 10);
-        }
-        return out;
-    };
-    static grayscale = (color, wr = WEIGHT_GRAY_RED, wg = WEIGHT_GRAY_GREEN, wb = WEIGHT_GRAY_BLUE, out = new ColorRGB()) => {
-        const gray = ColorRGB.averageWeighted(color, wr, wg, wb);
-        ColorRGB.fromScalar(gray, out);
-        return out;
-    };
-    dataType = ArraybufferDataType.COLOR_RGB;
-    constructor(r = 0, g = 0, b = 0) {
-        super(3);
-        this[0] = r;
-        this[1] = g;
-        this[2] = b;
-    }
-    get r() {
-        return this[0];
-    }
-    set r(val) {
-        this[0] = val;
-    }
-    get g() {
-        return this[1];
-    }
-    set g(val) {
-        this[1] = val;
-    }
-    get b() {
-        return this[2];
-    }
-    set b(val) {
-        this[2] = val;
-    }
-}
-
-class ColorRYB extends Uint8Array {
-    static average = (color) => {
-        return (color[0] + color[1] + color[2]) / 3;
-    };
-    static averageWeighted = (color, wr = 0.333333, wy = 0.333334, wb = 0.333333) => {
-        return color[0] * wr + color[1] * wy + color[2] * wb;
-    };
-    static clone = (color) => {
-        return new ColorRYB(color[0], color[1], color[2]);
-    };
-    static create = (r = 0, g = 0, b = 0) => {
-        return new ColorRYB(r, g, b);
-    };
-    static equals = (a, b) => {
-        return (a.r ?? a[0]) === (b.r ?? b[0]) && (a.y ?? a[1]) === (b.y ?? b[1]) && (a.b ?? a[2]) === (b.b ?? b[2]);
-    };
-    static fromArray = (arr, out = new ColorRYB()) => {
-        out[0] = arr[0];
-        out[1] = arr[1];
-        out[2] = arr[2];
-        return out;
-    };
-    static fromJson = (json, out = new ColorRYB()) => {
-        out[0] = json.r;
-        out[1] = json.y;
-        out[2] = json.b;
-        return out;
-    };
-    static fromRGB = (rgb, out = new ColorRYB()) => {
-        rgb[0];
-        rgb[1];
-        rgb[2];
-        return out;
-    };
-    static fromScalar = (scalar, out = new ColorRYB()) => {
-        out[0] = scalar;
-        out[1] = scalar;
-        out[2] = scalar;
-        return out;
-    };
-    static fromString = (str, out = new ColorRYB()) => {
-        if (str.startsWith("ryb(")) {
-            str = str.substring(4, str.length - 1);
-            const arr = str.split(",");
-            out[0] = parseInt(arr[0], 10);
-            out[1] = parseInt(arr[1], 10);
-            out[2] = parseInt(arr[2], 10);
-        }
-        return out;
-    };
-    dataType = ArraybufferDataType.COLOR_RGB;
-    constructor(r = 0, y = 0, b = 0) {
-        super(3);
-        this[0] = r;
-        this[1] = y;
-        this[2] = b;
-    }
-    get r() {
-        return this[0];
-    }
-    set r(val) {
-        this[0] = val;
-    }
-    get y() {
-        return this[1];
-    }
-    set y(val) {
-        this[1] = val;
-    }
-    get b() {
-        return this[2];
-    }
-    set b(val) {
-        this[2] = val;
-    }
-}
-
-var ceilPowerOfTwo = (value) => {
+const ceilPowerOfTwo = (value) => {
     return Math.pow(2, Math.ceil(Math.log(value) / Math.LN2));
 };
 
-let circle, v$1;
+let circle;
+let v$1;
 /**
  * @function clampCircle
  * @desc 将目标值限定在指定周期区间内。假定min小于等于max才能得到正确的结果。
@@ -2458,7 +2534,7 @@ let circle, v$1;
  * @example Mathx.clampCircle(3 * Math.PI, 0, 2 * Math.PI); // Math.PI;
  * Mathx.clampCircle(2 * Math.PI, -Math.PI, Math.PI); // 0;
  */
-var clampCircle = (val, min, max) => {
+const clampCircle = (val, min, max) => {
     circle = max - min;
     v$1 = floorToZero(min / circle) * circle + (val % circle);
     if (v$1 < min) {
@@ -2470,19 +2546,24 @@ var clampCircle = (val, min, max) => {
     return v$1;
 };
 
-var floorPowerOfTwo = (value) => {
+const combination = (a, b) => {
+    return factorialNaturalNumber(a) / factorialNaturalNumber(b) / factorialNaturalNumber(a - b);
+};
+
+const floorPowerOfTwo = (value) => {
     return Math.pow(2, Math.floor(Math.log(value) / Math.LN2));
 };
 
-var isPowerOfTwo = (value) => {
+const isPowerOf2 = (value) => {
     return (value & (value - 1)) === 0 && value !== 0;
 };
 
-var lerp = (a, b, p) => {
+const lerp = (a, b, p) => {
     return (b - a) * p + a;
 };
 
-let d1 = 0, d2$1 = 0;
+let d1 = 0;
+let d2$1 = 0;
 /**
  * @function mapRange
  * @desc 将目标值按照区间线性映射到另一个区间里面的值。
@@ -2494,25 +2575,54 @@ let d1 = 0, d2$1 = 0;
  * Mathx.clamp(150, [100, 200], [0, -100]); // -50;
  * Mathx.clamp(10, [0, 1], [0, -2]); // -20;
  */
-var mapRange = (value, range1, range2) => {
+const mapRange = (value, range1, range2) => {
     d1 = range1[1] - range1[0];
     d2$1 = range2[1] - range2[0];
     return (value - d1 * 0.5) / d2$1 / d1;
+};
+
+const swap = (arr, a, b) => {
+    const tmp = arr[a];
+    arr[a] = arr[b];
+    arr[b] = tmp;
+    return arr;
+};
+
+function findPartition(arr, low, high, compare) {
+    let pivot = arr[high];
+    let pivotloc = low;
+    for (let i = low; i <= high; i++) {
+        if (compare(pivot, arr[i])) {
+            swap(arr, i, pivotloc);
+            pivotloc++;
+        }
+    }
+    swap(arr, high, pivotloc);
+    return pivotloc;
+}
+function kthSmallest(arr, low, high, k, compare) {
+    let partition = findPartition(arr, low, high, compare);
+    if (partition == k - 1) {
+        return arr[partition];
+    }
+    else if (partition < k - 1) {
+        return kthSmallest(arr, partition + 1, high, k, compare);
+    }
+    return kthSmallest(arr, low, partition - 1, k, compare);
+}
+const defaultCompare = (a, b) => {
+    return a > b;
+};
+const minKth = (arr, k = 0, compare = defaultCompare) => {
+    return kthSmallest(arr, 0, arr.length - 1, k, compare);
 };
 
 const opposite = (v, center = 0) => {
     return center + center - v;
 };
 
-var randFloat = (min = 0, max = 1) => {
-    return min + Math.random() * (max - min);
-};
-
-var randInt = (min = 0, max = 1) => {
-    return min + Math.floor(Math.random() * (max - min + 1));
-};
-
-let len$1 = 0, sum$1 = 0;
+let len$1 = 0;
+let sum$1 = 0;
 /**
  * @function sumArray
  * @desc 求数组的和
@@ -2521,7 +2631,7 @@ let len$1 = 0, sum$1 = 0;
  * @returns {number} 和
  * @example Mathx.sumArray([1, 2, 3]); // 6;
  */
-var sumArray = (arr) => {
+const sumArray = (arr) => {
     sum$1 = 0;
     len$1 = arr.length;
     for (let i = 0; i < len$1; i++) {
@@ -2539,7 +2649,7 @@ var sumArray = (arr) => {
  * @example Mathx.sumArray(1, 2, 3); // 6;
  * Mathx.sumArray(1, 2, 3, 4, 5); // 15;
  */
-var sum = (...arr) => {
+const sum = (...arr) => {
     return sumArray(arr);
 };
 
@@ -2781,9 +2891,15 @@ class EulerAngle extends Float32Array {
         return new EulerAngle(x, y, z, order);
     }
     static fromMatrix4(matrix4, out = new EulerAngle()) {
-        const m11 = matrix4[0], m12 = matrix4[4], m13 = matrix4[8];
-        const m21 = matrix4[1], m22 = matrix4[5], m23 = matrix4[9];
-        const m31 = matrix4[2], m32 = matrix4[6], m33 = matrix4[10];
+        const m11 = matrix4[0];
+        const m12 = matrix4[4];
+        const m13 = matrix4[8];
+        const m21 = matrix4[1];
+        const m22 = matrix4[5];
+        const m23 = matrix4[9];
+        const m31 = matrix4[2];
+        const m32 = matrix4[6];
+        const m33 = matrix4[10];
         switch (out.order) {
             case EulerRotationOrders.XYZ:
                 out.y = Math.asin(clamp(m13, -1, 1));
@@ -2915,9 +3031,35 @@ const generateLagrange = (points) => {
     };
 };
 
+const vec1 = new Float32Array(3);
+const vec2$1 = new Float32Array(3);
 class Line3 {
     a = new Vector3();
     b = new Vector3();
+    static distancePointToLineSegment(p, line) {
+        return Math.sqrt(Line3.distancePointToLineSegmentSquared(p, line));
+    }
+    static distancePointToLineSegmentSquared(p, line) {
+        const a = line.a;
+        const b = line.b;
+        let l2 = Vector3.distanceToSquared(a, b);
+        if (l2 === 0) {
+            return Vector3.distanceToSquared(p, b);
+        }
+        Vector3.minus(p, a, vec1);
+        Vector3.minus(b, a, vec2$1);
+        let t = Vector3.dot(vec1, vec2$1) / l2;
+        t = clamp(t, 0, 1);
+        Vector3.multiplyScalar(vec2$1, t, vec2$1);
+        Vector3.add(a, vec2$1, vec1);
+        return Vector3.distanceToSquared(a, vec1);
+    }
+    static segmentLength(line) {
+        return Vector3.distanceTo(line.a, line.b);
+    }
+    static segmentLengthSquared(line) {
+        return Vector3.distanceToSquared(line.a, line.b);
+    }
     static fromPointAndDirection(p, direction, out = new Line3()) {
         out.a.set(p);
         Vector3.add(out.a, direction, out.b);
@@ -4683,6 +4825,11 @@ class Polar extends Float32Array {
     static create(r = 0, a = 0) {
         return new Polar(r, a);
     }
+    static fromRA(r = 0, a = 0, out = new Polar()) {
+        out[0] = r;
+        out[1] = a;
+        return out;
+    }
     get a() {
         return this[1];
     }
@@ -4831,113 +4978,93 @@ class Polar extends Float32Array {
 
 new Vector3();
 
-var rndFloat = (low, high) => {
-    return low + Math.random() * (high - low);
+const rndFloat = (min = 0, max = 1) => {
+    return min + Math.random() * (max - min);
 };
 
-var rndFloatRange = (range) => {
+const rndFloatRange = (range) => {
     return range * (0.5 - Math.random());
 };
 
-var rndInt = (low, high) => {
-    return low + Math.floor(Math.random() * (high - low + 1));
+const rndInt = (min = 0, max = 1) => {
+    return min + Math.floor(Math.random() * (max - min + 1));
 };
 
-let dis;
-let r2;
-let d2;
-const v = new Vector3();
-class Ray3 {
-    static at = (a, b, out = new Vector3()) => {
-        return Vector3.multiplyScalar(a.direction, b, out);
-    };
-    static distanceToPlane = (ray, plane) => {
-        const denominator = Vector3.dot(plane.normal, ray.direction);
-        if (denominator === 0) {
-            // line is coplanar, return origin
-            if (plane.distanceToPoint(ray.position) === 0) {
-                return 0;
-            }
-            return null;
-        }
-        const t = -(Vector3.dot(ray.position, plane.normal) + plane.distance) / denominator;
-        return t >= 0 ? t : null;
-    };
-    static distanceToPoint = (a, point) => {
-        return Math.sqrt(Ray3.distanceSqToPoint(a, point));
-    };
-    static distanceSqToPoint = (a, point) => {
-        Vector3.minus(point, a.position, v);
-        dis = Vector3.dot(v, a.direction);
-        if (dis < 0) {
-            return Vector3.distanceToSquared(a.position, point);
-        }
-        Vector3.multiplyScalar(a.direction, dis, v);
-        Vector3.add(v, a.position, v);
-        return Vector3.distanceToSquared(v, point);
-    };
-    static lookAt = (a, b, out = new Ray3()) => {
-        if (a !== out) {
-            Vector3.fromArray(a.position, 0, out.position);
-        }
-        Vector3.normalize(Vector3.minus(b, a.position, out.direction));
+const v1$1 = new Vector3();
+const v2$1 = new Vector3();
+const v3 = new Vector3();
+class Plane3 {
+    static normalize(p, out = new Plane3()) {
+        const normal = p.normal;
+        const factor = 1.0 / Vector3.norm(normal);
+        Vector3.multiplyScalar(normal, factor, out.normal);
+        out.distance = p.distance * factor;
         return out;
-    };
-    static intersectPlanePoint = (ray, plane, out = new Vector3()) => {
-        const t = Ray3.distanceToPlane(ray, plane);
-        if (t === null) {
-            return null;
-        }
-        return Ray3.at(ray, t, out);
-    };
-    static intersectSpherePoint = (ray, sphere, out = new Vector3()) => {
-        Vector3.minus(sphere.position, ray.position, v);
-        dis = Vector3.dot(v, ray.direction);
-        d2 = Vector3.dot(v, v) - dis * dis;
-        r2 = sphere.radius * sphere.radius;
-        if (d2 > r2)
-            return null;
-        const thc = Math.sqrt(r2 - d2);
-        const t0 = dis - thc;
-        const t1 = dis + thc;
-        if (t0 < 0 && t1 < 0)
-            return null;
-        if (t0 < 0)
-            return Ray3.at(ray, t1, out);
-        return Ray3.at(ray, t0, out);
-    };
-    static isIntersectSphere = (ray, sphere) => {
-        return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
-    };
-    static intersectsPlane = (ray, plane) => {
-        const distToPoint = plane.distanceToPoint(ray.position);
-        if (distToPoint === 0) {
-            return true;
-        }
-        const denominator = Vector3.dot(plane.normal, ray.direction);
-        if (denominator * distToPoint < 0) {
-            return true;
-        }
-        return false;
-    };
-    static recast = (ray, distance, out = new Ray3()) => {
-        v.set(Ray3.at(ray, distance));
-        out.direction.set(v);
-        return out;
-    };
-    position = new Vector3();
-    direction = new Vector3();
-    constructor(position = Vector3.VECTOR3_ZERO, direction = Vector3.VECTOR3_BACK) {
-        this.position.set(position);
-        Vector3.normalize(direction, this.direction);
+    }
+    normal = new Vector3();
+    distance;
+    constructor(normal = Vector3.VECTOR3_TOP, distance = 0) {
+        this.normal.set(normal);
+        this.distance = distance;
+    }
+    distanceToPoint(point) {
+        return Vector3.dot(this.normal, point) + this.distance;
+    }
+    distanceToSphere(sphere) {
+        return this.distanceToPoint(sphere.position) - sphere.radius;
+    }
+    from(p) {
+        this.distance = p.distance;
+        this.normal.set(p.normal);
+    }
+    fromCoplanarPoints(a, b, c) {
+        Vector3.minus(b, a, v1$1);
+        Vector3.minus(c, a, v2$1);
+        Vector3.cross(v1$1, v2$1, v3);
+        Vector3.normalize(v3, v3);
+        // TODO check zero vec
+        return this.formCoplanarPointAndNormal(a, v3);
+    }
+    formCoplanarPointAndNormal(point, normal) {
+        this.normal.set(normal);
+        this.distance = -Vector3.dot(point, normal);
+        return this;
+    }
+    fromTriangle3(triangle) {
+        return this.fromCoplanarPoints(triangle.a, triangle.b, triangle.c);
+    }
+    negate() {
+        this.distance *= -1;
+        Vector3.negate(this.normal, this.normal);
+        return this;
+    }
+    normalize() {
+        Plane3.normalize(this, this);
+        return this;
+    }
+    projectPoint(point, out = new Vector3()) {
+        Vector3.fromArray(this.normal, 0, out);
+        Vector3.multiplyScalar(out, -this.distanceToPoint(point), out);
+        return Vector3.add(out, point, out);
+    }
+    set(normal, distance = this.distance) {
+        this.normal.set(normal);
+        this.distance = distance;
+        return this;
     }
 }
 
 // import Matrix3 from "../matrix/Matrix3";
-const v1$1 = new Vector3(), v2$1 = new Vector3(), v0 = new Vector3(), f1 = new Vector3(), f2 = new Vector3(), f0 = new Vector3();
+const v1 = new Vector3();
+const v2 = new Vector3();
+const v0 = new Vector3();
+const f1 = new Vector3();
+const f2 = new Vector3();
+const f0 = new Vector3();
 const ta = new Vector3();
 // const ma: Matrix3 = new Matrix3();
-const tb = new Vector3(), vA = new Vector3();
+const tb = new Vector3();
+const vA = new Vector3();
 class Cube {
     static center = (a, out = new Vector3()) => {
         Vector3.add(a.min, a.max, out);
@@ -4999,12 +5126,12 @@ class Cube {
         Vector3.minus(a.max, ta, tb);
         // translate triangle to aabb origin
         Vector3.minus(b.a, ta, v0);
-        Vector3.minus(b.b, ta, v1$1);
-        Vector3.minus(b.c, ta, v2$1);
+        Vector3.minus(b.b, ta, v1);
+        Vector3.minus(b.c, ta, v2);
         // compute edge vectors for triangle
-        Vector3.minus(v1$1, v0, f0);
-        Vector3.minus(v2$1, v1$1, f1);
-        Vector3.minus(v0, v2$1, f2);
+        Vector3.minus(v1, v0, f0);
+        Vector3.minus(v2, v1, f1);
+        Vector3.minus(v0, v2, f2);
         // test against axes that are given by cross product combinations of the edges of the triangle and the edges of the aabb
         // make an axis testing of each of the 3 sides of the aabb against each of the 3 sides of the triangle = 9 axis of separation
         // axis_ij = u_i x f_j (u0, u1, u2 = face normals of aabb = x,y,z axes vectors since aabb is axis aligned)
@@ -5035,21 +5162,21 @@ class Cube {
             0,
             -f2[1],
             f2[0],
-            0
+            0,
         ];
-        if (!satForAxes(axes, v0, v1$1, v2$1, tb)) {
+        if (!satForAxes(axes, v0, v1, v2, tb)) {
             return false;
         }
         // test 3 face normals from the aabb
         // ta = Matrix3.identity(); ???
-        if (!satForAxes(axes, v0, v1$1, v2$1, tb)) {
+        if (!satForAxes(axes, v0, v1, v2, tb)) {
             return false;
         }
         // finally testing the face normal of the triangle
         // use already existing triangle edge vectors here
         Vector3.cross(f0, f1, ta);
         // axes = [_triangleNormal.x, _triangleNormal.y, _triangleNormal.z];
-        return satForAxes(ta, v0, v1$1, v2$1, tb);
+        return satForAxes(ta, v0, v1, v2, tb);
     };
     static isEmpty = (a) => {
         return a.max[0] < a.min[0] || a.max[0] < a.min[0] || a.max[0] < a.min[0];
@@ -5094,15 +5221,17 @@ class Cube {
         Vector3.max(a, b, this.max);
     }
 }
-let i, j, p0, p1, p2, r$1;
+let i;
+let j;
+let p0;
+let p1;
+let p2;
+let r$1;
 function satForAxes(axes, v0, v1, v2, extents) {
     for (i = 0, j = axes.length - 3; i <= j; i += 3) {
         Vector3.fromArray(axes, i, vA);
         // project the aabb onto the seperating axis
-        r$1 =
-            extents[0] * Math.abs(vA[0]) +
-                extents[1] * Math.abs(vA[1]) +
-                extents[2] * Math.abs(vA[2]);
+        r$1 = extents[0] * Math.abs(vA[0]) + extents[1] * Math.abs(vA[1]) + extents[2] * Math.abs(vA[2]);
         // project all 3 vertices of the triangle onto the seperating axis
         p0 = Vector3.dot(v0, vA);
         p1 = Vector3.dot(v1, vA);
@@ -5115,67 +5244,6 @@ function satForAxes(axes, v0, v1, v2, extents) {
         }
     }
     return true;
-}
-
-const v1 = new Vector3();
-const v2 = new Vector3();
-const v3 = new Vector3();
-class Plane3 {
-    static normalize(p, out = new Plane3) {
-        const normal = p.normal;
-        const factor = 1.0 / Vector3.norm(normal);
-        Vector3.multiplyScalar(normal, factor, out.normal);
-        out.distance = p.distance * factor;
-        return out;
-    }
-    normal = new Vector3();
-    distance;
-    constructor(normal = Vector3.VECTOR3_TOP, distance = 0) {
-        this.normal.set(normal);
-        this.distance = distance;
-    }
-    distanceToPoint(point) {
-        return Vector3.dot(this.normal, point) + this.distance;
-    }
-    distanceToSphere(sphere) {
-        return this.distanceToPoint(sphere.position) - sphere.radius;
-    }
-    from(p) {
-        this.distance = p.distance;
-        this.normal.set(p.normal);
-    }
-    fromCoplanarPoints(a, b, c) {
-        Vector3.minus(b, a, v1);
-        Vector3.minus(c, a, v2);
-        Vector3.cross(v1, v2, v3);
-        Vector3.normalize(v3, v3);
-        // TODO check zero vec
-        return this.formCoplanarPointAndNormal(a, v3);
-    }
-    formCoplanarPointAndNormal(point, normal) {
-        this.normal.set(normal);
-        this.distance = -Vector3.dot(point, normal);
-        return this;
-    }
-    negate() {
-        this.distance *= -1;
-        Vector3.negate(this.normal, this.normal);
-        return this;
-    }
-    normalize() {
-        Plane3.normalize(this, this);
-        return this;
-    }
-    projectPoint(point, out = new Vector3()) {
-        Vector3.fromArray(this.normal, 0, out);
-        Vector3.multiplyScalar(out, -this.distanceToPoint(point), out);
-        return Vector3.add(out, point, out);
-    }
-    set(normal, distance = this.distance) {
-        this.normal.set(normal);
-        this.distance = distance;
-        return this;
-    }
 }
 
 const _vector = new Vector3();
@@ -5212,22 +5280,22 @@ class Frustum {
         const m42 = matrix[13];
         const m43 = matrix[14];
         const m44 = matrix[15];
-        Vector3.fromValues(m14 + m13, m24 + m23, m34 + m33, this.near.normal);
+        Vector3.fromXYZ(m14 + m13, m24 + m23, m34 + m33, this.near.normal);
         this.near.distance = m44 + m43;
         this.near.normalize();
-        Vector3.fromValues(m14 - m13, m24 - m23, m34 - m33, this.far.normal);
+        Vector3.fromXYZ(m14 - m13, m24 - m23, m34 - m33, this.far.normal);
         this.far.distance = m44 - m43;
         this.far.normalize();
-        Vector3.fromValues(m14 + m11, m24 + m21, m34 + m31, this.left.normal);
+        Vector3.fromXYZ(m14 + m11, m24 + m21, m34 + m31, this.left.normal);
         this.left.distance = m44 + m41;
         this.left.normalize();
-        Vector3.fromValues(m14 - m11, m24 - m21, m34 - m31, this.right.normal);
+        Vector3.fromXYZ(m14 - m11, m24 - m21, m34 - m31, this.right.normal);
         this.right.distance = m44 - m41;
         this.right.normalize();
-        Vector3.fromValues(m14 + m12, m24 + m22, m34 + m32, this.bottom.normal);
+        Vector3.fromXYZ(m14 + m12, m24 + m22, m34 + m32, this.bottom.normal);
         this.bottom.distance = m44 + m42;
         this.bottom.normalize();
-        Vector3.fromValues(m14 - m12, m24 - m22, m34 - m32, this.top.normal);
+        Vector3.fromXYZ(m14 - m12, m24 - m22, m34 - m32, this.top.normal);
         this.top.distance = m44 - m42;
         this.top.normalize();
         return this;
@@ -5582,6 +5650,7 @@ class Triangle2 {
 
 const ab = new Vector3();
 const bc = new Vector3();
+const ca = new Vector3();
 class Triangle3 {
     static area = (t) => {
         const c = Triangle3.getABLength(t);
@@ -5590,8 +5659,67 @@ class Triangle3 {
         const p = (c + a + b) / 2;
         return Math.sqrt(p * (p - a) * (p - b) * (p - c));
     };
+    static centerOfGravity = (t, out = new Vector3()) => {
+        out[0] = t.a[0] + t.b[0] + t.c[0];
+        out[1] = t.a[1] + t.b[1] + t.c[1];
+        out[2] = t.a[2] + t.b[2] + t.c[2];
+        return Vector3.multiplyScalar(out, 1 / 3, out);
+    };
+    static containsPoint = (t, epsilon = EPSILON, point) => {
+        Vector3.minus(t.b, t.a, ab);
+        Vector3.minus(t.c, t.b, bc);
+        Vector3.minus(t.a, t.c, ca);
+        const v1 = Vector3.minus(t.a, point);
+        const v2 = Vector3.minus(t.b, point);
+        const v3 = Vector3.minus(t.c, point);
+        Vector3.normalize(Vector3.cross(v1, v2, ab), ab);
+        Vector3.normalize(Vector3.cross(v2, v3, bc), bc);
+        Vector3.normalize(Vector3.cross(v3, v1, ca), ca);
+        if (Vector3.closeToRect(ab, bc, epsilon) && Vector3.closeToRect(ab, ca, epsilon)) {
+            return true;
+        }
+        return false;
+    };
+    static cosAngle = (t, point) => {
+        let a, other = [];
+        const a2 = Vector3.lengthSquared(t.a);
+        const b2 = Vector3.lengthSquared(t.b);
+        const c2 = Vector3.lengthSquared(t.c);
+        if (typeof point === 'string') {
+            if (point === "a") {
+                a = a2;
+                other.push(b2, c2);
+            }
+            else if (point === "b") {
+                a = b2;
+                other.push(a2, c2);
+            }
+            else {
+                a = c2;
+                other.push(a2, b2);
+            }
+        }
+        else {
+            if (point === t.a) {
+                a = a2;
+                other.push(b2, c2);
+            }
+            else if (point === t.b) {
+                a = b2;
+                other.push(a2, c2);
+            }
+            else if (point === t.c) {
+                a = c2;
+                other.push(a2, b2);
+            }
+            else {
+                throw new Error("The point is not in triangle.");
+            }
+        }
+        return (other[0] + other[1] - a) * 0.5 / Math.sqrt(other[0] * other[1]);
+    };
     static create = (a = new Vector3(-1, -1, 0), b = new Vector3(1, -1, 0), c = new Vector3(0, 1, 0)) => {
-        return { a, b, c };
+        return new Triangle3(a, b, c);
     };
     static getABLength = (t) => {
         return Vector3.distanceTo(t.a, t.b);
@@ -5624,12 +5752,124 @@ class Triangle3 {
     }
 }
 
+let dis;
+let r2;
+let d2;
+const v = new Vector3();
+class Ray3 {
+    static at = (a, b, out = new Vector3()) => {
+        Vector3.multiplyScalar(a.direction, b, out);
+        return Vector3.add(a.position, out, out);
+    };
+    static distanceToPlane = (ray, plane) => {
+        const denominator = Vector3.dot(plane.normal, ray.direction);
+        if (denominator === 0) {
+            // line is coplanar, return origin
+            if (plane.distanceToPoint(ray.position) === 0) {
+                return 0;
+            }
+            return null;
+        }
+        const t = -(Vector3.dot(ray.position, plane.normal) + plane.distance) / denominator;
+        return t >= 0 ? t : null;
+    };
+    static distanceToPoint = (a, point) => {
+        return Math.sqrt(Ray3.distanceSqToPoint(a, point));
+    };
+    static distanceSqToPoint = (a, point) => {
+        Vector3.minus(point, a.position, v);
+        dis = Vector3.dot(v, a.direction);
+        if (dis < 0) {
+            return Vector3.distanceToSquared(a.position, point);
+        }
+        Vector3.multiplyScalar(a.direction, dis, v);
+        Vector3.add(v, a.position, v);
+        return Vector3.distanceToSquared(v, point);
+    };
+    static fromCameraMatrixAndScreenCoord(projectionMatrix, worldMatrix, screenCoord, out = new Ray3) {
+        Vector3.fromMatrix4Translate(worldMatrix, out.position);
+        Vector3.fromXYZ(screenCoord[0], screenCoord[1], 0.5, out.direction);
+        Matrix4.unproject(out.direction, projectionMatrix, worldMatrix, out.direction);
+        Vector3.minus(out.direction, out.position, out.direction);
+        Vector3.normalize(out.direction, out.direction);
+        return out;
+    }
+    static lookAt = (a, b, out = new Ray3()) => {
+        if (a !== out) {
+            Vector3.fromArray(a.position, 0, out.position);
+        }
+        Vector3.normalize(Vector3.minus(b, a.position, out.direction));
+        return out;
+    };
+    static intersectPlane3Point = (ray, plane, out = new Vector3()) => {
+        const t = Ray3.distanceToPlane(ray, plane);
+        if (t === null) {
+            return null;
+        }
+        return Ray3.at(ray, t, out);
+    };
+    static intersectSpherePoint = (ray, sphere, out = new Vector3()) => {
+        Vector3.minus(sphere.position, ray.position, v);
+        dis = Vector3.dot(v, ray.direction);
+        d2 = Vector3.dot(v, v) - dis * dis;
+        r2 = sphere.radius * sphere.radius;
+        if (d2 > r2)
+            return null;
+        const thc = Math.sqrt(r2 - d2);
+        const t0 = dis - thc;
+        const t1 = dis + thc;
+        if (t0 < 0 && t1 < 0)
+            return null;
+        if (t0 < 0)
+            return Ray3.at(ray, t1, out);
+        return Ray3.at(ray, t0, out);
+    };
+    static intersectsTriangle3Point = (ray, triangle, epsilon = EPSILON, out) => {
+        const plane = new Plane3();
+        plane.fromTriangle3(triangle);
+        const result = Ray3.intersectPlane3Point(ray, plane, out);
+        if (!result) {
+            return null;
+        }
+        const isInTriangle = Triangle3.containsPoint(triangle, epsilon, out);
+        if (!isInTriangle) {
+            return null;
+        }
+        return out;
+    };
+    static intersectsPlane3 = (ray, plane) => {
+        const distToPoint = plane.distanceToPoint(ray.position);
+        if (distToPoint === 0) {
+            return true;
+        }
+        const denominator = Vector3.dot(plane.normal, ray.direction);
+        if (denominator * distToPoint < 0) {
+            return true;
+        }
+        return false;
+    };
+    static intersectsSphere = (ray, sphere) => {
+        return Ray3.distanceSqToPoint(ray, sphere.position) <= sphere.radius * sphere.radius;
+    };
+    static recast = (ray, distance, out = new Ray3()) => {
+        v.set(Ray3.at(ray, distance));
+        out.direction.set(v);
+        return out;
+    };
+    position = new Vector3();
+    direction = new Vector3();
+    constructor(position = Vector3.VECTOR3_ZERO, direction = Vector3.VECTOR3_BACK) {
+        this.position.set(position);
+        Vector3.normalize(direction, this.direction);
+    }
+}
+
 class Spherical extends Float32Array {
-    static fromArray(arr, out = new Spherical) {
+    static fromArray(arr, out = new Spherical()) {
         out.set(arr);
         return out;
     }
-    static fromVector3(v, out = new Spherical) {
+    static fromVector3(v, out = new Spherical()) {
         const x = v[0];
         const y = v[1];
         const z = v[2];
@@ -5776,25 +6016,27 @@ class IdGenerator {
 
 const FIND_LEAVES_VISITOR = {
     enter: (node, result) => {
-        if (!node.children.length) {
+        if (TreeNode.isLeaf(node)) {
             result.push(node);
         }
-    }
+    },
 };
 const ARRAY_VISITOR = {
     enter: (node, result) => {
         result.push(node);
-    }
+    },
 };
 const mixin = (Base = Object) => {
-    return class TreeNode extends (Base) {
+    return class TreeNode extends Base {
         static mixin = mixin;
         static addChild(node, child) {
             if (TreeNode.hasAncestor(node, child)) {
                 throw new Error("The node added is one of the ancestors of current one.");
             }
             node.children.push(child);
-            child.parent = node;
+            if (child) {
+                child.parent = node;
+            }
             return node;
         }
         static depth(node) {
@@ -5815,7 +6057,7 @@ const mixin = (Base = Object) => {
         }
         static findLeaves(node) {
             const result = [];
-            TreeNode.traverse(node, FIND_LEAVES_VISITOR, result);
+            TreeNode.traversePreorder(node, FIND_LEAVES_VISITOR, result);
             return result;
         }
         static findRoot(node) {
@@ -5837,6 +6079,14 @@ const mixin = (Base = Object) => {
                 }
             }
         }
+        static isLeaf(node) {
+            for (let i = 0, len = node.children.length; i < len; i++) {
+                if (node.children[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
         static removeChild(node, child) {
             if (node.children.includes(child)) {
                 node.children.splice(node.children.indexOf(child), 1);
@@ -5846,20 +6096,26 @@ const mixin = (Base = Object) => {
         }
         static toArray(node) {
             const result = [];
-            TreeNode.traverse(node, ARRAY_VISITOR, result);
+            TreeNode.traversePreorder(node, ARRAY_VISITOR, result);
             return result;
         }
-        static traverse(node, visitor, rest) {
+        static traversePostorder(node, visitor, ...rest) {
             visitor.enter?.(node, rest);
-            visitor.visit?.(node, rest);
             for (const item of node.children) {
-                item && TreeNode.traverse(item, visitor, rest);
+                item && TreeNode.traversePostorder(item, visitor, ...rest);
+            }
+            visitor.visit?.(node, ...rest);
+            visitor.leave?.(node, ...rest);
+            return node;
+        }
+        static traversePreorder(node, visitor, ...rest) {
+            visitor.enter?.(node, ...rest);
+            visitor.visit?.(node, ...rest);
+            for (const item of node.children) {
+                item && TreeNode.traversePreorder(item, visitor, ...rest);
             }
             visitor.leave?.(node, rest);
             return node;
-        }
-        constructor(...rest) {
-            super(...rest);
         }
         parent = null;
         children = [];
@@ -5878,14 +6134,20 @@ const mixin = (Base = Object) => {
         hasAncestor(ancestor) {
             return TreeNode.hasAncestor(this, ancestor);
         }
+        isLeaf() {
+            return TreeNode.isLeaf(this);
+        }
         removeChild(child) {
             return TreeNode.removeChild(this, child);
         }
         toArray() {
             return TreeNode.toArray(this);
         }
-        traverse(visitor, rest) {
-            return TreeNode.traverse(this, visitor, rest);
+        traversePostorder(visitor, ...rest) {
+            return TreeNode.traversePostorder(this, visitor, rest);
+        }
+        traversePreorder(visitor, ...rest) {
+            return TreeNode.traversePreorder(this, visitor, ...rest);
         }
     };
 };
@@ -5893,7 +6155,6 @@ const TreeNode = mixin(Object);
 
 const IdGeneratorInstance = new IdGenerator();
 
-let weakMapTmp;
 class System extends EventFirer {
     id = IdGeneratorInstance.next();
     isSystem = true;
@@ -5909,6 +6170,9 @@ class System extends EventFirer {
     rule;
     _disabled = false;
     _priority = 0;
+    #handler;
+    #handlerBefore;
+    #handlerAfter;
     get disabled() {
         return this._disabled;
     }
@@ -5924,49 +6188,32 @@ class System extends EventFirer {
             this.usedBy[i].updatePriorityOrder();
         }
     }
-    constructor(name = "Untitled System", fitRule) {
+    constructor(fitRule, handler, handlerBefore, handlerAfter, name) {
         super();
-        this.name = name;
+        this.name = name ?? this.constructor.name;
         this.disabled = false;
+        this.#handler = handler;
+        this.#handlerAfter = handlerAfter;
+        this.#handlerBefore = handlerBefore;
         this.rule = fitRule;
     }
-    checkUpdatedEntities(manager) {
-        if (manager) {
-            weakMapTmp = this.entitySet.get(manager);
-            if (!weakMapTmp) {
-                weakMapTmp = new Set();
-                this.entitySet.set(manager, weakMapTmp);
-            }
-            manager.updatedEntities.forEach((item) => {
-                if (this.query(item)) {
-                    weakMapTmp.add(item);
-                }
-                else {
-                    weakMapTmp.delete(item);
-                }
-            });
-        }
-        return this;
-    }
     checkEntityManager(manager) {
-        if (manager) {
-            weakMapTmp = this.entitySet.get(manager);
-            if (!weakMapTmp) {
-                weakMapTmp = new Set();
-                this.entitySet.set(manager, weakMapTmp);
+        let weakMapTmp = this.entitySet.get(manager);
+        if (!weakMapTmp) {
+            weakMapTmp = new Set();
+            this.entitySet.set(manager, weakMapTmp);
+        }
+        else {
+            weakMapTmp.clear();
+        }
+        manager.elements.forEach((item) => {
+            if (this.query(item)) {
+                weakMapTmp.add(item);
             }
             else {
-                weakMapTmp.clear();
+                weakMapTmp.delete(item);
             }
-            manager.elements.forEach((item) => {
-                if (this.query(item)) {
-                    weakMapTmp.add(item);
-                }
-                else {
-                    weakMapTmp.delete(item);
-                }
-            });
-        }
+        });
         return this;
     }
     query(entity) {
@@ -5977,16 +6224,22 @@ class System extends EventFirer {
             return this;
         }
         this.handleBefore(time, delta, world);
-        if (world.entityManager) {
-            this.entitySet.get(world.entityManager)?.forEach((item) => {
-                // 此处不应该校验disabled。这个交给各自系统自行判断
-                this.handle(item, time, delta, world);
-            });
-        }
+        this.entitySet.get(world.entityManager)?.forEach((item) => {
+            // 此处不应该校验disabled。这个交给各自系统自行判断
+            this.handle(item, time, delta, world);
+        });
+        this.handleAfter?.(time, delta, world);
         return this;
     }
     serialize() {
-        return {};
+        return {
+            id: this.id,
+            name: this.name,
+            autoUpdate: this.autoUpdate,
+            priority: this.priority,
+            disabled: this.disabled,
+            class: this.constructor.name,
+        };
     }
     destroy() {
         for (let i = this.usedBy.length - 1; i > -1; i--) {
@@ -5994,36 +6247,33 @@ class System extends EventFirer {
         }
         return this;
     }
+    handle(entity, time, delta, world) {
+        this.#handler(entity, time, delta, world);
+        return this;
+    }
+    handleAfter(time, delta, world) {
+        this.#handlerAfter?.(time, delta, world);
+        return this;
+    }
     handleBefore(time, delta, world) {
         this.currentTime = time;
         this.currentDelta = delta;
         this.currentWorld = world;
         this.loopTimes++;
+        this.#handlerBefore?.(time, delta, world);
         return this;
     }
 }
 
-class PureSystem extends System {
-    handler;
-    constructor(name = "Untitled PureSystem", fitRule, handler) {
-        super(name, fitRule);
-        this.handler = handler;
-    }
-    handle(entity, time, delta) {
-        this.handler(entity, time, delta);
-        return this;
-    }
-}
-
-class Component {
+class Component extends EventFirer {
     static unserialize(json) {
-        const component = new Component(json.name, json.data);
+        const component = new Component(json.data, json.tags, json.name);
         component.disabled = json.disabled;
         return component;
     }
     isComponent = true;
     id = IdGeneratorInstance.next();
-    data;
+    data = null;
     disabled = false;
     name;
     usedBy = [];
@@ -6035,13 +6285,20 @@ class Component {
     set dirty(v) {
         this.#dirty = v;
     }
-    constructor(name, data, tags = []) {
+    constructor(data = null, tags = [], name = "Untitled Component") {
+        super();
         this.name = name;
         this.data = data;
         this.tags = tags;
     }
     clone() {
-        return new Component(this.name, this.data, this.tags);
+        return new Component(structuredClone(this.data), this.tags, this.name);
+    }
+    destroy() {
+        this.usedBy.forEach((manager) => {
+            manager.usedBy.remove(this);
+        });
+        this.data = null;
     }
     // 此处为只要tag标签相同就是同一类
     hasTagLabel(label) {
@@ -6054,28 +6311,41 @@ class Component {
     }
     serialize() {
         return {
+            class: "Component",
             data: this.data,
             disabled: this.disabled,
             id: this.id,
             name: this.name,
             tags: this.tags,
-            type: "component",
         };
     }
 }
 
+const CommonECSObjectEvents = {
+    ADDED: "added",
+    REMOVED: "removed",
+    UPDATED: "updated",
+    CREATED: "created",
+    BEFORE_DESTROY: "before-destroy",
+};
+const EntityEvents = {
+    ADD_CHILD: "add-child",
+    ADD_COMPONENT: "add-component",
+    REMOVE_CHILD: "remove-child",
+    REMOVE_COMPONENT: "remove-component",
+};
+
 // 私有全局变量，外部无法访问
 let elementTmp;
-const ElementChangeEvent = {
-    ADD: "add",
-    REMOVE: "remove",
-};
 class Manager extends EventFirer {
-    static Events = ElementChangeEvent;
     elements = new Map();
     disabled = false;
-    usedBy = [];
+    usedBy;
     isManager = true;
+    constructor(usedBy) {
+        super();
+        this.usedBy = usedBy;
+    }
     add(element) {
         if (this.has(element)) {
             return this;
@@ -6088,7 +6358,7 @@ class Manager extends EventFirer {
     }
     get(name) {
         if (typeof name === "number") {
-            return this.elements.get(name) || null;
+            return this.elements.get(name) ?? null;
         }
         if (typeof name === "function" && name.prototype) {
             for (const [, item] of this.elements) {
@@ -6109,9 +6379,16 @@ class Manager extends EventFirer {
             return this.elements.has(element);
         }
         else if (typeof element === "string") {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            for (const [_, item] of this.elements) {
+            for (const [, item] of this.elements) {
                 if (item.name === element) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        else if (typeof element === "function" && element.prototype) {
+            for (const [, item] of this.elements) {
+                if (item.constructor === element) {
                     return true;
                 }
             }
@@ -6125,37 +6402,35 @@ class Manager extends EventFirer {
         if (typeof element === "number" || typeof element === "string") {
             elementTmp = this.get(element);
             if (elementTmp) {
-                this.removeInstanceDirectly(elementTmp);
+                this.removeElementDirectly(elementTmp);
             }
-            return this;
         }
-        if (this.elements.has(element.id)) {
-            return this.removeInstanceDirectly(element);
+        else if (typeof element === "function") {
+            this.elements.forEach((item) => {
+                if (item.constructor === element) {
+                    this.removeElementDirectly(item);
+                }
+            });
+        }
+        else {
+            this.elements.forEach((item) => {
+                if (item === element) {
+                    this.removeElementDirectly(element);
+                }
+            });
         }
         return this;
     }
     addElementDirectly(element) {
         this.elements.set(element.id, element);
         element.usedBy.push(this);
-        this.elementChangedFireEvent(Manager.Events.ADD, this);
         return this;
     }
     // 必定有element情况
-    removeInstanceDirectly(element) {
+    removeElementDirectly(element) {
         this.elements.delete(element.id);
         element.usedBy.splice(element.usedBy.indexOf(this), 1);
-        this.elementChangedFireEvent(Manager.Events.REMOVE, this);
         return this;
-    }
-    elementChangedFireEvent(type, eventObject) {
-        for (const entity of this.usedBy) {
-            entity.fire?.(type, eventObject);
-            if (entity.usedBy) {
-                for (const manager of entity.usedBy) {
-                    manager.updatedEntities.add(entity);
-                }
-            }
-        }
     }
 }
 
@@ -6172,7 +6447,7 @@ class ComponentManager extends Manager {
         }
         const componentSet = this.checkedComponentsWithTargetTags(element);
         for (const item of componentSet) {
-            this.removeInstanceDirectly(item);
+            this.removeElementDirectly(item);
         }
         return this.addElementDirectly(element);
     }
@@ -6184,14 +6459,6 @@ class ComponentManager extends Manager {
             }
         });
         return result;
-    }
-    getComponentByClass(clazz) {
-        for (const [, component] of this.elements) {
-            if (component instanceof clazz) {
-                return component;
-            }
-        }
-        return null;
     }
     getComponentsByTagLabel(label) {
         const result = [];
@@ -6209,6 +6476,25 @@ class ComponentManager extends Manager {
             }
         }
         return null;
+    }
+    addElementDirectly(element) {
+        super.addElementDirectly(element);
+        element.fire(CommonECSObjectEvents.ADDED, element);
+        this.usedBy.fire(EntityEvents.ADD_COMPONENT, this);
+        for (let i = 0, len = this.usedBy.usedBy.length; i < len; i++) {
+            this.usedBy.usedBy[i].updatedEntities.add(this.usedBy);
+        }
+        return this;
+    }
+    // 必定有element情况
+    removeElementDirectly(element) {
+        super.removeElementDirectly(element);
+        element.fire(CommonECSObjectEvents.REMOVED, element);
+        this.usedBy.fire(EntityEvents.REMOVE_COMPONENT, this);
+        for (let i = 0, len = this.usedBy.usedBy.length; i < len; i++) {
+            this.usedBy.usedBy[i].updatedEntities.add(this.usedBy);
+        }
+        return this;
     }
     // 找到所有含目标组件唯一标签一致的组件。只要有任意1个标签符合就行。此处规定名称一致的tag，unique也必须是一致的。且不可修改
     checkedComponentsWithTargetTags(component) {
@@ -6228,118 +6514,10 @@ class ComponentManager extends Manager {
     }
 }
 
-let arr$1;
-class Entity extends mixin$1(TreeNode) {
-    id = IdGeneratorInstance.next();
-    isEntity = true;
-    componentManager = null;
-    disabled = false;
-    name = "";
-    usedBy = [];
-    constructor(name = "Untitled Entity", componentManager) {
-        super();
-        this.name = name;
-        this.registerComponentManager(componentManager);
-    }
-    addComponent(component) {
-        if (this.componentManager) {
-            this.componentManager.add(component);
-        }
-        else {
-            throw new Error("Current entity hasn't registered a component manager yet.");
-        }
-        return this;
-    }
-    addChild(entity) {
-        super.addChild(entity);
-        if (this.usedBy) {
-            for (const manager of this.usedBy) {
-                manager.add(entity);
-            }
-        }
-        return this;
-    }
-    addTo(manager) {
-        manager.add(this);
-        return this;
-    }
-    addToWorld(world) {
-        if (world.entityManager) {
-            world.entityManager.add(this);
-        }
-        return this;
-    }
-    destroy() {
-        for (const manager of this.usedBy) {
-            manager.remove(this);
-        }
-        this.unregisterComponentManager();
-    }
-    getComponent(nameOrId) {
-        return this.componentManager?.get(nameOrId) || null;
-    }
-    getComponentsByTagLabel(label) {
-        return this.componentManager?.getComponentsByTagLabel(label) || [];
-    }
-    getComponentByTagLabel(label) {
-        return this.componentManager?.getComponentByTagLabel(label) || null;
-    }
-    getComponentsByClass(clazz) {
-        return this.componentManager?.getComponentsByClass(clazz) || [];
-    }
-    getComponentByClass(clazz) {
-        return this.componentManager?.getComponentByClass(clazz) || null;
-    }
-    hasComponent(component) {
-        return this.componentManager?.has(component) || false;
-    }
-    registerComponentManager(manager = new ComponentManager()) {
-        this.unregisterComponentManager();
-        this.componentManager = manager;
-        if (!this.componentManager.usedBy.includes(this)) {
-            this.componentManager.usedBy.push(this);
-        }
-        return this;
-    }
-    removeChild(entity) {
-        super.removeChild(entity);
-        if (this.usedBy) {
-            for (const manager of this.usedBy) {
-                manager.remove(entity);
-            }
-        }
-        return this;
-    }
-    removeComponent(component) {
-        if (this.componentManager) {
-            this.componentManager.remove(component);
-        }
-        return this;
-    }
-    serialize() {
-        return {};
-    }
-    unregisterComponentManager() {
-        if (this.componentManager) {
-            arr$1 = this.componentManager.usedBy;
-            arr$1.splice(arr$1.indexOf(this) - 1, 1);
-            this.componentManager = null;
-        }
-        return this;
-    }
-}
-
 class EntityManager extends Manager {
-    // public elements: Map<string, IEntity> = new Map();
     data = null;
     updatedEntities = new Set();
     isEntityManager = true;
-    constructor(world) {
-        super();
-        if (world) {
-            this.usedBy.push(world);
-        }
-    }
     createEntity(name) {
         const entity = new Entity(name);
         this.add(entity);
@@ -6349,42 +6527,34 @@ class EntityManager extends Manager {
         super.addElementDirectly(entity);
         this.updatedEntities.add(entity);
         for (const child of entity.children) {
-            if (child) {
-                this.add(child);
-            }
+            this.add(child);
         }
         return this;
     }
-    removeInstanceDirectly(entity) {
-        super.removeInstanceDirectly(entity);
+    removeElementDirectly(entity) {
+        super.removeElementDirectly(entity);
         this.deleteEntityFromSystemSet(entity);
         for (const child of entity.children) {
-            if (child) {
-                this.remove(child);
-            }
+            this.remove(child);
         }
         return this;
     }
     deleteEntityFromSystemSet(entity) {
         entity.usedBy.splice(entity.usedBy.indexOf(this), 1);
-        for (const world of this.usedBy) {
-            if (world.systemManager) {
-                world.systemManager.elements.forEach((system) => {
-                    if (system.entitySet.get(this)) {
-                        system.entitySet.get(this).delete(entity);
-                    }
-                });
-            }
-        }
+        const world = this.usedBy;
+        world.systemManager.elements.forEach((system) => {
+            system.entitySet.get(this)?.delete(entity);
+        });
     }
 }
 
-let systemTmp;
 const SystemEvent = {
     ADD: "add",
     AFTER_RUN: "afterRun",
     BEFORE_RUN: "beforeRun",
     REMOVE: "remove",
+    ADDED: "added",
+    REMOVED: "removed",
 };
 const sort = (a, b) => a[1].priority - b[1].priority;
 class SystemManager extends Manager {
@@ -6392,14 +6562,7 @@ class SystemManager extends Manager {
     disabled = false;
     elements = new Map();
     loopTimes = 0;
-    usedBy = [];
     #systemChunks = [];
-    constructor(world) {
-        super();
-        if (world) {
-            this.usedBy.push(world);
-        }
-    }
     add(system) {
         super.add(system);
         this.updatePriorityOrder();
@@ -6412,32 +6575,40 @@ class SystemManager extends Manager {
     }
     remove(element) {
         if (typeof element === "number" || typeof element === "string") {
-            systemTmp = this.get(element);
+            const systemTmp = this.get(element);
             if (systemTmp) {
-                this.removeInstanceDirectly(systemTmp);
+                this.removeElementDirectly(systemTmp);
                 this.updateSystemEntitySetByRemovedFromManager(systemTmp);
                 systemTmp.usedBy.splice(systemTmp.usedBy.indexOf(this), 1);
             }
-            return this;
         }
-        if (this.elements.has(element.id)) {
-            this.removeInstanceDirectly(element);
-            this.updateSystemEntitySetByRemovedFromManager(element);
-            element.usedBy.splice(element.usedBy.indexOf(this), 1);
+        else if (element instanceof System) {
+            if (this.elements.has(element.id)) {
+                this.removeElementDirectly(element);
+                this.updateSystemEntitySetByRemovedFromManager(element);
+                element.usedBy.splice(element.usedBy.indexOf(this), 1);
+            }
+        }
+        else {
+            this.elements.forEach((system) => {
+                if (system instanceof element) {
+                    this.removeElementDirectly(system);
+                    this.updateSystemEntitySetByRemovedFromManager(system);
+                    system.usedBy.splice(system.usedBy.indexOf(this), 1);
+                }
+            });
         }
         return this;
     }
     run(world, time, delta) {
         this.fire(SystemManager.Events.BEFORE_RUN, this);
         this.elements.forEach((item) => {
-            item.checkUpdatedEntities(world.entityManager);
+            this.checkUpdatedEntities(item, world.entityManager);
             if (!item.disabled && item.autoUpdate) {
                 item.run(world, time, delta);
             }
         });
-        if (world.entityManager) {
-            world.entityManager.updatedEntities.clear();
-        }
+        world.entityManager.updatedEntities.clear();
         this.loopTimes++;
         this.fire(SystemManager.Events.BEFORE_RUN, this);
         return this;
@@ -6451,39 +6622,39 @@ class SystemManager extends Manager {
         }
         return this;
     }
-    updateSystemEntitySetByRemovedFromManager(system) {
-        for (const item of this.usedBy) {
-            if (item.entityManager) {
-                system.entitySet.delete(item.entityManager);
+    checkUpdatedEntities(system, manager) {
+        let weakMapTmp = system.entitySet.get(manager);
+        manager.updatedEntities.forEach((item) => {
+            if (system.query(item)) {
+                weakMapTmp.add(item);
             }
-        }
+            else {
+                weakMapTmp.delete(item);
+            }
+        });
+        return this;
+    }
+    updateSystemEntitySetByRemovedFromManager(system) {
+        system.entitySet.delete(this.usedBy.entityManager);
         return this;
     }
     updateSystemEntitySetByAddFromManager(system) {
-        for (const item of this.usedBy) {
-            if (item.entityManager) {
-                system.checkEntityManager(item.entityManager);
-            }
-        }
+        system.checkEntityManager(this.usedBy.entityManager);
         return this;
     }
 }
 
-let arr;
 class World extends EventFirer {
     disabled = false;
     name;
-    entityManager = null;
-    systemManager = null;
-    store = new Map();
+    entityManager = new EntityManager(this);
+    systemManager = new SystemManager(this);
     usedBy = [];
     id = IdGeneratorInstance.next();
     isWorld = true;
-    constructor(name = "Untitled World", entityManager, systemManager) {
+    constructor(name) {
         super();
-        this.name = name;
-        this.registerEntityManager(entityManager);
-        this.registerSystemManager(systemManager);
+        this.name = name ?? this.constructor.name;
     }
     add(element) {
         if (element.isEntity) {
@@ -6494,87 +6665,51 @@ class World extends EventFirer {
         }
     }
     addEntity(entity) {
-        if (this.entityManager) {
-            this.entityManager.add(entity);
-        }
-        else {
-            throw new Error("The world doesn't have an entityManager yet.");
-        }
+        this.entityManager.add(entity);
         return this;
     }
     addSystem(system) {
-        if (this.systemManager) {
-            this.systemManager.add(system);
-        }
-        else {
-            throw new Error("The world doesn't have a systemManager yet.");
-        }
+        this.systemManager.add(system);
         return this;
     }
     clearAllEntities() {
-        if (this.entityManager) {
-            this.entityManager.clear();
-        }
+        this.entityManager.clear();
+        return this;
+    }
+    clearAllSystems() {
+        this.systemManager.clear();
         return this;
     }
     createEntity(name) {
-        return this.entityManager?.createEntity(name) || null;
+        return this.entityManager.createEntity(name);
     }
     hasEntity(entity) {
-        if (this.entityManager) {
-            return this.entityManager.has(entity);
-        }
-        return false;
+        return this.entityManager.has(entity);
     }
     hasSystem(system) {
-        if (this.systemManager) {
-            return this.systemManager.has(system);
-        }
-        return false;
-    }
-    registerEntityManager(manager) {
-        this.unregisterEntityManager();
-        this.entityManager = manager || new EntityManager(this);
-        if (!this.entityManager.usedBy.includes(this)) {
-            this.entityManager.usedBy.push(this);
-        }
-        return this;
-    }
-    registerSystemManager(manager) {
-        this.unregisterSystemManager();
-        this.systemManager = manager || new SystemManager(this);
-        if (!this.systemManager.usedBy.includes(this)) {
-            this.systemManager.usedBy.push(this);
-        }
-        return this;
+        return this.systemManager.has(system);
     }
     remove(element) {
-        if (element.isEntity) {
-            return this.removeEntity(element);
+        if (element instanceof System || typeof element === "function") {
+            return this.removeSystem(element);
         }
         else {
-            return this.removeSystem(element);
+            return this.removeEntity(element);
         }
     }
     removeEntity(entity) {
-        if (this.entityManager) {
-            this.entityManager.remove(entity);
-        }
+        this.entityManager.remove(entity);
         return this;
     }
     removeSystem(system) {
-        if (this.systemManager) {
-            this.systemManager.remove(system);
-        }
+        this.systemManager.remove(system);
         return this;
     }
     run(time, delta) {
         if (this.disabled) {
             return this;
         }
-        if (this.systemManager) {
-            this.systemManager.run(this, time, delta);
-        }
+        this.systemManager.run(this, time, delta);
         return this;
     }
     serialize() {
@@ -6582,23 +6717,133 @@ class World extends EventFirer {
             id: this.id,
             name: this.name,
             type: "world",
+            class: this.constructor.name,
+            disabled: this.disabled,
+            systems: [],
+            entities: [],
         };
     }
-    unregisterEntityManager() {
-        if (this.entityManager) {
-            arr = this.entityManager.usedBy;
-            arr.splice(arr.indexOf(this) - 1, 1);
-            this.entityManager = null;
+}
+
+class Entity extends mixin$1(TreeNode) {
+    id = IdGeneratorInstance.next();
+    isEntity = true;
+    componentManager = new ComponentManager(this);
+    disabled = false;
+    name = "";
+    usedBy = [];
+    constructor(name = "Untitled Entity") {
+        super();
+        this.name = name;
+    }
+    add(componentOrChild) {
+        if (componentOrChild instanceof Entity) {
+            return this.addChild(componentOrChild);
+        }
+        return this.addComponent(componentOrChild);
+    }
+    addComponent(component) {
+        this.componentManager.add(component);
+        return this;
+    }
+    addChild(entity) {
+        super.addChild(entity);
+        for (const manager of this.usedBy) {
+            manager.add(entity);
         }
         return this;
     }
-    unregisterSystemManager() {
-        if (this.systemManager) {
-            arr = this.systemManager.usedBy;
-            arr.splice(arr.indexOf(this) - 1, 1);
-            this.entityManager = null;
+    addTo(worldOrManager) {
+        if (worldOrManager instanceof World) {
+            return this.addToWorld(worldOrManager);
+        }
+        if (worldOrManager instanceof Entity) {
+            worldOrManager.addChild(this);
+            return this;
+        }
+        return this.addToManager(worldOrManager);
+    }
+    addToWorld(world) {
+        world.entityManager.add(this);
+        return this;
+    }
+    addToManager(manager) {
+        manager.add(this);
+        return this;
+    }
+    clone(cloneComponents, includeChildren) {
+        const entity = new Entity(this.name);
+        if (cloneComponents) {
+            this.componentManager.elements.forEach((component) => {
+                entity.addComponent(component.clone());
+            });
+        }
+        else {
+            this.componentManager.elements.forEach((component) => {
+                entity.addComponent(component);
+            });
+        }
+        if (includeChildren) {
+            for (let i = 0, len = this.children.length; i < len; i++) {
+                entity.addChild(this.children[i].clone());
+            }
+        }
+        return entity;
+    }
+    destroy() {
+        for (const manager of this.usedBy) {
+            manager.remove(this);
+        }
+        this.componentManager.elements.forEach((c) => {
+            c.destroy();
+        });
+        this.componentManager.clear();
+        return this;
+    }
+    getComponent(nameOrId) {
+        return this.componentManager.get(nameOrId);
+    }
+    getComponentsByTagLabel(label) {
+        return this.componentManager.getComponentsByTagLabel(label);
+    }
+    getComponentByTagLabel(label) {
+        return this.componentManager.getComponentByTagLabel(label);
+    }
+    getComponentsByClass(clazz) {
+        return this.componentManager.getComponentsByClass(clazz);
+    }
+    hasComponent(component) {
+        return this.componentManager.has(component);
+    }
+    remove(entityOrComponent) {
+        if (entityOrComponent instanceof Entity) {
+            return this.removeChild(entityOrComponent);
+        }
+        return this.removeComponent(entityOrComponent);
+    }
+    removeChild(entity) {
+        super.removeChild(entity);
+        for (const manager of this.usedBy) {
+            manager.remove(entity);
         }
         return this;
+    }
+    removeComponent(component) {
+        this.componentManager.remove(component);
+        return this;
+    }
+    serialize() {
+        const result = {
+            id: this.id,
+            name: this.name,
+            disabled: this.disabled,
+            class: "Entity",
+            components: [],
+        };
+        this.componentManager.elements.forEach((c) => {
+            result.components.push(c.id);
+        });
+        return result;
     }
 }
 
@@ -6615,7 +6860,7 @@ class OrbitControls extends Component {
     dom;
     target;
     constructor(target = Vector3.VECTOR3_ZERO, dom = document.body) {
-        super('orbitcontrols', target);
+        super(target, undefined, 'orbitcontrols');
         this.dom = dom;
         this.target = target;
         this.addEvent();
@@ -6647,7 +6892,7 @@ class OrbitControls extends Component {
                 return;
             }
             this.screenPositionOld.set(this.screenPositionNew);
-            Vector2.fromValues(e.offsetX, e.offsetY, this.screenPositionNew);
+            Vector2.fromXY(e.offsetX, e.offsetY, this.screenPositionNew);
             Vector2.minus(this.screenPositionNew, this.screenPositionOld, this.positionDelta);
             this.spherical.theta += this.positionDelta.y * this.speedPhi;
             this.spherical.phi += this.positionDelta.x * this.speedTheta;
@@ -6670,15 +6915,13 @@ class OrbitControls extends Component {
         this.dirty = false;
         this.spherical.toVector3(this.innerPosition);
         for (let manager of this.usedBy) {
-            const entities = manager.usedBy;
-            for (let entity of entities) {
-                const position = entity.position;
-                Matrix4.fromTranslation(this.innerPosition, position.data);
-                position.dirty = true;
-                const rotation = entity.rotation;
-                Matrix4.targetTo(this.innerPosition, this.target, Vector3.VECTOR3_TOP, rotation.data);
-                rotation.dirty = true;
-            }
+            const entity = manager.usedBy;
+            const position = entity.position;
+            Matrix4.fromTranslation(this.innerPosition, position.data);
+            position.dirty = true;
+            const rotation = entity.rotation;
+            Matrix4.targetTo(this.innerPosition, this.target, Vector3.VECTOR3_TOP, rotation.data);
+            rotation.dirty = true;
         }
     }
 }
@@ -6742,7 +6985,7 @@ var constants$1 = /*#__PURE__*/Object.freeze({
 
 class Matrix3Component extends Component {
     constructor(name, data = Matrix3.create(), tags = []) {
-        super(name, data, tags);
+        super(data, tags, name);
         this.dirty = true;
     }
 }
@@ -7080,8 +7323,8 @@ class Vector2Scale2 extends AScale2 {
 }
 
 class Matrix4Component extends Component {
-    constructor(name, data = Matrix4.create(), tags = []) {
-        super(name, data, tags);
+    constructor(data = Matrix4.create(), tags = [], name) {
+        super(data, tags, name);
         this.dirty = true;
     }
 }
@@ -7129,10 +7372,10 @@ const updateModelMatrixComponent = (obj3) => {
 class Anchor3 extends Matrix4Component {
     vec3 = new Vector3();
     constructor(vec = Vector3.VECTOR3_ZERO) {
-        super(ANCHOR_3D, Matrix4.create(), [{
+        super(Matrix4.create(), [{
                 label: ANCHOR_3D,
                 unique: true
-            }]);
+            }], ANCHOR_3D);
         Vector3.fromArray(vec, 0, this.vec3);
         this.update();
     }
@@ -7181,20 +7424,20 @@ class Anchor3 extends Matrix4Component {
 
 class APosition3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super(TRANSLATION_3D, data, [{
+        super(data, [{
                 label: TRANSLATION_3D,
                 unique: true
-            }]);
+            }], TRANSLATION_3D);
     }
 }
 
 class AProjection3 extends Matrix4Component {
     inverseMatrix = new Float32Array(16);
     constructor(data = Matrix4.create()) {
-        super(PROJECTION_3D, data, [{
+        super(data, [{
                 label: PROJECTION_3D,
                 unique: true
-            }]);
+            }], PROJECTION_3D);
     }
     updateProjectionInverse() {
         Matrix4.invert(this.data, this.inverseMatrix);
@@ -7203,19 +7446,19 @@ class AProjection3 extends Matrix4Component {
 
 class ARotation3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super(ROTATION_3D, data, [{
+        super(data, [{
                 label: ROTATION_3D,
                 unique: true
-            }]);
+            }], ROTATION_3D);
     }
 }
 
 class AScale3 extends Matrix4Component {
     constructor(data = Matrix4.create()) {
-        super(SCALING_3D, data, [{
+        super(data, [{
                 label: SCALING_3D,
                 unique: true
-            }]);
+            }], SCALING_3D);
     }
 }
 
@@ -7333,7 +7576,7 @@ class EulerRotation3 extends ARotation3 {
 
 class OrthogonalProjection extends AProjection3 {
     options;
-    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 10) {
+    constructor(left = -window.innerWidth * 0.005, right = window.innerWidth * 0.005, bottom = -window.innerHeight * 0.005, top = window.innerHeight * 0.005, near = 0.01, far = 20) {
         super();
         this.options = {
             left,
@@ -7714,14 +7957,14 @@ class Object3 extends Entity {
         this.position = new EuclidPosition3();
         this.rotation = new EulerRotation3();
         this.anchor = new Anchor3();
-        this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
+        this.modelMatrix = new Matrix4Component(Matrix4.create(), [{
                 label: MODEL_3D,
                 unique: true
-            }]);
-        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
+            }], MODEL_3D);
+        this.worldMatrix = new Matrix4Component(Matrix4.create(), [{
                 label: WORLD_MATRIX4,
                 unique: true
-            }]);
+            }], WORLD_MATRIX4);
     }
     localToWorld(vec) {
         return Vector3.transformMatrix4(vec, this.worldMatrix.data, vec);
@@ -7808,24 +8051,45 @@ class Geometry extends Component {
      * 拓扑类型
      */
     dimension;
-    topology;
+    #topology;
     /**
      * 剔除方式
      */
-    cullMode;
-    frontFace;
+    #cullMode;
+    #frontFace;
     data = [];
     tags = [{
             label: GEOMETRY,
             unique: true
         }];
     constructor(dimension, count = 0, topology = "triangle-list", cullMode = "none", data = []) {
-        super(GEOMETRY, data);
+        super(data, undefined, GEOMETRY);
         this.count = count;
-        this.cullMode = cullMode;
+        this.#cullMode = cullMode;
         this.dimension = dimension;
-        this.topology = topology;
-        this.frontFace = "ccw";
+        this.#topology = topology;
+        this.#frontFace = "ccw";
+    }
+    get cullMode() {
+        return this.#cullMode;
+    }
+    set cullMode(mode) {
+        this.#cullMode = mode;
+        this.dirty = true;
+    }
+    get frontFace() {
+        return this.#frontFace;
+    }
+    set frontFace(mode) {
+        this.#frontFace = mode;
+        this.dirty = true;
+    }
+    get topology() {
+        return this.#topology;
+    }
+    set topology(mode) {
+        this.#topology = mode;
+        this.dirty = true;
     }
     addAttribute(name, arr, stride = arr.length / this.count, attributes = []) {
         stride = Math.floor(stride);
@@ -8981,7 +9245,7 @@ class Renderable extends Component {
             unique: false
         }];
     constructor(data) {
-        super(RENDERABLE, data);
+        super(data, undefined, RENDERABLE);
     }
     get geometry() {
         return this.data.geometry;
@@ -9055,11 +9319,9 @@ class RenderSystemInCanvas extends System {
         minDepth: 0,
         maxDepth: 1
     };
-    id = 0;
     cache = new WeakMap();
     entitySet = new WeakMap();
     loopTimes = 0;
-    name = "";
     usedBy = [];
     rendererMap = new Map();
     canvas;
@@ -9072,10 +9334,10 @@ class RenderSystemInCanvas extends System {
         clearColor: new ColorGPU(),
         noDepthTexture: false
     };
-    constructor(name, options) {
-        super(name, (entity) => {
-            return entity.getComponent(RENDERABLE)?.data;
-        });
+    constructor(options, name = "RenderSystem") {
+        super((entity) => {
+            return !!entity.getComponent(RENDERABLE)?.data;
+        }, () => { }, undefined, undefined, name);
         const element = options.element ?? document.body;
         const w = element.offsetWidth;
         const h = element.offsetHeight;
@@ -9191,7 +9453,7 @@ class RenderSystemInCanvas extends System {
         this.rendererMap.clear();
         return this;
     }
-    resize(width, height, resolution = this.resolution) {
+    resize(width = this.options.width, height = this.options.height, resolution = this.resolution) {
         this.options.width = width;
         this.options.height = height;
         this.options.resolution = resolution;
@@ -10204,13 +10466,21 @@ function fromMatrix3MVP(data, out = new Matrix4()) {
     return out;
 }
 
+class Camera3 extends Object3 {
+    projection;
+    constructor(projection = new PerspectiveProjection(), name = "Camera3") {
+        super(name);
+        this.projection = projection;
+    }
+}
+
 class WebGPUMesh3Renderer {
     static renderTypes = MESH3;
     renderTypes = MESH3;
     camera;
     vpMatrix = new Float32Array(16);
     entityCacheData = new Map();
-    constructor(camera) {
+    constructor(camera = new Camera3()) {
         this.camera = camera;
     }
     clearCache() {
@@ -10610,20 +10880,32 @@ class WebGPUPostProcessingPass {
 }
 
 class WebGPURenderSystem extends RenderSystemInCanvas {
-    static async detect(canvas = document.createElement("canvas")) {
+    static Events = {
+        INITED: 'inited'
+    };
+    static async getAdapterAndDevice(adapterInput, deviceInput) {
+        const adapter = adapterInput ?? await navigator?.gpu?.requestAdapter();
+        if (!adapter) {
+            throw new Error('WebGPU not supported: ');
+        }
+        const device = deviceInput ?? await adapter.requestDevice();
+        if (!device) {
+            throw new Error('WebGPU not supported: ');
+        }
+        return {
+            adapter,
+            device,
+        };
+    }
+    static async detect(canvas = document.createElement("canvas"), adapterInput, deviceInput) {
         const gpu = canvas.getContext("webgpu");
         if (!gpu) {
             throw new Error('WebGPU not supported: ');
         }
-        const adapter = await navigator?.gpu?.requestAdapter();
-        if (!adapter) {
-            throw new Error('WebGPU not supported: ');
-        }
-        const device = await adapter.requestDevice();
-        if (!device) {
-            throw new Error('WebGPU not supported: ');
-        }
-        return { gpu, adapter, device };
+        return {
+            gpu,
+            ...await WebGPURenderSystem.getAdapterAndDevice(adapterInput, deviceInput)
+        };
     }
     rendererMap = new Map();
     inited = false;
@@ -10634,9 +10916,9 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
     msaaTexture;
     postprocessingPasses = new Set();
     renderPassDescriptor;
-    constructor(name = "WebGPU Render System", options = {}) {
-        super(name, options);
-        WebGPURenderSystem.detect(this.canvas).then((data) => {
+    constructor(options = {}, adapterInput, deviceInput, name = "WebGPURenderSystem") {
+        super(options, name);
+        WebGPURenderSystem.detect(this.canvas, adapterInput, deviceInput).then((data) => {
             this.context = data;
             this.context.preferredFormat = navigator.gpu.getPreferredCanvasFormat();
             this.#msaa = !!options.multisample;
@@ -10662,6 +10944,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
                 });
             }
             this.inited = true;
+            this.fire(WebGPURenderSystem.Events.INITED, this);
         });
     }
     #msaa = false;
@@ -10702,7 +10985,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
         });
         return this;
     }
-    resize(width, height, resolution = this.resolution) {
+    resize(width = this.options.width, height = this.options.height, resolution = this.resolution) {
         super.resize(width, height, resolution);
         if (this.context) {
             this.setRenderPassDescripter();
@@ -10764,7 +11047,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
             return this;
         }
         // 根据不同类别进行渲染
-        this.rendererMap.get(entity.getComponent(RENDERABLE)?.data.type)?.render(entity, this.context);
+        this.rendererMap.get(entity.getComponent(Renderable)?.data.type)?.render(entity, this.context);
         return this;
     }
     loopStart() {
@@ -10787,11 +11070,21 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
         }
         this.context.passEncoder = this.commandEncoder.beginRenderPass(this.renderPassDescriptor);
     }
+    add(renderOrPass) {
+        if (renderOrPass instanceof WebGPUPostProcessingPass) {
+            return this.addPostprocessingPass(renderOrPass);
+        }
+        else {
+            return this.addRenderer(renderOrPass);
+        }
+    }
     addPostprocessingPass(pass) {
         this.postprocessingPasses.add(pass);
+        return this;
     }
     removePostprocessingPass(pass) {
         this.postprocessingPasses.delete(pass);
+        return this;
     }
     async getFramePixelData() {
         const width = this.swapChainTexture.width;
@@ -10821,6 +11114,7 @@ class WebGPURenderSystem extends RenderSystemInCanvas {
         await buffer.mapAsync(GPUMapMode.READ);
         const copyArrayBuffer = buffer.getMappedRange();
         console.log(new Uint8Array(copyArrayBuffer));
+        return copyArrayBuffer;
     }
     postprocess(world, time, delta) {
         this.postprocessingPasses.forEach((pass) => {
@@ -11574,7 +11868,7 @@ class BitmapFontString extends Object3 {
         for (let i = 0, len = this.#chars.length; i < len; i++) {
             this.#chars[i].destroy();
         }
-        this.destroy();
+        return super.destroy();
     }
     get text() {
         return this.#text;
@@ -11604,7 +11898,7 @@ class BitmapFontString extends Object3 {
         const oldLength = this.#chars.length;
         for (let i = 0, len = text.length; i < len; i++) {
             const e = this.#chars[i] ?? new Object3();
-            let char = e.getComponentByClass(BitmapFontChar3);
+            let char = e.getComponent(BitmapFontChar3);
             const code = text.charCodeAt(i);
             if (char) {
                 char.setChar(code);
@@ -11800,7 +12094,7 @@ class Object2 extends Entity {
     scaling;
     modelMatrix;
     worldMatrix;
-    constructor(name = "Object3") {
+    constructor(name = "Object2") {
         super(name);
         this.scaling = new Vector2Scale2();
         this.position = new EuclidPosition2();
@@ -11819,15 +12113,7 @@ class Object2 extends Entity {
 
 class Camera2 extends Object2 {
     projection;
-    constructor(name = "Camera2", projection) {
-        super(name);
-        this.projection = projection;
-    }
-}
-
-class Camera3 extends Object3 {
-    projection;
-    constructor(name = "Camera3", projection) {
+    constructor(projection, name = "Camera2") {
         super(name);
         this.projection = projection;
     }
@@ -13051,50 +13337,6 @@ function decodeRLE(data, offset, pixelSize, outputSize) {
     return output;
 }
 
-class HashRouteSystem extends System {
-    static listeningHashChange = false;
-    static count = 0; // 计数
-    static listener = () => {
-        HashRouteSystem.currentPath = location.hash.slice(1) || "/";
-    };
-    static currentPath = location.hash.slice(1) || "/";
-    currentPath = "";
-    constructor() {
-        super("HashRouteSystem", (entity) => {
-            return entity.getFirstComponentByTagLabel("HashRoute");
-        });
-        HashRouteSystem.count++;
-        if (!HashRouteSystem.listeningHashChange) {
-            HashRouteSystem.listeningHashChange = true;
-            window.addEventListener("load", HashRouteSystem.listener, false);
-            window.addEventListener("hashchange", HashRouteSystem.listener, false);
-        }
-    }
-    destroy() {
-        HashRouteSystem.count--;
-        if (HashRouteSystem.count < 1) {
-            window.removeEventListener("load", HashRouteSystem.listener, false);
-            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
-        }
-        return this;
-    }
-    handle(entity) {
-        let routeComponents = entity.getComponentsByTagLabel("HashRoute");
-        for (let i = routeComponents.length - 1; i > -1; i--) {
-            routeComponents[i].route(this.currentPath, entity);
-        }
-        return this;
-    }
-    run(world, time, delta) {
-        if (HashRouteSystem.currentPath === this.currentPath) {
-            return this;
-        }
-        this.currentPath = HashRouteSystem.currentPath;
-        super.run(world, time, delta);
-        return this;
-    }
-}
-
 function fixData(data) {
     if (!data.path.startsWith("/")) {
         data.path = "/" + data.path;
@@ -13104,11 +13346,11 @@ function fixData(data) {
 class HashRouteComponent extends TreeNode.mixin(Component) {
     children = [];
     data;
-    constructor(name, data) {
-        super(name, fixData(data), [{
+    constructor(data, name) {
+        super(fixData(data), [{
                 label: "HashRoute",
                 unique: false
-            }]);
+            }], undefined, name);
     }
     route(path, entity) {
         let p = this.data.path;
@@ -13143,6 +13385,50 @@ class HashRouteComponent extends TreeNode.mixin(Component) {
     }
 }
 
+class HashRouteSystem extends System {
+    static listeningHashChange = false;
+    static count = 0; // 计数
+    static listener = () => {
+        HashRouteSystem.currentPath = location.hash.slice(1) || "/";
+    };
+    static currentPath = location.hash.slice(1) || "/";
+    currentPath = "";
+    constructor() {
+        super((entity) => {
+            return !!entity.getComponent(HashRouteComponent);
+        }, () => { });
+        HashRouteSystem.count++;
+        if (!HashRouteSystem.listeningHashChange) {
+            HashRouteSystem.listeningHashChange = true;
+            window.addEventListener("load", HashRouteSystem.listener, false);
+            window.addEventListener("hashchange", HashRouteSystem.listener, false);
+        }
+    }
+    destroy() {
+        HashRouteSystem.count--;
+        if (HashRouteSystem.count < 1) {
+            window.removeEventListener("load", HashRouteSystem.listener, false);
+            window.removeEventListener("hashchange", HashRouteSystem.listener, false);
+        }
+        return this;
+    }
+    handle(entity) {
+        const routeComponents = entity.getComponentsByTagLabel("HashRoute");
+        for (let i = routeComponents.length - 1; i > -1; i--) {
+            routeComponents[i].route(this.currentPath, entity);
+        }
+        return this;
+    }
+    run(world, time, delta) {
+        if (HashRouteSystem.currentPath === this.currentPath) {
+            return this;
+        }
+        this.currentPath = HashRouteSystem.currentPath;
+        super.run(world, time, delta);
+        return this;
+    }
+}
+
 var TWEEN_STATE;
 (function (TWEEN_STATE) {
     TWEEN_STATE[TWEEN_STATE["IDLE"] = 0] = "IDLE";
@@ -13162,7 +13448,7 @@ class Tween extends Component {
     loop;
     easing = index$4.Linear;
     constructor(from, to, duration = 1000, loop = 0) {
-        super("tween", new Map());
+        super(new Map(), [], "Tween");
         this.loop = loop;
         this.from = from;
         this.to = to;
@@ -13246,76 +13532,79 @@ class Tween extends Component {
 
 class TweenSystem extends System {
     constructor(name = "Tween System") {
-        super(name, (entity) => {
+        super((entity) => {
             const component = entity.getComponent("tween");
             if (!component) {
                 return false;
             }
             component.time = 0;
             return true;
-        });
+        }, () => { }, undefined, undefined, name);
     }
     destroy() {
         throw new Error("Method not implemented.");
     }
     handle(entity, _time, delta) {
-        let tweenC = entity.getComponent("tween");
-        if (tweenC.end) {
-            return this;
+        let tweens = entity.getComponentsByClass(Tween);
+        for (let i = 0, len = tweens.length; i < len; i++) {
+            const tween = tweens[i];
+            if (tween.end) {
+                continue;
+            }
+            tween.time += delta;
+            if (tween.time > tween.duration) {
+                tween.loopTimes--;
+                if (tween.loopTimes >= 0) {
+                    tween.time -= tween.duration;
+                }
+                else {
+                    tween.end = true;
+                    tween.time = tween.duration;
+                }
+            }
+            let map = tween.data;
+            let from = tween.from;
+            let rate = tween.easing(tween.time / tween.duration);
+            if (from instanceof Float32Array) {
+                let data = map.get(' ');
+                if (data.type === "vector2") {
+                    Vector2.multiplyScalar(data.delta, rate, from);
+                    Vector2.add(data.delta, data.origin, from);
+                }
+                else if (data.type === "vector3") {
+                    Vector3.multiplyScalar(data.delta, rate, from);
+                    Vector3.add(data.delta, data.origin, from);
+                }
+                else if (data.type === "vector4") {
+                    Vector4.multiplyScalar(data.delta, rate, from);
+                    Vector4.add(data.delta, data.origin, from);
+                }
+                return this;
+            }
+            map.forEach((data, key) => {
+                if (data.type === "number") {
+                    from[key] = data.origin + data.delta * rate;
+                }
+                else if (data.type === "vector2") {
+                    Vector2.multiplyScalar(data.delta, rate, from[key]);
+                    Vector2.add(data.delta, data.origin, from[key]);
+                }
+                else if (data.type === "vector3") {
+                    Vector3.multiplyScalar(data.delta, rate, from[key]);
+                    Vector3.add(data.delta, data.origin, from[key]);
+                }
+                else if (data.type === "vector4") {
+                    Vector4.multiplyScalar(data.delta, rate, from[key]);
+                    Vector4.add(data.delta, data.origin, from[key]);
+                }
+            });
         }
-        tweenC.time += delta;
-        if (tweenC.time > tweenC.duration) {
-            tweenC.loopTimes--;
-            if (tweenC.loopTimes >= 0) {
-                tweenC.time -= tweenC.duration;
-            }
-            else {
-                tweenC.end = true;
-                tweenC.time = tweenC.duration;
-            }
-        }
-        let map = tweenC.data;
-        let from = tweenC.from;
-        let rate = tweenC.easing(tweenC.time / tweenC.duration);
-        if (from instanceof Float32Array) {
-            let data = map.get(' ');
-            if (data.type === "vector2") {
-                Vector2.multiplyScalar(data.delta, rate, from);
-                Vector2.add(data.delta, data.origin, from);
-            }
-            else if (data.type === "vector3") {
-                Vector3.multiplyScalar(data.delta, rate, from);
-                Vector3.add(data.delta, data.origin, from);
-            }
-            else if (data.type === "vector4") {
-                Vector4.multiplyScalar(data.delta, rate, from);
-                Vector4.add(data.delta, data.origin, from);
-            }
-            return this;
-        }
-        map.forEach((data, key) => {
-            if (data.type === "number") {
-                from[key] = data.origin + data.delta * rate;
-            }
-            else if (data.type === "vector2") {
-                Vector2.multiplyScalar(data.delta, rate, from[key]);
-                Vector2.add(data.delta, data.origin, from[key]);
-            }
-            else if (data.type === "vector3") {
-                Vector3.multiplyScalar(data.delta, rate, from[key]);
-                Vector3.add(data.delta, data.origin, from[key]);
-            }
-            else if (data.type === "vector4") {
-                Vector4.multiplyScalar(data.delta, rate, from[key]);
-                Vector4.add(data.delta, data.origin, from[key]);
-            }
-        });
         return this;
     }
 }
 
 const createCamera2 = (projection, name = "camera", world) => {
-    const entity = new Camera2(name, projection);
+    const entity = new Camera2(projection, name);
     if (world) {
         world.addEntity(entity);
     }
@@ -13323,7 +13612,7 @@ const createCamera2 = (projection, name = "camera", world) => {
 };
 
 const createCamera3 = (projection, name = "camera", world) => {
-    const entity = new Camera3(name, projection);
+    const entity = new Camera3(projection, name);
     if (world) {
         world.addEntity(entity);
     }
@@ -13421,4 +13710,4 @@ var index = /*#__PURE__*/Object.freeze({
 	createSprite3: createSprite3
 });
 
-export { APngParser, APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BitmapFontChar3, BitmapFontManager, BitmapFontMaterial, BitmapFontString, BufferFloat32, COLOR_HEX_MAP, constants$1 as COMPONENT_NAME, Camera2, Camera3, ColorCMYK, ColorGPU, ColorHSL, ColorHSV, ColorMaterial, ColorRGB, ColorRGBA, ColorRYB, ColorXYZ, Component, ComponentManager, index$3 as ComponentProxy, constants$2 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, ElementChangeEvent, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, FntParser, Frustum, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, GifParser, HashRouteComponent, HashRouteSystem, IdGeneratorInstance, ImageBitmapTexture, Line3, LoadType, MATRIX_RGB2XYZ, MATRIX_XYZ2RGB, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrbitControls, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, PureSystem, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemEvent, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, TgaParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, UNIT_MATRIX3_DATA, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, catmullRom, ceilPowerOfTwo, clamp, clampCircle, clampSafeCommon as clampSafe, closeTo, cubicBezier, eventfirer, filt, fire, floorPowerOfTwo, floorToZero, generateLagrange, hue2rgb, isPowerOfTwo, lerp, linearToSrgb, mapRange, mixin$1 as mixin, on, once, opposite, quadraticBezier, randFloat, randInt, rndFloat, rndFloatRange, rndInt, srgbToLinear, sum, sumArray, times, transformMatrix3, transformMatrix4 };
+export { APngParser, APosition2, APosition3, AProjection2, AProjection3, ARotation2, ARotation3, AScale2, AScale3, constants as ATTRIBUTE_NAME, Anchor2, Anchor3, AngleRotation2, ArraybufferDataType, AtlasParser, AtlasTexture, BitmapFontChar3, BitmapFontManager, BitmapFontMaterial, BitmapFontString, BufferFloat32, COLOR_HEX_MAP, constants$1 as COMPONENT_NAME, Camera2, Camera3, ColorCMYK, ColorGPU, ColorHSL, ColorHSV, ColorMaterial, ColorRGB, ColorRGBA, ColorRYB, ColorXYZ, Component, ComponentManager, index$3 as ComponentProxy, constants$2 as Constants, Cube, DEFAULT_BLEND_STATE, DEFAULT_ENGINE_OPTIONS, DEFAULT_OPTIONS, DepthMaterial, DomMaterial, EComponentEvent, index$4 as Easing, Engine, EngineEvents, EngineTaskChunk, Entity, index as EntityFactory, EntityManager, EuclidPosition2, EuclidPosition3, EulerAngle, EulerRotation3, EulerRotationOrders, EventFirer, FntParser, Frustum, Geometry, index$1 as Geometry2Factory, index$2 as Geometry3Factory, GifParser, HashRouteComponent, HashRouteSystem, ImageBitmapTexture, Line3, LoadType, MATRIX_RGB2XYZ, MATRIX_XYZ2RGB, Manager, Material, Matrix2, Matrix3, Matrix3Component, Matrix4, Matrix4Component, MeshObjParser, NormalMaterial, Object2, Object3, OrbitControls, OrthogonalProjection, PerspectiveProjection, PerspectiveProjectionX, Plane3, Polar, PolarPosition2, Projection2D, Ray3, Rectangle2, RenderSystemInCanvas, Renderable, ResourceStore, Sampler, ShaderMaterial, ShaderProgram, ShadertoyMaterial, Sphere, Spherical, SphericalPosition3, Sprite3, SpritesheetTexture, System, SystemManager, TWEEN_STATE, Texture, TextureMaterial, TextureParser, TgaParser, Timeline, Triangle2, Triangle3, Tween, TweenSystem, UNIT_MATRIX3_DATA, Vector2, Vector2Scale2, Vector3, Vector3Scale3, Vector4, WebGPUCacheObjectStore, WebGPUMesh2Renderer, WebGPUMesh3Renderer, WebGPUPostProcessingPass, WebGPURenderSystem, World, all, arrangement, catmullRom, ceilPowerOfTwo, clamp, clampCircle, clampSafe, closeTo, combination, cubicBezier, eventfirer, factorialNaturalNumber, filt, fire, floorPowerOfTwo, floorToZero, generateLagrange, getColorGPU$1 as getColorGPU, hue2rgb, isPowerOf2, lerp, linearToSrgb, mapRange, minKth, mixin$1 as mixin, on, once, opposite, quadraticBezier, rndFloat, rndFloatRange, rndInt, srgbToLinear, sum, sumArray, swap, times, transformMatrix3, transformMatrix4 };

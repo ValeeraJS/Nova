@@ -1,35 +1,53 @@
-import { IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 type RouteComponentData = {
     path: string;
-    action: (entity: IEntity, matching: boolean) => any;
+    action: (entity: Entity, matching: boolean) => any;
 };
 declare const HashRouteComponent_base: {
-    new <T_1 extends import("@valeera/tree").ITreeNodeData<T_1>>(...rest: any[]): {
-        parent: import("@valeera/tree").ITreeNode<T_1>;
-        children: import("@valeera/tree").ITreeNode<T_1>[];
-        addChild(node: import("@valeera/tree").ITreeNodeData<T_1>): any;
+    new (...a: any[]): {
+        parent: any;
+        children: any[];
+        addChild(node: import("@valeera/tree").ITreeNodeData): any;
         depth(): number;
-        findLeaves(): import("@valeera/tree").ITreeNodeData<T_1>[];
-        findRoot(): import("@valeera/tree").ITreeNodeData<T_1>;
-        hasAncestor(ancestor: import("@valeera/tree").ITreeNodeData<T_1>): boolean;
-        removeChild(child: import("@valeera/tree").ITreeNodeData<T_1>): any;
-        toArray(): import("@valeera/tree").ITreeNodeData<T_1>[];
-        traverse(visitor: import("@valeera/tree").IVisitor<T_1>, rest?: any): any;
+        findLeaves(): any[];
+        findRoot(): any;
+        hasAncestor(ancestor: any): boolean;
+        isLeaf(): boolean;
+        removeChild(child: any): any;
+        toArray(): any[];
+        traversePostorder(visitor: import("@valeera/tree").IVisitor<any>, ...rest: any[]): any;
+        traversePreorder(visitor: import("@valeera/tree").IVisitor<any>, ...rest: any[]): any;
+    };
+    new (value?: any): {
+        parent: any;
+        children: any[];
+        addChild(node: import("@valeera/tree").ITreeNodeData): any;
+        depth(): number;
+        findLeaves(): any[];
+        findRoot(): any;
+        hasAncestor(ancestor: any): boolean;
+        isLeaf(): boolean;
+        removeChild(child: any): any;
+        toArray(): any[];
+        traversePostorder(visitor: import("@valeera/tree").IVisitor<any>, ...rest: any[]): any;
+        traversePreorder(visitor: import("@valeera/tree").IVisitor<any>, ...rest: any[]): any;
     };
     mixin: any;
-    addChild<T_2>(node: import("@valeera/tree").ITreeNodeData<T_2>, child: import("@valeera/tree").ITreeNodeData<T_2>): import("@valeera/tree").ITreeNodeData<T_2>;
-    depth<T_3>(node: import("@valeera/tree").ITreeNodeData<T_3>): number;
-    findLeaves<T_4>(node: import("@valeera/tree").ITreeNodeData<T_4>): import("@valeera/tree").ITreeNodeData<T_4>[];
-    findRoot<T_5>(node: import("@valeera/tree").ITreeNodeData<T_5>): import("@valeera/tree").ITreeNodeData<T_5>;
-    hasAncestor<T_6>(node: import("@valeera/tree").ITreeNodeData<T_6>, ancestor: import("@valeera/tree").ITreeNodeData<T_6>): boolean;
-    removeChild<T_7>(node: import("@valeera/tree").ITreeNodeData<T_7>, child: import("@valeera/tree").ITreeNodeData<T_7>): import("@valeera/tree").ITreeNodeData<T_7>;
-    toArray<T_8>(node: import("@valeera/tree").ITreeNodeData<T_8>): import("@valeera/tree").ITreeNodeData<T_8>[];
-    traverse<T_9>(node: import("@valeera/tree").ITreeNodeData<T_9>, visitor: import("@valeera/tree").IVisitor<T_9>, rest?: any): import("@valeera/tree").ITreeNodeData<T_9>;
+    addChild<T extends import("@valeera/tree").ITreeNodeData>(node: T, child: import("@valeera/tree").ITreeNodeData): T;
+    depth(node: import("@valeera/tree").ITreeNodeData): number;
+    findLeaves<T_1 extends import("@valeera/tree").ITreeNodeData>(node: T_1): T_1[];
+    findRoot<T_2 extends import("@valeera/tree").ITreeNodeData>(node: T_2): import("@valeera/tree").ITreeNodeData;
+    hasAncestor(node: import("@valeera/tree").ITreeNodeData, ancestor: import("@valeera/tree").ITreeNodeData): boolean;
+    isLeaf(node: import("@valeera/tree").ITreeNodeData): boolean;
+    removeChild<T_3 extends import("@valeera/tree").ITreeNodeData>(node: T_3, child: T_3): T_3;
+    toArray<T_4 extends import("@valeera/tree").ITreeNodeData>(node: T_4): T_4[];
+    traversePostorder<T_5 extends import("@valeera/tree").ITreeNodeData>(node: T_5, visitor: import("@valeera/tree").IVisitor<T_5>, ...rest: any[]): T_5;
+    traversePreorder<T_6 extends import("@valeera/tree").ITreeNodeData>(node: T_6, visitor: import("@valeera/tree").IVisitor<T_6>, ...rest: any[]): T_6;
 };
-export default class HashRouteComponent extends HashRouteComponent_base<HashRouteComponent> {
+export declare class HashRouteComponent extends HashRouteComponent_base {
     children: HashRouteComponent[];
     data: RouteComponentData;
-    constructor(name: string, data: RouteComponentData);
-    route(path: string, entity: IEntity): this;
+    constructor(data: RouteComponentData, name?: string);
+    route(path: string, entity: Entity): this;
 }
 export {};

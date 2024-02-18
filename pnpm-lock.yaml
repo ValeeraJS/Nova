@@ -12,20 +12,20 @@ dependencies:
     specifier: '>=1.2.2'
     version: 1.2.2
   '@valeera/mathx':
-    specifier: '>=0.1.69'
-    version: 0.1.69
+    specifier: '>=0.1.71'
+    version: 0.1.71
   '@valeera/timeline':
     specifier: '>=0.1.2'
     version: 0.1.2
   '@valeera/tree':
-    specifier: '>=0.1.9alpha-2'
-    version: 0.1.9-alpha-2
+    specifier: '>=0.2.0'
+    version: 0.2.0
   '@valeera/webgpu-constant':
     specifier: '>=0.1.1'
     version: 0.1.1
   '@valeera/x':
-    specifier: '>=0.1.32alpha-3'
-    version: 0.1.32-alpha-3
+    specifier: '>=0.2.0'
+    version: 0.2.0
 
 devDependencies:
   '@babel/eslint-parser':
@@ -772,16 +772,16 @@ packages:
     resolution: {integrity: sha512-7JM6tQRINMfLHklacUReA+Xq9w2eaMwjtdVCdDWJgCWbAelB6F962LWsTUbk0m+W2ZpuLmJoJxPUSpY80Qo4ug==}
     dev: false
 
-  /@valeera/mathx@0.1.69:
-    resolution: {integrity: sha512-b5cgKE80f3lyvP1gT6nrI8XlFlgFIF9eI95ZWhrtksHnecXQL2TDqt0v3Ejw+SrrHkygrwVx0zoAshAKdyuymQ==}
+  /@valeera/mathx@0.1.71:
+    resolution: {integrity: sha512-uC+f/6pQ5m66uAobeG/Bdv+2CoYpcKEQByTL0EcTVl6AbvEhtrWE/e17N52ceikyamWCfUzWAlAiUVpmhqTmfg==}
     dev: false
 
   /@valeera/timeline@0.1.2:
     resolution: {integrity: sha512-aNEjwwawID876+fmG/hLkSpJ1pnhP0i3V4k508H+H/Jqlcy2TX+G0R7JgKlDS+4VYjQ5lX6Vw5Y+UITiG7VIMg==}
     dev: false
 
-  /@valeera/tree@0.1.9-alpha-2:
-    resolution: {integrity: sha512-lsigjfqdMcqoYKDZA+I7kvFSb42ZcZYinOR/y5qo1+MuYU2i5lj5BxVdM+T32UapDbavv78ufsyGcYR/prXOXQ==}
+  /@valeera/tree@0.2.0:
+    resolution: {integrity: sha512-vOD+mLHEY4tuneIpYYaNILEl+Me/R5U/0LiA252JidwcQRag3cRq26xApnD2KgALprayw/VrhdaOTgX7YX8+9A==}
     dependencies:
       '@valeera/mathx': 0.1.61-alpha1
     dev: false
@@ -790,13 +790,12 @@ packages:
     resolution: {integrity: sha512-74n1qjoMiAorlLdi9eRWFU7Rl9z1YBXD0kr1ixmV39sprbkGFXva4OPFib179FxXmvM0D9OFFSz5qyIxH5GwuA==}
     dev: false
 
-  /@valeera/x@0.1.32-alpha-3:
-    resolution: {integrity: sha512-aw/3XnyTM7kNg5Ioc+h8DMUrRqnQ+gfUcg/KJDjJ8kLNFGlb8PJVLitNhfBgOn0kNuROzu7GxZh5c4Y7VvF5Ig==}
+  /@valeera/x@0.2.0:
+    resolution: {integrity: sha512-Xl5+9MOtr07JiWQhw3g+KevyFtWYsqu6FG8V+a4iAE1h8oFfV9BpUuBj5qlDshxryi8CLvUeNgRPLOl8YeMimw==}
     dependencies:
       '@valeera/eventfire': 1.1.1
       '@valeera/idgenerator': 1.2.2
-      '@valeera/tree': 0.1.9-alpha-2
-      clone-deep: 4.0.1
+      '@valeera/tree': 0.2.0
     dev: false
 
   /@webgpu/types@0.1.37:
@@ -1160,15 +1159,6 @@ packages:
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
     dev: true
-
-  /clone-deep@4.0.1:
-    resolution: {integrity: sha512-neHB9xuzh/wk0dIHweyAXv2aPGZIVk3pLMe+/RNzINf17fe0OG96QroktYAUm7SM1PBnzTabaLboqqxDyMU+SQ==}
-    engines: {node: '>=6'}
-    dependencies:
-      is-plain-object: 2.0.4
-      kind-of: 6.0.3
-      shallow-clone: 3.0.1
-    dev: false
 
   /color-convert@1.9.3:
     resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
@@ -2349,13 +2339,6 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /is-plain-object@2.0.4:
-    resolution: {integrity: sha512-h5PpgXkWitc38BBMYawTYMWJHFZJVnBquFE57xFpjB8pJFiF6gZ+bU+WyI/yqXiFR5mdLsgYNaPe8uao6Uv9Og==}
-    engines: {node: '>=0.10.0'}
-    dependencies:
-      isobject: 3.0.1
-    dev: false
-
   /is-regex@1.1.4:
     resolution: {integrity: sha512-kvRdxDsxZjhzUX07ZnLydzS1TU/TJlTUHHY4YLL87e37oUA49DfkLqgy+VjFocowy29cKvcSiu+kIv728jTTVg==}
     engines: {node: '>= 0.4'}
@@ -2435,11 +2418,6 @@ packages:
   /isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
     dev: true
-
-  /isobject@3.0.1:
-    resolution: {integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==}
-    engines: {node: '>=0.10.0'}
-    dev: false
 
   /istanbul-lib-coverage@3.2.0:
     resolution: {integrity: sha512-eOeJ5BHCmHYvQK7xt9GkdHuzuCGS1Y6g9Gvnx3Ym33fz/HpLRYxiS0wHNr+m/MBC8B647Xt608vCDEvhl9c6Mw==}
@@ -2558,11 +2536,6 @@ packages:
     optionalDependencies:
       graceful-fs: 4.2.11
     dev: true
-
-  /kind-of@6.0.3:
-    resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
-    engines: {node: '>=0.10.0'}
-    dev: false
 
   /levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -3245,13 +3218,6 @@ packages:
   /set-blocking@2.0.0:
     resolution: {integrity: sha512-KiKBS8AnWGEyLzofFfmvKwpdPzqiy16LvQfK3yv/fVH7Bj13/wl3JSR1J+rfgRE9q7xUJK4qvgS8raSOeLUehw==}
     dev: true
-
-  /shallow-clone@3.0.1:
-    resolution: {integrity: sha512-/6KqX+GVUdqPuPPd2LxDDxzX6CAbjJehAAOKlNpqqUpAqPM6HeL8f+o3a+JsyGjn2lv0WY8UsTgUJjU9Ok55NA==}
-    engines: {node: '>=8'}
-    dependencies:
-      kind-of: 6.0.3
-    dev: false
 
   /shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}

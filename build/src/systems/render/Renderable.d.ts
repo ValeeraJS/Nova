@@ -4,7 +4,7 @@ export interface RenderableData<T, U> {
     geometry: T;
     material: U;
 }
-export declare abstract class Renderable<T, U> extends Component<RenderableData<T, U>> {
+export declare class Renderable<T, U> extends Component<RenderableData<T, U>> {
     tags: {
         label: string;
         unique: boolean;

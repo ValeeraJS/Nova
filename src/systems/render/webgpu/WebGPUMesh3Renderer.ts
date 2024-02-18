@@ -6,7 +6,7 @@ import { updateModelMatrixComponent } from "../../../components/matrix4/Matrix4C
 import createVerticesBuffer from "./createVerticesBuffer";
 import { GPURendererContext, IWebGPURenderer } from "./IWebGPURenderer";
 import type { IMaterial, IUniformSlot } from "../IMatrial";
-import { ICamera3 } from "../../../entities/Camera3";
+import { Camera3, ICamera3 } from "../../../entities/Camera3";
 import { Object3 } from "../../../entities/Object3";
 import { Mesh3 } from "../Mesh3";
 import { WebGPUCacheObjectStore } from "./WebGPUCacheObjectStore";
@@ -30,7 +30,7 @@ export class WebGPUMesh3Renderer implements IWebGPURenderer {
 
 	private entityCacheData: Map<Entity, ICacheData> = new Map();
 
-	public constructor(camera: ICamera3) {
+	public constructor(camera: ICamera3 = new Camera3()) {
 		this.camera = camera;
 	}
 

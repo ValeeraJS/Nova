@@ -1,6 +1,6 @@
-import { Entity, IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import Matrix3Component from "../components/matrix3/Matrix3Component";
-export interface IObject2 extends IEntity {
+export interface IObject2 extends Entity {
     anchor: Matrix3Component;
     position: Matrix3Component;
     rotation: Matrix3Component;
