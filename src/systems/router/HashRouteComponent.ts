@@ -1,9 +1,9 @@
 import { TreeNode } from "@valeera/tree";
-import { Component, IEntity } from "@valeera/x";
+import { Component, Entity } from "@valeera/x";
 
 type RouteComponentData = {
     path: string;
-    action: (entity: IEntity, matching: boolean) => any
+    action: (entity: Entity, matching: boolean) => any
 }
 
 function fixData(data: RouteComponentData) {
@@ -13,18 +13,18 @@ function fixData(data: RouteComponentData) {
     return data;
 }
 
-export default class HashRouteComponent extends TreeNode.mixin(Component)<HashRouteComponent> {
+export class HashRouteComponent extends TreeNode.mixin(Component) {
     children: HashRouteComponent[] = [];
     data: RouteComponentData;
-    
-    public constructor(name: string, data: RouteComponentData) {
-        super(name, fixData(data), [{
+
+    public constructor(data: RouteComponentData, name?: string) {
+        super(fixData(data), [{
             label: "HashRoute",
             unique: false
-        }]);
+        }], undefined, name);
     }
 
-    public route(path: string, entity: IEntity) {
+    public route(path: string, entity: Entity) {
         let p = this.data.path;
         if (path === p) {
             this.data.action(entity, true);
