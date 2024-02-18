@@ -1,8 +1,10 @@
 <!DOCTYPE html>
+
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" href="./../style/common.css" />
 </head>
+
 <body>
 	<script type="text/javascript" src="./../../build/Nova.js"></script>
 	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
@@ -12,35 +14,25 @@
 
 		const geometry = Nova.Geometry3Factory.createPlane({
 			width: 3,
-			height: 3,
+			height: 3
 		});
 		const mesh = Nova.EntityFactory.createMesh3(geometry);
 		mesh.position.z = -5;
 
 		const perspectiveProjection = new Nova.PerspectiveProjection();
 
-		const camera = new Nova.Camera3("test-camera", perspectiveProjection);
+		const camera = new Nova.Camera3(perspectiveProjection);
 
-		let renderSystem = new Nova.WebGPURenderSystem();
-		let renderer = new Nova.WebGPUMesh3Renderer(camera);
+		const renderSystem = new Nova.WebGPURenderSystem({
+			autoResize: true
+		});
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
 		renderSystem.addRenderer(renderer);
 		world.addSystem(renderSystem).add(mesh);
-		createGUI();
 
 		engine.addTask(() => {
 			world.run();
 			mesh.rotation.y -= 0.01;
 		});
-
-		function createGUI() {
-			const gui = new dat.GUI();
-			const f = gui.addFolder("canvas size");
-			f.add(renderSystem, "width", 400, 1600).step(1).onChange(onChange);
-			f.add(renderSystem, "height", 225, 900).step(1).onChange(onChange);
-
-			function onChange(val) {
-				perspectiveProjection.aspect = renderSystem.width / renderSystem.height;
-			}
-		}
 	</script>
 </body>
