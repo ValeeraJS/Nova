@@ -1,10 +1,10 @@
-import { IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import Matrix4Component from "../matrix4/Matrix4Component";
 import { TRANSLATION_3D } from "../constants";
 
-export default (position: Matrix4Component | IEntity) => {
-    if ((position as IEntity).isEntity) {
-        position = (position as IEntity).getComponent(TRANSLATION_3D) as Matrix4Component;
+export default (position: Matrix4Component | Entity) => {
+    if ((position as Entity).isEntity) {
+        position = (position as Entity).getComponent(TRANSLATION_3D) as Matrix4Component;
     }
     return new Proxy(position, {
         get: (target: Matrix4Component, property: string) => {
