@@ -14,7 +14,7 @@
 		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("test-camera", projection);
+		const camera = new Nova.Camera3(projection);
 		camera.position.z = 3;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
@@ -33,10 +33,10 @@ fn main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 	return vec4<f32>(gray, gray, gray, 1.);
 }`);
 
+		renderSystem.addPostprocessingPass(pass);
+
 		const gui = new dat.GUI();
 		gui.add(pass, "disabled");
-
-		renderSystem.addPostprocessingPass(pass);
 
 		engine.addTask(() => {
 			world.run();
