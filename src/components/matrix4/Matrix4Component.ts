@@ -1,10 +1,15 @@
 import { Matrix4 } from "@valeera/mathx";
-import { ComponentTag, Component } from "@valeera/x";
+import { Component } from "@valeera/x";
 import { IObject3 } from "../../entities/Object3";
 
+export interface ComponentTag {
+	readonly label: string;
+	readonly unique: boolean;
+}
+
 export default class Matrix4Component extends Component<Float32Array> {
-    constructor(name: string, data = Matrix4.create(), tags: ComponentTag[] = []) {
-        super(name, data, tags);
+    constructor(data = Matrix4.create(), tags: ComponentTag[] = [], name: string) {
+        super(data, tags, name);
         this.dirty = true;
     }
 }
