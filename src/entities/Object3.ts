@@ -1,5 +1,5 @@
 import { Matrix4, Vector3Like, Vector3 } from "@valeera/mathx";
-import { Entity, IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import { Anchor3 } from "../components";
 import { MODEL_3D, WORLD_MATRIX4 } from "../components/constants";
 import EuclidPosition3 from "../components/matrix4/EuclidPosition3";
@@ -7,7 +7,7 @@ import EulerRotation3 from "../components/matrix4/EulerRotation3";
 import Matrix4Component, { updateModelMatrixComponent } from "../components/matrix4/Matrix4Component";
 import Vector3Scale3 from "../components/matrix4/Vector3Scale3";
 
-export interface IObject3 extends IEntity {
+export interface IObject3 extends Entity {
     anchor: Matrix4Component;
     position: Matrix4Component;
     rotation: Matrix4Component;
@@ -31,14 +31,14 @@ export class Object3 extends Entity implements IObject3 {
         this.position = new EuclidPosition3();
         this.rotation = new EulerRotation3();
         this.anchor = new Anchor3();
-        this.modelMatrix = new Matrix4Component(MODEL_3D, Matrix4.create(), [{
+        this.modelMatrix = new Matrix4Component(Matrix4.create(), [{
             label: MODEL_3D,
             unique: true 
-        }]);
-        this.worldMatrix = new Matrix4Component(WORLD_MATRIX4, Matrix4.create(), [{
+        }], MODEL_3D);
+        this.worldMatrix = new Matrix4Component(Matrix4.create(), [{
             label: WORLD_MATRIX4,
             unique: true 
-        }]);
+        }], WORLD_MATRIX4);
     }
 
     localToWorld(vec: Vector3Like) {
