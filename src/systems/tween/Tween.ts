@@ -28,7 +28,7 @@ export class Tween extends Component<Map<string, InterpolationType>> {
 	public easing: (p: number) => number = Easing.Linear;
 
 	constructor(from: any, to: any, duration = 1000, loop = 0) {
-		super("tween", new Map());
+		super(new Map(), [], "Tween");
 		this.loop = loop;
 		this.from = from;
 		this.to = to;
