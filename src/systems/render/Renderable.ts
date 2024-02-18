@@ -7,14 +7,14 @@ export interface RenderableData<T, U> {
     material: U;
 }
 
-export abstract class Renderable<T, U> extends Component<RenderableData<T, U>> {
+export class Renderable<T, U> extends Component<RenderableData<T, U>> {
     public tags = [{
         label: RENDERABLE,
         unique: false
     }];
 
     constructor(data: RenderableData<T, U>) {
-        super(RENDERABLE, data);
+        super(data, undefined, RENDERABLE);
     }
 
     get geometry() {
