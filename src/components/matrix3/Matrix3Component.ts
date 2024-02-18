@@ -1,15 +1,20 @@
-import { Component, ComponentTag } from "@valeera/x";
+import { Component } from "@valeera/x";
 import { Matrix3 } from "@valeera/mathx";
-import { IObject3 } from "../../entities/Object3";
+import { IObject2 } from "../../entities/Object2";
+
+export interface ComponentTag {
+	readonly label: string;
+	readonly unique: boolean;
+}
 
 export default class Matrix3Component extends Component<Float32Array> {
 	constructor(name: string, data = Matrix3.create(), tags: ComponentTag[] = []) {
-		super(name, data, tags);
+		super(data, tags, name);
 		this.dirty = true;
 	}
 }
 
-export const updateModelMatrixComponent = (mesh: IObject3) => {
+export const updateModelMatrixComponent = (mesh: IObject2) => {
 	let p3 = mesh.position;
 	let r3 = mesh.rotation;
 	let s3 = mesh.scaling;
@@ -43,7 +48,7 @@ export const updateModelMatrixComponent = (mesh: IObject3) => {
 	}
 
 	if (mesh.parent) {
-		let parentWorldMatrix = (mesh.parent as IObject3).worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
+		let parentWorldMatrix = (mesh.parent as IObject2).worldMatrix?.data ?? Matrix3.UNIT_MATRIX3;
 		Matrix3.multiply(parentWorldMatrix, m3.data, worldMatrix.data);
 	} else {
 		Matrix3.fromArray(m3.data, worldMatrix.data);
