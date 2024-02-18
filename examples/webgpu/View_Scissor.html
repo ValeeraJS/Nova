@@ -15,7 +15,7 @@
 		mesh.position.z = -5;
 
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("", projection);
+		const camera = new Nova.Camera3(projection);
 
 		let renderSystem = new Nova.WebGPURenderSystem();
 		let renderer = new Nova.WebGPUMesh3Renderer(camera);
