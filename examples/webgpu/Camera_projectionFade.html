@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="./../style/common.css" />
+</head>
+
+<body>
+	<script type="text/javascript" src="./../../build/Nova.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+	<script>
+		const engine = new Nova.Engine();
+		const world = new Nova.World();
+
+		const geometry = Nova.Geometry3Factory.createPlane({
+			width: 3,
+			height: 3
+		});
+
+		const mesh = Nova.EntityFactory.createMesh3(geometry);
+		mesh.position.z = -10;
+
+		const perspectiveProjection = new Nova.PerspectiveProjection();
+		const orthogonalProjection = new Nova.OrthogonalProjection();
+		const projection = new Nova.Matrix4Component();
+		projection.data.set(perspectiveProjection.data);
+		const camera = new Nova.Camera3(projection);
+
+		const renderSystem = new Nova.WebGPURenderSystem();
+		const renderer = new Nova.WebGPUMesh3Renderer(camera);
+		renderSystem.addRenderer(renderer);
+		world.addSystem(renderSystem).add(mesh);
+		createGUI();
+		engine.addTask(() => {
+			world.run();
+			mesh.rotation.y -= 0.01;
+		});
+
+		function createGUI() {
+			const gui = new dat.GUI();
+			const f = gui.addFolder("相机过渡");
+			const options = {
+				value: 0,
+			};
+			f.add(options, "value", 0, 1).step(0.01).onChange(onChange);
+
+			function onChange(val) {
+				for (let i = 0; i < 16; i++) {
+					projection.data[i] = Nova.lerp(perspectiveProjection.data[i], orthogonalProjection.data[i], val);
+				}
+				projection.dirty = true;
+			}
+		}
+	</script>
+</body>
