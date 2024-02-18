@@ -14,7 +14,7 @@
 		const mesh = Nova.EntityFactory.createMesh3(geo, material);
 
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("test-camera", projection);
+		const camera = new Nova.Camera3(projection);
 		camera.position.z = 3;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
@@ -29,7 +29,7 @@
 
 @fragment
 fn main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
-var res: vec2<f32> = resolution / 8.;
+	var res: vec2<f32> = resolution / 8.;
 	var pos: vec2<f32> = floor(fragUV * res) / res;
 
 	return floor(textureSample(myTexture, mySampler, pos) * 8.) / 8.;
