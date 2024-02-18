@@ -21,14 +21,14 @@ export class Raycaster {
 		const direction = this.ray.direction;
 		// TODO 怎么更加严谨判断类型
 		if (cameraComponent instanceof OrthogonalProjection) {
-			Vector3.fromValues(vec2[0], vec2[1], cameraComponent.data[14], position);
-			Vector3.fromValues(vec2[0], vec2[1], -1, direction);
+			Vector3.fromXYZ(vec2[0], vec2[1], cameraComponent.data[14], position);
+			Vector3.fromXYZ(vec2[0], vec2[1], -1, direction);
 			Vector3.transformMatrix4(position, cameraComponent.inverseMatrix, position);
 			Vector3.transformMatrix4(position, camera.worldMatrix.data, position);
 			Vector3.transformDirection(direction, camera.worldMatrix.data, direction);
 		} else {
 			Vector3.fromMatrix4Translate(camera.worldMatrix.data, position);
-			Vector3.fromValues(vec2[0], vec2[1], 0.5, direction);
+			Vector3.fromXYZ(vec2[0], vec2[1], 0.5, direction);
 			Vector3.transformMatrix4(direction, cameraComponent.inverseMatrix, direction);
 			Vector3.transformMatrix4(direction, camera.worldMatrix.data, direction);
 			Vector3.minus(direction, position, direction);
