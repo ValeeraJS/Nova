@@ -1,8 +1,8 @@
-import { ISystem } from "@valeera/x";
+import type { System } from "@valeera/x";
 import { ColorFormatType } from "../../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";
 
-export interface IRenderSystemInCanvas extends ISystem {
+export interface IRenderSystemInCanvas extends System {
 	canvas: HTMLCanvasElement;
 	context: any;
 	clearColor: ColorFormatType;
