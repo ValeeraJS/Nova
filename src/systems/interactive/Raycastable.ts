@@ -5,7 +5,7 @@ import { Raycaster } from "./Raycaster";
 export default abstract class Raycastable extends Component<any> {
     inverseMatrix = new Float32Array(16);
     constructor(data: any) {
-        super("Raycastable", data, [{
+        super(data, [{
 			label: "Raycastable",
 			unique: true
 		}]);
