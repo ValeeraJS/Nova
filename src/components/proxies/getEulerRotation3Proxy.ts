@@ -1,11 +1,11 @@
 import { EulerAngle, EulerRotationOrders, Matrix4 } from "@valeera/mathx";
-import { IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import { Matrix4Component } from "..";
 import { ROTATION_3D } from "../constants";
 
-export default (position: Matrix4Component | IEntity) => {
-    if ((position as IEntity).isEntity) {
-        position = (position as IEntity).getComponent(ROTATION_3D) as Matrix4Component;
+export default (position: Matrix4Component | Entity) => {
+    if ((position as Entity).isEntity) {
+        position = (position as Entity).getComponent(ROTATION_3D) as Matrix4Component;
     }
     let euler = EulerAngle.fromMatrix4((position as Matrix4Component).data);
     return new Proxy(position, {
