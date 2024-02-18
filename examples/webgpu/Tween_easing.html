@@ -25,7 +25,7 @@
 		});
 		mesh.addComponent(tween);
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("", projection);
+		const camera = new Nova.Camera3(projection);
 
 		const renderSystem = new Nova.WebGPURenderSystem();
 		const renderer = new Nova.WebGPUMesh3Renderer(camera);
