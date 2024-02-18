@@ -9,7 +9,7 @@
 	<script>
 		const engine = new Nova.Engine();
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("test-camera", projection);
+		const camera = new Nova.Camera3(projection);
 		let renderer = new Nova.WebGPUMesh3Renderer(camera);
 		let renderSystem = new Nova.WebGPURenderSystem();
 		renderSystem.addRenderer(renderer);
