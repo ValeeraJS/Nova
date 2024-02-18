@@ -1,6 +1,7 @@
-import { IWorld, Entity, System } from "@valeera/x";
+import { World, Entity, System } from "@valeera/x";
+import { HashRouteComponent } from "./HashRouteComponent";
 
-export default class HashRouteSystem extends System {
+export class HashRouteSystem extends System {
 	private static listeningHashChange = false;
 	private static count = 0; // 计数
 	private static listener = () => {
@@ -10,9 +11,9 @@ export default class HashRouteSystem extends System {
 
 	public currentPath = "";
 	constructor() {
-		super("HashRouteSystem", (entity) => {
-			return (entity as any).getFirstComponentByTagLabel("HashRoute");
-		});
+		super((entity) => {
+			return !!entity.getComponent(HashRouteComponent as any);
+		}, () => { });
 
 		HashRouteSystem.count++;
 
@@ -35,14 +36,14 @@ export default class HashRouteSystem extends System {
 	}
 
 	handle(entity: Entity): this {
-		let routeComponents = entity.getComponentsByTagLabel("HashRoute") as any[];
+		const routeComponents = entity.getComponentsByTagLabel("HashRoute") as any[];
 		for (let i = routeComponents.length - 1; i > -1; i--) {
 			routeComponents[i].route(this.currentPath, entity);
 		}
 		return this;
 	}
 
-	run(world: IWorld, time: number, delta: number) {
+	run(world: World, time: number, delta: number) {
 		if (HashRouteSystem.currentPath === this.currentPath) {
 			return this;
 		}
