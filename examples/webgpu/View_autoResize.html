@@ -21,9 +21,9 @@
 
 		const perspectiveProjection = new Nova.PerspectiveProjection();
 
-		const camera = new Nova.Camera3("test-camera", perspectiveProjection);
+		const camera = new Nova.Camera3(perspectiveProjection);
 
-		const renderSystem = new Nova.WebGPURenderSystem("", {
+		const renderSystem = new Nova.WebGPURenderSystem({
 			autoResize: true
 		});
 		const renderer = new Nova.WebGPUMesh3Renderer(camera);
