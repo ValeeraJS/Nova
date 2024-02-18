@@ -47,7 +47,7 @@
 		const mesh = Nova.EntityFactory.createMesh3(geo);
 
 		const projection = new Nova.PerspectiveProjection();
-		const camera = new Nova.Camera3("test-camera", projection);
+		const camera = new Nova.Camera3(projection);
 		camera.position.z = 5;
 
 		const renderSystem = new Nova.WebGPURenderSystem();
