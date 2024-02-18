@@ -1,5 +1,5 @@
 import { ColorGPU } from "@valeera/mathx";
-import { IEntity, System, IEntityManager, ISystemManager } from "@valeera/x";
+import { Entity, EntityManager, System, SystemManager } from "@valeera/x";
 import { RENDERABLE } from "../../components/constants";
 import { getColorGPU, ColorFormatType } from "../../utils/getColorGPU";
 import { IRenderer } from "./IRenderer";
@@ -17,12 +17,10 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
         minDepth: 0,
         maxDepth: 1
     };
-    id: number = 0;
-    cache: WeakMap<IEntity, any> = new WeakMap<IEntity, any>();
-    entitySet: WeakMap<IEntityManager, Set<IEntity>> = new WeakMap<IEntityManager, Set<IEntity>>();
+    cache: WeakMap<Entity, any> = new WeakMap<Entity, any>();
+    entitySet: WeakMap<EntityManager, Set<Entity>> = new WeakMap<EntityManager, Set<Entity>>();
     loopTimes: number = 0;
-    name: string = "";
-    usedBy: ISystemManager[] = [];
+    usedBy: SystemManager[] = [];
     rendererMap: Map<string, IRenderer> = new Map();
     canvas: HTMLCanvasElement;
 
@@ -36,10 +34,10 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
         noDepthTexture: false
     };
 
-    constructor(name: string, options: IRenderSystemInCanvasOptions) {
-        super(name, (entity) => {
-            return entity.getComponent(RENDERABLE)?.data;
-        });    
+    constructor(options: IRenderSystemInCanvasOptions, name: string = "RenderSystem") {
+        super((entity) => {
+            return !!entity.getComponent(RENDERABLE)?.data;
+        }, () => {}, undefined, undefined, name);
         const element = options.element ?? document.body;
         const w = element.offsetWidth;
         const h = element.offsetHeight;
@@ -172,7 +170,7 @@ export abstract class RenderSystemInCanvas extends System implements IRenderSyst
         return this;
     }
 
-    resize(width: number, height: number, resolution: number = this.resolution): this {
+    resize(width: number = this.options.width, height: number = this.options.height, resolution: number = this.resolution): this {
         this.options.width = width;
         this.options.height = height;
         this.options.resolution = resolution;
