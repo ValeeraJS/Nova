@@ -4,7 +4,7 @@ import AProjection3 from "./AProjection3";
 export default class OrthogonalProjection extends AProjection3 {
     options: { left: number; right: number; bottom: number; top: number; near: number; far: number; };
 
-    constructor(left: number = -window.innerWidth * 0.005, right: number = window.innerWidth * 0.005, bottom: number = -window.innerHeight * 0.005, top: number = window.innerHeight * 0.005, near: number = 0.01, far: number = 10) {
+    constructor(left: number = -window.innerWidth * 0.005, right: number = window.innerWidth * 0.005, bottom: number = -window.innerHeight * 0.005, top: number = window.innerHeight * 0.005, near: number = 0.01, far: number = 20) {
         super();
         this.options = {
             left,
