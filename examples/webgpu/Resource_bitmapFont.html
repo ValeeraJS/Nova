@@ -44,7 +44,7 @@
 
 		const engine = new Nova.Engine();
 		const world = new Nova.World();
-		const camera = new Nova.Camera3("test-camera", new Nova.PerspectiveProjection());
+		const camera = new Nova.Camera3(new Nova.PerspectiveProjection());
 		camera.position.z = 5;
 		const renderSystem = new Nova.WebGPURenderSystem();
 		renderSystem.clearColor = "white";
