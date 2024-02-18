@@ -7,7 +7,7 @@ import { IMaterial, IUniformSlot } from "../IMatrial";
 import { ICamera2 } from "../../../entities/Camera2";
 import { Object2 } from "../../../entities/Object2";
 import { Matrix3, Matrix4 } from "@valeera/mathx";
-import { IEntity } from "@valeera/x";
+import { Entity } from "@valeera/x";
 import { Mesh2 } from "../Mesh2";
 
 interface ICacheData {
@@ -26,7 +26,7 @@ export class WebGPUMesh2Renderer implements IWebGPURenderer {
 	public static readonly renderTypes = MESH2;
 	public readonly renderTypes = MESH2;
 	public camera: ICamera2;
-	private entityCacheData: Map<IEntity, ICacheData> = new Map();
+	private entityCacheData: Map<Entity, ICacheData> = new Map();
 
 	public constructor(camera: ICamera2) {
 		this.camera = camera;
